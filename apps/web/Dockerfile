@@ -1,6 +1,3 @@
-# Build context: monorepo root (see compose.yaml)
-
-# ---- build: static bundle with Nx/Vite ----
 FROM node:24-alpine AS build
 
 ENV NX_DAEMON=false \

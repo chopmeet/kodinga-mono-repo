@@ -1,6 +1,3 @@
-# Build context: monorepo root (see compose.yaml)
-
-# ---- deps: resolve the locked environment with uv ----
 FROM python:3.14-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /usr/local/bin/uv
 
