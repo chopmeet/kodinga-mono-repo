@@ -43,3 +43,22 @@ Thumbs.db
 .nx/migrate-runs
 .claude/worktrees
 .claude/settings.local.json
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Python / Django
+__pycache__/
+*.py[cod]
+db.sqlite3
+.env
+!.env.example
+/reports
+.coverage
+staticfiles/

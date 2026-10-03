@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - recette
   pull_request:
 
 permissions:
@@ -36,10 +36,18 @@ jobs:
        
       - run: npm ci
 
+      # Python toolchain for the Django api (version read from apps/api/.python-version)
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'apps/api/uv.lock'
+
+      - run: uv sync --directory apps/api --locked
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
       # - run: npx nx record -- echo Hello World
       - run: npx nx run-many -t lint test build
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
-      - run: npx nx fix-ci
-        if: always()
+      # Requires Nx Cloud: run "nx connect" then uncomment
+      # - run: npx nx fix-ci
+      #   if: always()

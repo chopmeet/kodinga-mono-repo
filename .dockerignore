@@ -1,0 +1,25 @@
+# Shared by apps/web and apps/api builds (context = repo root)
+.git
+.github
+.nx
+.vscode
+.claude
+node_modules
+dist
+tmp
+coverage
+reports
+
+# Python
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+**/staticfiles
+**/db.sqlite3
+
+# Secrets never go into images
+**/.env
+!**/.env.example
