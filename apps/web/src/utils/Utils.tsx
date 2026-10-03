@@ -1,0 +1,29 @@
+import { useAppSelector } from '@/redux/hook';
+import { type User, UserType } from './api/user/user.type';
+
+export const isAdmin = (user?: User | null) =>
+  user?.userType === UserType.admin || user?.userType === UserType.superAdmin;
+
+export const useUser = () => useAppSelector((s) => s.user.user);
+
+export const getName = (user?: User | null) =>
+  [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+
+export function getInitials(user?: User | null): string {
+  const parts = getName(user).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+/** Builds `path/?a=1&b=2`, skipping empty values. */
+export const QueryUrl = (path: string, query: object = {}) => {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value));
+    }
+  });
+  const qs = params.toString();
+  return qs ? `${path}/?${qs}` : `${path}/`;
+};

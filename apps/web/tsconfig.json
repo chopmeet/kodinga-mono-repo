@@ -7,7 +7,16 @@
     "types": [
       "vite/client",
       "vitest"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@kodinga-mono-repo/ui": [
+        "../../libs/ui/src/index.ts"
+      ]
+    }
   },
   "files": [],
   "include": [],

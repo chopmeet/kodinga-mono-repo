@@ -1,1 +1,19 @@
-/* You can add global styles to this file, and also import other style files */
+/* Tailwind + shadcn theme from the shared ui lib */
+@import '../../../libs/ui/src/styles.css';
+
+/* App-specific global styles go below */
+
+/* Kodinga brand: bg-brand, text-brand, hover:bg-brand-hover, text-brand-soft... */
+@theme {
+  --color-brand: #e05a2b;
+  --color-brand-hover: #ca4a1c;
+  --color-brand-soft: #ffb59d;
+}
+
+/* Horizontal scrollers (filter strips) without a visible scrollbar */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
