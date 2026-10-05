@@ -1,0 +1,31 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Votre compte est officiellement actif ! 🎉</h2>
+
+<p>Bonjour <strong>{{ first_name|default:username }}</strong>,</p>
+
+<p>
+    Félicitations, votre adresse email a été confirmée avec succès. Vous faites désormais pleinement partie de l'écosystème <strong>{{ app_name }}</strong>.
+</p>
+
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0;">
+    <p style="margin: 0 0 12px 0; color: #0f172a; font-weight: 700; font-size: 15px;">Voici ce que vous pouvez faire dès maintenant :</p>
+    <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.8;">
+        <li>🚀 <strong>Explorer les communautés :</strong> Rejoignez des collectifs de développeurs spécialisés.</li>
+        <li>💬 <strong>Interagir & Collaborer :</strong> Partagez vos projets, posez vos questions et débattez.</li>
+        <li>🎓 <strong>Formations & Replays :</strong> Accédez aux cours vidéo, tutoriels et ateliers interactifs.</li>
+        <li>⚡ <strong>Live Sessions :</strong> Participez à des sessions de live coding et d'architecture.</li>
+    </ul>
+</div>
+
+<div class="btn-wrapper">
+    <a href="{{ frontend_url }}/dashboard" class="btn-primary">
+        Accéder à mon espace développeur
+    </a>
+</div>
+
+<p style="font-size: 13px; color: #64748b; margin-top: 24px;">
+    Nous sommes ravis de vous compter parmi nous. À très bientôt sur la plateforme !
+</p>
+{% endblock %}

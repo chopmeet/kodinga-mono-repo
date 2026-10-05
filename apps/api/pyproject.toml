@@ -1,12 +1,14 @@
 [tool.coverage.run]
 branch = true
-source = [ "api" ]
+source = [ "api", "apps", "common" ]
 
 [tool.coverage.report]
 exclude_lines = ['if TYPE_CHECKING:']
 show_missing = true
 
 [tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "*_test.py"]
 addopts = """
  --cov
  --cov-report html:'../../coverage/apps/api/html'
@@ -24,13 +26,22 @@ readme = 'README.md'
 dependencies = [
     "django>=4.2.30",
     "django-environ>=0.12",
+    "djangorestframework>=3.15.0",
+    "djangorestframework-simplejwt>=5.3.0",
+    "drf-spectacular>=0.27.0",
+    "django-cors-headers>=4.3.0",
+    "django-filter>=24.0",
+    "redis>=5.0.0",
+    "celery>=5.3.0",
+    "cryptography>=42.0.0",
+    "requests>=2.31.0",
     "gunicorn>=23.0.0",
     "psycopg[binary]>=3.2.13",
     "whitenoise>=6.11.0",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["api"]
+packages = ["api", "apps", "common"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -40,9 +51,11 @@ dev = [
   "autopep8>=2.3.1",
   "ruff>=0.8.2",
   "pytest>=8.3.4",
+  "pytest-django>=4.8.0",
   "pytest-sugar>=1.0.0",
   "pytest-cov>=6.0.0",
   "pytest-html>=4.1.1",
+  "factory-boy>=3.3.0",
 ]
 
 [build-system]

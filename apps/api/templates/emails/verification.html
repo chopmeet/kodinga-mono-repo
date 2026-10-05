@@ -1,0 +1,35 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Bienvenue sur {{ app_name }} ! 🚀</h2>
+
+<p>Bonjour <strong>{{ first_name|default:username }}</strong>,</p>
+
+<p>
+    Merci de rejoindre la communauté <strong>{{ app_name }}</strong>, l'espace dédié aux développeurs, architectes et passionnés de tech.
+</p>
+
+<p>
+    Afin de finaliser la création de votre compte et d'activer l'ensemble de vos accès, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
+</p>
+
+<div class="btn-wrapper">
+    <a href="{{ verification_url }}" class="btn-primary">
+        Vérifier mon adresse email
+    </a>
+</div>
+
+<div class="callout-box">
+    <p style="margin: 0 0 8px 0; color: #475569; font-weight: 600;">
+        ⏱️ Ce lien sécurisé est valable pendant <strong>{{ expires_in_minutes|default:1440 }} minutes</strong> (24h).
+    </p>
+    <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b;">
+        Si le bouton ci-dessus ne s'affiche pas correctement, vous pouvez copier et coller l'URL suivante dans votre navigateur :
+    </p>
+    <div class="link-text">{{ verification_url }}</div>
+</div>
+
+<p style="margin-top: 24px; font-size: 13px; color: #64748b;">
+    Si vous n'êtes pas à l'origine de cette inscription, aucune action n'est requise de votre part. Vous pouvez ignorer cet email en toute sécurité.
+</p>
+{% endblock %}

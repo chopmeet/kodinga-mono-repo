@@ -1,0 +1,68 @@
+# ==============================================================================
+# KODINGA BACKEND API — DOCKERIGNORE SPECIFICATION
+# Prevents unnecessary files, secrets, and caches from bloating Docker build context
+# ==============================================================================
+
+# Version Control
+.git/
+.gitignore
+.gitattributes
+
+# Environment Variables & Secrets (CRITICAL: Never bake secrets into image)
+.env
+.env.*
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+
+# Python / Virtual Environments / Caches
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.uv_cache/
+.uv/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+coverage/
+htmlcov/
+reports/
+tests/
+
+# Linters & IDEs
+.ruff_cache/
+.mypy_cache/
+.idea/
+.vscode/
+*.swp
+*.bak
+*.tmp
+
+# Local databases & logs
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-shm
+*.sqlite3-wal
+*.db
+local_db/
+*.log
+logs/
+
+# Documentation & Scratch
+docs/
+.agents/
+brain/
+scratch/
+README.md

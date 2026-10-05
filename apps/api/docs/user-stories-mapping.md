@@ -1,0 +1,33 @@
+# KODINGA USER STORIES MAPPING (309 STORIES MATRIX)
+
+Ce document trace l'ensemble des modules et exigences fonctionnelles et techniques de la plateforme Kodinga.
+
+| ID | Domaine / Besoin | Application | Models | Serializers | Services | API | Permissions | Tests | Priorité | Statut |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **US-006** | Inscription par Email & Mot de passe | `accounts` | `User`, `AuthToken` | `RegisterSerializer` | `RegistrationService`, `EmailService` | `POST /api/v1/auth/register/` | AllowAny | `test_register_success`, `test_register_duplicate_email` | P0 | En cours |
+| **US-007** | Inscription / Connexion Google OAuth | `accounts` | `User`, `OAuthIdentity` | `OAuthCallbackSerializer` | `OAuthService` | `GET/POST /api/v1/auth/google/*` | AllowAny | `test_google_oauth_flow` | P0 | En cours |
+| **US-008** | Inscription / Connexion GitHub OAuth | `accounts` | `User`, `OAuthIdentity` | `OAuthCallbackSerializer` | `OAuthService` | `GET/POST /api/v1/auth/github/*` | AllowAny | `test_github_oauth_flow` | P0 | En cours |
+| **US-009** | Consentements RGPD & CGU à l'inscription | `accounts` | `UserConsent` | `ConsentSerializer` | `ConsentService` | `POST /api/v1/users/me/consents/` | IsAuthenticated | `test_record_consent` | P0 | En cours |
+| **US-010** | Vérification d'adresse email par token SMTP | `accounts` | `AuthToken`, `User` | `EmailVerificationSerializer` | `EmailVerificationService` | `POST /api/v1/auth/verify-email/` | AllowAny | `test_verify_email_token` | P0 | En cours |
+| **US-011** | Connexion Email/Mot de passe avec émission JWT | `accounts` | `User`, `UserSession` | `LoginSerializer` | `AuthenticationService`, `SessionService` | `POST /api/v1/auth/login/` | AllowAny | `test_login_success`, `test_login_invalid_password` | P0 | En cours |
+| **US-012** | Demande de réinitialisation de mot de passe | `accounts` | `AuthToken`, `User` | `PasswordResetRequestSerializer` | `PasswordResetService`, `EmailService` | `POST /api/v1/auth/password/reset/` | AllowAny | `test_password_reset_request` | P0 | En cours |
+| **US-013** | Confirmation de réinitialisation de mot de passe | `accounts` | `AuthToken`, `User` | `PasswordResetConfirmSerializer` | `PasswordResetService` | `POST /api/v1/auth/password/reset/confirm/` | AllowAny | `test_password_reset_confirm` | P0 | En cours |
+| **US-014** | Changement de mot de passe connecté | `accounts` | `User` | `ChangePasswordSerializer` | `PasswordChangeService` | `POST /api/v1/auth/password/change/` | IsAuthenticated | `test_change_password` | P0 | En cours |
+| **US-015** | Gestion & révocation des sessions actives | `accounts` | `UserSession` | `SessionSerializer` | `SessionService` | `GET/DELETE /api/v1/auth/sessions/*` | IsAuthenticated | `test_list_and_revoke_sessions` | P0 | En cours |
+| **US-016** | Consultation du profil utilisateur connecté | `accounts` | `User` | `UserSerializer` | `UserService` | `GET /api/v1/users/me/` | IsAuthenticated | `test_get_me` | P0 | En cours |
+| **US-017** | Mise à jour des informations de compte | `accounts` | `User` | `UserUpdateSerializer` | `UserService` | `PATCH /api/v1/users/me/` | IsAuthenticated | `test_update_me` | P0 | En cours |
+| **US-020** | Déconnexion globale de tous les appareils | `accounts` | `UserSession` | `EmptySerializer` | `SessionService` | `POST /api/v1/auth/logout-all/` | IsAuthenticated | `test_logout_all` | P0 | En cours |
+| **US-021** | Renvoi d'email de vérification avec rate-limit | `accounts` | `AuthToken`, `User` | `ResendVerificationSerializer` | `EmailVerificationService` | `POST /api/v1/auth/resend-verification/` | AllowAny | `test_resend_verification_throttled` | P0 | En cours |
+| **US-294** | Journalisation des événements de sécurité | `accounts` | `SecurityEvent` | `SecurityEventSerializer` | `AccountSecurityService` | Interne / Audits | IsAuthenticated | `test_security_event_logging` | P0 | En cours |
+| **US-023-035** | Profil développeur, compétences, technologies | `profiles` | `DeveloperProfile`, `UserSkill`, `Technology` | `ProfileSerializer` | `ProfileService` | `/api/v1/profiles/*` | IsAuthenticated | Tests profils | P1 | Planifié |
+| **US-036-058** | Gestion des communautés, règles & settings | `communities` | `Community`, `CommunitySettings` | `CommunitySerializer` | `CommunityService` | `/api/v1/communities/*` | CommunityOwner | Tests communautés | P1 | Planifié |
+| **US-059-084** | Feed social, publications, commentaires | `posts` | `Post`, `Comment`, `Reaction`, `Poll` | `PostSerializer` | `PostService` | `/api/v1/posts/*` | MemberOnly | Tests feed & posts | P1 | Planifié |
+| **US-085-112** | Formations, modules, leçons & progression | `classroom` | `Course`, `Module`, `Lesson`, `Progress` | `CourseSerializer` | `CourseService` | `/api/v1/courses/*` | CourseAccessPermission | Tests classroom | P1 | Planifié |
+| **US-113-135** | Événements, calendrier & LiveKit meetings | `events`, `live` | `Event`, `LiveSession` | `EventSerializer` | `LiveService` | `/api/v1/events/*` | MemberOnly | Tests events & live | P2 | Planifié |
+| **US-136-160** | Gamification, points, niveaux & badges | `gamification` | `PointTransaction`, `Level` | `LevelSerializer` | `GamificationService` | `/api/v1/gamification/*` | IsAuthenticated | Tests gamification | P2 | Planifié |
+| **US-161-176** | Découverte, recherche globale & filtres | `discovery` | Vues d'indexation | `DiscoverySerializer` | `DiscoveryService` | `/api/v1/discovery/*` | AllowAny | Tests recherche | P2 | Planifié |
+| **US-177-202** | Plans, abonnements, paiements & facturation | `billing` | `Plan`, `Subscription`, `Invoice` | `BillingSerializer` | `BillingService` | `/api/v1/billing/*` | CommunityAdmin | Tests billing & webhooks | P1 | Planifié |
+| **US-203-240** | Messagerie, notifications & alertes | `messaging`, `notifications`| `Message`, `Notification` | `MessageSerializer` | `NotificationService`| `/api/v1/notifications/*`| IsAuthenticated | Tests messaging | P2 | Planifié |
+| **US-241-270** | Projets, challenges & opportunités | `projects`, `challenges` | `Project`, `Challenge` | `ProjectSerializer` | `ChallengeService` | `/api/v1/challenges/*` | IsAuthenticated | Tests challenges | P3 | Planifié |
+| **US-271-293** | Modération, signalements & audits | `moderation` | `Report`, `ModerationAction` | `ReportSerializer` | `ModerationService` | `/api/v1/moderation/*` | ModeratorPermission | Tests modération | P2 | Planifié |
+| **US-295-309** | Administration plateforme, monitoring & analytics | `administration`, `analytics` | `PlatformMetric`, `AuditLog` | `AdminSerializer` | `AnalyticsService` | `/api/v1/admin/*` | IsSuperUser | Tests super admin | P2 | Planifié |

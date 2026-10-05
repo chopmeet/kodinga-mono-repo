@@ -1,0 +1,15 @@
+Bienvenue sur {{ app_name }} !
+
+Bonjour {{ first_name|default:username }},
+
+Merci d'avoir créé votre compte sur {{ app_name }}.
+Veuillez confirmer votre adresse email en ouvrant le lien ci-dessous :
+
+{{ verification_url }}
+
+Ce lien expire dans {{ expires_in_minutes|default:1440 }} minutes.
+
+Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.
+
+L'équipe {{ app_name }}
+{{ support_email }}
