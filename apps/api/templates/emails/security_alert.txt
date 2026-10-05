@@ -1,0 +1,14 @@
+Alerte de sécurité sur votre compte {{ app_name }}
+
+Bonjour {{ first_name|default:username }},
+
+Une nouvelle activité a été enregistrée :
+- Événement : {{ event_name|default:"Connexion" }}
+- Date : {{ timestamp|default:"À l'instant" }}
+- IP : {{ ip_address|default:"Non communiquée" }}
+- Appareil : {{ user_agent|default:"Non communiqué" }}
+
+Si vous ne reconnaissez pas cette connexion, révoquez vos sessions actives et modifiez votre mot de passe immédiatement.
+
+L'équipe {{ app_name }}
+{{ support_email }}

@@ -1,0 +1,147 @@
+# ==============================================================================
+# KODINGA PLATFORM — DOCKER COMPOSE ORCHESTRATION
+# Complete local development & staging stack (API, Celery, Redis, Postgres)
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Django API Web Server (Gunicorn WSGI)
+  # ----------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kodinga_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - WAIT_FOR_DB=true
+      - MIGRATE_ON_BOOT=true
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - kodinga_network
+
+  # ----------------------------------------------------------------------------
+  # 2. Celery Worker (Asynchronous Task Processing)
+  # ----------------------------------------------------------------------------
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kodinga_celery_worker
+    restart: unless-stopped
+    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=4"]
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - WAIT_FOR_DB=true
+      - MIGRATE_ON_BOOT=false
+    volumes:
+      - media_volume:/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - kodinga_network
+
+  # ----------------------------------------------------------------------------
+  # 3. Celery Beat (Periodic & Scheduled Cron Jobs)
+  # ----------------------------------------------------------------------------
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kodinga_celery_beat
+    restart: unless-stopped
+    command: ["celery", "-A", "config", "beat", "--loglevel=INFO"]
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - WAIT_FOR_DB=true
+      - MIGRATE_ON_BOOT=false
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - kodinga_network
+
+  # ----------------------------------------------------------------------------
+  # 4. Redis (Cache & Celery Message Broker)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: kodinga_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kodinga_network
+
+  # ----------------------------------------------------------------------------
+  # 5. Local PostgreSQL (Fallback if remote Neon DB is not used)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: kodinga_postgres
+    restart: unless-stopped
+    profiles:
+      - local-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: kodinga
+      POSTGRES_USER: kodinga_user
+      POSTGRES_PASSWORD: kodinga_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kodinga_user -d kodinga"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kodinga_network
+
+# ------------------------------------------------------------------------------
+# Persistent Volumes & Networks
+# ------------------------------------------------------------------------------
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  static_volume:
+    driver: local
+  media_volume:
+    driver: local
+
+networks:
+  kodinga_network:
+    driver: bridge

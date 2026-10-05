@@ -1,0 +1,11 @@
+Votre compte est vérifié !
+
+Bonjour {{ first_name|default:username }},
+
+Félicitations, votre adresse email a été confirmée avec succès.
+Vous pouvez désormais accéder à votre espace {{ app_name }} :
+
+{{ frontend_url }}/dashboard
+
+L'équipe {{ app_name }}
+{{ support_email }}

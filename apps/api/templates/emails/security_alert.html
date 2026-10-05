@@ -1,0 +1,43 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Alerte de sécurité sur votre compte ⚠️</h2>
+
+<p>Bonjour <strong>{{ first_name|default:username }}</strong>,</p>
+
+<p>
+    Une activité importante ou une nouvelle connexion a été enregistrée sur votre compte <strong>{{ app_name }}</strong> :
+</p>
+
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 20px 0;">
+    <table role="presentation" border="0" cellpadding="6" cellspacing="0" width="100%" style="font-size: 14px; color: #334155;">
+        <tr>
+            <td width="35%" style="font-weight: 600; color: #0f172a;">Événement :</td>
+            <td>{{ event_name|default:"Connexion au compte" }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: 600; color: #0f172a;">Date & Heure :</td>
+            <td>{{ timestamp|default:"À l'instant" }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: 600; color: #0f172a;">Adresse IP :</td>
+            <td><code style="background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">{{ ip_address|default:"Non communiquée" }}</code></td>
+        </tr>
+        <tr>
+            <td style="font-weight: 600; color: #0f172a;">Appareil / Navigateur :</td>
+            <td>{{ user_agent|default:"Non communiqué" }}</td>
+        </tr>
+    </table>
+</div>
+
+<p>
+    Si vous êtes à l'origine de cette connexion, aucune action supplémentaire n'est nécessaire.
+</p>
+
+<div class="alert-box-warning">
+    <p class="alert-title-warning">Cette activité ne provient pas de vous ?</p>
+    <p class="alert-desc-warning">
+        Nous vous invitons à révoquer immédiatement toutes vos sessions actives depuis les paramètres de votre compte et à modifier votre mot de passe sans attendre.
+    </p>
+</div>
+{% endblock %}
