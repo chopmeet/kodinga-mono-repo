@@ -3,11 +3,12 @@
 
 /* App-specific global styles go below */
 
-/* Kodinga brand: bg-brand, text-brand, hover:bg-brand-hover, text-brand-soft... */
-@theme {
-  --color-brand: #e05a2b;
-  --color-brand-hover: #ca4a1c;
-  --color-brand-soft: #ffb59d;
+/* Kodinga brand = shadcn primary (libs/ui/src/styles.css), so light/dark follow the theme.
+   bg-brand, text-brand, hover:bg-brand-hover, text-brand-soft... */
+@theme inline {
+  --color-brand: var(--primary);
+  --color-brand-hover: color-mix(in oklch, var(--primary), black 18%);
+  --color-brand-soft: color-mix(in oklch, var(--primary), white 60%);
 }
 
 /* Horizontal scrollers (filter strips) without a visible scrollbar */

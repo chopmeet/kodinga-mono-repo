@@ -1,14 +1,11 @@
 import { ChevronDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { ActivityFeed } from './components/activity-feed';
 import { CommunityCard } from './components/community-card';
 import { CreatorCallout } from './components/creator-callout';
 import { DiscoverFilters } from './components/discover-filters';
-import { FinalCtaSection } from './components/final-cta-section';
 import { HeroSection } from './components/hero-section';
 import { LeaderboardCard } from './components/leaderboard-card';
-import { TestimonialsSection } from './components/testimonials-section';
 import {
   type CategoryId,
   type Community,
@@ -16,6 +13,7 @@ import {
   type SortId,
   type StackId,
 } from '@/data/home.data';
+import { useAppSelector } from '@/redux/hook';
 
 const PAGE_SIZE = 6;
 
@@ -25,6 +23,16 @@ const matchesCategory = (c: Community, category: CategoryId) => {
   return c.categories.includes(category);
 };
 
+// Case- and accent-insensitive: "cote" matches "Côte"
+const normalize = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+const matchesQuery = (c: Community, query: string) => {
+  const q = normalize(query.trim());
+  if (!q) return true;
+  return normalize([c.name, c.description, ...c.tags].join(' ')).includes(q);
+};
+
 const sorters: Record<SortId, (a: Community, b: Community) => number> = {
   active: (a, b) => b.online - a.online,
   members: (a, b) => b.members - a.members,
@@ -32,6 +40,8 @@ const sorters: Record<SortId, (a: Community, b: Community) => number> = {
 };
 
 function Home() {
+  // Shared with the header's compact search (see Search.slice)
+  const query = useAppSelector((s) => s.search.query);
   const [category, setCategory] = useState<CategoryId>('all');
   const [stack, setStack] = useState<StackId | null>(null);
   const [sort, setSort] = useState<SortId>('active');
@@ -40,11 +50,15 @@ function Home() {
   const results = useMemo(
     () =>
       communities
+        .filter((c) => matchesQuery(c, query))
         .filter((c) => matchesCategory(c, category))
         .filter((c) => !stack || c.stacks.includes(stack))
         .sort(sorters[sort]),
-    [category, stack, sort]
+    [query, category, stack, sort]
   );
+  // A new search (from the hero or the header) collapses the list back to the first page
+  useEffect(() => setShowAll(false), [query]);
+
   const visible = showAll ? results : results.slice(0, PAGE_SIZE);
 
   // Changing a filter collapses the list back to the first page
@@ -57,13 +71,11 @@ function Home() {
 
   return (
     <div className="bg-white text-slate-900">
-      <HeroSection />
+      <HeroSection stack={stack} onStackChange={withReset(setStack)} />
 
       <DiscoverFilters
         category={category}
         onCategoryChange={withReset(setCategory)}
-        stack={stack}
-        onStackChange={withReset(setStack)}
         sort={sort}
         onSortChange={setSort}
       />
@@ -89,7 +101,9 @@ function Home() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
-                Aucune communauté ne correspond à ces filtres pour le moment.
+                {query.trim()
+                  ? `Aucune communauté ne correspond à « ${query.trim()} ».`
+                  : 'Aucune communauté ne correspond à ces filtres pour le moment.'}
               </div>
             )}
 
@@ -110,13 +124,11 @@ function Home() {
           <aside id="leaderboard" className="flex flex-col gap-6 lg:col-span-4 xl:col-span-3">
             <LeaderboardCard />
             <CreatorCallout />
-            <ActivityFeed />
           </aside>
         </div>
       </div>
 
-      <TestimonialsSection />
-      <FinalCtaSection />
+      
     </div>
   );
 }

@@ -5,15 +5,11 @@ import {
   type CategoryId,
   type SortId,
   sortOptions,
-  type StackId,
-  stacks,
 } from '@/data/home.data';
 
 type Props = {
   category: CategoryId;
   onCategoryChange: (id: CategoryId) => void;
-  stack: StackId | null;
-  onStackChange: (id: StackId | null) => void;
   sort: SortId;
   onSortChange: (id: SortId) => void;
 };
@@ -21,8 +17,6 @@ type Props = {
 export function DiscoverFilters({
   category,
   onCategoryChange,
-  stack,
-  onStackChange,
   sort,
   onSortChange,
 }: Props) {
@@ -31,7 +25,7 @@ export function DiscoverFilters({
       id="grille-communautes"
       className="sticky top-16 z-40 scroll-mt-16 border-b border-slate-200 bg-white"
     >
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1440px] flex-col px-4 py-3 sm:px-6 lg:px-8">
         <div className="no-scrollbar flex items-center justify-between gap-4 overflow-x-auto">
           <div className="flex shrink-0 items-center gap-1.5">
             {categories.map((c) => {
@@ -73,29 +67,6 @@ export function DiscoverFilters({
               ))}
             </select>
           </div>
-        </div>
-
-        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-          <span className="shrink-0 font-mono text-[11px] font-medium text-slate-400">STACKS :</span>
-          {stacks.map((s) => {
-            const active = s.id === stack;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => onStackChange(active ? null : s.id)}
-                className={cn(
-                  'rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors',
-                  active
-                    ? 'bg-brand text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                )}
-              >
-                # {s.label}
-              </button>
-            );
-          })}
         </div>
       </div>
     </section>

@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import DashboardLayout from '@/layouts/dashboard-layout';
 
 import Home from '@/pages/public/home/home';
-import Blog from '@/pages/public/blog/blog';
+import CommunityDetails from '@/pages/public/community/community-details';
 import Login from '@/pages/auth/login';
 import AdminDashboard from '@/pages/admin/dashboard/admin-dashboard';
 import NotFound from '@/pages/extra/not-found';
@@ -29,8 +29,8 @@ export const AppRoutes: RouteObject[] = [
         element: <Home />,
       },
       {
-        path: 'blog',
-        element: <Blog />,
+        path: 'communities/:id',
+        element: <CommunityDetails />,
       },
     ],
   },

@@ -27,3 +27,15 @@ export const QueryUrl = (path: string, query: object = {}) => {
   const qs = params.toString();
   return qs ? `${path}/?${qs}` : `${path}/`;
 };
+
+const compactNumber = new Intl.NumberFormat('fr-FR', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+/** 5800 → "5,8 k" */
+export const formatCompact = (value: number) => compactNumber.format(value);
+
+/** Smooth-scrolls to the home results (the sticky filters strip sits on top of the grid). */
+export const scrollToResults = () =>
+  document.getElementById('grille-communautes')?.scrollIntoView({ behavior: 'smooth' });

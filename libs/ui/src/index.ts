@@ -5,6 +5,7 @@ export * from './components/card';
 export * from './components/dropdown-menu';
 export * from './components/input';
 export * from './components/label';
+export * from './components/search-input';
 export * from './components/separator';
 export * from './components/sheet';
 export * from './components/sidebar';

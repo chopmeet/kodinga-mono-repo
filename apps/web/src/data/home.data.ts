@@ -22,6 +22,8 @@ export type Community = {
   initials: string;
   avatarClassName: string;
   coverClassName: string;
+  /** Cover photo; coverClassName is the gradient shown while it loads */
+  image: string;
   badge: string;
   online: number;
   members: number;
@@ -74,6 +76,7 @@ export const communities: Community[] = [
     initials: 'Py',
     avatarClassName: 'bg-blue-900 text-amber-400',
     coverClassName: 'from-blue-700 via-indigo-600 to-amber-500',
+    image: '/images/communities/python-africa-core.jpg',
     badge: '#1 en Backend',
     online: 412,
     members: 5800,
@@ -91,6 +94,7 @@ export const communities: Community[] = [
     initials: 'AI',
     avatarClassName: 'bg-emerald-800 text-emerald-200',
     coverClassName: 'from-emerald-600 via-teal-700 to-slate-900',
+    image: '/images/communities/lagos-ai-data.jpg',
     badge: '#1 en IA & Data',
     online: 540,
     members: 6200,
@@ -108,6 +112,7 @@ export const communities: Community[] = [
     initials: 'K8s',
     avatarClassName: 'bg-orange-700 text-orange-100',
     coverClassName: 'from-orange-600 via-amber-600 to-rose-700',
+    image: '/images/communities/dakar-devops.jpg',
     badge: '#1 en DevOps',
     online: 194,
     members: 2700,
@@ -125,6 +130,7 @@ export const communities: Community[] = [
     initials: 'Rs',
     avatarClassName: 'bg-stone-900 text-orange-400',
     coverClassName: 'from-stone-800 via-orange-900 to-amber-700',
+    image: '/images/communities/nairobi-rustaceans.jpg',
     badge: '🔥 En plein essor',
     online: 289,
     members: 3100,
@@ -142,6 +148,7 @@ export const communities: Community[] = [
     initials: '⚛️',
     avatarClassName: 'bg-sky-600 text-white',
     coverClassName: 'from-sky-500 via-indigo-600 to-purple-600',
+    image: '/images/communities/frontend-francophone.jpg',
     badge: '#2 en UI / Web',
     online: 310,
     members: 4200,
@@ -159,6 +166,7 @@ export const communities: Community[] = [
     initials: 'C/C++',
     avatarClassName: 'bg-zinc-900 text-emerald-400',
     coverClassName: 'from-zinc-900 via-stone-800 to-emerald-950',
+    image: '/images/communities/african-kernel-lab.jpg',
     badge: 'Systèmes bas niveau',
     online: 98,
     members: 1400,
@@ -177,6 +185,7 @@ export const communities: Community[] = [
     initials: 'Ξ',
     avatarClassName: 'bg-purple-900 text-purple-200',
     coverClassName: 'from-violet-700 via-purple-800 to-indigo-900',
+    image: '/images/communities/solidity-web3-africa.jpg',
     badge: 'FinTech & Rails',
     online: 240,
     members: 3600,
@@ -194,6 +203,7 @@ export const communities: Community[] = [
     initials: 'IoT',
     avatarClassName: 'bg-emerald-900 text-emerald-300',
     coverClassName: 'from-emerald-700 via-teal-600 to-green-700',
+    image: '/images/communities/kigali-embedded.jpg',
     badge: 'IoT & Énergie',
     online: 115,
     members: 1900,
@@ -211,6 +221,7 @@ export const communities: Community[] = [
     initials: 'Job',
     avatarClassName: 'bg-amber-900 text-amber-200',
     coverClassName: 'from-amber-600 via-orange-600 to-red-600',
+    image: '/images/communities/africode-mentorship.jpg',
     badge: 'Carrière & Remote',
     online: 680,
     members: 7100,
