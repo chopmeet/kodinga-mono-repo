@@ -12,6 +12,8 @@ x-api: &api
   restart: unless-stopped
   env_file: api.env
   depends_on:
+    postgres:
+      condition: service_healthy
     redis:
       condition: service_healthy
   volumes:
@@ -38,12 +40,18 @@ services:
     command: ['celery', '-A', 'config', 'worker', '--loglevel=INFO', '--concurrency=2']
     environment:
       MIGRATE_ON_BOOT: 'false'
+    # The image's HEALTHCHECK curls the HTTP api: meaningless for Celery
+    healthcheck:
+      disable: true
 
   celery_beat:
     <<: *api
-    command: ['celery', '-A', 'config', 'beat', '--loglevel=INFO']
+    # /app is read-only for the non-root user: keep the schedule file in /tmp
+    command: ['celery', '-A', 'config', 'beat', '--loglevel=INFO', '--schedule=/tmp/celerybeat-schedule']
     environment:
       MIGRATE_ON_BOOT: 'false'
+    healthcheck:
+      disable: true
     volumes: []
 
   redis:
@@ -58,11 +66,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # Only when DATABASE_URL points here (COMPOSE_PROFILES=local-db). Skip it when using Neon.
+  # POSTGRES_DB/USER/PASSWORD come from api.env and must match DATABASE_URL.
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
-    profiles: ['local-db']
     env_file: api.env
     volumes:
       - postgres_data:/var/lib/postgresql/data

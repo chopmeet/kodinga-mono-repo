@@ -19,7 +19,7 @@ Sur une pull request, les images sont seulement construites (rien n'est publié 
 | `api` | Django + Gunicorn, applique les migrations au démarrage |
 | `celery_worker`, `celery_beat` | emails asynchrones et tâches planifiées (même image que `api`) |
 | `redis` | broker Celery + cache Django |
-| `postgres` | uniquement avec `COMPOSE_PROFILES=local-db` (inutile si `DATABASE_URL` pointe vers Neon) |
+| `postgres` | conteneur PostgreSQL dédié (pas le Postgres installé sur le VPS), données dans le volume `postgres_data`. L'API attend qu'il soit prêt avant de démarrer |
 
 La recette et la production peuvent tourner sur le même VPS : chacune est un projet compose distinct
 (`kodinga-recette`, `kodinga-production`), avec son dossier, son port et ses volumes.
@@ -56,7 +56,6 @@ recette.kodinga.com {
 | secret | `GHCR_TOKEN` | token d'accès personnel avec `read:packages` (permet au VPS de récupérer les images) |
 | variable | `DEPLOY_PATH` | `/opt/kodinga/recette` |
 | variable | `WEB_PORT` | `8082` (recette), `8081` (production) |
-| variable | `COMPOSE_PROFILES` | vide, ou `local-db` |
 
 Variables du dépôt (Settings → Secrets and variables → Actions → Variables) :
 `RECETTE_SITE_URL` (`https://recette.kodinga.com`) et `PROD_SITE_URL` (`https://kodinga.com`).

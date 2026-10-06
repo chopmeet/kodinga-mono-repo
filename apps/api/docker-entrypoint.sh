@@ -36,13 +36,17 @@ for attempt in range(1, retries + 1):
         print("✅ Database connection successful and ready.")
         sys.exit(0)
     except OperationalError as err:
-        print(f"⏳ Database unavailable (attempt {attempt}/{retries}). Retrying in {delay}s...")
+        last_error = str(err).strip().splitlines()[0] if str(err).strip() else repr(err)
+        print(f"⏳ Database unavailable (attempt {attempt}/{retries}): {last_error}. Retrying in {delay}s...")
         time.sleep(delay)
     except Exception as err:
         print(f"ℹ️ Non-fatal database check warning: {err}")
         sys.exit(0)
 
-print("❌ Database connection timed out.", file=sys.stderr)
+# Which database we tried (password never printed) + why it failed
+db = connections['default'].settings_dict
+target = db.get('HOST') or db.get('NAME')
+print(f"❌ Database connection timed out ({db.get('ENGINE', '?').rsplit('.', 1)[-1]} at {target}).", file=sys.stderr)
 sys.exit(1)
 EOF
 }

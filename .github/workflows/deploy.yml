@@ -5,7 +5,7 @@
 #
 # Per GitHub environment (Settings > Environments > recette | production):
 #   secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY, SSH_PASSPHRASE (optional), GHCR_TOKEN (PAT read:packages)
-#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082), COMPOSE_PROFILES (optional: local-db)
+#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082)
 name: Deploy (reusable)
 
 on:
@@ -109,7 +109,6 @@ jobs:
           REGISTRY_PATH: ${{ needs.images.outputs.registry-path }}
           IMAGE_TAG: ${{ needs.images.outputs.tag }}
           WEB_PORT: ${{ vars.WEB_PORT }}
-          COMPOSE_PROFILES: ${{ vars.COMPOSE_PROFILES }}
           SITE_URL: ${{ inputs.site-url }}
           GHCR_USER: ${{ github.repository_owner }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
@@ -118,7 +117,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,COMPOSE_PROFILES,SITE_URL,GHCR_USER,GHCR_TOKEN
+          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,SITE_URL,GHCR_USER,GHCR_TOKEN
           script_stop: true
           script: |
             set -eu
@@ -133,7 +132,6 @@ jobs:
               echo "WEB_IMAGE=$REGISTRY_PATH/web"
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "WEB_PORT=${WEB_PORT:-8081}"
-              echo "COMPOSE_PROFILES=${COMPOSE_PROFILES:-}"
             } > .env
 
             # stdin: the token never shows up in logs or in the process list
