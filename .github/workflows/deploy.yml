@@ -142,18 +142,28 @@ jobs:
             # Each deploy has its own tag: drop unused images older than a week (keeps recent rollbacks local)
             docker image prune -af --filter "until=168h"
 
-            # Smoke test through the web container (nginx -> api). Send the real domain as Host,
-            # otherwise Django rejects 127.0.0.1 (ALLOWED_HOSTS) and the check fails for nothing.
+            # Smoke test through the web container (nginx -> api), sending the real domain as Host
+            # like a visitor would: it must be listed in ALLOWED_HOSTS (api.env).
             SITE_HOST="${SITE_URL#*://}"
             SITE_HOST="${SITE_HOST%%/*}"
+            HEALTH_URL="http://127.0.0.1:${WEB_PORT:-8081}/api/v1/health/"
             for i in $(seq 1 20); do
-              if curl -fsS ${SITE_HOST:+-H "Host: $SITE_HOST"} "http://127.0.0.1:${WEB_PORT:-8081}/api/v1/health/" > /dev/null; then
+              code=$(curl -s -o /tmp/kodinga-health.txt -w '%{http_code}' ${SITE_HOST:+-H "Host: $SITE_HOST"} "$HEALTH_URL" || true)
+              if [ "$code" = "200" ]; then
                 echo "Deployed $IMAGE_TAG"
                 exit 0
               fi
+              echo "Health check $i/20: HTTP $code"
               sleep 5
             done
-            echo "Health check failed for $IMAGE_TAG"
+
+            echo "Health check failed for $IMAGE_TAG (Host sent: ${SITE_HOST:-none, RECETTE_SITE_URL/PROD_SITE_URL is empty})"
+            echo "--- last response:"
+            head -c 300 /tmp/kodinga-health.txt; echo
+            if [ "$code" = "400" ]; then
+              echo "--- HTTP 400 usually means DisallowedHost: add '${SITE_HOST:-the domain}' to ALLOWED_HOSTS in $DEPLOY_PATH/api.env"
+              docker compose -p "$PROJECT" logs --tail=200 api | grep -i "Invalid HTTP_HOST" | tail -3 || true
+            fi
             docker compose -p "$PROJECT" ps
-            docker compose -p "$PROJECT" logs --tail=80 api
+            docker compose -p "$PROJECT" logs --tail=60 api
             exit 1
