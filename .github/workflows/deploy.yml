@@ -128,8 +128,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,API_PORT,SITE_URL,API_URL,GHCR_USER,GHCR_TOKEN
-          script_stop: true
           script: |
+            # No `script_stop` option: it checks $? after every line and silently exits on any
+            # non-zero test (e.g. a health check attempt that is not 200 yet). set -eu is enough.
             set -eu
             cd "$DEPLOY_PATH"
             test -f api.env || { echo "Missing $DEPLOY_PATH/api.env (see deploy/api.env.example)"; exit 1; }
@@ -170,7 +171,9 @@ jobs:
             code=000
             for i in $(seq 1 20); do
               code=$(curl -s -o /tmp/kodinga-health.txt -w '%{http_code}' ${CHECK_HOST:+-H "Host: $CHECK_HOST"} "$HEALTH_URL" || true)
-              [ "$code" = "200" ] && break
+              if [ "$code" = "200" ]; then
+                break
+              fi
               echo "Api health check $i/20: HTTP $code"
               sleep 5
             done
