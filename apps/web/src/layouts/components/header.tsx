@@ -78,6 +78,7 @@ function Header() {
           {showSearch && (
             <SearchInput
               id="header-search"
+              size="md"
               className="animate-in duration-200 fade-in slide-in-from-top-2"
               label={t('header.search')}
               clearLabel={t('header.clearSearch')}

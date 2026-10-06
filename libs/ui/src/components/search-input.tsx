@@ -9,6 +9,7 @@ const searchInputVariants = cva(
     variants: {
       size: {
         sm: "h-9 rounded-full pr-9 pl-9 text-sm focus:ring-3",
+        md: "h-11 rounded-full pr-10 pl-11 text-[15px] focus:ring-3",
         lg: "h-14 rounded-full pr-12 pl-14 text-base shadow-lg shadow-slate-900/5 focus:ring-4 sm:h-[4.5rem] sm:text-lg",
       },
     },
@@ -28,6 +29,13 @@ type SearchInputProps = Omit<React.ComponentProps<"input">, "size" | "onChange" 
     submitLabel?: string
   }
 
+// Positions of the inner icon/buttons for each size
+const parts = {
+  sm: { icon: "left-3 size-4", clear: "right-2", clearWithSubmit: "right-10", clearIcon: "size-3.5", submit: "right-1 size-7", submitIcon: "size-4", padWithSubmit: "pr-16" },
+  md: { icon: "left-4 size-4.5", clear: "right-3", clearWithSubmit: "right-12", clearIcon: "size-4", submit: "right-1.5 size-8", submitIcon: "size-4", padWithSubmit: "pr-20" },
+  lg: { icon: "left-5 size-5", clear: "right-4", clearWithSubmit: "right-16 sm:right-20", clearIcon: "size-4", submit: "right-2 size-10 sm:right-3 sm:size-12", submitIcon: "size-5", padWithSubmit: "pr-28 sm:pr-32" },
+} as const
+
 /** Search field with leading icon and a clear button. Brand color comes from the app theme. */
 function SearchInput({
   id,
@@ -44,7 +52,7 @@ function SearchInput({
 }: SearchInputProps) {
   const fallbackId = React.useId()
   const inputId = id ?? fallbackId
-  const large = size === "lg"
+  const ui = parts[size ?? "sm"]
 
   return (
     <div data-slot="search-input" className={cn("relative w-full", className)}>
@@ -55,7 +63,7 @@ function SearchInput({
         aria-hidden
         className={cn(
           "pointer-events-none absolute top-1/2 -translate-y-1/2 text-slate-400",
-          large ? "left-5 size-5" : "left-3 size-4"
+          ui.icon
         )}
       />
       <input
@@ -68,7 +76,7 @@ function SearchInput({
           if (e.key === "Enter") onSubmit?.()
           onKeyDown?.(e)
         }}
-        className={cn(searchInputVariants({ size }), onSubmit && (large ? "pr-28 sm:pr-32" : "pr-16"))}
+        className={cn(searchInputVariants({ size }), onSubmit && ui.padWithSubmit)}
         {...props}
       />
       {value && (
@@ -78,10 +86,10 @@ function SearchInput({
           aria-label={clearLabel}
           className={cn(
             "absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700",
-            onSubmit ? (large ? "right-16 sm:right-20" : "right-10") : large ? "right-4" : "right-2"
+            onSubmit ? ui.clearWithSubmit : ui.clear
           )}
         >
-          <X className={large ? "size-4" : "size-3.5"} />
+          <X className={ui.clearIcon} />
         </button>
       )}
       {onSubmit && (
@@ -91,10 +99,10 @@ function SearchInput({
           aria-label={submitLabel}
           className={cn(
             "absolute top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full bg-brand text-white shadow-sm transition-colors hover:bg-brand-hover",
-            large ? "right-2 size-10 sm:right-3 sm:size-12" : "right-1 size-7"
+            ui.submit
           )}
         >
-          <ArrowRight className={large ? "size-5" : "size-4"} />
+          <ArrowRight className={ui.submitIcon} />
         </button>
       )}
     </div>

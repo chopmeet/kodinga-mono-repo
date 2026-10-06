@@ -9,6 +9,11 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+
+# Public origin baked into index.html (og:image...). Empty = vite.config default.
+ARG VITE_SITE_URL=""
+ENV VITE_SITE_URL=$VITE_SITE_URL
+
 RUN npx nx build web
 
 # ---- runtime: nginx serves the bundle and proxies the api ----

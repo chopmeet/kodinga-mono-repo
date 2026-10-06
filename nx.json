@@ -15,7 +15,8 @@
       "!{projectRoot}/src/test-setup.[jt]s"
     ],
     "sharedGlobals": [
-      "{workspaceRoot}/.github/workflows/ci.yml"
+      "{workspaceRoot}/.github/workflows/recette.yml",
+      "{workspaceRoot}/.github/workflows/prod.yml"
     ]
   },
   "plugins": [

@@ -1,0 +1,78 @@
+# Kodinga stack deployed on the VPS by .github/workflows/deploy.yml (images from GHCR, nothing is built here).
+#
+# Files expected next to this one on the VPS (see deploy/README.md):
+#   .env      generated at each deploy: image names/tag, port, profiles (compose interpolation)
+#   api.env   created once by hand: Django secrets & settings (see api.env.example)
+#
+# Recette and prod can share a VPS: each runs as its own compose project (-p kodinga-recette / kodinga-production),
+# so no fixed container_name here.
+
+x-api: &api
+  image: ${API_IMAGE}:${IMAGE_TAG}
+  restart: unless-stopped
+  env_file: api.env
+  depends_on:
+    redis:
+      condition: service_healthy
+  volumes:
+    - media:/app/media
+
+services:
+  web:
+    image: ${WEB_IMAGE}:${IMAGE_TAG}
+    restart: unless-stopped
+    # Only published port: a host reverse proxy (nginx/Caddy/Traefik) handles the domain and TLS.
+    # nginx inside the image proxies /api, /admin and /static to the `api` service.
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:80'
+    depends_on:
+      - api
+
+  api:
+    <<: *api
+    environment:
+      MIGRATE_ON_BOOT: 'true'
+
+  celery_worker:
+    <<: *api
+    command: ['celery', '-A', 'config', 'worker', '--loglevel=INFO', '--concurrency=2']
+    environment:
+      MIGRATE_ON_BOOT: 'false'
+
+  celery_beat:
+    <<: *api
+    command: ['celery', '-A', 'config', 'beat', '--loglevel=INFO']
+    environment:
+      MIGRATE_ON_BOOT: 'false'
+    volumes: []
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Only when DATABASE_URL points here (COMPOSE_PROFILES=local-db). Skip it when using Neon.
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    profiles: ['local-db']
+    env_file: api.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  media:
+  redis_data:
+  postgres_data:

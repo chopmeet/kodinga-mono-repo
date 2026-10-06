@@ -7,7 +7,8 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
 // Public origin used for absolute URLs in index.html (og:image...). Override per environment:
 //   VITE_SITE_URL=https://staging.kodinga.com npx nx build web
-process.env.VITE_SITE_URL ??= 'https://kodinga.com';
+// ||= (not ??=): the Docker build passes an empty string when no URL is given
+process.env.VITE_SITE_URL ||= 'https://kodinga.com';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,

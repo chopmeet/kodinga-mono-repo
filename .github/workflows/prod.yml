@@ -1,0 +1,59 @@
+name: Prod
+
+on:
+  push:
+    branches:
+      - prod
+  pull_request:
+    branches:
+      - prod
+
+# A newer push on the same branch/PR cancels the run in progress
+concurrency:
+  group: prod-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          filter: tree:0
+          fetch-depth: 0
+
+      # Cache node_modules
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Python toolchain for the Django api (version read from apps/api/.python-version)
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'apps/api/uv.lock'
+
+      - run: uv sync --directory apps/api --locked
+
+      - run: npx nx run-many -t lint test build
+
+  # Images + deploy once the checks pass. Pull requests only build the images (no push, no deploy).
+  deploy:
+    needs: main
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      environment: production
+      site-url: ${{ vars.PROD_SITE_URL }}
+      deploy: ${{ github.event_name == 'push' }}
+    secrets: inherit

@@ -1,0 +1,160 @@
+# Reusable: builds the api and web images, pushes them to GHCR and deploys them on the VPS
+# with docker compose (deploy/docker-compose.yaml). Called by recette.yml and prod.yml.
+#
+# With `deploy: false` (pull requests) the images are only built, to check the Dockerfiles.
+#
+# Per GitHub environment (Settings > Environments > recette | production):
+#   secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY, SSH_PASSPHRASE (optional), GHCR_TOKEN (PAT read:packages)
+#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8081), COMPOSE_PROFILES (optional: local-db)
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment, also the moving image tag (recette | production)
+        type: string
+        required: true
+      site-url:
+        description: Public origin baked into the web image (og:image...)
+        type: string
+        required: false
+        default: ''
+      deploy:
+        description: Push the images and deploy (false = build only)
+        type: boolean
+        required: true
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        app: [api, web]
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      registry-path: ${{ steps.meta.outputs.registry-path }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image name and tag
+        id: meta
+        run: |
+          # GHCR image names must be lowercase
+          echo "registry-path=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "tag=${{ inputs.environment }}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Pushing uses the workflow token: no personal token needed on the CI side
+      - name: Log in to GHCR
+        if: inputs.deploy
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build context is the repo root for both apps (monorepo)
+      - name: Build ${{ matrix.app }}${{ inputs.deploy && ' and push' || '' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          build-args: ${{ matrix.app == 'web' && format('VITE_SITE_URL={0}', inputs.site-url) || '' }}
+          push: ${{ inputs.deploy }}
+          # Immutable tag (rollback) + moving tag per environment
+          tags: |
+            ${{ steps.meta.outputs.registry-path }}/${{ matrix.app }}:${{ steps.meta.outputs.tag }}
+            ${{ steps.meta.outputs.registry-path }}/${{ matrix.app }}:${{ inputs.environment }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+  deploy:
+    if: inputs.deploy
+    needs: images
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.site-url }}
+    # Never run two deployments of the same environment at once, never cancel one midway
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: deploy
+
+      - name: Copy the compose file to the VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: deploy/docker-compose.yaml
+          target: ${{ vars.DEPLOY_PATH }}
+          strip_components: 1
+
+      - name: Pull and restart the stack
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          PROJECT: kodinga-${{ inputs.environment }}
+          REGISTRY_PATH: ${{ needs.images.outputs.registry-path }}
+          IMAGE_TAG: ${{ needs.images.outputs.tag }}
+          WEB_PORT: ${{ vars.WEB_PORT }}
+          COMPOSE_PROFILES: ${{ vars.COMPOSE_PROFILES }}
+          SITE_URL: ${{ inputs.site-url }}
+          GHCR_USER: ${{ github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,COMPOSE_PROFILES,SITE_URL,GHCR_USER,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -eu
+            cd "$DEPLOY_PATH"
+            test -f api.env || { echo "Missing $DEPLOY_PATH/api.env (see deploy/api.env.example)"; exit 1; }
+
+            # Compose interpolation values (api.env holds the app secrets)
+            {
+              # Explicit: compose would pick a stray compose.yaml before docker-compose.yaml
+              echo "COMPOSE_FILE=docker-compose.yaml"
+              echo "API_IMAGE=$REGISTRY_PATH/api"
+              echo "WEB_IMAGE=$REGISTRY_PATH/web"
+              echo "IMAGE_TAG=$IMAGE_TAG"
+              echo "WEB_PORT=${WEB_PORT:-8080}"
+              echo "COMPOSE_PROFILES=${COMPOSE_PROFILES:-}"
+            } > .env
+
+            # stdin: the token never shows up in logs or in the process list
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose -p "$PROJECT" pull
+            docker compose -p "$PROJECT" up -d --remove-orphans
+            docker logout ghcr.io
+            # Each deploy has its own tag: drop unused images older than a week (keeps recent rollbacks local)
+            docker image prune -af --filter "until=168h"
+
+            # Smoke test through the web container (nginx -> api). Send the real domain as Host,
+            # otherwise Django rejects 127.0.0.1 (ALLOWED_HOSTS) and the check fails for nothing.
+            SITE_HOST="${SITE_URL#*://}"
+            SITE_HOST="${SITE_HOST%%/*}"
+            for i in $(seq 1 20); do
+              if curl -fsS ${SITE_HOST:+-H "Host: $SITE_HOST"} "http://127.0.0.1:${WEB_PORT:-8080}/api/v1/health/" > /dev/null; then
+                echo "Deployed $IMAGE_TAG"
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Health check failed for $IMAGE_TAG"
+            docker compose -p "$PROJECT" ps
+            docker compose -p "$PROJECT" logs --tail=80 api
+            exit 1
