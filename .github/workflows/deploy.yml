@@ -43,6 +43,23 @@ jobs:
       tag: ${{ steps.meta.outputs.tag }}
       registry-path: ${{ steps.meta.outputs.registry-path }}
     steps:
+      # These URLs come from *repository* variables: the caller reads them before entering the
+      # GitHub environment, so environment-level variables are invisible at that point.
+      - name: Check deploy settings
+        if: inputs.deploy
+        env:
+          SITE_URL: ${{ inputs.site-url }}
+          API_URL: ${{ inputs.api-url }}
+        run: |
+          missing=""
+          [ -n "$SITE_URL" ] || missing="$missing site-url"
+          [ -n "$API_URL" ] || missing="$missing api-url"
+          if [ -n "$missing" ]; then
+            echo "::error::Empty input(s):$missing. Create RECETTE_SITE_URL / RECETTE_API_URL (or PROD_*) under Settings > Secrets and variables > Actions > Variables > *Repository* variables (not in the environment)."
+            exit 1
+          fi
+          echo "Front: $SITE_URL | Api: $API_URL"
+
       - uses: actions/checkout@v7
 
       - name: Image name and tag
