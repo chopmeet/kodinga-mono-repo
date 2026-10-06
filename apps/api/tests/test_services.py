@@ -1,15 +1,15 @@
 import pytest
 from django.core import mail
-from common.exceptions.handler import ApplicationError
-from common.services.email_service import EmailService
-from common.utils.tokens import hash_token
+
 from apps.accounts.models.token import AuthToken
 from apps.accounts.models.user import User
 from apps.accounts.services.authentication import AuthenticationService
 from apps.accounts.services.password import PasswordChangeService, PasswordResetService
 from apps.accounts.services.registration import RegistrationService
-from apps.accounts.services.session import SessionService
 from apps.accounts.services.verification import EmailVerificationService
+from common.exceptions.handler import ApplicationError
+from common.services.email_service import EmailService
+from common.utils.tokens import hash_token
 
 
 @pytest.mark.django_db
@@ -24,7 +24,9 @@ class TestAuthServices:
         )
         assert user.email == "newdev@kodinga.com"
         assert user.is_email_verified is False
-        assert AuthToken.objects.filter(user=user, purpose=AuthToken.PURPOSE_EMAIL_VERIFICATION).exists()
+        assert AuthToken.objects.filter(
+            user=user, purpose=AuthToken.PURPOSE_EMAIL_VERIFICATION
+        ).exists()
 
     def test_authentication_service_success_and_failure(self):
         user = User.objects.create_user(
@@ -59,8 +61,9 @@ class TestAuthServices:
         )
         raw_token = "valid_test_token_string_12345"
         token_hash = hash_token(raw_token)
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
         AuthToken.objects.create(
             user=user,
             purpose=AuthToken.PURPOSE_EMAIL_VERIFICATION,
@@ -83,7 +86,9 @@ class TestAuthServices:
         )
 
         PasswordResetService.request_password_reset(user.email)
-        token_obj = AuthToken.objects.filter(user=user, purpose=AuthToken.PURPOSE_PASSWORD_RESET).first()
+        token_obj = AuthToken.objects.filter(
+            user=user, purpose=AuthToken.PURPOSE_PASSWORD_RESET
+        ).first()
         assert token_obj is not None
 
         # Manually create a raw token and hash for confirmation test
@@ -91,7 +96,9 @@ class TestAuthServices:
         token_obj.token_hash = hash_token(raw_reset_token)
         token_obj.save()
 
-        PasswordResetService.confirm_password_reset(raw_reset_token, "NewSecurePassword456!")
+        PasswordResetService.confirm_password_reset(
+            raw_reset_token, "NewSecurePassword456!"
+        )
         user.refresh_from_db()
         assert user.check_password("NewSecurePassword456!")
 

@@ -26,7 +26,7 @@ function FetchUser() {
     if (isSuccess) dispatch(onSetUser(data));
     if (isError) logout();
     
-  }, [isSuccess, isError, data]);
+  }, [isSuccess, isError, data, dispatch, logout]);
 
   return null;
 }

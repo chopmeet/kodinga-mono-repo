@@ -2,10 +2,10 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from common.utils.tokens import hash_token
-from apps.accounts.models.session import UserSession
+
 from apps.accounts.models.token import AuthToken
 from apps.accounts.models.user import User
+from common.utils.tokens import hash_token
 
 
 @pytest.fixture
@@ -84,8 +84,9 @@ class TestAuthAPIEndpoints:
         assert 'access' in response.data
 
     def test_email_verification_endpoint(self, api_client, user):
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
         raw_tok = "test_raw_token_xyz"
         AuthToken.objects.create(
             user=user,
@@ -109,7 +110,9 @@ class TestAuthAPIEndpoints:
         response = api_client.post(req_url, {'email': user.email}, format='json')
         assert response.status_code == status.HTTP_200_OK
 
-        token_obj = AuthToken.objects.filter(user=user, purpose=AuthToken.PURPOSE_PASSWORD_RESET).first()
+        token_obj = AuthToken.objects.filter(
+            user=user, purpose=AuthToken.PURPOSE_PASSWORD_RESET
+        ).first()
         raw_tok = "pwd_reset_raw_token_123"
         token_obj.token_hash = hash_token(raw_tok)
         token_obj.save()
@@ -164,7 +167,9 @@ class TestAuthAPIEndpoints:
         assert list_resp.status_code == status.HTTP_200_OK
         assert len(list_resp.data['data']) >= 1
 
-        detail_url = reverse('accounts:session_detail', kwargs={'session_id': session.id})
+        detail_url = reverse(
+            'accounts:session_detail', kwargs={'session_id': session.id}
+        )
         del_resp = client.delete(detail_url)
         assert del_resp.status_code == status.HTTP_204_NO_CONTENT
 

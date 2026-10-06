@@ -1,6 +1,8 @@
 from datetime import timedelta
+
 import pytest
 from django.utils import timezone
+
 from apps.accounts.models.consent import UserConsent
 from apps.accounts.models.oauth import OAuthIdentity
 from apps.accounts.models.security import SecurityEvent

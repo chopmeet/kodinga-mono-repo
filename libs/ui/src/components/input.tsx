@@ -191,7 +191,7 @@ export const Input = forwardRef<
           <div className="relative">
             {!!icon && <span className={`absolute ${iconPosition === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-zinc-400`}>{icon}</span>}
             <input
-              className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${!!icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
               name={name}
               id={id}
               ref={ref}
@@ -435,16 +435,16 @@ export const InputPassword = forwardRef<
         <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
           {label && (
             <label
-              htmlFor={name}
+              htmlFor={id ?? name}
               className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={name}
+              aria-labelledby={id ?? name}
             >
               {label}
             </label>
           )}
           <div className="input-group custom-input-group relative mb-1">
             <input
-              className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${!!icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
               name={name}
               id={id}
               ref={ref}
@@ -510,7 +510,7 @@ export const SelectInput = forwardRef<
               name={name}
               id={name}
               ref={ref}
-              className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${!!icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
             >
               {!!placeholder && <option value="">{placeholder}</option>}
               {options?.map((option) => (
