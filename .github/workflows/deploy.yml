@@ -5,7 +5,7 @@
 #
 # Per GitHub environment (Settings > Environments > recette | production):
 #   secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY, SSH_PASSPHRASE (optional), GHCR_TOKEN (PAT read:packages)
-#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8081), COMPOSE_PROFILES (optional: local-db)
+#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082), COMPOSE_PROFILES (optional: local-db)
 name: Deploy (reusable)
 
 on:
@@ -131,7 +131,7 @@ jobs:
               echo "API_IMAGE=$REGISTRY_PATH/api"
               echo "WEB_IMAGE=$REGISTRY_PATH/web"
               echo "IMAGE_TAG=$IMAGE_TAG"
-              echo "WEB_PORT=${WEB_PORT:-8080}"
+              echo "WEB_PORT=${WEB_PORT:-8081}"
               echo "COMPOSE_PROFILES=${COMPOSE_PROFILES:-}"
             } > .env
 
@@ -148,7 +148,7 @@ jobs:
             SITE_HOST="${SITE_URL#*://}"
             SITE_HOST="${SITE_HOST%%/*}"
             for i in $(seq 1 20); do
-              if curl -fsS ${SITE_HOST:+-H "Host: $SITE_HOST"} "http://127.0.0.1:${WEB_PORT:-8080}/api/v1/health/" > /dev/null; then
+              if curl -fsS ${SITE_HOST:+-H "Host: $SITE_HOST"} "http://127.0.0.1:${WEB_PORT:-8081}/api/v1/health/" > /dev/null; then
                 echo "Deployed $IMAGE_TAG"
                 exit 0
               fi

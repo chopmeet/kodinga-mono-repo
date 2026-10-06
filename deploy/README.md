@@ -41,7 +41,7 @@ Ensuite, faire pointer le domaine vers le port publié avec le reverse proxy dé
 
 ```
 recette.kodinga.com {
-    reverse_proxy 127.0.0.1:8081
+    reverse_proxy 127.0.0.1:8082
 }
 ```
 
@@ -55,7 +55,7 @@ recette.kodinga.com {
 | secret | `SSH_PASSPHRASE` | seulement si la clé en a une |
 | secret | `GHCR_TOKEN` | token d'accès personnel avec `read:packages` (permet au VPS de récupérer les images) |
 | variable | `DEPLOY_PATH` | `/opt/kodinga/recette` |
-| variable | `WEB_PORT` | `8081` (recette), `8080` (production) |
+| variable | `WEB_PORT` | `8082` (recette), `8081` (production) |
 | variable | `COMPOSE_PROFILES` | vide, ou `local-db` |
 
 Variables du dépôt (Settings → Secrets and variables → Actions → Variables) :

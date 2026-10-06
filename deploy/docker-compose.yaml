@@ -24,7 +24,7 @@ services:
     # Only published port: a host reverse proxy (nginx/Caddy/Traefik) handles the domain and TLS.
     # nginx inside the image proxies /api, /admin and /static to the `api` service.
     ports:
-      - '127.0.0.1:${WEB_PORT:-8080}:80'
+      - '127.0.0.1:${WEB_PORT:-8081}:80'
     depends_on:
       - api
 
