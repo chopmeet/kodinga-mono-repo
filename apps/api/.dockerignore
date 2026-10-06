@@ -65,4 +65,4 @@ docs/
 .agents/
 brain/
 scratch/
-README.md
+# README.md stays in: pyproject.toml declares it (readme = 'README.md') and hatchling needs it to build the project

@@ -27,7 +27,7 @@ on:
 
 jobs:
   images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -58,11 +58,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build context is the repo root for both apps (monorepo)
+      # Build contexts: web needs the repo root (package.json, nx, libs/ui),
+      # api is self-contained in apps/api (its Dockerfile copies pyproject.toml from the context root)
       - name: Build ${{ matrix.app }}${{ inputs.deploy && ' and push' || '' }}
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ matrix.app == 'api' && 'apps/api' || '.' }}
           file: apps/${{ matrix.app }}/Dockerfile
           build-args: ${{ matrix.app == 'web' && format('VITE_SITE_URL={0}', inputs.site-url) || '' }}
           push: ${{ inputs.deploy }}
@@ -76,7 +77,7 @@ jobs:
   deploy:
     if: inputs.deploy
     needs: images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: ${{ inputs.environment }}
       url: ${{ inputs.site-url }}

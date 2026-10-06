@@ -15,8 +15,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+      # The api Dockerfile expects apps/api as context (COPY pyproject.toml ...)
+      context: apps/api
     env_file: apps/api/.env
     environment:
       DEBUG: 'False'
