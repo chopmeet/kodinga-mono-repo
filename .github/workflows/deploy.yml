@@ -5,7 +5,7 @@
 #
 # Per GitHub environment (Settings > Environments > recette | production):
 #   secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY, SSH_PASSPHRASE (optional), GHCR_TOKEN (PAT read:packages)
-#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082)
+#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082), API_PORT (e.g. 8092)
 name: Deploy (reusable)
 
 on:
@@ -16,7 +16,12 @@ on:
         type: string
         required: true
       site-url:
-        description: Public origin baked into the web image (og:image...)
+        description: Public origin of the front (e.g. https://recette.kodinga.com), baked into the web image
+        type: string
+        required: false
+        default: ''
+      api-url:
+        description: Public origin of the api (e.g. https://api.recette.kodinga.com). Empty = same origin as the front
         type: string
         required: false
         default: ''
@@ -65,7 +70,10 @@ jobs:
         with:
           context: ${{ matrix.app == 'api' && 'apps/api' || '.' }}
           file: apps/${{ matrix.app }}/Dockerfile
-          build-args: ${{ matrix.app == 'web' && format('VITE_SITE_URL={0}', inputs.site-url) || '' }}
+          # Only the web Dockerfile declares these (the api build just ignores them)
+          build-args: |
+            VITE_SITE_URL=${{ inputs.site-url }}
+            VITE_API_URL=${{ inputs.api-url && format('{0}/api/v1/', inputs.api-url) || '' }}
           push: ${{ inputs.deploy }}
           # Immutable tag (rollback) + moving tag per environment
           tags: |
@@ -109,7 +117,9 @@ jobs:
           REGISTRY_PATH: ${{ needs.images.outputs.registry-path }}
           IMAGE_TAG: ${{ needs.images.outputs.tag }}
           WEB_PORT: ${{ vars.WEB_PORT }}
+          API_PORT: ${{ vars.API_PORT }}
           SITE_URL: ${{ inputs.site-url }}
+          API_URL: ${{ inputs.api-url }}
           GHCR_USER: ${{ github.repository_owner }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
@@ -117,7 +127,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,SITE_URL,GHCR_USER,GHCR_TOKEN
+          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,API_PORT,SITE_URL,API_URL,GHCR_USER,GHCR_TOKEN
           script_stop: true
           script: |
             set -eu
@@ -132,6 +142,7 @@ jobs:
               echo "WEB_IMAGE=$REGISTRY_PATH/web"
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "WEB_PORT=${WEB_PORT:-8081}"
+              echo "API_PORT=${API_PORT:-8091}"
             } > .env
 
             # stdin: the token never shows up in logs or in the process list
@@ -142,26 +153,46 @@ jobs:
             # Each deploy has its own tag: drop unused images older than a week (keeps recent rollbacks local)
             docker image prune -af --filter "until=168h"
 
-            # Smoke test through the web container (nginx -> api), sending the real domain as Host
-            # like a visitor would: it must be listed in ALLOWED_HOSTS (api.env).
-            SITE_HOST="${SITE_URL#*://}"
-            SITE_HOST="${SITE_HOST%%/*}"
-            HEALTH_URL="http://127.0.0.1:${WEB_PORT:-8081}/api/v1/health/"
+            # Smoke tests sending the real domains as Host, like a visitor would
+            # (each domain must be listed in ALLOWED_HOSTS of api.env for the api).
+            host_of() { h="${1#*://}"; echo "${h%%/*}"; }
+            SITE_HOST=$(host_of "$SITE_URL")
+            API_HOST=$(host_of "$API_URL")
+            if [ -n "$API_HOST" ]; then
+              CHECK_HOST="$API_HOST"
+              HEALTH_URL="http://127.0.0.1:${API_PORT:-8091}/api/v1/health/"
+            else
+              # No api subdomain: the api is reached through the web container (/api)
+              CHECK_HOST="$SITE_HOST"
+              HEALTH_URL="http://127.0.0.1:${WEB_PORT:-8081}/api/v1/health/"
+            fi
+
+            code=000
             for i in $(seq 1 20); do
-              code=$(curl -s -o /tmp/kodinga-health.txt -w '%{http_code}' ${SITE_HOST:+-H "Host: $SITE_HOST"} "$HEALTH_URL" || true)
-              if [ "$code" = "200" ]; then
-                echo "Deployed $IMAGE_TAG"
-                exit 0
-              fi
-              echo "Health check $i/20: HTTP $code"
+              code=$(curl -s -o /tmp/kodinga-health.txt -w '%{http_code}' ${CHECK_HOST:+-H "Host: $CHECK_HOST"} "$HEALTH_URL" || true)
+              [ "$code" = "200" ] && break
+              echo "Api health check $i/20: HTTP $code"
               sleep 5
             done
 
-            echo "Health check failed for $IMAGE_TAG (Host sent: ${SITE_HOST:-none, RECETTE_SITE_URL/PROD_SITE_URL is empty})"
+            if [ "$code" = "200" ]; then
+              # The front is static: one request is enough once the api is up
+              web_code=$(curl -s -o /dev/null -w '%{http_code}' ${SITE_HOST:+-H "Host: $SITE_HOST"} "http://127.0.0.1:${WEB_PORT:-8081}/" || true)
+              if [ "$web_code" = "200" ]; then
+                echo "Deployed $IMAGE_TAG"
+                exit 0
+              fi
+              echo "Front check failed: HTTP $web_code on port ${WEB_PORT:-8081}"
+              docker compose -p "$PROJECT" ps
+              docker compose -p "$PROJECT" logs --tail=40 web
+              exit 1
+            fi
+
+            echo "Api health check failed for $IMAGE_TAG (Host sent: ${CHECK_HOST:-none, the *_SITE_URL / *_API_URL variables are empty})"
             echo "--- last response:"
             head -c 300 /tmp/kodinga-health.txt; echo
             if [ "$code" = "400" ]; then
-              echo "--- HTTP 400 usually means DisallowedHost: add '${SITE_HOST:-the domain}' to ALLOWED_HOSTS in $DEPLOY_PATH/api.env"
+              echo "--- HTTP 400 usually means DisallowedHost: add '${CHECK_HOST:-the domain}' to ALLOWED_HOSTS in $DEPLOY_PATH/api.env"
               docker compose -p "$PROJECT" logs --tail=200 api | grep -i "Invalid HTTP_HOST" | tail -3 || true
             fi
             docker compose -p "$PROJECT" ps

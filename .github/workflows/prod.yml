@@ -55,5 +55,6 @@ jobs:
     with:
       environment: production
       site-url: ${{ vars.PROD_SITE_URL }}
+      api-url: ${{ vars.PROD_API_URL }}
       deploy: ${{ github.event_name == 'push' }}
     secrets: inherit

@@ -70,5 +70,6 @@ jobs:
     with:
       environment: recette
       site-url: ${{ vars.RECETTE_SITE_URL }}
+      api-url: ${{ vars.RECETTE_API_URL }}
       deploy: ${{ github.event_name == 'push' }}
     secrets: inherit

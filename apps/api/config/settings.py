@@ -32,6 +32,11 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS')
 
+# Behind the VPS nginx (TLS terminated there): trust its X-Forwarded-Proto so Django knows
+# the request was HTTPS (secure cookies, https:// absolute URLs). The api port is only
+# published on 127.0.0.1, so this header cannot be forged from outside.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

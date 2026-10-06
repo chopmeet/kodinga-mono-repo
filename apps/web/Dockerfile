@@ -14,6 +14,10 @@ COPY . .
 ARG VITE_SITE_URL=""
 ENV VITE_SITE_URL=$VITE_SITE_URL
 
+# Api base URL used by the app (e.g. https://api.recette.kodinga.com/api/v1/). Empty = same origin /api/v1/.
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+
 RUN npx nx build web
 
 # ---- runtime: nginx serves the bundle and proxies the api ----

@@ -15,8 +15,8 @@ Sur une pull request, les images sont seulement construites (rien n'est publié 
 
 | Service | Rôle |
 |---|---|
-| `web` | nginx : sert le build React et relaie `/api`, `/admin`, `/static` vers `api`. Seul port publié, sur `127.0.0.1:${WEB_PORT}` |
-| `api` | Django + Gunicorn, applique les migrations au démarrage |
+| `web` | nginx : sert le build React (domaine du front). Publié sur `127.0.0.1:${WEB_PORT}`. Relaie aussi `/api`, `/admin`, `/static` vers `api` (accès de secours sur le même domaine) |
+| `api` | Django + Gunicorn (domaine de l'API), applique les migrations au démarrage. Publié sur `127.0.0.1:${API_PORT}` |
 | `celery_worker`, `celery_beat` | emails asynchrones et tâches planifiées (même image que `api`) |
 | `redis` | broker Celery + cache Django |
 | `postgres` | conteneur PostgreSQL dédié (pas le Postgres installé sur le VPS), données dans le volume `postgres_data`. L'API attend qu'il soit prêt avant de démarrer |
@@ -36,14 +36,41 @@ nano /opt/kodinga/recette/api.env
 
 Docker et son plugin compose doivent être installés, et l'utilisateur SSH doit pouvoir lancer `docker`.
 
-Ensuite, faire pointer le domaine vers le port publié avec le reverse proxy déjà présent sur le VPS
-(nginx, Caddy, Traefik…), qui gère aussi le HTTPS. Exemple avec Caddy :
+Ensuite, sur le reverse proxy du VPS (nginx), un fichier par domaine, qui gère aussi le HTTPS :
 
-```
-recette.kodinga.com {
-    reverse_proxy 127.0.0.1:8082
+| Domaine | Fichier `sites-available` | `proxy_pass` |
+|---|---|---|
+| `recette.kodinga.com` (front) | `kodinga-recette` | `http://127.0.0.1:8082` (`WEB_PORT`) |
+| `api.recette.kodinga.com` (API) | `kodinga-recette-api` | `http://127.0.0.1:8092` (`API_PORT`) |
+| `kodinga.com` (front) | `kodinga-prod` | `http://127.0.0.1:8081` |
+| `api.kodinga.com` (API) | `kodinga-prod-api` | `http://127.0.0.1:8091` |
+
+```nginx
+# /etc/nginx/sites-available/kodinga-recette-api
+server {
+    server_name api.recette.kodinga.com;
+    client_max_body_size 20m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8092;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
+
+Le fichier du front est identique, avec son domaine et son port. Puis :
+
+```bash
+sudo ln -s /etc/nginx/sites-available/kodinga-recette-api /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d api.recette.kodinga.com
+```
+
+Chaque domaine doit aussi avoir son enregistrement DNS (A) vers l'IP du VPS.
 
 ### 2. Sur GitHub : Settings → Environments → `recette` et `production`
 
@@ -56,9 +83,12 @@ recette.kodinga.com {
 | secret | `GHCR_TOKEN` | token d'accès personnel avec `read:packages` (permet au VPS de récupérer les images) |
 | variable | `DEPLOY_PATH` | `/opt/kodinga/recette` |
 | variable | `WEB_PORT` | `8082` (recette), `8081` (production) |
+| variable | `API_PORT` | `8092` (recette), `8091` (production) |
 
 Variables du dépôt (Settings → Secrets and variables → Actions → Variables) :
-`RECETTE_SITE_URL` (`https://recette.kodinga.com`) et `PROD_SITE_URL` (`https://kodinga.com`).
+`RECETTE_SITE_URL` (`https://recette.kodinga.com`), `RECETTE_API_URL` (`https://api.recette.kodinga.com`),
+`PROD_SITE_URL` (`https://kodinga.com`) et `PROD_API_URL` (`https://api.kodinga.com`).
+Sans `*_API_URL`, le front appelle l'API en relatif (`/api/v1/`) via son propre domaine.
 
 Publier les images ne demande aucun secret : le workflow utilise son propre `GITHUB_TOKEN`.
 Conseil : ajouter des *required reviewers* sur l'environnement `production` pour valider chaque mise en prod.
