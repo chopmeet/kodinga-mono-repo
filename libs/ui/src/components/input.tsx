@@ -3,20 +3,24 @@ import {
   forwardRef, 
   InputHTMLAttributes, 
   JSX, 
-  SelectHTMLAttributes, 
-  useCallback, 
-  useEffect, 
-  useRef, 
+  SelectHTMLAttributes,
   useState 
 } from "react";
 import { FieldError } from "react-hook-form";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
+import makeAnimated from "react-select/animated";
 import { FaEye, FaEyeSlash } from "react-icons/fa6";
 import { MdOutlineInfo } from 'react-icons/md';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'
 import { ColgateWrapper } from "./wrapper";
 import { FiSearch } from "react-icons/fi";
 
 
-export type PropsType = {
+export const animatedComponents = makeAnimated();
+
+type PropsType = {
   label?: string;
   error?: string | FieldError;
   customClassContainer?: string;
@@ -35,7 +39,7 @@ type InputPropsType = InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement
   cols?: number;
 } & PropsType;
 
-export type InputTextPropsType = {
+type InputTextPropsType = {
   onChange: (val: string) => void;
   value: string;
   name?: string;
@@ -46,7 +50,7 @@ export type InputTextPropsType = {
   fieldHelp?: string;
 } & PropsType;
 
-export type InputPhoneTextPropsType = {
+type InputPhoneTextPropsType = {
   onChange: (val: string, country: any) => void;
   value: string;
   name?: string;
@@ -187,7 +191,7 @@ export const Input = forwardRef<
           <div className="relative">
             {!!icon && <span className={`absolute ${iconPosition === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-zinc-400`}>{icon}</span>}
             <input
-              className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${!!icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
               name={name}
               id={id}
               ref={ref}
@@ -203,6 +207,207 @@ export const Input = forwardRef<
     );
   }
 );
+
+
+export const InputQuill = forwardRef<
+  ReactQuill,
+  InputTextPropsType
+>((props, ref) => {
+  const {
+    name,
+    error,
+    id,
+    label,
+    required,
+    readOnly,
+    customClassContainer,
+    customClassInput,
+    customClassLabel,
+    fieldHelp,
+    value,
+    onChange,
+    ...rest
+  } = props;
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      ["bold", "italic", "underline", "strike", "blockquote"],
+      [
+        { list: "ordered" },
+        // { list: "bullet" },
+        { indent: "-1" },
+        { indent: "+1" },
+      ],
+      ["link", "image"],
+      [
+        {
+          color: [
+            "#4be1b4",
+            "#f45b5b",
+            "#000000",
+            "#e60000",
+            "#ff9900",
+            "#ffff00",
+            "#008a00",
+            "#0066cc",
+            "#9933ff",
+            "#ffffff",
+            "#ffcccc",
+            "#ffe699",
+            "#ffffcc",
+            "#cfe2f3",
+            "#d9d2e9",
+            "#fff1f1",
+            "#21a3740d",
+            "#f45b5b0d",
+
+            // Couleurs standard WYSIWYG
+            "#808080",
+            "#C0C0C0",
+            "#800000",
+            "#FF0000",
+            "#808000",
+            "#008000",
+            "#00FF00",
+            "#008080",
+            "#00FFFF",
+            "#000080",
+            "#0000FF",
+            "#800080",
+            "#FF00FF",
+            "#8B0000",
+            "#006400",
+            "#00008B",
+            "#FF8C00",
+            "#ADD8E6",
+            "#90EE90",
+            "#FFC0CB",
+            "#87CEEB",
+            "#FFD700",
+            "#A52A2A",
+            "#FF7F50",
+            "#40E0D0",
+            "#708090",
+            "#E6E6FA",
+            "#4B0082",
+            "#F5F5DC",
+            "#FA8072",
+            "#F0E68C",
+            "#FFB6C1",
+            "#DC143C",
+            "#2E8B57",
+            "#4169E1",
+          ],
+        },
+        {
+          background: [
+            "#4be1b4",
+            "#f45b5b",
+            "#000000",
+            "#e60000",
+            "#ff9900",
+            "#ffff00",
+            "#008a00",
+            "#0066cc",
+            "#9933ff",
+            "#ffffff",
+            "#ffcccc",
+            "#ffe699",
+            "#ffffcc",
+            "#cfe2f3",
+            "#d9d2e9",
+            "#fff1f1",
+            "#21a3740d",
+            "#f45b5b0d",
+
+            // Couleurs standard WYSIWYG
+            "#808080",
+            "#C0C0C0",
+            "#800000",
+            "#FF0000",
+            "#808000",
+            "#008000",
+            "#00FF00",
+            "#008080",
+            "#00FFFF",
+            "#000080",
+            "#0000FF",
+            "#800080",
+            "#FF00FF",
+            "#8B0000",
+            "#006400",
+            "#00008B",
+            "#FF8C00",
+            "#ADD8E6",
+            "#90EE90",
+            "#FFC0CB",
+            "#87CEEB",
+            "#FFD700",
+            "#A52A2A",
+            "#FF7F50",
+            "#40E0D0",
+            "#708090",
+            "#E6E6FA",
+            "#4B0082",
+            "#F5F5DC",
+            "#FA8072",
+            "#F0E68C",
+            "#FFB6C1",
+            "#DC143C",
+            "#2E8B57",
+            "#4169E1",
+          ],
+        },
+      ],
+    ],
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "blockquote",
+    "list",
+    // "bullet",
+    "indent",
+    "link",
+    "image",
+    "color",
+    "background",
+  ];
+  return (
+    <>
+      <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
+        {label && (
+          <label
+            htmlFor={id}
+            className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+            aria-labelledby={id}
+          >
+            {label}
+          </label>
+        )}
+        <ReactQuill
+          className={`placeholder:text-gray-200 ${customClassInput}`}
+          // name={name}
+          id={id}
+          readOnly={readOnly || false}
+          theme="snow"
+          value={value}
+          onChange={(val: string) => onChange(val)}
+          modules={modules}
+          formats={formats}
+          ref={ref}
+          {...rest}
+        ></ReactQuill>
+        {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+        {<FormError error={error} />}
+      </div>
+    </>
+  );
+});
 
 
 export const InputPassword = forwardRef<
@@ -230,16 +435,16 @@ export const InputPassword = forwardRef<
         <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
           {label && (
             <label
-              htmlFor={id ?? name}
+              htmlFor={name}
               className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={id ?? name}
+              aria-labelledby={name}
             >
               {label}
             </label>
           )}
           <div className="input-group custom-input-group relative mb-1">
             <input
-              className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${!!icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
               name={name}
               id={id}
               ref={ref}
@@ -305,7 +510,7 @@ export const SelectInput = forwardRef<
               name={name}
               id={name}
               ref={ref}
-              className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${!!icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
             >
               {!!placeholder && <option value="">{placeholder}</option>}
               {options?.map((option) => (
@@ -315,6 +520,73 @@ export const SelectInput = forwardRef<
               ))}
             </select>
           </div>
+          {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+          {<FormError error={error} />}
+        </div>
+      </>
+    );
+  }
+);
+
+export const InputPhone = forwardRef<
+  HTMLInputElement, 
+  InputPhoneTextPropsType
+>(
+  (props, ref) => {
+    const {
+      name,
+      error,
+      id,
+      label,
+      required,
+      readOnly,
+      customClassInput,
+      customClassLabel,
+      customClassContainer,
+      fieldHelp,
+      value,
+      onChange,
+      ...rest
+    } = props;
+    return (
+      <>
+        <div className={`mb-3 ${customClassContainer ?? ''}`}>
+          {label && (
+            <label
+              htmlFor={id}
+              className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+              aria-labelledby={id}
+            >
+              {label}
+            </label>
+          )}
+          <PhoneInput
+            onlyCountries={['bf', 'ci', 'sn']}
+            masks={{
+              bf: ".. .. .. ..",
+              ci: ".. .. .. .. ..",
+              sn: ".. ... .. ..",
+            }}
+            country={"bf"}
+            containerClass="p-0"
+            inputClass={`w-full block custom-form-control bg-background! placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
+            placeholder="Numéro de télephone"
+            inputProps={{
+                name: name,
+                required: true,
+                autoFocus: true,
+            }}
+            countryCodeEditable={false}
+            enableAreaCodes={true}
+            prefix="+"
+            value={value}
+            onChange={onChange}
+            inputStyle={{
+                width: "100%",
+            }}
+            {...rest}
+          />
+          <span ref={ref}></span>
           {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
           {<FormError error={error} />}
         </div>
@@ -431,165 +703,4 @@ export function SearchInput({
       )}
     </div>
   );
-}
-
-
-
-const PHOTON_URL = import.meta.env.VITE_PHOTON_URL ?? "https://photon.komoot.io/api";
-
-// on ne garde que les résultats "lieu habité" (ville, village...) et on écarte rues/POI
-const CITY_OSM_VALUES = ["city", "town", "village", "municipality"];
-
-function parseCity(feature: PhotonFeature): CityPlace {
-    const p = feature.properties ?? {};
-    const [lng, lat] = feature.geometry?.coordinates ?? [0, 0];
-
-    return {
-        name: p.name ?? p.city ?? p.town ?? p.village ?? "",
-        region: p.state ?? "",
-        country: p.country ?? "",
-        countryCode: p.countrycode?.toUpperCase() ?? "",
-        lat,
-        lng,
-    };
-}
-
-export function CitySearchInput({
-  name,
-  label,
-  placeholder,
-  lang = "fr",
-  onSelect,
-  error,
-  defaultValue,
-}: CitySearchProps) {
-  const [query, setQuery] = useState(defaultValue ?? "");
-  const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (defaultValue) setQuery(defaultValue);
-  }, [defaultValue]);
-
-    useEffect(() => {
-      const handler = (e: MouseEvent) => {
-        if (!containerRef.current?.contains(e.target as Node)) {
-          setOpen(false);
-        }
-      };
-      document.addEventListener("mousedown", handler);
-      return () => document.removeEventListener("mousedown", handler);
-    }, []);
-
-    const search = useCallback(
-      async (q: string) => {
-          if (q.trim().length < 2) {
-            setSuggestions([]);
-            setOpen(false);
-            return;
-          }
-          setLoading(true);
-          try {
-            const url = new URL(PHOTON_URL);
-            url.searchParams.set("q", q);
-            url.searchParams.set("limit", "8");
-            url.searchParams.set("lang", lang);
-            url.searchParams.set("osm_tag", "place");
-
-            const res = await fetch(url.toString());
-            const data: PhotonResponse = await res.json();
-            const features = (data.features ?? []).filter((f) =>
-              CITY_OSM_VALUES.includes(f.properties?.osm_value)
-            );
-            setSuggestions(features);
-            setOpen(features.length > 0);
-          } catch {
-            setSuggestions([]);
-          } finally {
-            setLoading(false);
-          }
-      },
-      [lang]
-    );
-
-    const handleChange = (value: string) => {
-      setQuery(value);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => search(value), 400);
-    };
-
-    const handleSelect = (feature: PhotonFeature) => {
-      const place = parseCity(feature);
-      setQuery(place.name);
-      setOpen(false);
-      setSuggestions([]);
-      onSelect(place);
-    };
-
-    return (
-      <div ref={containerRef} className="relative w-full">
-        {label && (
-          <label className="block custom-form-label dark:text-foreground! mb-1">
-            {label}
-          </label>
-        )}
-
-        <div className="relative">
-          <input
-            name={name}
-            value={query}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={placeholder ?? "Rechercher une ville..."}
-            autoComplete="off"
-            className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 outline-none transition
-              focus:ring-2 focus:ring-blue-500
-              ${error ? "border-red-500" : "border-gray-300"}`}
-          />
-          {loading && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs animate-pulse">
-              ...
-            </span>
-          )}
-        </div>
-
-          {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-          {/* {!error && (
-            <p className="mt-1 text-xs text-gray-400">
-              Sélectionnez une ville dans la liste pour renseigner sa position.
-            </p>
-          )} */}
-
-          {open && suggestions.length > 0 && (
-            <ColgateWrapper className="absolute z-50 mt-1 w-full border border-gray-200 dark:border-gray-600 max-h-64 overflow-y-auto">
-              <ul>
-                {suggestions.map((feature, index) => {
-                  const place = parseCity(feature);
-                  return (
-                    <li
-                      key={index}
-                      onMouseDown={() => handleSelect(feature)}
-                      className="flex items-start gap-2 py-2 px-3 text-sm cursor-pointer hover:bg-blue-50 transition-colors"
-                    >
-                      <div className="leading-snug">
-                        <span className="text-gray-800 dark:text-gray-300 font-medium">
-                          {place.name}
-                        </span>
-                        {place.region && (
-                          <span className="text-gray-500 ml-1">
-                            — {place.region}
-                            {place.country ? `, ${place.country}` : ""}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </ColgateWrapper>
-          )}
-      </div>
-    );
 }
