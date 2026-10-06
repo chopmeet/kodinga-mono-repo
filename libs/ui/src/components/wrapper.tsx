@@ -1,0 +1,22 @@
+import { cn } from '../lib/utils'
+
+
+function ColgateWrapper({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "wrapper p-3 bg-white rounded-xl dark:bg-neutral-900",
+        className
+      )}
+      {...props}
+    >{children}</div>
+  )
+}
+
+export {
+  ColgateWrapper,
+}

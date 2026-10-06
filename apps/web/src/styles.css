@@ -1,9 +1,9 @@
 /* Tailwind + shadcn theme from the shared ui lib */
-@import '../../../libs/ui/src/styles.css';
+@import '../../../libs/ui/src/index.css';
 
 /* App-specific global styles go below */
 
-/* Kodinga brand = shadcn primary (libs/ui/src/styles.css), so light/dark follow the theme.
+/* Kodinga brand = shadcn primary (libs/ui/src/index.css), so light/dark follow the theme.
    bg-brand, text-brand, hover:bg-brand-hover, text-brand-soft... */
 @theme inline {
   --color-brand: var(--primary);

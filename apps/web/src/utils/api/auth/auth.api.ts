@@ -1,7 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { ApiBaseUrl } from '@/utils/http';
+import { type ApiSuccess, unwrap } from '../api.type';
 import { prepareHeaders } from '../user/user.api';
+import type { User } from '../user/user.type';
 import type {
   ForgotPasswordFormData,
   LoginFormData,
@@ -16,16 +18,19 @@ export const AuthApi = createApi({
   endpoints: (builder) => ({
     loginUser: builder.mutation<LoginResult, LoginFormData>({
       query: (body) => ({ url: 'auth/login/', method: 'POST', body }),
+      transformResponse: unwrap<LoginResult>,
       invalidatesTags: ['auth'],
     }),
-    logoutUser: builder.mutation<void, void>({
-      query: () => ({ url: 'auth/logout/', method: 'POST' }),
+    logoutUser: builder.mutation<void, { refresh?: string | null }>({
+      query: (body) => ({ url: 'auth/logout/', method: 'POST', body, timeout: 5000 }),
     }),
-    forgotPassword: builder.mutation<void, ForgotPasswordFormData>({
-      query: (body) => ({ url: 'auth/forgot-password/', method: 'POST', body }),
+    // Always answers 200 (no account enumeration): the email arrives only if the account exists
+    forgotPassword: builder.mutation<ApiSuccess<undefined>, ForgotPasswordFormData>({
+      query: (body) => ({ url: 'auth/password/reset/', method: 'POST', body }),
     }),
-    resetUserPassword: builder.mutation<void, ResetPasswordFormData>({
-      query: (body) => ({ url: 'auth/reset-password/', method: 'POST', body }),
+    resetUserPassword: builder.mutation<User, ResetPasswordFormData>({
+      query: (body) => ({ url: 'auth/password/reset/confirm/', method: 'POST', body }),
+      transformResponse: unwrap<User>,
     }),
   }),
 });

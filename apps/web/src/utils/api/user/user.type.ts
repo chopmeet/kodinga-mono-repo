@@ -1,37 +1,36 @@
-export enum UserType {
-  admin = 'admin',
-  superAdmin = 'superadmin',
-  user = 'user',
-}
-
+// Mirrors apps/accounts/serializers/user.py (UserSerializer)
 export type User = {
-  id: number;
-  firstName: string;
-  lastName: string;
+  id: string;
   email: string;
-  phone?: string;
-  userType: UserType;
+  username: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  is_active: boolean;
+  is_email_verified: boolean;
+  preferred_language: string;
+  timezone: string;
+  date_joined: string;
+  last_login: string | null;
+  /** Not exposed by the api yet */
   avatar?: string;
-  isActive: boolean;
+  /** Not exposed by the api yet: admin area stays closed until it is */
+  is_staff?: boolean;
 };
 
 export interface AuthState {
   user: User | null;
+  /** JWT access token */
   token: string | null;
+  /** JWT refresh token (needed to log out server-side) */
+  refresh?: string | null;
 }
 
-export type UserFormData = Partial<Omit<User, 'id'>>;
-
-export type PaginationResults<T> = {
-  count: number;
-  next?: string | null;
-  previous?: string | null;
-  results: T[];
-};
-
-export type TypeQuery = Partial<{
-  page: number;
-  limit: number;
-  search: string;
-  ordering: string;
-}>;
+export type UserFormData = Partial<
+  Pick<User, 
+    'first_name' | 
+    'last_name' | 
+    'preferred_language' | 
+    'timezone'
+  >
+>;

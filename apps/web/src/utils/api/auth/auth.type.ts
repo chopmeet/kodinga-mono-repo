@@ -1,14 +1,18 @@
 import type { User } from '../user/user.type';
 
+// Mirrors apps/accounts/serializers/auth.py
+
 export type LoginFormData = {
   email: string;
   password: string;
+  device_name?: string;
 };
 
 export type LoginResult = {
-  user: User;
   access: string;
-  refresh?: string;
+  refresh: string;
+  session_id: string;
+  user: User;
 };
 
 export type ForgotPasswordFormData = {
@@ -16,8 +20,8 @@ export type ForgotPasswordFormData = {
 };
 
 export type ResetPasswordFormData = {
-  email: string;
-  code: string;
-  password: string;
-  passwordConfirmation: string;
+  /** From the emailed link: /auth/reset-password?token=... */
+  token: string;
+  new_password: string;
+  confirm_password: string;
 };

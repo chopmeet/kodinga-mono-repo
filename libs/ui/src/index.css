@@ -130,3 +130,67 @@
     @apply bg-background text-foreground;
     }
 }
+/* ------------------------------------------------------------------
+   Form controls used by components/input*.tsx (ported from moovi-app App.css).
+   moovi's global `input:focus-visible { box-shadow: none }` is NOT ported:
+   it would remove the focus rings of every other input in the apps.
+   ------------------------------------------------------------------ */
+@layer components {
+  .custom-form-label {
+    font-size: 12px;
+    color: #828282;
+    font-weight: 500;
+    line-height: normal;
+    text-transform: uppercase;
+  }
+
+  .custom-form-control,
+  .react-tel-input .flag-dropdown,
+  .quill .ql-container.ql-snow,
+  .quill .ql-toolbar.ql-snow {
+    border: 1px solid #e9eaf0;
+  }
+
+  .custom-form-control,
+  .css-13cymwt-control {
+    border-radius: 16px !important;
+    color: #1d2026;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: normal;
+    min-height: 48px !important;
+  }
+
+  .custom-form-control:focus-visible {
+    box-shadow: none;
+    outline-color: color-mix(in oklch, var(--color-primary) 80%, transparent);
+  }
+
+  .input-group .icon__wrapper {
+    position: absolute;
+    right: 20px;
+    top: 38%;
+    display: grid;
+    place-items: center;
+  }
+
+  .react-tel-input .form-control,
+  .react-tel-input .flag-dropdown,
+  .css-13cymwt-control {
+    border-color: #e9eaf0 !important;
+  }
+
+  .react-tel-input .flag-dropdown {
+    background: transparent !important;
+    border-radius: 15px 0 0 15px !important;
+    padding: 2px !important;
+  }
+
+  .quill .ql-toolbar.ql-snow {
+    border-radius: 10px 10px 0 0;
+  }
+
+  .quill .ql-container {
+    min-height: 200px;
+  }
+}

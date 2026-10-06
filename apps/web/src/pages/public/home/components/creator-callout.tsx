@@ -32,7 +32,7 @@ export function CreatorCallout() {
       </ol>
 
       <Link
-        to="/login"
+        to="/auth/login"
         className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-hover"
       >
         <span>Lancer ma guilde Kodinga</span>

@@ -101,7 +101,7 @@ function Header() {
             </NavLink>
           ) : (
             <NavLink
-              to="/login"
+              to="/auth/login"
               className="px-2 text-sm font-medium whitespace-nowrap text-slate-900 hover:text-brand"
             >
               {t('header.login')}

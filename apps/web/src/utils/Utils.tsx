@@ -1,13 +1,16 @@
 import { useAppSelector } from '@/redux/hook';
-import { type User, UserType } from './api/user/user.type';
+import type { User } from './api/user/user.type';
 
-export const isAdmin = (user?: User | null) =>
-  user?.userType === UserType.admin || user?.userType === UserType.superAdmin;
+/** The api does not expose roles yet (see User.is_staff) */
+export const isAdmin = (user?: User | null) => !!user?.is_staff;
 
 export const useUser = () => useAppSelector((s) => s.user.user);
 
 export const getName = (user?: User | null) =>
-  [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  user?.full_name?.trim() ||
+  [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
+  user?.username ||
+  '';
 
 export function getInitials(user?: User | null): string {
   const parts = getName(user).trim().split(/\s+/).filter(Boolean);

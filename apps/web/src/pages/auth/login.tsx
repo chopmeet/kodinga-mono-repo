@@ -1,80 +1,66 @@
-import { type FormEvent, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from '@kodinga-mono-repo/ui';
-import { useAppDispatch } from '@/redux/hook';
-import { onSetUserToken } from '@/redux/slice/User.slice';
-import { useLoginUserMutation } from '@/utils/api/auth/auth.api';
-import { isAdmin } from '@/utils/Utils';
+import { Input, InputPassword } from '@kodinga-mono-repo/ui';
+
+import AuthWrapper from './auth-wrapper';
+import { FormAlert } from './components/form-alert';
+import { SubmitButton } from './components/submit-button';
+import UseLoginForm from './hooks/UseLoginForm';
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginUser, { isLoading, isError }] = useLoginUserMutation();
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
-
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const res = await loginUser({ email, password });
-    if ('data' in res && res.data) {
-      dispatch(onSetUserToken({ user: res.data.user, token: res.data.access }));
-      const fallback = isAdmin(res.data.user) ? '/admin/dashboard' : '/';
-      navigate(params.get('next') || fallback, { replace: true });
-    }
-  };
+  const { register, errors, formError, onSubmit, isLoading } = UseLoginForm();
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Connexion</CardTitle>
-          <CardDescription>Accédez à votre espace.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="flex flex-col gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            {isError && (
-              <p className="text-sm text-destructive">Identifiants invalides.</p>
-            )}
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Connexion…' : 'Se connecter'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthWrapper
+      title="Se connecter"
+      subtitle="Content de vous revoir ! Retrouvez vos communautés."
+      footer={
+        <>
+          En vous connectant, vous acceptez nos conditions d'utilisation
+          <br />
+          et notre politique de confidentialité.
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
+        {formError && <FormAlert>{formError}</FormAlert>}
+
+        <Input
+          id="login-email"
+          label="Adresse email"
+          type="email"
+          icon={<Mail className="size-4" />}
+          autoComplete="email"
+          required
+          error={errors.email?.message}
+          {...register('email')}
+        />
+
+        <div>
+          <InputPassword
+            id="login-password"
+            label="Mot de passe"
+            autoComplete="current-password"
+            required
+            error={errors.password?.message}
+            {...register('password')}
+          />
+          <div className="mt-2 text-right">
+            <Link
+              to="/auth/forgot-password"
+              className="text-sm font-semibold text-brand hover:text-brand-hover hover:underline"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <SubmitButton isLoading={isLoading}>Se connecter</SubmitButton>
+        </div>
+      </form>
+    </AuthWrapper>
   );
 }
 

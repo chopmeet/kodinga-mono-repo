@@ -11,7 +11,7 @@ import { Button, Card, cn } from '@kodinga-mono-repo/ui';
 Import the theme once in the app's global stylesheet (path relative to that file):
 
 ```css
-@import '../../../libs/ui/src/styles.css';
+@import '../../../libs/ui/src/index.css';
 ```
 
 The app's `tsconfig.json` must also list the lib in `paths`, because `paths` there replaces (does not merge with) `tsconfig.base.json`:

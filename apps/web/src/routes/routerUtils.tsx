@@ -18,7 +18,7 @@ export const IsAdminAllow = ({ children }: { children: ReactElement }) => {
   const { pathname } = useLocation();
 
   if (!token) {
-    return <Navigate to={`/login?next=${encodeURIComponent(pathname)}`} replace />;
+    return <Navigate to={`/auth/login?next=${encodeURIComponent(pathname)}`} replace />;
   }
   if (!isAdmin(user)) return <Navigate to="/" replace />;
   return children;

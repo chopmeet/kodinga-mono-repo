@@ -1,12 +1,13 @@
 import * as React from "react"
-import { cn } from "cn"
+
+import { cn } from "../lib/utils"
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
         className
       )}
       {...props}
@@ -31,7 +32,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("font-semibold", className)}
       {...props}
     />
   )
@@ -41,7 +42,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
   )
@@ -80,6 +81,43 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+
+export type CardType = {
+    id: string,
+    label: string,
+    value?: number|string,
+    color?: string,
+    icon?: React.JSX.Element,
+}
+
+function OverviewCardItem ({item}: {item: CardType}) {
+  return (
+    <div className="overview__card moovi-shadow bg-white dark:bg-zinc-800 p-5 rounded-lg">
+      <div className="flex items-center gap-4">
+        {!!item?.icon &&
+        <div 
+          className="icon__wrapper p-2 rounded-lg"
+          style={{ 
+            color: item?.color, 
+            backgroundColor: `${item?.color}1a` 
+          }}
+        >
+          {item?.icon}
+        </div> }
+        <div className="value__and__label">
+          <h6 className="value text-2xl font-semibold font-barlow">
+            {item.value}
+          </h6>
+          <p className="m-0 label">
+            {item.label}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 export {
   Card,
   CardHeader,
@@ -88,4 +126,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  OverviewCardItem,
 }

@@ -6,6 +6,7 @@ import { AppStorage } from '@/utils/storage';
 const initialState: AuthState = AppStorage.getItem<AuthState>('user') ?? {
   user: null,
   token: null,
+  refresh: null,
 };
 
 export const UserSlice = createSlice({
@@ -23,11 +24,13 @@ export const UserSlice = createSlice({
     onSetUserToken: (state, action: PayloadAction<AuthState>) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
+      state.refresh = action.payload.refresh ?? null;
       AppStorage.setItem('user', state);
     },
     onLogout: (state) => {
       state.user = null;
       state.token = null;
+      state.refresh = null;
       AppStorage.removeItem('user');
     },
   },

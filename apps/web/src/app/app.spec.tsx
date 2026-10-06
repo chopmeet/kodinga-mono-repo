@@ -87,4 +87,43 @@ describe('App', () => {
     const { getByRole } = renderAt('/communities/nope');
     expect(getByRole('heading', { level: 1, name: /communauté introuvable/i })).toBeTruthy();
   });
+
+  it('redirects the legacy /login url to /auth/login', () => {
+    const { getByRole } = renderAt('/login?next=/communities/dakar-devops');
+    expect(getByRole('heading', { level: 1, name: 'Se connecter' })).toBeTruthy();
+  });
+
+  it('validates the login form before calling the api', async () => {
+    const { getByRole, findByText } = renderAt('/auth/login');
+    fireEvent.click(getByRole('button', { name: 'Se connecter' }));
+    expect(await findByText('Saisissez votre email')).toBeTruthy();
+    expect(await findByText('Saisissez votre mot de passe')).toBeTruthy();
+  });
+
+  it('renders the forgot password page', () => {
+    const { getByRole } = renderAt('/auth/forgot-password');
+    expect(getByRole('heading', { level: 1, name: 'Mot de passe oublié' })).toBeTruthy();
+    expect(getByRole('link', { name: /retour à la connexion/i })).toBeTruthy();
+  });
+
+  it('shows an invalid link message when the reset token is missing', () => {
+    const { getByRole } = renderAt('/auth/reset-password');
+    expect(getByRole('heading', { level: 1, name: 'Lien invalide' })).toBeTruthy();
+    expect(getByRole('link', { name: /demander un nouveau lien/i })).toBeTruthy();
+  });
+
+  it('checks the new password rules on the reset page', async () => {
+    const { getByLabelText, getByRole, findByText } = renderAt('/auth/reset-password?token=abcdefghij123');
+    fireEvent.change(getByLabelText(/nouveau mot de passe/i), { target: { value: '12345678' } });
+    fireEvent.change(getByLabelText(/confirmer le mot de passe/i), { target: { value: '12345679' } });
+    fireEvent.click(getByRole('button', { name: /réinitialiser le mot de passe/i }));
+    expect(await findByText('Le mot de passe ne peut pas contenir uniquement des chiffres')).toBeTruthy();
+    expect(await findByText('Les mots de passe ne correspondent pas')).toBeTruthy();
+  });
+
+  it('labels the login inputs (Input / InputPassword from the ui lib)', () => {
+    const { getByLabelText } = renderAt('/auth/login');
+    expect(getByLabelText(/adresse email/i)).toHaveProperty('type', 'email');
+    expect(getByLabelText(/mot de passe/i)).toHaveProperty('type', 'password');
+  });
 });

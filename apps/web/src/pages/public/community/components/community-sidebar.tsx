@@ -17,7 +17,7 @@ export function JoinButton({ community, className }: { community: CommunityDetai
   if (!token) {
     return (
       <Button asChild className={classes}>
-        <Link to={`/login?next=${encodeURIComponent(`/communities/${community.id}`)}`}>{label}</Link>
+        <Link to={`/auth/login?next=${encodeURIComponent(`/communities/${community.id}`)}`}>{label}</Link>
       </Button>
     );
   }

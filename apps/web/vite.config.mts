@@ -38,6 +38,13 @@ export default defineConfig(() => ({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      treeshake: {
+        // The ui lib is imported through one barrel (index.ts): mark its components side-effect free
+        // so an unused component does not drag its deps/CSS (Quill, phone input, vaul...) into the bundle.
+        moduleSideEffects: (id: string) => !(id.includes('/libs/ui/src/') && /\.tsx?$/.test(id)),
+      },
+    },
   },
   test: {
     name: 'web',

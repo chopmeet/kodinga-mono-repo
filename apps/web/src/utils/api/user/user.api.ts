@@ -2,14 +2,8 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { ApiBaseUrl } from '@/utils/http';
 import { AppStorage } from '@/utils/storage';
-import { QueryUrl } from '@/utils/Utils';
-import type {
-  AuthState,
-  PaginationResults,
-  TypeQuery,
-  User,
-  UserFormData,
-} from './user.type';
+import { type ApiSuccess, unwrap } from '../api.type';
+import type { AuthState, User, UserFormData } from './user.type';
 
 // Shared by every *Api: attaches the JWT stored by User.slice
 export const prepareHeaders = (
@@ -27,35 +21,24 @@ export const prepareHeaders = (
 
 export const UserApi = createApi({
   reducerPath: 'userApi',
-  tagTypes: ['user', 'usersList'],
+  tagTypes: ['user'],
   baseQuery: fetchBaseQuery({ baseUrl: ApiBaseUrl, prepareHeaders }),
   endpoints: (builder) => ({
     meAccount: builder.query<User, void>({
-      query: () => 'me/',
+      query: () => 'users/me/',
+      transformResponse: unwrap<User>,
       providesTags: ['user'],
     }),
-    getUsersList: builder.query<PaginationResults<User>, TypeQuery>({
-      query: (q) => QueryUrl('users', q),
-      providesTags: ['usersList'],
-    }),
-    addOrEditUser: builder.mutation<User, { id?: number; data: UserFormData }>({
-      query: ({ id, data }) => ({
-        url: id ? `users/${id}/` : 'users/',
-        method: id ? 'PUT' : 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['user', 'usersList'],
-    }),
-    deleteUser: builder.mutation<void, number>({
-      query: (id) => ({ url: `users/${id}/`, method: 'DELETE' }),
-      invalidatesTags: ['usersList'],
+    updateMe: builder.mutation<User, UserFormData>({
+      query: (body) => ({ url: 'users/me/', method: 'PATCH', body }),
+      transformResponse: (res: ApiSuccess<User>) => res.data,
+      invalidatesTags: ['user'],
     }),
   }),
 });
 
-export const {
-  useMeAccountQuery,
-  useGetUsersListQuery,
-  useAddOrEditUserMutation,
-  useDeleteUserMutation,
+export const { 
+  useMeAccountQuery, 
+  useUpdateMeMutation,
+  
 } = UserApi;
