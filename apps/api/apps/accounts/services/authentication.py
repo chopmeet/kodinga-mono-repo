@@ -22,15 +22,18 @@ class AuthenticationService:
         request=None,
         device_name: str = ""
     ) -> Dict[str, Any]:
-        normalized_email = email.strip().lower()
-        user = User.objects.filter(email=normalized_email).first()
+        identifier = email.strip()
+        user = (
+            User.objects.filter(email__iexact=identifier).first()
+            or User.objects.filter(username__iexact=identifier).first()
+        )
 
         if user is None or not user.check_password(password):
             AccountSecurityService.log_event(
                 event_type='login_failed',
                 user=user,
                 request=request,
-                metadata={'attempted_email': normalized_email}
+                metadata={'attempted_identifier': identifier}
             )
             raise ApplicationError(
                 message="Invalid email or password.",

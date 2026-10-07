@@ -1,0 +1,183 @@
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import success_response, error_response
+from apps.communities.models.community import Community
+from apps.communities.selectors.community_selector import CommunitySelector
+from apps.communities.serializers.category import CommunityCategorySerializer
+from apps.communities.serializers.community import (
+    CommunityCreateUpdateSerializer,
+    CommunityDetailSerializer,
+    CommunityListSerializer,
+)
+from apps.communities.services.community_service import CommunityService
+
+
+class CommunityListCreateView(APIView):
+    """
+    Public directory of communities with search and creation of new spaces.
+    """
+    pagination_class = StandardResultsSetPagination
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Explorer et rechercher des communautés",
+        parameters=[
+            OpenApiParameter(name='q', description="Recherche textuelle (nom, description, tag)", required=False, type=str),
+            OpenApiParameter(name='category', description="Slug de la catégorie", required=False, type=str),
+            OpenApiParameter(name='privacy', description="Type de confidentialité (public, private)", required=False, type=str),
+            OpenApiParameter(name='pricing', description="Type de tarification (free, paid)", required=False, type=str),
+            OpenApiParameter(name='is_featured', description="Communautés à la une (true/false)", required=False, type=bool),
+        ],
+        responses={200: CommunityListSerializer(many=True)}
+    )
+    def get(self, request):
+        q = request.query_params.get('q')
+        category = request.query_params.get('category')
+        privacy = request.query_params.get('privacy')
+        pricing = request.query_params.get('pricing')
+        featured_param = request.query_params.get('is_featured')
+        featured = featured_param.lower() in ['true', '1'] if featured_param else None
+
+        queryset = CommunitySelector.search_communities(
+            search_query=q,
+            category_slug=category,
+            privacy=privacy,
+            pricing=pricing,
+            is_featured=featured,
+            user=request.user
+        )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = CommunityListSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Créer un nouvel espace communautaire",
+        request=CommunityCreateUpdateSerializer,
+        responses={201: CommunityDetailSerializer}
+    )
+    def post(self, request):
+        serializer = CommunityCreateUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rules_data = serializer.validated_data.pop('rules', None)
+        settings_data = serializer.validated_data.pop('settings', None)
+
+        community = CommunityService.create_community(
+            owner=request.user,
+            data=serializer.validated_data,
+            rules_data=rules_data,
+            settings_data=settings_data
+        )
+
+        return success_response(
+            data=CommunityDetailSerializer(community, context={'request': request}).data,
+            message="Espace communautaire créé avec succès !",
+            status_code=status.HTTP_201_CREATED
+        )
+
+
+class CommunityDetailView(APIView):
+    """
+    Get, update, or archive a specific community by slug.
+    """
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'PUT', 'DELETE']:
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Consulter les détails d'une communauté par son slug",
+        responses={200: CommunityDetailSerializer}
+    )
+    def get(self, request, slug):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+        except Community.DoesNotExist:
+            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        serializer = CommunityDetailSerializer(community, context={'request': request})
+        return success_response(data=serializer.data)
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Mettre à jour les informations d'une communauté",
+        request=CommunityCreateUpdateSerializer,
+        responses={200: CommunityDetailSerializer}
+    )
+    def patch(self, request, slug):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+        except Community.DoesNotExist:
+            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        serializer = CommunityCreateUpdateSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        updated = CommunityService.update_community(community, request.user, serializer.validated_data)
+        return success_response(
+            data=CommunityDetailSerializer(updated, context={'request': request}).data,
+            message="Communauté mise à jour."
+        )
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Archiver / Supprimer une communauté (Propriétaire uniquement)",
+        responses={200: None}
+    )
+    def delete(self, request, slug):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+        except Community.DoesNotExist:
+            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        CommunityService.delete_community(community, request.user)
+        return success_response(message="Communauté archivée avec succès.")
+
+
+class MyCommunitiesListView(APIView):
+    """
+    List of communities the authenticated user owns or participates in.
+    """
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Lister mes espaces communautaires",
+        responses={200: CommunityListSerializer(many=True)}
+    )
+    def get(self, request):
+        queryset = CommunitySelector.get_user_communities(request.user)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = CommunityListSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+
+class CategoryListView(APIView):
+    """
+    List active community categories.
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['Communities'],
+        summary="Lister les catégories thématiques",
+        responses={200: CommunityCategorySerializer(many=True)}
+    )
+    def get(self, request):
+        cats = CommunitySelector.get_categories()
+        return success_response(data=CommunityCategorySerializer(cats, many=True).data)

@@ -68,7 +68,8 @@ local_db/
 # ------------------------------------------------------------------------------
 staticfiles/
 collected_static/
-media/
+/media/
+!apps/media/
 uploads/
 local_settings.py
 

@@ -52,6 +52,12 @@ INSTALLED_APPS = [
     # Internal applications & common core
     'common',
     'apps.accounts.apps.AccountsConfig',
+    'apps.profiles.apps.ProfilesConfig',
+    'apps.media.apps.MediaConfig',
+    'apps.communities.apps.CommunitiesConfig',
+    'apps.memberships.apps.MembershipsConfig',
+    'apps.posts.apps.PostsConfig',
+    'apps.billing.apps.BillingConfig',
     'api',
 ]
 
@@ -188,7 +194,7 @@ SPECTACULAR_SETTINGS = {
         '2. Copiez la valeur du champ `access` (ex: `eyJhbGciOi...`).\n'
         '3. Cliquez sur le bouton vert **Authorize** en haut à droite.\n'
         '4. Collez votre token (ou `Bearer <token>`) et cliquez sur **Authorize**.\n'
-        '5. Vous pouvez désormais tester tous les endpoints protégés (`GET /api/v1/users/me/`, etc.).'
+        '5. Vous pouvez désormais tester tous les endpoints protégés (`GET /api/v1/users/me/`, `GET /api/v1/profiles/me/`, etc.).'
     ),
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
@@ -218,6 +224,11 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Sessions', 'description': 'Active devices, session audit, and token revocations.'},
         {'name': 'OAuth', 'description': 'Third-party single sign-on (Google, GitHub).'},
         {'name': 'Users', 'description': 'Authenticated user profiles and legal consents.'},
+        {'name': 'Profiles', 'description': 'Developer profiles, skills, work history, educations, and portfolio showcases.'},
+        {'name': 'Media', 'description': 'File uploads (UploadThing) and Video on Demand streaming (Mux HLS).'},
+        {'name': 'Communities', 'description': 'Tech communities, spaces, discovery, settings, and charter rules.'},
+        {'name': 'Memberships', 'description': 'Community RBAC memberships, invitations, and moderation sanctions.'},
+        {'name': 'Feed & Posts', 'description': 'Community posts, code snippets, rich media, interactive polls, threaded comments, and emoji reactions.'},
     ],
 }
 
@@ -232,8 +243,17 @@ FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 BACKEND_URL = env('BACKEND_URL', default='http://localhost:8000')
 SUPPORT_EMAIL = env('SUPPORT_EMAIL', default='support@kodinga.com')
 
-# Email (SMTP) Configuration
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend' if not DEBUG else 'django.core.mail.backends.console.EmailBackend')
+# Testing overrides (fast hashers, locmem email backend)
+import sys
+IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in arg for arg in sys.argv)
+if IS_TESTING:
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+else:
+    EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend' if not DEBUG else 'django.core.mail.backends.console.EmailBackend')
+
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.sendgrid.net')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
@@ -263,3 +283,24 @@ GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
 GITHUB_CLIENT_ID = env('GITHUB_CLIENT_ID', default='')
 GITHUB_CLIENT_SECRET = env('GITHUB_CLIENT_SECRET', default='')
+
+# UploadThing Credentials (v7+ single token, with legacy v6 fallback)
+UPLOADTHING_TOKEN = env('UPLOADTHING_TOKEN', default='')
+UPLOADTHING_SECRET = env('UPLOADTHING_SECRET', default='')
+UPLOADTHING_APP_ID = env('UPLOADTHING_APP_ID', default='')
+
+# Mux Video Streaming & VoD Credentials (Direct Uploads & Webhooks)
+MUX_TOKEN_ID = env('MUX_TOKEN_ID', default='')
+MUX_TOKEN_SECRET = env('MUX_TOKEN_SECRET', default='')
+MUX_WEBHOOK_SECRET = env('MUX_WEBHOOK_SECRET', default='')
+
+# PayDunya Gateway Configuration (Sandbox / Production)
+PAYDUNYA_MODE = env('PAYDUNYA_MODE', default='test')
+PAYDUNYA_MASTER_KEY = env('PAYDUNYA_MASTER_KEY', default='')
+PAYDUNYA_PRIVATE_KEY = env('PAYDUNYA_PRIVATE_KEY', default='')
+PAYDUNYA_PUBLIC_KEY = env('PAYDUNYA_PUBLIC_KEY', default='')
+PAYDUNYA_TOKEN = env('PAYDUNYA_TOKEN', default='')
+PAYDUNYA_CALLBACK_URL = env('PAYDUNYA_CALLBACK_URL', default='')
+PAYDUNYA_SUCCESS_URL = env('PAYDUNYA_SUCCESS_URL', default='')
+PAYDUNYA_CANCEL_URL = env('PAYDUNYA_CANCEL_URL', default='')
+

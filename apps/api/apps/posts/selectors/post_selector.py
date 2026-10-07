@@ -1,0 +1,91 @@
+from typing import Optional
+from django.db.models import Prefetch, Q, QuerySet
+from apps.accounts.models.user import User
+from apps.communities.models.community import Community, CommunityPrivacy
+from apps.memberships.models.member import CommunityMember, MembershipStatus
+from apps.posts.models.category import PostCategory
+from apps.posts.models.comment import Comment
+from apps.posts.models.poll import Poll, PollOption
+from apps.posts.models.post import Post
+from apps.posts.models.reaction import PostReaction, CommentReaction
+
+
+class PostSelector:
+    """
+    Optimized data queries and prefetching for community posts, threaded comments, and polls.
+    """
+
+    @classmethod
+    def get_base_post_queryset(cls) -> QuerySet[Post]:
+        poll_prefetch = Prefetch(
+            'poll__options',
+            queryset=PollOption.objects.order_by('order', 'created_at')
+        )
+        return Post.objects.select_related(
+            'author',
+            'author__profile',
+            'category',
+            'community',
+            'poll'
+        ).prefetch_related(
+            'media_attachments',
+            'reactions',
+            poll_prefetch
+        )
+
+    @classmethod
+    def get_community_feed(
+        cls,
+        community: Community,
+        category_slug: Optional[str] = None,
+        post_type: Optional[str] = None,
+        search: Optional[str] = None,
+        is_pinned: Optional[bool] = None,
+        user: Optional[User] = None
+    ) -> QuerySet[Post]:
+        qs = cls.get_base_post_queryset().filter(community=community)
+
+        if category_slug:
+            qs = qs.filter(category__slug=category_slug)
+
+        if post_type:
+            qs = qs.filter(post_type=post_type)
+
+        if is_pinned is not None:
+            qs = qs.filter(is_pinned=is_pinned)
+
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(content__icontains=search) |
+                Q(code_snippet__icontains=search) |
+                Q(author__username__icontains=search)
+            )
+
+        return qs.order_by('-is_pinned', '-created_at')
+
+    @classmethod
+    def get_post_by_id(cls, post_id: str, user: Optional[User] = None) -> Post:
+        return cls.get_base_post_queryset().get(id=post_id)
+
+    @classmethod
+    def get_post_comments(cls, post: Post, user: Optional[User] = None) -> QuerySet[Comment]:
+        replies_prefetch = Prefetch(
+            'replies',
+            queryset=Comment.objects.select_related('author', 'author__profile').prefetch_related('media_attachments', 'reactions').order_by('created_at')
+        )
+        return Comment.objects.filter(
+            post=post,
+            parent__isnull=True
+        ).select_related(
+            'author',
+            'author__profile'
+        ).prefetch_related(
+            'media_attachments',
+            'reactions',
+            replies_prefetch
+        ).order_by('-is_accepted_answer', 'created_at')
+
+    @classmethod
+    def get_categories(cls, community: Community) -> QuerySet[PostCategory]:
+        return PostCategory.objects.filter(community=community).order_by('order', 'name')
