@@ -16,6 +16,12 @@ urlpatterns = [
 
     # API v1 Domain Modules
     path('api/v1/', include('apps.accounts.urls', namespace='accounts')),
+    path('api/v1/', include('apps.profiles.urls', namespace='profiles')),
+    path('api/v1/', include('apps.media.urls', namespace='media')),
+    path('api/v1/', include('apps.communities.urls', namespace='communities')),
+    path('api/v1/', include('apps.memberships.urls', namespace='memberships')),
+    path('api/v1/', include('apps.posts.urls', namespace='posts')),
+    path('api/v1/', include('apps.billing.urls', namespace='billing')),
 
     # OpenAPI / Swagger Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

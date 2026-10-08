@@ -42,7 +42,7 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.CharField(required=True, help_text="Email address or username")
     password = serializers.CharField(write_only=True, required=True)
     device_name = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
