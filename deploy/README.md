@@ -88,7 +88,10 @@ Chaque domaine doit aussi avoir son enregistrement DNS (A) vers l'IP du VPS.
 Variables du dépôt (Settings → Secrets and variables → Actions → Variables) :
 `RECETTE_SITE_URL` (`https://recette.kodinga.com`), `RECETTE_API_URL` (`https://api.recette.kodinga.com`),
 `PROD_SITE_URL` (`https://kodinga.com`) et `PROD_API_URL` (`https://api.kodinga.com`).
-Sans `*_API_URL`, le front appelle l'API en relatif (`/api/v1/`) via son propre domaine.
+Le front, lui, ne lit pas ces variables : ses URLs sont écrites dans `apps/web/src/utils/http.ts`,
+et l'environnement y est fixé **à la main** (`currentEnv`) : `'demo'` sur la branche `recette`,
+`'prod'` sur la branche `prod`. Le déploiement s'arrête si la valeur ne correspond pas.
+Les `*_API_URL` servent au contrôle de santé du déploiement : garder les deux en accord.
 
 Publier les images ne demande aucun secret : le workflow utilise son propre `GITHUB_TOKEN`.
 Conseil : ajouter des *required reviewers* sur l'environnement `production` pour valider chaque mise en prod.
