@@ -16,3 +16,17 @@ export type ApiErrorBody = {
 
 /** RTK Query `transformResponse` helper: keep only `data` */
 export const unwrap = <T>(response: ApiSuccess<T>) => response.data;
+
+/** Paginated list (common/utils/pagination.py: StandardResultsSetPagination) */
+export type ApiPaginated<T> = {
+  success: true;
+  pagination: {
+    count: number;
+    total_pages: number;
+    current_page: number;
+    next: string | null;
+    previous: string | null;
+    page_size: number;
+  };
+  results: T[];
+};

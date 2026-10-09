@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useLocation, useRoutes } from 'react-router-dom';
 
+import { Toaster } from '@kodinga-mono-repo/ui';
+
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetUser } from '@/redux/slice/User.slice';
@@ -50,6 +52,8 @@ export function App() {
       <ScrollToTop />
       {token && (expired ? <ExpiredSession /> : <FetchUser />)}
       {routes}
+      {/* Renders the customToast notifications of the ui lib */}
+      <Toaster richColors closeButton />
     </>
   );
 }

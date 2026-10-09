@@ -183,7 +183,6 @@ export const Input = forwardRef<
             <label
               htmlFor={id}
               className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={id}
             >
               {label}
             </label>
@@ -384,7 +383,6 @@ export const InputQuill = forwardRef<
           <label
             htmlFor={id}
             className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-            aria-labelledby={id}
           >
             {label}
           </label>
@@ -437,7 +435,6 @@ export const InputPassword = forwardRef<
             <label
               htmlFor={id ?? name}
               className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={id ?? name}
             >
               {label}
             </label>
@@ -498,7 +495,6 @@ export const SelectInput = forwardRef<
             <label
               htmlFor={name}
               className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={name}
             >
               {label}
             </label>
@@ -555,7 +551,6 @@ export const InputPhone = forwardRef<
             <label
               htmlFor={id}
               className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={id}
             >
               {label}
             </label>
@@ -625,7 +620,6 @@ export const TextareaInput = forwardRef<
             <label
               htmlFor={id}
               className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-              aria-labelledby={id}
             >
               {label}
             </label>

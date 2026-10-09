@@ -4,7 +4,6 @@ import {
     VisibilityState,
     flexRender,
     getCoreRowModel,
-    getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
@@ -32,6 +31,9 @@ interface DataTableProps<TData, TValue> {
 }
 
 
+// Renders every row it receives: paginate on the server (or slice before passing `data`)
+// together with the <Pagination> component. A client-side row model without pagination
+// controls used to hide every row after the 10th.
 export function DataTable<TData, TValue>({
     columns,
     data,
@@ -44,8 +46,14 @@ export function DataTable<TData, TValue>({
     const table = useReactTable({
         data: data ?? [],
         columns,
+        // Key rows by their entity id when they have one (index otherwise): with index keys, a
+        // filter or a removal makes React reuse another row's components (and their state,
+        // e.g. an open "…" menu) for the rows that shifted.
+        getRowId: (row, index) => {
+            const id = (row as { id?: string | number } | null)?.id
+            return id !== undefined && id !== null ? String(id) : String(index)
+        },
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onColumnVisibilityChange: setColumnVisibility,

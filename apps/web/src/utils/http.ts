@@ -1,6 +1,32 @@
-// Same-origin by default: Vite proxies /api in dev, the web container's nginx otherwise.
-// Deployed builds set VITE_API_URL to the api subdomain (e.g. https://api.recette.kodinga.com/api/v1/).
-// `||` (not `??`): the Docker build passes an empty string when no api URL is configured.
-export const ApiBaseUrl: string = import.meta.env.VITE_API_URL || '/api/v1/';
+type ENV = 'dev' | 'prod' | 'demo';
 
-export const isDev = import.meta.env.DEV;
+export const currentEnv: ENV = 'dev';
+
+const env: ENV = currentEnv;
+
+export const Env = env;
+
+const API_DEV_URL = 'http://127.0.0.1:5000/api/';
+const API_DEMO_URL = 'https://api.recette.kodinga.com/api/v1/';
+const API_PROD_URL = 'https://api.kodinga.com/api/v1/';
+
+export const APP_URL_DEV = 'http://localhost:4200/';
+export const APP_URL_DEMO = 'https://kodinga.fassane.dev/';
+export const APP_URL_PROD = 'https://kodinga.com/';
+
+function processApiUrl() {
+  if (env === 'prod') return API_PROD_URL;
+  if (env === 'demo') return API_DEMO_URL;
+  return API_DEV_URL;
+}
+
+function processAppUrl() {
+  if (env === 'prod') return APP_URL_PROD;
+  if (env === 'demo') return APP_URL_DEMO;
+  return APP_URL_DEV;
+}
+
+export const ApiBaseUrl = processApiUrl();
+export const AppBaseUrl = processAppUrl();
+
+export const isDev: boolean = currentEnv === 'dev'

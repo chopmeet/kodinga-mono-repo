@@ -5,6 +5,7 @@ import {
 } from '@reduxjs/toolkit';
 
 import { AuthApi } from '@/utils/api/auth/auth.api';
+import { CommunityApi } from '@/utils/api/community/community.api';
 import { UserApi } from '@/utils/api/user/user.api';
 import { isDev } from '@/utils/http';
 import { SearchSlice } from './slice/Search.slice';
@@ -27,13 +28,15 @@ export const store = configureStore({
     [SearchSlice.name]: SearchSlice.reducer,
     [AuthApi.reducerPath]: AuthApi.reducer,
     [UserApi.reducerPath]: UserApi.reducer,
+    [CommunityApi.reducerPath]: CommunityApi.reducer,
   },
   devTools: isDev,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
       .concat(authMiddleware)
       .concat(AuthApi.middleware)
-      .concat(UserApi.middleware),
+      .concat(UserApi.middleware)
+      .concat(CommunityApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

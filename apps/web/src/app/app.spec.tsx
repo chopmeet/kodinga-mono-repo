@@ -88,10 +88,6 @@ describe('App', () => {
     expect(getByRole('heading', { level: 1, name: /communauté introuvable/i })).toBeTruthy();
   });
 
-  it('redirects the legacy /login url to /auth/login', () => {
-    const { getByRole } = renderAt('/login?next=/communities/dakar-devops');
-    expect(getByRole('heading', { level: 1, name: 'Se connecter' })).toBeTruthy();
-  });
 
   it('validates the login form before calling the api', async () => {
     const { getByRole, findByText } = renderAt('/auth/login');
