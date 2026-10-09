@@ -20,7 +20,7 @@ class TestAuthServices:
             username="newdev",
             password="StrongPassword123!",
             first_name="Alice",
-            last_name="Tech"
+            last_name="Tech",
         )
         assert user.email == "newdev@kodinga.com"
         assert user.is_email_verified is False
@@ -32,24 +32,23 @@ class TestAuthServices:
         user = User.objects.create_user(
             email="auth_test@kodinga.com",
             username="authtest",
-            password="ValidPassword123!"
+            password="ValidPassword123!",
         )
 
         # Success
         result = AuthenticationService.login_user(
             email="auth_test@kodinga.com",
             password="ValidPassword123!",
-            device_name="TestDevice"
+            device_name="TestDevice",
         )
-        assert 'access' in result
-        assert 'refresh' in result
-        assert result['user'] == user
+        assert "access" in result
+        assert "refresh" in result
+        assert result["user"] == user
 
         # Invalid password
         with pytest.raises(ApplicationError) as exc_info:
             AuthenticationService.login_user(
-                email="auth_test@kodinga.com",
-                password="WrongPassword123!"
+                email="auth_test@kodinga.com", password="WrongPassword123!"
             )
         assert exc_info.value.code == "invalid_credentials"
 
@@ -57,18 +56,19 @@ class TestAuthServices:
         user = User.objects.create_user(
             email="verify_test@kodinga.com",
             username="verifytest",
-            password="ValidPassword123!"
+            password="ValidPassword123!",
         )
         raw_token = "valid_test_token_string_12345"
         token_hash = hash_token(raw_token)
         from datetime import timedelta
 
         from django.utils import timezone
+
         AuthToken.objects.create(
             user=user,
             purpose=AuthToken.PURPOSE_EMAIL_VERIFICATION,
             token_hash=token_hash,
-            expires_at=timezone.now() + timedelta(hours=24)
+            expires_at=timezone.now() + timedelta(hours=24),
         )
 
         verified_user = EmailVerificationService.verify_email(raw_token)
@@ -80,9 +80,7 @@ class TestAuthServices:
 
     def test_password_reset_and_change_services(self):
         user = User.objects.create_user(
-            email="pwd_test@kodinga.com",
-            username="pwdtest",
-            password="OldPassword123!"
+            email="pwd_test@kodinga.com", username="pwdtest", password="OldPassword123!"
         )
 
         PasswordResetService.request_password_reset(user.email)
@@ -112,7 +110,7 @@ class TestAuthServices:
             to_email="test@kodinga.com",
             subject="Test Subject",
             template_name="welcome",
-            context={"first_name": "Tester", "username": "tester"}
+            context={"first_name": "Tester", "username": "tester"},
         )
         assert len(mail.outbox) > 0
         assert "Test Subject" in mail.outbox[0].subject

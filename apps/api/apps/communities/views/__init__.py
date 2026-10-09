@@ -1,5 +1,8 @@
+from apps.communities.views.category import (
+    CategoryDetailView,
+    CategoryListCreateView,
+)
 from apps.communities.views.community import (
-    CategoryListView,
     CommunityDetailView,
     CommunityListCreateView,
     MyCommunitiesListView,
@@ -14,8 +17,10 @@ __all__ = [
     'CommunityListCreateView',
     'CommunityDetailView',
     'MyCommunitiesListView',
-    'CategoryListView',
+    'CategoryListCreateView',
+    'CategoryDetailView',
     'CommunitySettingsView',
     'CommunityRulesView',
     'CommunityRuleDetailView',
 ]
+

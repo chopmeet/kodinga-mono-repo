@@ -3,4 +3,8 @@ from apps.posts.models.reaction import ReactionType
 
 
 class ToggleReactionRequestSerializer(serializers.Serializer):
-    reaction_type = serializers.ChoiceField(choices=ReactionType.choices, default=ReactionType.LIKE)
+    reaction_type = serializers.ChoiceField(
+        choices=ReactionType.choices,
+        default=ReactionType.LIKE,
+        help_text="Type d'emoji ('like', 'celebrate', 'insightful', 'curious', 'heart', 'rocket')."
+    )

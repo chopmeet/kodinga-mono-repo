@@ -1,5 +1,14 @@
 # Kodinga
 
+## Le projet
+
+Plateforme de communautés tech pour l'Afrique (francophone d'abord). Des créateurs ouvrent des
+communautés thématiques (IA & Data, Cloud & DevOps, Web & Mobile, Web3 & Fintech…), gratuites ou
+payantes ; les membres y publient, discutent et suivent des contenus. Les paiements passent par
+PayDunya (Mobile Money : Orange Money, Wave, MTN MoMo, Moov Money, et carte), en XOF / FCFA, et
+Kodinga prélève une commission.
+
+
 ## ⛔ RÈGLE ABSOLUE : AUCUNE MIGRATION PAR UN AGENT
 
 Claude Code, Codex, ou tout autre assistant ou générateur de code ne doit **JAMAIS, en aucun cas**, faire les migrations de base de données lui-même. Cette règle ne souffre aucune exception, même si un test, une commande ou une demande semble l'exiger.
@@ -15,14 +24,6 @@ Quand une modification de modèle Django demande une migration :
 3. signaler clairement au développeur qu'une migration est nécessaire, et pourquoi.
 
 C'est le développeur qui génère, relit et applique la migration lui-même.
-
-## Le projet
-
-Plateforme de communautés tech pour l'Afrique (francophone d'abord). Des créateurs ouvrent des
-communautés thématiques (IA & Data, Cloud & DevOps, Web & Mobile, Web3 & Fintech…), gratuites ou
-payantes ; les membres y publient, discutent et suivent des contenus. Les paiements passent par
-PayDunya (Mobile Money : Orange Money, Wave, MTN MoMo, Moov Money, et carte), en XOF / FCFA, et
-Kodinga prélève une commission.
 
 
 ## Monorepo Nx
@@ -68,7 +69,7 @@ npx nx lint api                                         # ruff
 ## Conventions front
 
 - Alias `@/` = `apps/web/src`. Le kit UI s'importe depuis `@kodinga-mono-repo/ui`.
-- Structure d'une page (repris de moovi-app) : `form/UseXxx.ts` (état + logique), `tables/`, `tabs/` (sous-routes avec `NavTabs` + `Outlet` context), `modals/`, `components/`.
+- Structure d'une page : `form/UseXxx.ts` (état + logique), `tables/`, `tabs/` (sous-routes avec `NavTabs` + `Outlet` context), `modals/`, `components/`.
 - Éléments partagés entre admin et espace communauté : `src/pages/shared/` (libellés, chips de filtre, menu d'actions, thème des graphiques, `FormActions`, `SettingSwitch`).
 - Tant que les endpoints n'existent pas, les écrans utilisent des données fictives déterministes dans `src/data/*.data.ts`, typées comme l'API (`src/utils/api/**/**.type.ts`). Les écrans d'auth appellent déjà la vraie API.
 - Textes de l'interface en français. Les erreurs de validation de l'API arrivent en anglais et sont traduites dans `src/utils/api/errors.ts`.

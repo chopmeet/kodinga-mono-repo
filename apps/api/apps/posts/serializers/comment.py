@@ -56,10 +56,17 @@ class CommentSerializer(BaseModelSerializer):
 
 
 class CreateCommentRequestSerializer(serializers.Serializer):
-    content = serializers.CharField()
-    parent_id = serializers.UUIDField(required=False, allow_null=True)
+    content = serializers.CharField(
+        help_text="Texte du commentaire (Markdown supporté)."
+    )
+    parent_id = serializers.UUIDField(
+        required=False,
+        allow_null=True,
+        help_text="ID optionnel du commentaire parent pour créer une réponse imbriquée (Thread)."
+    )
     media_ids = serializers.ListField(
         child=serializers.UUIDField(),
         required=False,
-        write_only=True
+        write_only=True,
+        help_text="Identifiants des médias attachés au commentaire."
     )
