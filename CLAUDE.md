@@ -1,5 +1,14 @@
 # Kodinga
 
+## Le projet
+
+Plateforme de communautés tech pour l'Afrique (francophone d'abord). Des créateurs ouvrent des
+communautés thématiques (IA & Data, Cloud & DevOps, Web & Mobile, Web3 & Fintech…), gratuites ou
+payantes ; les membres y publient, discutent et suivent des contenus. Les paiements passent par
+PayDunya (Mobile Money : Orange Money, Wave, MTN MoMo, Moov Money, et carte), en XOF / FCFA, et
+Kodinga prélève une commission.
+
+
 ## ⛔ RÈGLE ABSOLUE : AUCUNE MIGRATION PAR UN AGENT
 
 Claude Code, Codex, ou tout autre assistant ou générateur de code ne doit **JAMAIS, en aucun cas**, faire les migrations de base de données lui-même. Cette règle ne souffre aucune exception, même si un test, une commande ou une demande semble l'exiger.
@@ -15,14 +24,6 @@ Quand une modification de modèle Django demande une migration :
 3. signaler clairement au développeur qu'une migration est nécessaire, et pourquoi.
 
 C'est le développeur qui génère, relit et applique la migration lui-même.
-
-## Le projet
-
-Plateforme de communautés tech pour l'Afrique (francophone d'abord). Des créateurs ouvrent des
-communautés thématiques (IA & Data, Cloud & DevOps, Web & Mobile, Web3 & Fintech…), gratuites ou
-payantes ; les membres y publient, discutent et suivent des contenus. Les paiements passent par
-PayDunya (Mobile Money : Orange Money, Wave, MTN MoMo, Moov Money, et carte), en XOF / FCFA, et
-Kodinga prélève une commission.
 
 
 ## Monorepo Nx
