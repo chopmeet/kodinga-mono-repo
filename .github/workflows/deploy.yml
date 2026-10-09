@@ -21,7 +21,7 @@ on:
         required: false
         default: ''
       api-url:
-        description: Public origin of the api (e.g. https://api.recette.kodinga.com). Empty = same origin as the front
+        description: Public origin of the api (e.g. https://api.recette.kodinga.com), used by the health check. Must match the URLs in apps/web/src/utils/http.ts
         type: string
         required: false
         default: ''
@@ -62,6 +62,19 @@ jobs:
 
       - uses: actions/checkout@v7
 
+      # currentEnv is set by hand in http.ts: never ship recette pointing to the prod api (or the reverse)
+      - name: Check currentEnv in apps/web/src/utils/http.ts
+        if: inputs.deploy && matrix.app == 'web'
+        env:
+          EXPECTED: ${{ inputs.environment == 'production' && 'prod' || 'demo' }}
+        run: |
+          actual=$(sed -nE "s/^export const currentEnv: ENV = ['\"]([a-z]+)['\"];.*/\1/p" apps/web/src/utils/http.ts)
+          if [ "$actual" != "$EXPECTED" ]; then
+            echo "::error file=apps/web/src/utils/http.ts::currentEnv is '${actual:-not found}', expected '$EXPECTED' for ${{ inputs.environment }}. Fix it on this branch and push again."
+            exit 1
+          fi
+          echo "currentEnv = $actual"
+
       - name: Image name and tag
         id: meta
         run: |
@@ -90,7 +103,6 @@ jobs:
           # Only the web Dockerfile declares these (the api build just ignores them)
           build-args: |
             VITE_SITE_URL=${{ inputs.site-url }}
-            VITE_API_URL=${{ inputs.api-url && format('{0}/api/v1/', inputs.api-url) || '' }}
           push: ${{ inputs.deploy }}
           # Immutable tag (rollback) + moving tag per environment
           tags: |
