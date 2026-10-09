@@ -2,9 +2,9 @@ import { fireEvent, screen, within } from '@testing-library/react';
 
 import { getCommunityPosts } from '@/data/admin-community-details.data';
 import { getMyCommunity } from '@/data/community-space.data';
-import { renderAppAt, SLOW } from '@/test-utils';
+import { must, renderAppAt, SLOW } from '@/test-utils';
 
-const postsOf = (slug: string) => getCommunityPosts(getMyCommunity(slug)!.community);
+const postsOf = (slug: string) => getCommunityPosts(must(getMyCommunity(slug)).community);
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });

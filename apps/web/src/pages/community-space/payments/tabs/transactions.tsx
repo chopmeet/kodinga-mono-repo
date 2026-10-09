@@ -32,7 +32,7 @@ function TransactionsTab() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
 
-  const match = filters.find((f) => f.value === filter)!.match;
+  const match = (filters.find((f) => f.value === filter) ?? filters[0]).match;
   const filtered = useMemo(() => payments.filter((p) => match(p.status)), [payments, match]);
   const visible = filtered.slice((page - 1) * size, page * size);
 

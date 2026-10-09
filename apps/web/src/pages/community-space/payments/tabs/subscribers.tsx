@@ -25,7 +25,7 @@ function SubscribersTab() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
 
-  const match = filters.find((f) => f.value === filter)!.match;
+  const match = (filters.find((f) => f.value === filter) ?? filters[0]).match;
   const filtered = useMemo(() => subscriptions.filter((s) => match(s.status)), [subscriptions, match]);
   const visible = filtered.slice((page - 1) * size, page * size);
 

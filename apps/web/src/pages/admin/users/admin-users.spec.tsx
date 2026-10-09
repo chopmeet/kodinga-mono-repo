@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { adminUsers } from '@/data/admin-users.data';
 import store from '@/redux/store';
+import { must } from '@/test-utils';
 import AdminUsers from './admin-users';
 import UseUsersList from './form/UseUsersList';
 
@@ -46,7 +47,7 @@ describe('AdminUsers (mock data)', () => {
   });
 
   it('suspends an account from the actions menu', async () => {
-    const target = adminUsers.find((u) => u.is_active && !u.is_staff)!;
+    const target = must(adminUsers.find((u) => u.is_active && !u.is_staff));
     const utils = renderPage();
     await openMenu(utils, target.full_name);
     fireEvent.click(await utils.findByRole('menuitem', { name: 'Suspendre le compte' }, SLOW));
@@ -62,7 +63,7 @@ describe('AdminUsers (mock data)', () => {
     const [first, second] = result.current.users.filter((u) => u.is_staff);
 
     act(() => result.current.toggleStaff(first));
-    act(() => result.current.toggleStaff(result.current.users.find((u) => u.id === second.id)!));
+    act(() => result.current.toggleStaff(must(result.current.users.find((u) => u.id === second.id))));
 
     const staff = result.current.users.filter((u) => u.is_staff);
     expect(staff.map((u) => u.id)).toEqual([second.id]);

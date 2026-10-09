@@ -1,10 +1,10 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 
 import { getCommunityMembers } from '@/data/admin-community-details.data';
 import { getMyCommunity } from '@/data/community-space.data';
-import { renderAppAt, SLOW } from '@/test-utils';
+import { must, renderAppAt, SLOW } from '@/test-utils';
 
-const membersOf = (slug: string) => getCommunityMembers(getMyCommunity(slug)!.community);
+const membersOf = (slug: string) => getCommunityMembers(must(getMyCommunity(slug)).community);
 
 const openMenu = async (label: string) => {
   const trigger = await screen.findByRole('button', { name: label }, SLOW);
@@ -42,14 +42,14 @@ describe('Community space: members', () => {
     for (const m of members.filter((x) => x.role === 'owner' || x.role === 'admin')) {
       expect(screen.queryByRole('button', { name: `Actions pour ${m.name}` })).toBeNull();
     }
-    const moderator = members.find((x) => x.role === 'moderator')!;
+    const moderator = must(members.find((x) => x.role === 'moderator'));
     const menu = await openMenu(`Actions pour ${moderator.name}`);
     expect(within(menu).queryByRole('menuitem', { name: /Nommer/ })).toBeNull();
     expect(within(menu).getByRole('menuitem', { name: 'Suspendre' })).toBeTruthy();
   });
 
   it('asks a reason before banning (owner)', async () => {
-    const target = membersOf('dakar-devops').find((m) => m.role === 'admin')!;
+    const target = must(membersOf('dakar-devops').find((m) => m.role === 'admin'));
     renderAppAt('/c/dakar-devops/members');
     const menu = await openMenu(`Actions pour ${target.name}`);
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Bannir' }));

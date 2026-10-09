@@ -19,3 +19,9 @@ export function renderAppAt(path: string) {
   );
   return { ...view, where: () => router.state.location.pathname + router.state.location.search };
 }
+
+/** Test data that must exist: fails with a clear message instead of a non-null assertion */
+export function must<T>(value: T | null | undefined, what = 'test data'): T {
+  if (value == null) throw new Error(`Missing ${what}`);
+  return value;
+}

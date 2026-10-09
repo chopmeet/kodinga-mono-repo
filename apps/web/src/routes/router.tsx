@@ -43,7 +43,7 @@ import MonetizationSettingsTab from '@/pages/admin/settings/tabs/monetization';
 import NotFound from '@/pages/extra/not-found';
 
 import { 
-  IsAdminAllow, 
+  // IsAdminAllow, 
   RedirectAuthRoute 
 } from './routerUtils';
 

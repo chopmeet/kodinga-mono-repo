@@ -101,14 +101,12 @@ function Header() {
               {t('header.mySpace')}
             </NavLink>
           ) : (
-            <>
-              <NavLink
-                to="/auth/login"
-                className="px-2 text-sm font-medium whitespace-nowrap text-slate-900 hover:text-brand"
-              >
-                {t('header.login')}
-              </NavLink>
-            </>
+            <NavLink
+              to="/auth/login"
+              className="px-2 text-sm font-medium whitespace-nowrap text-slate-900 hover:text-brand"
+            >
+              {t('header.login')}
+            </NavLink>
           )}
           {/* Plain anchor: from another page it loads home then jumps to the creators block */}
           <a

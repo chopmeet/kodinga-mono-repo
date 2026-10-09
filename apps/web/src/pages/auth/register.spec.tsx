@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-import { renderAppAt, SLOW } from '@/test-utils';
+import { must, renderAppAt, SLOW } from '@/test-utils';
 import { leaveTo } from './hooks/oauth-state';
 
 vi.mock('./hooks/oauth-state', async (importOriginal) => ({
@@ -174,7 +174,7 @@ describe('Verify email', () => {
     });
     renderAppAt('/auth/verify-email?token=0123456789abcdef');
     expect(await screen.findByRole('heading', { name: 'Lien invalide' }, SLOW)).toBeTruthy();
-    const form = screen.getByLabelText('Recevoir un nouveau lien').closest('form')!;
+    const form = must(screen.getByLabelText('Recevoir un nouveau lien').closest('form'));
     fireEvent.change(within(form).getByLabelText('Recevoir un nouveau lien'), { target: { value: 'aicha@example.com' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Renvoyer le lien' }));
     expect(await screen.findByText(/un nouveau lien vient d'être envoyé/, {}, SLOW)).toBeTruthy();

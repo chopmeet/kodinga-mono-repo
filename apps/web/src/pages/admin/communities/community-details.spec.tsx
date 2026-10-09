@@ -5,6 +5,7 @@ import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { getCommunityMembers } from '@/data/admin-community-details.data';
 import { adminCommunities } from '@/data/admin-communities.data';
 import store from '@/redux/store';
+import { must } from '@/test-utils';
 import CommunityDetails from './community-details';
 import CommunityMembersTab from './tabs/members';
 import CommunityPaymentsTab from './tabs/payments';
@@ -29,8 +30,8 @@ const renderAt = (path: string) =>
     </Provider>
   );
 
-const paid = adminCommunities.find((c) => c.pricing_type === 'paid')!;
-const free = adminCommunities.find((c) => c.pricing_type === 'free')!;
+const paid = must(adminCommunities.find((c) => c.pricing_type === 'paid'));
+const free = must(adminCommunities.find((c) => c.pricing_type === 'free'));
 
 describe('Admin community details (mock data)', () => {
   it('shows the header, the stats and the members tab by default', async () => {
@@ -42,7 +43,7 @@ describe('Admin community details (mock data)', () => {
   });
 
   it('suspends a member from the actions menu', async () => {
-    const target = getCommunityMembers(free).find((m) => m.role === 'member' && m.status === 'active')!;
+    const target = must(getCommunityMembers(free).find((m) => m.role === 'member' && m.status === 'active'));
     const { findByRole, findByText } = renderAt(`/admin/communities/${free.slug}/members`);
     const button = await findByRole('button', { name: `Actions pour ${target.name}` });
     fireEvent.pointerDown(button, { button: 0, ctrlKey: false });

@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import { getCommunityMembers } from '@/data/admin-community-details.data';
 import { getMyCommunity } from '@/data/community-space.data';
-import { renderAppAt, SLOW } from '@/test-utils';
+import { must, renderAppAt, SLOW } from '@/test-utils';
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
@@ -57,7 +57,7 @@ describe('Community space: settings', () => {
   });
 
   it('deletes the community only once its name is typed (owner)', async () => {
-    const { community } = getMyCommunity('lagos-ai-data')!;
+    const { community } = must(getMyCommunity('lagos-ai-data'));
     const { where } = renderAppAt('/c/lagos-ai-data/settings/danger');
     fireEvent.click(await screen.findByRole('button', { name: 'Supprimer' }, SLOW));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
@@ -70,7 +70,7 @@ describe('Community space: settings', () => {
   });
 
   it('transfers the ownership to an administrator only', async () => {
-    const { community } = getMyCommunity('lagos-ai-data')!;
+    const { community } = must(getMyCommunity('lagos-ai-data'));
     const admins = getCommunityMembers(community).filter((m) => m.role === 'admin' && m.status === 'active');
     renderAppAt('/c/lagos-ai-data/settings/danger');
     const select = await screen.findByLabelText('Nouveau propriétaire', {}, SLOW);

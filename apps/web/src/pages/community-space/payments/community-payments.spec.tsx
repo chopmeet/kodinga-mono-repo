@@ -3,9 +3,9 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { getCommunityPayments } from '@/data/admin-community-details.data';
 import { getCommunitySubscriptions } from '@/data/community-billing.data';
 import { getMyCommunity } from '@/data/community-space.data';
-import { renderAppAt, SLOW } from '@/test-utils';
+import { must, renderAppAt, SLOW } from '@/test-utils';
 
-const lagos = () => getMyCommunity('lagos-ai-data')!.community;
+const lagos = () => must(getMyCommunity('lagos-ai-data')).community;
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
