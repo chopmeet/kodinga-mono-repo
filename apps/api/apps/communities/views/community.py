@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from common.utils.pagination import StandardResultsSetPagination
+from common.utils.pagination import CommunityGridPagination, StandardResultsSetPagination
 from common.utils.responses import success_response, error_response
 from apps.communities.models.community import Community
 from apps.communities.selectors.community_selector import CommunitySelector
@@ -14,13 +14,15 @@ from apps.communities.serializers.community import (
     CommunityListSerializer,
 )
 from apps.communities.services.community_service import CommunityService
+from apps.memberships.models.member import CommunityMember, MembershipStatus
 
 
 class CommunityListCreateView(APIView):
     """
     Public directory of communities with search and creation of new spaces.
+    Optimized for infinite scrolling (9 per page) and 3-column grid layouts.
     """
-    pagination_class = StandardResultsSetPagination
+    pagination_class = CommunityGridPagination
 
     def get_permissions(self):
         if self.request.method == 'POST':
@@ -36,6 +38,8 @@ class CommunityListCreateView(APIView):
             OpenApiParameter(name='privacy', description="Type de confidentialité (public, private)", required=False, type=str),
             OpenApiParameter(name='pricing', description="Type de tarification (free, paid)", required=False, type=str),
             OpenApiParameter(name='is_featured', description="Communautés à la une (true/false)", required=False, type=bool),
+            OpenApiParameter(name='page', description="Numéro de la page (Infinite Scroll)", required=False, type=int),
+            OpenApiParameter(name='page_size', description="Nombre d'éléments par page (défaut: 9)", required=False, type=int),
         ],
         responses={200: CommunityListSerializer(many=True)}
     )
@@ -58,7 +62,22 @@ class CommunityListCreateView(APIView):
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = CommunityListSerializer(page, many=True, context={'request': request})
+
+        user_memberships = None
+        if request.user.is_authenticated and page:
+            user_memberships = set(
+                CommunityMember.objects.filter(
+                    user=request.user,
+                    community_id__in=[c.id for c in page],
+                    status=MembershipStatus.ACTIVE
+                ).values_list('community_id', flat=True)
+            )
+
+        serializer = CommunityListSerializer(
+            page,
+            many=True,
+            context={'request': request, 'user_memberships': user_memberships}
+        )
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
@@ -166,18 +185,3 @@ class MyCommunitiesListView(APIView):
         serializer = CommunityListSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
-
-class CategoryListView(APIView):
-    """
-    List active community categories.
-    """
-    permission_classes = [AllowAny]
-
-    @extend_schema(
-        tags=['Communities'],
-        summary="Lister les catégories thématiques",
-        responses={200: CommunityCategorySerializer(many=True)}
-    )
-    def get(self, request):
-        cats = CommunitySelector.get_categories()
-        return success_response(data=CommunityCategorySerializer(cats, many=True).data)

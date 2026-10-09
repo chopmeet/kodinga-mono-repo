@@ -5,7 +5,7 @@ from apps.media.serializers.media import MediaAssetSerializer
 from apps.posts.models.post import Post, PostType
 from apps.posts.models.reaction import PostReaction
 from apps.posts.serializers.category import PostCategorySerializer
-from apps.posts.serializers.poll import PollSerializer
+from apps.posts.serializers.poll import PollInputSerializer, PollSerializer
 
 
 class PostListSerializer(BaseModelSerializer):
@@ -59,13 +59,17 @@ class PostDetailSerializer(PostListSerializer):
 
 
 class PostCreateUpdateSerializer(serializers.ModelSerializer):
-    category_id = serializers.UUIDField(required=False, allow_null=True)
     media_ids = serializers.ListField(
         child=serializers.UUIDField(),
         required=False,
-        write_only=True
+        write_only=True,
+        help_text="Liste des identifiants des médias uploadés à joindre."
     )
-    poll = serializers.DictField(required=False, write_only=True)
+    poll = PollInputSerializer(
+        required=False,
+        write_only=True,
+        help_text="Configuration du sondage si post_type = 'poll'."
+    )
 
     class Meta:
         model = Post
@@ -73,7 +77,6 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
             'title',
             'content',
             'post_type',
-            'category_id',
             'code_snippet',
             'code_language',
             'media_ids',

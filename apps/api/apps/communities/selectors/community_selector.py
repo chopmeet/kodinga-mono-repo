@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 from django.db.models import Prefetch, Q, QuerySet
 from apps.accounts.models.user import User
@@ -7,28 +8,48 @@ from apps.communities.models.rule import CommunityRule
 from apps.memberships.models.member import CommunityMember, MembershipStatus
 
 
+def is_valid_uuid(val: str) -> bool:
+    try:
+        uuid.UUID(str(val))
+        return True
+    except (ValueError, AttributeError, TypeError):
+        return False
+
+
 class CommunitySelector:
     """
     Optimized database queries and prefetch pipelines for communities and spaces.
+    Supports resolution by both slug and UUID ID across all methods.
     """
 
     @classmethod
     def get_base_queryset(cls) -> QuerySet[Community]:
-        return Community.objects.filter(is_active=True).select_related('owner', 'category', 'settings')
+        return Community.objects.filter(is_active=True).select_related(
+            'owner', 'category', 'settings'
+        )
 
     @classmethod
-    def get_community_by_slug(cls, slug: str, user: Optional[User] = None) -> Community:
-        rules_prefetch = Prefetch('rules', queryset=CommunityRule.objects.order_by('order'))
+    def get_community_by_slug(
+        cls, identifier: str, user: Optional[User] = None
+    ) -> Community:
+        rules_prefetch = Prefetch(
+            'rules', queryset=CommunityRule.objects.order_by('order')
+        )
         qs = cls.get_base_queryset().prefetch_related(rules_prefetch)
 
-        community = qs.get(slug__iexact=slug)
+        if is_valid_uuid(identifier):
+            community = qs.get(Q(id=identifier) | Q(slug__iexact=identifier))
+        else:
+            community = qs.get(slug__iexact=identifier)
 
         # If secret community, ensure user is active member, owner, or superuser
         if community.privacy_type == CommunityPrivacy.SECRET:
             if not user or not user.is_authenticated:
                 raise Community.DoesNotExist("Communauté introuvable.")
             if not user.is_superuser and community.owner_id != user.id:
-                if not CommunityMember.objects.filter(community=community, user=user, status=MembershipStatus.ACTIVE).exists():
+                if not CommunityMember.objects.filter(
+                    community=community, user=user, status=MembershipStatus.ACTIVE
+                ).exists():
                     raise Community.DoesNotExist("Communauté introuvable.")
 
         return community
@@ -48,14 +69,19 @@ class CommunitySelector:
 
         if search_query:
             qs = qs.filter(
-                Q(name__icontains=search_query) |
-                Q(tagline__icontains=search_query) |
-                Q(description__icontains=search_query) |
-                Q(slug__icontains=search_query)
+                Q(name__icontains=search_query)
+                | Q(tagline__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(slug__icontains=search_query)
             )
 
         if category_slug:
-            qs = qs.filter(category__slug=category_slug)
+            if is_valid_uuid(category_slug):
+                qs = qs.filter(
+                    Q(category_id=category_slug) | Q(category__slug=category_slug)
+                )
+            else:
+                qs = qs.filter(category__slug=category_slug)
 
         if privacy:
             qs = qs.filter(privacy_type=privacy)
@@ -77,12 +103,30 @@ class CommunitySelector:
             return Community.objects.none()
 
         member_community_ids = CommunityMember.objects.filter(
-            user=user,
-            status=MembershipStatus.ACTIVE
+            user=user, status=MembershipStatus.ACTIVE
         ).values_list('community_id', flat=True)
 
-        return cls.get_base_queryset().filter(id__in=member_community_ids).order_by('-created_at')
+        return (
+            cls.get_base_queryset()
+            .filter(id__in=member_community_ids)
+            .order_by('-created_at')
+        )
 
     @classmethod
-    def get_categories(cls) -> QuerySet[CommunityCategory]:
-        return CommunityCategory.objects.filter(is_active=True).order_by('order', 'name')
+    def get_categories(
+        cls, include_inactive: bool = False
+    ) -> QuerySet[CommunityCategory]:
+        qs = CommunityCategory.objects.all()
+        if not include_inactive:
+            qs = qs.filter(is_active=True)
+        return qs.order_by('order', 'name')
+
+    @classmethod
+    def get_category_by_slug(cls, identifier: str) -> CommunityCategory:
+        if is_valid_uuid(identifier):
+            return CommunityCategory.objects.get(
+                Q(id=identifier) | Q(slug__iexact=identifier)
+            )
+        return CommunityCategory.objects.get(slug__iexact=identifier)
+
+

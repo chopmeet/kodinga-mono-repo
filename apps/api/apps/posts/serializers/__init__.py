@@ -4,6 +4,7 @@ from apps.posts.serializers.comment import (
     CreateCommentRequestSerializer,
 )
 from apps.posts.serializers.poll import (
+    PollInputSerializer,
     PollOptionSerializer,
     PollSerializer,
     VotePollRequestSerializer,
@@ -20,6 +21,7 @@ __all__ = [
     'ToggleReactionRequestSerializer',
     'PollOptionSerializer',
     'PollSerializer',
+    'PollInputSerializer',
     'VotePollRequestSerializer',
     'CommentSerializer',
     'CreateCommentRequestSerializer',

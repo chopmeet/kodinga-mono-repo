@@ -49,5 +49,31 @@ class PollSerializer(BaseModelSerializer):
 class VotePollRequestSerializer(serializers.Serializer):
     option_ids = serializers.ListField(
         child=serializers.UUIDField(),
-        min_length=1
+        min_length=1,
+        help_text="Identifiants des options sélectionnées."
+    )
+
+
+class PollInputSerializer(serializers.Serializer):
+    question = serializers.CharField(
+        max_length=255,
+        required=False,
+        help_text="Question du sondage (par défaut le titre du post)."
+    )
+    options = serializers.ListField(
+        child=serializers.CharField(max_length=255),
+        min_length=2,
+        help_text="Liste des choix possibles (au moins 2 options requises)."
+    )
+    is_multiple_choice = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Autorise les votes multiples si True."
+    )
+    duration_days = serializers.IntegerField(
+        required=False,
+        default=7,
+        min_value=1,
+        max_value=30,
+        help_text="Durée de validité du sondage en jours (1 à 30 jours, défaut 7)."
     )

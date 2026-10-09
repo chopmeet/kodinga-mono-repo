@@ -56,15 +56,17 @@ class Community(BaseModel):
     )
 
     # Visuals & Branding
-    avatar_url = models.URLField(max_length=500, blank=True)
-    banner_url = models.URLField(max_length=500, blank=True)
+    avatar_url = models.URLField(max_length=500, blank=True, default="")
+    banner_url = models.URLField(max_length=500, blank=True, default="")
     brand_color = models.CharField(max_length=10, default='#3B82F6')
 
     # Socials & External Links
-    website_url = models.URLField(max_length=300, blank=True)
-    github_url = models.URLField(max_length=300, blank=True)
-    discord_url = models.URLField(max_length=300, blank=True)
-    twitter_url = models.URLField(max_length=300, blank=True)
+    website_url = models.URLField(max_length=300, blank=True, default="")
+    github_url = models.URLField(max_length=300, blank=True, default="")
+    discord_url = models.URLField(max_length=300, blank=True, default="")
+    twitter_url = models.URLField(max_length=300, blank=True, default="")
+    whatsapp_url = models.URLField(max_length=300, blank=True, default="")
+    telegram_url = models.URLField(max_length=300, blank=True, default="")
 
     # Flags & Badges
     is_verified = models.BooleanField(default=False, db_index=True)

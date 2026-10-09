@@ -2,6 +2,8 @@ from rest_framework import serializers
 from common.serializers.base import BaseModelSerializer
 from apps.accounts.serializers.user import UserSerializer
 from apps.communities.models.community import Community, CommunityPrivacy, CommunityPricing
+from apps.communities.models.rule import CommunityRule
+from apps.communities.models.settings import CommunitySettings
 from apps.communities.serializers.category import CommunityCategorySerializer
 from apps.communities.serializers.rule import CommunityRuleSerializer
 from apps.communities.serializers.settings import CommunitySettingsSerializer
@@ -14,6 +16,7 @@ class CommunityListSerializer(BaseModelSerializer):
     """
     category = CommunityCategorySerializer(read_only=True)
     owner = UserSerializer(read_only=True)
+    is_member = serializers.SerializerMethodField()
 
     class Meta:
         model = Community
@@ -35,9 +38,25 @@ class CommunityListSerializer(BaseModelSerializer):
             'posts_count',
             'courses_count',
             'events_count',
+            'is_member',
             'created_at',
         ]
         read_only_fields = fields
+
+    def get_is_member(self, obj) -> bool:
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        if obj.owner_id == request.user.id:
+            return True
+        user_memberships = self.context.get('user_memberships')
+        if user_memberships is not None:
+            return obj.id in user_memberships
+        return CommunityMember.objects.filter(
+            community=obj,
+            user=request.user,
+            status=MembershipStatus.ACTIVE
+        ).exists()
 
 
 class CommunityDetailSerializer(BaseModelSerializer):
@@ -65,6 +84,8 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'github_url',
             'discord_url',
             'twitter_url',
+            'whatsapp_url',
+            'telegram_url',
             'category',
             'owner',
             'privacy_type',
@@ -116,14 +137,66 @@ class CommunityDetailSerializer(BaseModelSerializer):
         }
 
 
+class CommunityRuleInputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityRule
+        fields = ['title', 'description', 'order']
+        extra_kwargs = {
+            'description': {'required': False, 'allow_blank': True},
+            'order': {'required': False},
+        }
+
+
+class CommunitySettingsInputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunitySettings
+        fields = [
+            'allow_member_invites',
+            'require_approval_to_join',
+            'welcome_message',
+            'default_post_permission',
+            'enabled_features',
+        ]
+        extra_kwargs = {
+            'allow_member_invites': {'required': False},
+            'require_approval_to_join': {'required': False},
+            'welcome_message': {'required': False, 'allow_blank': True},
+            'default_post_permission': {'required': False},
+            'enabled_features': {'required': False},
+        }
+
+
 class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
     category_id = serializers.UUIDField(required=False, allow_null=True)
-    rules = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        write_only=True
+    avatar_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
     )
-    settings = serializers.DictField(required=False, write_only=True)
+    banner_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    website_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    github_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    discord_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    twitter_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    whatsapp_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    telegram_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    tagline = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    brand_color = serializers.CharField(required=False, allow_blank=True)
+    rules = CommunityRuleInputSerializer(many=True, required=False, write_only=True)
+    settings = CommunitySettingsInputSerializer(required=False, write_only=True)
 
     class Meta:
         model = Community
@@ -142,6 +215,30 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
             'github_url',
             'discord_url',
             'twitter_url',
+            'whatsapp_url',
+            'telegram_url',
             'rules',
             'settings',
         ]
+
+    def validate(self, attrs):
+        url_fields = [
+            'avatar_url',
+            'banner_url',
+            'website_url',
+            'github_url',
+            'discord_url',
+            'twitter_url',
+            'whatsapp_url',
+            'telegram_url',
+        ]
+        for field in url_fields:
+            if field in attrs:
+                val = attrs[field]
+                if val is None or (isinstance(val, str) and not val.strip()):
+                    attrs[field] = ""
+                elif isinstance(val, str):
+                    attrs[field] = val.strip()
+        return super().validate(attrs)
+
+
