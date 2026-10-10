@@ -29,4 +29,4 @@ function processAppUrl() {
 export const ApiBaseUrl = processApiUrl();
 export const AppBaseUrl = processAppUrl();
 
-export const isDev: boolean = currentEnv === 'demo'
+export const isDev: boolean = currentEnv !== 'demo'
