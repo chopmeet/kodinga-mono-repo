@@ -43,6 +43,11 @@ jobs:
 
       - run: uv sync --directory apps/api --locked
 
+      #
+      - name: Check that migrations are committed
+        working-directory: apps/api
+        run: uv run python manage.py makemigrations --check --dry-run
+
       - run: npx nx run-many -t lint test build
 
   # Images + deploy once the checks pass. Pull requests only build the images (no push, no deploy).

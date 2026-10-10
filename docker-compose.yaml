@@ -1,7 +1,9 @@
 # Production-like stack: http://localhost
 #   docker compose up --build
-# Dev only needs the database:
-#   docker compose up -d db
+# Dev only needs the database (the api runs with `npx nx serve api`):
+#   docker compose -p kodinga up -d kodingadb
+name: kodinga
+
 services:
   web:
     build:
@@ -22,19 +24,20 @@ services:
       DEBUG: 'False'
       ALLOWED_HOSTS: localhost,127.0.0.1
       CSRF_TRUSTED_ORIGINS: http://localhost
-      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@db:5432/${POSTGRES_DB:-app}
+      DATABASE_URL: postgres://${POSTGRES_USER:-kodinga}:${POSTGRES_PASSWORD:-kodinga}@kodingadb:5432/${POSTGRES_DB:-kodinga}
     depends_on:
-      db:
+      kodingadb:
         condition: service_healthy
 
-  db:
+  kodingadb:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-kodinga}
+      POSTGRES_USER: ${POSTGRES_USER:-kodinga}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kodinga}
     ports:
-      - '5432:5432'
+      # Local machine only: the dev api reaches it on localhost:5432
+      - '127.0.0.1:5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
