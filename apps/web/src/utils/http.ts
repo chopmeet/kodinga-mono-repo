@@ -1,12 +1,12 @@
 type ENV = 'dev' | 'prod' | 'demo';
 
-export const currentEnv: ENV = 'demo';
+export const currentEnv: ENV = 'dev';
 
 const env: ENV = currentEnv;
 
 export const Env = env;
 
-const API_DEV_URL = 'http://127.0.0.1:5000/api/';
+const API_DEV_URL = 'http://127.0.0.1:8000/api/v1/';
 const API_DEMO_URL = 'https://api.recette.kodinga.com/api/v1/';
 const API_PROD_URL = 'https://api.kodinga.com/api/v1/';
 
@@ -29,4 +29,4 @@ function processAppUrl() {
 export const ApiBaseUrl = processApiUrl();
 export const AppBaseUrl = processAppUrl();
 
-export const isDev: boolean = currentEnv !== 'demo'
+export const isDev: boolean = currentEnv !== 'dev'

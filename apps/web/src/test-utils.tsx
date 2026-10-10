@@ -25,3 +25,23 @@ export function must<T>(value: T | null | undefined, what = 'test data'): T {
   if (value == null) throw new Error(`Missing ${what}`);
   return value;
 }
+
+type Call = { url: string; method: string; body: unknown };
+
+/** Stubs fetch with one answer per api path; returns the calls made */
+export function stubApi(routes: Record<string, { status?: number; body: unknown }>) {
+  const calls: Call[] = [];
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const request = input as Request;
+    const url = request.url;
+    const text = request.method === 'GET' ? '' : await request.text();
+    calls.push({ url, method: request.method, body: text ? JSON.parse(text) : null });
+    const path = Object.keys(routes).find((p) => new URL(url).pathname.endsWith(p));
+    const answer = path ? routes[path] : { status: 404, body: { success: false, code: 'not_found', message: 'Not found' } };
+    return new Response(JSON.stringify(answer.body), {
+      status: answer.status ?? 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+  return calls;
+}
