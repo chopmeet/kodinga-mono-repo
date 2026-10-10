@@ -1,6 +1,6 @@
 type ENV = 'dev' | 'prod' | 'demo';
 
-export const currentEnv: ENV = 'dev';
+export const currentEnv: ENV = 'demo';
 
 const env: ENV = currentEnv;
 
@@ -29,4 +29,4 @@ function processAppUrl() {
 export const ApiBaseUrl = processApiUrl();
 export const AppBaseUrl = processAppUrl();
 
-export const isDev: boolean = currentEnv === 'dev'
+export const isDev: boolean = currentEnv === 'demo'
