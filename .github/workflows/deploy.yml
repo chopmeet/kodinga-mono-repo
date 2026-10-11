@@ -21,7 +21,7 @@ on:
         required: false
         default: ''
       api-url:
-        description: Public origin of the api (e.g. https://api.recette.kodinga.com), used by the health check. Must match the URLs in apps/web/src/utils/http.ts
+        description: Public origin of the api (e.g. https://api.kodinga.fassane.dev), used by the health check. Must match the URLs in apps/web/src/utils/http.ts
         type: string
         required: false
         default: ''
