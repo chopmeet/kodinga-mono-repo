@@ -8,6 +8,8 @@ from apps.communities.models.settings import CommunitySettings
 class CommunityRuleInline(admin.TabularInline):
     model = CommunityRule
     extra = 1
+    #essential and default rules
+    
 
 
 class CommunitySettingsInline(admin.StackedInline):
