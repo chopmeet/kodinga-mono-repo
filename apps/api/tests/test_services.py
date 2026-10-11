@@ -1,5 +1,10 @@
+from unittest.mock import MagicMock
+
 import pytest
+import resend
+from django.conf import settings
 from django.core import mail
+from django.core.mail import EmailMultiAlternatives
 
 from apps.accounts.models.token import AuthToken
 from apps.accounts.models.user import User
@@ -8,7 +13,7 @@ from apps.accounts.services.password import PasswordChangeService, PasswordReset
 from apps.accounts.services.registration import RegistrationService
 from apps.accounts.services.verification import EmailVerificationService
 from common.exceptions.handler import ApplicationError
-from common.services.email_service import EmailService
+from common.services.email_service import EmailService, ResendEmailBackend
 from common.utils.tokens import hash_token
 
 
@@ -116,16 +121,11 @@ class TestAuthServices:
         assert "Test Subject" in mail.outbox[0].subject
 
     def test_email_service_resend_dispatch(self, monkeypatch):
-        from unittest.mock import MagicMock
-        import resend
-        from common.services.email_service import ResendEmailBackend, get_formatted_sender
-
         # Mock resend.Emails.send
         mock_send = MagicMock(return_value={"id": "resend_test_123"})
         monkeypatch.setattr(resend.Emails, "send", mock_send)
 
         # Force non-testing branch simulation
-        from django.conf import settings
         monkeypatch.setattr(settings, "IS_TESTING", False)
         monkeypatch.setattr(settings, "RESEND_API_KEY", "re_mock_test_key")
         monkeypatch.setattr(settings, "MAIL_FROM", "no-reply@fassane.dev")
@@ -148,11 +148,6 @@ class TestAuthServices:
         assert "text" in call_args
 
     def test_resend_email_backend(self, monkeypatch):
-        from unittest.mock import MagicMock
-        from django.core.mail import EmailMultiAlternatives
-        import resend
-        from common.services.email_service import ResendEmailBackend
-
         mock_send = MagicMock(return_value={"id": "backend_resend_456"})
         monkeypatch.setattr(resend.Emails, "send", mock_send)
 

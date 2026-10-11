@@ -231,7 +231,7 @@ class EmailService:
                 print(f"[RESEND SUCCESS] API Response: {response}", flush=True)
                 print(f"==================================================\n", flush=True)
                 logger.info(f"Email '{subject}' successfully dispatched via Resend to {recipients} (id: {email_id})")
-                return response or True
+                return True
             except RateLimitError as exc:
                 print(f"[RESEND RATE LIMIT ERROR]: {exc}\n==================================================\n")
                 logger.error(f"Resend rate limit exceeded for '{subject}' to {recipients}: {exc}")
