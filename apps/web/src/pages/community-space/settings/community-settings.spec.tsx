@@ -1,11 +1,24 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import { getCommunityMembers } from '@/data/admin-community-details.data';
 import { getMyCommunity } from '@/data/community-space.data';
-import { must, renderAppAt, SLOW } from '@/test-utils';
+import store from '@/redux/store';
+import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
+import { must, renderAppAt, SLOW, stubApi } from '@/test-utils';
+import { CommunityApi } from '@/utils/api/community/community.api';
+import type { User } from '@/utils/api/user/user.type';
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  act(() => {
+    store.dispatch(onLogout());
+    store.dispatch(CommunityApi.util.resetApiState());
+  });
+});
 
 describe('Community space: settings', () => {
   it('lets an admin edit the settings, without the danger zone', async () => {
@@ -58,6 +71,11 @@ describe('Community space: settings', () => {
 
   it('deletes the community only once its name is typed (owner)', async () => {
     const { community } = must(getMyCommunity('lagos-ai-data'));
+    // Back on /c (signed-in page): the user has no other community left
+    act(() => {
+      store.dispatch(onSetUserToken({ user: { id: 'u1' } as User, token: 'access', refresh: 'refresh' }));
+    });
+    stubApi({ 'communities/my/': { body: { success: true, pagination: { count: 0 }, results: [] } } });
     const { where } = renderAppAt('/c/lagos-ai-data/settings/danger');
     fireEvent.click(await screen.findByRole('button', { name: 'Supprimer' }, SLOW));
     const dialog = await screen.findByRole('dialog', {}, SLOW);

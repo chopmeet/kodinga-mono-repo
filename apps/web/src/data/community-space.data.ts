@@ -1,13 +1,13 @@
 // Mock data for the community space (/c/:slug), seen by the signed-in user.
 // With the api: GET communities/my/ (+ user_membership.role of each community).
-import type { CommunityListItem } from '@/utils/api/community/community.type';
+import type { CommunityListItem, ManagedCommunity, ManagedRole } from '@/utils/api/community/community.type';
 import { getCommunityMembers, getCommunityPayments, getCommunityPosts } from './admin-community-details.data';
 import { adminCommunities } from './admin-communities.data';
 
 /** Roles that open the community space (plain members do not manage anything) */
-export type SpaceRole = 'owner' | 'admin' | 'moderator';
+export type SpaceRole = ManagedRole;
 
-export type MyCommunity = { community: CommunityListItem; role: SpaceRole };
+export type MyCommunity = ManagedCommunity;
 
 // The mock signed-in user manages these communities, with different roles to try the menus
 const MY_MEMBERSHIPS: { slug: string; role: SpaceRole }[] = [
