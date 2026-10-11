@@ -74,3 +74,9 @@ export type CommunityCreateData = {
   brand_color?: string;
   settings?: { require_approval_to_join?: boolean };
 };
+
+/** Roles that manage a community (plain members do not): they open /c/<slug> */
+export type ManagedRole = Exclude<CommunityRole, 'member'>;
+
+/** A community the signed-in user manages, with their role in it */
+export type ManagedCommunity = { community: CommunityListItem; role: ManagedRole };
