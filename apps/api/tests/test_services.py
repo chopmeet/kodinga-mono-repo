@@ -114,3 +114,61 @@ class TestAuthServices:
         )
         assert len(mail.outbox) > 0
         assert "Test Subject" in mail.outbox[0].subject
+
+    def test_email_service_resend_dispatch(self, monkeypatch):
+        from unittest.mock import MagicMock
+        import resend
+        from common.services.email_service import ResendEmailBackend, get_formatted_sender
+
+        # Mock resend.Emails.send
+        mock_send = MagicMock(return_value={"id": "resend_test_123"})
+        monkeypatch.setattr(resend.Emails, "send", mock_send)
+
+        # Force non-testing branch simulation
+        from django.conf import settings
+        monkeypatch.setattr(settings, "IS_TESTING", False)
+        monkeypatch.setattr(settings, "RESEND_API_KEY", "re_mock_test_key")
+        monkeypatch.setattr(settings, "MAIL_FROM", "no-reply@fassane.dev")
+
+        sent = EmailService.send_mail(
+            to_email="developer@example.com",
+            subject="Bienvenue chez Kodinga",
+            template_name="welcome",
+            context={"first_name": "Dev", "username": "dev"},
+            reply_to="support@kodinga.com",
+        )
+        assert sent is True
+        assert mock_send.called
+        call_args = mock_send.call_args[0][0]
+        assert call_args["to"] == ["developer@example.com"]
+        assert "Bienvenue chez Kodinga" in call_args["subject"]
+        assert call_args["from"] == "Kodinga <no-reply@fassane.dev>"
+        assert call_args["reply_to"] == ["support@kodinga.com"]
+        assert "html" in call_args
+        assert "text" in call_args
+
+    def test_resend_email_backend(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from django.core.mail import EmailMultiAlternatives
+        import resend
+        from common.services.email_service import ResendEmailBackend
+
+        mock_send = MagicMock(return_value={"id": "backend_resend_456"})
+        monkeypatch.setattr(resend.Emails, "send", mock_send)
+
+        backend = ResendEmailBackend(api_key="re_backend_key")
+        msg = EmailMultiAlternatives(
+            subject="Sujet Backend",
+            body="Corps texte",
+            from_email="no-reply@fassane.dev",
+            to=["recipient@example.com"],
+        )
+        msg.attach_alternative("<h1>Corps HTML</h1>", "text/html")
+        count = backend.send_messages([msg])
+
+        assert count == 1
+        call_params = mock_send.call_args[0][0]
+        assert call_params["subject"] == "Sujet Backend"
+        assert call_params["to"] == ["recipient@example.com"]
+        assert call_params["html"] == "<h1>Corps HTML</h1>"
+

@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from django.conf import settings
 from django.db import transaction
@@ -10,6 +11,8 @@ from apps.accounts.models.user import User
 from apps.accounts.services.security import AccountSecurityService
 from apps.accounts.services.session import SessionService
 
+logger = logging.getLogger('kodinga.auth')
+
 
 class PasswordResetService:
     """
@@ -17,13 +20,23 @@ class PasswordResetService:
     """
 
     @classmethod
-    def request_password_reset(cls, email: str, request=None) -> None:
-        normalized_email = email.strip().lower()
-        user = User.objects.filter(email=normalized_email, is_active=True).first()
+    def request_password_reset(cls, email: str, request=None) -> dict:
+        identifier = email.strip()
+        print(f"\n==================================================", flush=True)
+        print(f"[PASSWORD RESET] Requete recue pour : '{identifier}'", flush=True)
+
+        user = (
+            User.objects.filter(email__iexact=identifier, is_active=True).first()
+            or User.objects.filter(username__iexact=identifier, is_active=True).first()
+        )
 
         # Always return generic success to prevent account enumeration
         if not user:
-            return
+            logger.info(f"Password reset requested for non-existent or inactive identifier: {identifier}")
+            print(f"[PASSWORD RESET NOTICE] Aucun compte actif trouve avec l'identifiant: '{identifier}'.", flush=True)
+            print(f"[RESEND] AUCUN EMAIL ENVOYE (Compte inexistant dans la base de donnees).", flush=True)
+            print(f"==================================================\n", flush=True)
+            return {"status": "not_found", "email": identifier}
 
         with transaction.atomic():
             # Invalidate older pending password reset tokens
@@ -59,19 +72,41 @@ class PasswordResetService:
                 'expires_in_minutes': 60,
             }
 
-            def queue_reset_email():
-                try:
-                    EmailService.send_mail(
-                        to_email=user.email,
-                        subject=f"Réinitialisation de votre mot de passe - {getattr(settings, 'APP_NAME', 'Kodinga')}",
-                        template_name='password_reset',
-                        context=email_context,
-                        fail_silently=True
-                    )
-                except Exception:
-                    pass
+            print(f"[DEBUG PASSWORD RESET LINK for {user.email}]: {reset_url}", flush=True)
 
-            transaction.on_commit(queue_reset_email)
+        # Dispatch email directly for immediate response and console feedback
+        dispatch_result = None
+        try:
+            dispatch_result = EmailService.send_mail(
+                to_email=user.email,
+                subject=f"Réinitialisation de votre mot de passe - {getattr(settings, 'APP_NAME', 'Kodinga')}",
+                template_name='password_reset',
+                context=email_context,
+                fail_silently=False
+            )
+            AccountSecurityService.log_event(
+                user=user,
+                event_type='email_dispatch_success',
+                request=request,
+                metadata={'purpose': 'password_reset', 'email': user.email}
+            )
+        except Exception as exc:
+            logger.error(f"Failed to dispatch password reset email to {user.email}: {exc}")
+            print(f"[PASSWORD RESET ERROR]: {exc}", flush=True)
+            AccountSecurityService.log_event(
+                user=user,
+                event_type='email_dispatch_failed',
+                request=request,
+                metadata={'purpose': 'password_reset', 'email': user.email, 'error': str(exc)}
+            )
+
+        resend_id = dispatch_result.get("id") if isinstance(dispatch_result, dict) else None
+        return {
+            "status": "sent",
+            "email": user.email,
+            "resend_id": resend_id,
+            "reset_link": reset_url,
+        }
 
     @classmethod
     def confirm_password_reset(cls, token_str: str, new_password: str, request=None) -> User:
@@ -116,10 +151,10 @@ class PasswordResetService:
                         subject=f"Votre mot de passe {getattr(settings, 'APP_NAME', 'Kodinga')} a été modifié",
                         template_name='password_changed',
                         context=email_context,
-                        fail_silently=True
+                        fail_silently=False
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.error(f"Failed to dispatch password changed email to {user.email}: {exc}")
 
             transaction.on_commit(queue_confirmation)
 
@@ -156,9 +191,9 @@ class PasswordChangeService:
                         subject=f"Confirmation de modification de mot de passe - {getattr(settings, 'APP_NAME', 'Kodinga')}",
                         template_name='password_changed',
                         context=email_context,
-                        fail_silently=True
+                        fail_silently=False
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.error(f"Failed to dispatch password confirmation email to {user.email}: {exc}")
 
             transaction.on_commit(queue_confirmation)

@@ -84,6 +84,9 @@ class RegistrationService:
                 'expires_in_minutes': 1440,
             }
 
+            if getattr(settings, 'DEBUG', False):
+                print(f"\n[DEBUG EMAIL VERIFICATION LINK for {user.email}]: {verification_url}\n")
+
             def queue_email():
                 try:
                     sent = EmailService.send_mail(

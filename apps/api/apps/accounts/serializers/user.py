@@ -7,6 +7,14 @@ from apps.accounts.models.consent import UserConsent
 class UserSerializer(BaseModelSerializer):
     is_email_verified = serializers.BooleanField(read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
+    status = serializers.SerializerMethodField(read_only=True)
+
+    def get_status(self, obj) -> str:
+        if not obj.is_active:
+            return "inactive"
+        if not obj.is_email_verified:
+            return "unverified"
+        return "active"
 
     class Meta:
         model = User
@@ -17,6 +25,7 @@ class UserSerializer(BaseModelSerializer):
             'first_name',
             'last_name',
             'full_name',
+            'status',
             'is_active',
             'is_email_verified',
             'preferred_language',
@@ -30,6 +39,7 @@ class UserSerializer(BaseModelSerializer):
             'id',
             'email',
             'username',
+            'status',
             'is_active',
             'is_email_verified',
             'date_joined',
