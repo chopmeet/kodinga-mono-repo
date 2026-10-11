@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -212,9 +215,6 @@ class TestAuthAPIEndpoints:
         assert "token" in response.data["data"]
 
     def test_email_verification_get_endpoint(self, api_client, user):
-        from datetime import timedelta
-        from django.utils import timezone
-
         raw_tok = "test_get_token_abc123"
         AuthToken.objects.create(
             user=user,
@@ -231,6 +231,8 @@ class TestAuthAPIEndpoints:
     def test_password_reset_nonexistent_email_creates_no_token(self, api_client):
         initial_token_count = AuthToken.objects.count()
         req_url = reverse("accounts:password_reset_request")
-        response = api_client.post(req_url, {"email": "completely_unknown@kodinga.com"}, format="json")
+        response = api_client.post(
+            req_url, {"email": "completely_unknown@kodinga.com"}, format="json"
+        )
         assert response.status_code == status.HTTP_200_OK
         assert AuthToken.objects.count() == initial_token_count
