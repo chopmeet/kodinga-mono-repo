@@ -198,3 +198,39 @@ class TestAuthAPIEndpoints:
         assert response.status_code == status.HTTP_200_OK
         assert "url" in response.data["data"]
         assert "accounts.google.com" in response.data["data"]["url"]
+
+    def test_login_with_username_endpoint(self, api_client, user):
+        url = reverse("accounts:login")
+        payload = {
+            "username": user.username,
+            "password": "TestPassword123!",
+        }
+        response = api_client.post(url, payload, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["success"] is True
+        assert "access" in response.data["data"]
+        assert "token" in response.data["data"]
+
+    def test_email_verification_get_endpoint(self, api_client, user):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        raw_tok = "test_get_token_abc123"
+        AuthToken.objects.create(
+            user=user,
+            purpose=AuthToken.PURPOSE_EMAIL_VERIFICATION,
+            token_hash=hash_token(raw_tok),
+            expires_at=timezone.now() + timedelta(hours=24),
+        )
+        url = f"{reverse('accounts:verify_email')}?token={raw_tok}"
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        user.refresh_from_db()
+        assert user.is_email_verified is True
+
+    def test_password_reset_nonexistent_email_creates_no_token(self, api_client):
+        initial_token_count = AuthToken.objects.count()
+        req_url = reverse("accounts:password_reset_request")
+        response = api_client.post(req_url, {"email": "completely_unknown@kodinga.com"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert AuthToken.objects.count() == initial_token_count

@@ -176,8 +176,8 @@ REST_FRAMEWORK = {
 
 # SimpleJWT Configuration
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=env.int('JWT_ACCESS_MINUTES', default=15)),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=env.int('JWT_REFRESH_DAYS', default=7)),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=env.int('JWT_ACCESS_DAYS', default=36500)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=env.int('JWT_REFRESH_DAYS', default=36500)),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
@@ -248,6 +248,11 @@ FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 BACKEND_URL = env('BACKEND_URL', default='http://localhost:8000')
 SUPPORT_EMAIL = env('SUPPORT_EMAIL', default='support@kodinga.com')
 
+# Resend & Transactional Email Configuration
+RESEND_API_KEY = env('RESEND_API_KEY', default='')
+MAIL_FROM = env('MAIL_FROM', default=env('DEFAULT_FROM_EMAIL', default='Kodinga <no-reply@kodinga.com>'))
+DEFAULT_FROM_EMAIL = MAIL_FROM
+
 # Testing overrides (fast hashers, locmem email backend)
 import sys
 IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in arg for arg in sys.argv)
@@ -256,6 +261,13 @@ if IS_TESTING:
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+elif RESEND_API_KEY:
+    # Prioritize Resend backend when RESEND_API_KEY is configured
+    configured_backend = env('EMAIL_BACKEND', default='common.services.email_service.ResendEmailBackend')
+    if configured_backend == 'django.core.mail.backends.smtp.EmailBackend':
+        EMAIL_BACKEND = 'common.services.email_service.ResendEmailBackend'
+    else:
+        EMAIL_BACKEND = configured_backend
 else:
     EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend' if not DEBUG else 'django.core.mail.backends.console.EmailBackend')
 
@@ -265,7 +277,6 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Kodinga <no-reply@kodinga.com>')
 EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=20)
 
 # Celery & Redis Configuration

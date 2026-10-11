@@ -117,6 +117,9 @@ class EmailVerificationService:
                 'expires_in_minutes': 1440,
             }
 
+            if getattr(settings, 'DEBUG', False):
+                print(f"\n[DEBUG RESEND VERIFICATION LINK for {user.email}]: {verification_url}\n")
+
             def queue_resend():
                 try:
                     sent = EmailService.send_mail(

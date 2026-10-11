@@ -42,27 +42,54 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.CharField(required=True, help_text="Email address or username")
+    email = serializers.CharField(required=False, allow_blank=True, help_text="Email address or username")
+    username = serializers.CharField(required=False, allow_blank=True, help_text="Username or email address")
+    identifier = serializers.CharField(required=False, allow_blank=True, help_text="Email address or username")
     password = serializers.CharField(write_only=True, required=True)
     device_name = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        login_id = attrs.get('email') or attrs.get('username') or attrs.get('identifier')
+        if not login_id or not login_id.strip():
+            raise serializers.ValidationError({"email": "Email address or username is required."})
+        attrs['email'] = login_id.strip()
+        return attrs
 
 
 class EmailVerificationSerializer(serializers.Serializer):
     token = serializers.CharField(required=True, min_length=10)
 
+    def validate_token(self, value):
+        return value.strip()
+
 
 class ResendVerificationSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.CharField(required=True)
+
+    def validate_email(self, value):
+        cleaned = value.strip().lower()
+        if not cleaned:
+            raise serializers.ValidationError("Email is required.")
+        return cleaned
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.CharField(required=True, help_text="Email address or username")
+
+    def validate_email(self, value):
+        cleaned = value.strip().lower()
+        if not cleaned:
+            raise serializers.ValidationError("Email or username is required.")
+        return cleaned
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     token = serializers.CharField(required=True, min_length=10)
     new_password = serializers.CharField(write_only=True, required=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True, required=True, min_length=8)
+
+    def validate_token(self, value):
+        return value.strip()
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['confirm_password']:

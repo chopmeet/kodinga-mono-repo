@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import success_response, error_response
@@ -101,7 +101,7 @@ class CommunityMemberListView(APIView):
     """
     List members of a community with filters and search.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(

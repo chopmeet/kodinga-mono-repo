@@ -87,6 +87,8 @@ class LoginView(APIView):
             data={
                 'access': result['access'],
                 'refresh': result['refresh'],
+                'token': result['access'],
+                'status': user_data.get('status', 'active'),
                 'session_id': result['session_id'],
                 'user': user_data,
             },
@@ -101,7 +103,7 @@ class EmailVerificationView(APIView):
     @extend_schema(
         tags=['Authentication'],
         summary='Verify account email address',
-        description='Validates a single-use token and marks the associated user email as verified.',
+        description='Validates a single-use token and marks the associated user email as verified (via GET query param or POST payload).',
         request=EmailVerificationSerializer,
         responses={
             200: OpenApiResponse(response=UserSerializer, description='Email verified successfully'),
@@ -113,6 +115,22 @@ class EmailVerificationView(APIView):
         serializer.is_valid(raise_exception=True)
         user = EmailVerificationService.verify_email(
             token_str=serializer.validated_data['token'],
+            request=request
+        )
+        return success_response(
+            data=UserSerializer(user).data,
+            message="Email address verified successfully."
+        )
+
+    def get(self, request):
+        token_str = request.query_params.get('token', '').strip()
+        if not token_str:
+            serializer = self.serializer_class(data=request.query_params)
+            serializer.is_valid(raise_exception=True)
+            token_str = serializer.validated_data['token']
+
+        user = EmailVerificationService.verify_email(
+            token_str=token_str,
             request=request
         )
         return success_response(
@@ -162,11 +180,14 @@ class PasswordResetRequestView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        PasswordResetService.request_password_reset(
+        result = PasswordResetService.request_password_reset(
             email=serializer.validated_data['email'],
             request=request
         )
+        from django.conf import settings
+        debug_data = result if getattr(settings, 'DEBUG', False) else None
         return success_response(
+            data=debug_data,
             message="If an account with this email exists, password reset instructions have been sent."
         )
 

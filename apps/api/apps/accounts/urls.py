@@ -13,7 +13,7 @@ from apps.accounts.views.auth import (
 )
 from apps.accounts.views.oauth import OAuthCallbackView, OAuthStartView
 from apps.accounts.views.session import UserSessionDetailView, UserSessionListView
-from apps.accounts.views.user import UserConsentView, UserProfileMeView
+from apps.accounts.views.user import UserConsentView, UserListView, UserProfileMeView
 
 app_name = 'accounts'
 
@@ -38,7 +38,8 @@ urlpatterns = [
     path('auth/<str:provider>/start/', OAuthStartView.as_view(), name='oauth_start'),
     path('auth/<str:provider>/callback/', OAuthCallbackView.as_view(), name='oauth_callback'),
     
-    # User Profile & Consents
+    # Users & Profiles
+    path('users/', UserListView.as_view(), name='user_list'),
     path('users/me/', UserProfileMeView.as_view(), name='user_me'),
     path('users/me/consents/', UserConsentView.as_view(), name='user_consents'),
 ]
