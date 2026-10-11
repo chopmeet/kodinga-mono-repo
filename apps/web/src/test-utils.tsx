@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { vi } from 'vitest';
 
 import { Toaster } from '@kodinga-mono-repo/ui';
 import store from '@/redux/store';

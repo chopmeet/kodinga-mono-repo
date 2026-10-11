@@ -47,3 +47,30 @@ export type CommunityListQuery = Partial<{
   page: number;
   page_size: number;
 }>;
+
+export type CommunityRole = 'owner' | 'admin' | 'moderator' | 'member';
+
+/** user_membership of the detail serializer (role of the signed-in user in this community) */
+export type CommunityMembership = {
+  is_member: boolean;
+  role: CommunityRole | null;
+  status: string | null;
+};
+
+/** CommunityDetailSerializer (GET communities/<slug>/, and the 201 of POST communities/) */
+export type CommunityDetail = CommunityListItem & {
+  description: string;
+  user_membership: CommunityMembership;
+};
+
+/** CommunityCreateUpdateSerializer: the slug is generated from the name when omitted */
+export type CommunityCreateData = {
+  name: string;
+  slug?: string;
+  tagline?: string;
+  category_id?: string | null;
+  privacy_type: CommunityPrivacy;
+  pricing_type: CommunityPricing;
+  brand_color?: string;
+  settings?: { require_approval_to_join?: boolean };
+};

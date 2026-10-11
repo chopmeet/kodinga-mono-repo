@@ -3,7 +3,13 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { ApiBaseUrl } from '@/utils/http';
 import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
 import { prepareHeaders } from '../user/user.api';
-import type { CommunityCategory, CommunityListItem, CommunityListQuery } from './community.type';
+import type {
+  CommunityCategory,
+  CommunityCreateData,
+  CommunityDetail,
+  CommunityListItem,
+  CommunityListQuery,
+} from './community.type';
 
 /** Drops empty filters so the api does not receive `?q=&category=` */
 const cleanParams = (query: CommunityListQuery) =>
@@ -23,6 +29,17 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityCategory[]>,
       providesTags: ['categories'],
     }),
+    getCommunity: builder.query<CommunityDetail, string>({
+      query: (slug) => `communities/${slug}/`,
+      transformResponse: unwrap<CommunityDetail>,
+      providesTags: (_result, _error, slug) => [{ type: 'communities', id: slug }],
+    }),
+    // Signed-in users only; the api makes the creator the owner (active membership)
+    createCommunity: builder.mutation<CommunityDetail, CommunityCreateData>({
+      query: (body) => ({ url: 'communities/', method: 'POST', body }),
+      transformResponse: unwrap<CommunityDetail>,
+      invalidatesTags: ['communities'],
+    }),
     // The api archives (is_active = false): owner or superuser only
     archiveCommunity: builder.mutation<ApiSuccess<undefined>, string>({
       query: (slug) => ({ url: `communities/${slug}/`, method: 'DELETE' }),
@@ -34,5 +51,7 @@ export const CommunityApi = createApi({
 export const {
   useGetCommunitiesQuery,
   useGetCommunityCategoriesQuery,
+  useGetCommunityQuery,
+  useCreateCommunityMutation,
   useArchiveCommunityMutation,
 } = CommunityApi;

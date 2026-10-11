@@ -10,6 +10,7 @@ import Login from '@/pages/auth/login';
 import ResetPassword from '@/pages/auth/reset-password';
 import OAuthCallback from '@/pages/auth/oauth-callback';
 import Register from '@/pages/auth/register';
+import CreateCommunity from '@/pages/public/create-community/create-community';
 import VerifyEmail from '@/pages/auth/verify-email';
 import AdminCommunities from '@/pages/admin/communities/admin-communities';
 import AdminCommunityDetails from '@/pages/admin/communities/community-details';
@@ -115,6 +116,11 @@ export const AppRoutes: RouteObject[] = [
         element: <MyCommunities />,
       },
     ],
+  },
+  {
+    // Creation flow, full screen (open to visitors: the account is asked at the last step)
+    path: '/create-community',
+    element: <CreateCommunity />,
   },
   {
     // Community space: /c/<community slug>/..., menus depend on the role in that community
