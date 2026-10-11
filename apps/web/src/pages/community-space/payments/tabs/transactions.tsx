@@ -8,7 +8,7 @@ import { COMMISSION_RATE } from '@/data/community-billing.data';
 import { paymentStatusStyle, xof } from '@/pages/shared/community-labels';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { dateFormat } from '@/pages/shared/row-actions';
-import { downloadCsv } from '@/utils/csv';
+import { downloadCsv } from '@/utils/Utils';
 import { useCommunitySpace } from '../../community-space-context';
 import { useSpaceBilling } from '../form/UseSpaceBilling';
 

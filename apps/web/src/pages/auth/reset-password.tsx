@@ -12,8 +12,16 @@ import UseResetPasswordForm from './hooks/UseResetPasswordForm';
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
 function ResetPassword() {
-  const { register, errors, formError, isLoading, done, linkInvalid, password, onSubmit } =
-    UseResetPasswordForm();
+  const { 
+    register, 
+    errors, 
+    formError, 
+    isLoading, 
+    done, 
+    linkInvalid, 
+    password, 
+    onSubmit
+  } = UseResetPasswordForm();
 
   if (done) {
     return (

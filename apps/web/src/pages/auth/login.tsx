@@ -4,18 +4,18 @@ import { Link } from 'react-router-dom';
 import { Button, Input, InputPassword } from '@kodinga-mono-repo/ui';
 
 import AuthWrapper from './auth-wrapper';
-// import { FormAlert } from './components/form-alert';
-// import { SubmitButton } from './components/submit-button';
-// import UseLoginForm from './hooks/UseLoginForm';
+import { FormAlert } from './components/form-alert';
+import UseLoginForm from './hooks/UseLoginForm';
+
 
 function Login() {
-  // const { 
-  //   register, 
-  //   errors, 
-  //   formError, 
-  //   onSubmit, 
-  //   isLoading 
-  // } = UseLoginForm();
+  const { 
+    register, 
+    errors, 
+    formError, 
+    onSubmit, 
+    isLoading 
+  } = UseLoginForm();
 
   return (
     <AuthWrapper
@@ -35,9 +35,9 @@ function Login() {
         </>
       }
     >
-      <form noValidate>
+      <form onSubmit={onSubmit} noValidate>
         <div className="form-content flex flex-col gap-2">
-          {/* {formError && <FormAlert>{formError}</FormAlert>} */}
+          {formError && <FormAlert>{formError}</FormAlert>}
 
           <Input
             id="login-email"
@@ -46,8 +46,8 @@ function Login() {
             icon={<Mail className="size-4" />}
             autoComplete="email"
             required
-            // error={errors.email?.message}
-            // {...register('email')}
+            error={errors.email?.message}
+            {...register('email')}
           />
 
           <div>
@@ -56,8 +56,8 @@ function Login() {
               label="Mot de passe"
               autoComplete="current-password"
               required
-              // error={errors.password?.message}
-              // {...register('password')}
+              error={errors.password?.message}
+              {...register('password')}
             />
             <div className="mt-2 text-right">
               <Link
@@ -70,13 +70,11 @@ function Login() {
           </div>
 
           <div className="mt-4">
-            <Button
-              title="Log In"
-              className="w-full rounded-xl"
-            >Se connecter</Button>
+            <Button type="submit" className="w-full rounded-xl" isLoading={isLoading}>
+              Se connecter
+            </Button>
           </div>
         </div>
-        
       </form>
     </AuthWrapper>
   );

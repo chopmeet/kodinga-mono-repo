@@ -16,9 +16,10 @@ export default defineConfig(() => ({
   server:{
     port: 4200,
     host: 'localhost',
-    // Same paths as nginx in production (apps/web/nginx.conf)
+    // Same paths as nginx in production (apps/web/nginx.conf). Not /admin/: it is the SPA admin;
+    // the Django admin is at http://localhost:8000/admin/
     proxy: {
-      '^/(api|admin|static)/': 'http://localhost:8000',
+      '^/(api|static)/': 'http://localhost:8000',
     },
   },
   preview:{

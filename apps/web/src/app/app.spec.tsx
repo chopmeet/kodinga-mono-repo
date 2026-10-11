@@ -90,8 +90,7 @@ describe('App', () => {
   });
 
 
-  // TODO: réactiver quand le login et les gardes (IsAdminAllow / RedirectAuthRoute) seront rebranchés
-  it.skip('validates the login form before calling the api', async () => {
+  it('validates the login form before calling the api', async () => {
     const { getByRole, findByText } = renderAt('/auth/login');
     fireEvent.click(getByRole('button', { name: 'Se connecter' }));
     expect(await findByText('Saisissez votre email')).toBeTruthy();

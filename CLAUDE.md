@@ -61,6 +61,7 @@ deploy/     docker-compose.yaml du VPS + README de déploiement
 ```bash
 npx nx run-many -t lint test build --projects=web,ui   # vérif complète du front
 npx nx serve web                                        # front en dev
+docker compose -p kodinga up -d kodingadb               # PostgreSQL local (docker-compose.yaml racine, 127.0.0.1:5432)
 npx nx serve api                                        # api (uv run python manage.py runserver 8000)
 npx nx test api                                         # uv run pytest tests/
 npx nx lint api                                         # ruff

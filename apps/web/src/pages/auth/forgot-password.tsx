@@ -19,7 +19,16 @@ const backToLogin = (
 );
 
 function ForgotPassword() {
-  const { register, errors, formError, sentTo, isLoading, onSubmit, resend, reset } = UseForgotPasswordForm();
+  const { 
+    register, 
+    errors, 
+    formError, 
+    sentTo, 
+    isLoading, 
+    onSubmit, 
+    resend, 
+    reset 
+  } = UseForgotPasswordForm();
 
   if (sentTo) {
     return (

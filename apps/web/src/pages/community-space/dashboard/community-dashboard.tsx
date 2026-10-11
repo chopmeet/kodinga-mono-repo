@@ -8,6 +8,7 @@ import { useUser } from '@/utils/Utils';
 import { useCommunitySpace } from '../community-space-context';
 import MembersGrowthChart from './components/members-growth-chart';
 import SpaceOverview from './components/space-overview';
+import WelcomeChecklist from './components/welcome-checklist';
 
 function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -50,6 +51,8 @@ function CommunityDashboardPage() {
         title="Tableau de bord"
         paragraph={`${user?.first_name ? `Bienvenue ${user.first_name} ! ` : ''}Voici l'activité de ${space.community.name}.`}
       />
+
+      <WelcomeChecklist />
 
       <section aria-label="Indicateurs de la communauté" className="mb-6">
         <SpaceOverview stats={stats} />

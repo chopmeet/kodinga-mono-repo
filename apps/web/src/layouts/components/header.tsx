@@ -108,16 +108,16 @@ function Header() {
               {t('header.login')}
             </NavLink>
           )}
-          {/* Plain anchor: from another page it loads home then jumps to the creators block */}
-          <a
-            href="/#creer"
+          {/* Straight into the creation flow (open to visitors) */}
+          <NavLink
+            to="/create-community"
             aria-label={t('header.create')}
             className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-brand px-3 whitespace-nowrap text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-hover sm:px-5"
           >
             <Plus className="size-4 sm:hidden" />
             <span className="hidden sm:inline">{t('header.create')}</span>
             <ArrowUpRight className="hidden size-4 sm:block" />
-          </a>
+          </NavLink>
         </div>
       </nav>
     </header>
