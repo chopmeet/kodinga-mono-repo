@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'apps.memberships.apps.MembershipsConfig',
     'apps.posts.apps.PostsConfig',
     'apps.billing.apps.BillingConfig',
+    'apps.classroom.apps.ClassroomConfig',
     'api',
 ]
 
@@ -152,6 +153,9 @@ STORAGES = {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

@@ -2,7 +2,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 // Public origin used for absolute URLs in index.html (og:image...). Override per environment:
 //   VITE_SITE_URL=https://staging.kodinga.com npx nx build web
@@ -25,8 +24,9 @@ export default defineConfig(() => ({
     port: 4300,
     host: 'localhost',
   },
-  plugins: [react(), tailwindcss(), tsconfigPaths()],
+  plugins: [react(), tailwindcss()],
   resolve: {
+    tsconfigPaths: true,
     // Mirrors "paths" in tsconfig.json (used by shadcn/ui imports)
     alias: {
       '@': `${import.meta.dirname}/src`,
@@ -56,6 +56,7 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'jsdom',
+    testTimeout: 15000,
     setupFiles: ['src/test-setup.ts'],
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
