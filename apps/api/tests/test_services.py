@@ -166,4 +166,3 @@ class TestAuthServices:
         assert call_params["subject"] == "Sujet Backend"
         assert call_params["to"] == ["recipient@example.com"]
         assert call_params["html"] == "<h1>Corps HTML</h1>"
-

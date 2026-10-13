@@ -6,7 +6,7 @@ from apps.accounts.models.user import User
 from apps.classroom.models.course import Course, CourseLevel
 from apps.classroom.models.lesson import Lesson, LessonType
 from apps.classroom.models.module import CourseModule
-from apps.classroom.models.progress import CourseEnrollment, LessonProgress
+from apps.classroom.models.progress import CourseEnrollment
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.settings import CommunitySettings
 from apps.media.models.video_asset import VideoAsset, VideoStatus
@@ -174,7 +174,11 @@ class TestClassroomAPI:
         # Create Module
         res_module = api_client.post(
             f"/api/v1/communities/{test_community.slug}/courses/fullstack-python/modules/",
-            {"title": "Module 1 : Fundamentals", "description": "Core concepts", "order": 0},
+            {
+                "title": "Module 1 : Fundamentals",
+                "description": "Core concepts",
+                "order": 0,
+            },
             format="json",
         )
         assert res_module.status_code == status.HTTP_201_CREATED
@@ -195,7 +199,10 @@ class TestClassroomAPI:
         assert res_lesson1.status_code == status.HTTP_201_CREATED
         lesson1_data = res_lesson1.json()["data"]
         lesson1_id = lesson1_data["id"]
-        assert lesson1_data["video_hls_url"] == "https://stream.mux.com/playback_xyz789.m3u8"
+        assert (
+            lesson1_data["video_hls_url"]
+            == "https://stream.mux.com/playback_xyz789.m3u8"
+        )
         assert lesson1_data["duration_seconds"] == 360
 
         # Create Lesson 2 (Sequential)
@@ -246,7 +253,11 @@ class TestClassroomAPI:
         # Student completes Lesson 1
         res_progress = api_client.post(
             f"/api/v1/communities/{test_community.slug}/courses/fullstack-python/lessons/{lesson1_id}/progress/",
-            {"is_completed": True, "last_watched_second": 360, "notes": "Great lesson!"},
+            {
+                "is_completed": True,
+                "last_watched_second": 360,
+                "notes": "Great lesson!",
+            },
             format="json",
         )
         assert res_progress.status_code == status.HTTP_200_OK
@@ -265,9 +276,7 @@ class TestClassroomAPI:
         assert res_read_lesson2.status_code == status.HTTP_200_OK
         assert res_read_lesson2.json()["data"]["content"].startswith("# Deep Dive")
 
-    def test_rich_text_and_images_lesson(
-        self, api_client, user_owner, test_community
-    ):
+    def test_rich_text_and_images_lesson(self, api_client, user_owner, test_community):
         api_client.force_authenticate(user=user_owner)
 
         # 1. Create Course and Module
@@ -292,7 +301,7 @@ class TestClassroomAPI:
         # 2. Create rich text lesson with formatted markdown & images (no video)
         rich_markdown = """# CQRS & Event Sourcing Architecture
 
-Ce guide détaille l'implémentation d'une architecture orientée événements pour les systèmes distribués.
+Ce guide détaille l'implémentation d'une architecture orientée événements.
 
 ## Schéma Conceptuel
 ![Architecture Diagram](https://storage.kodinga.com/assets/cqrs-diagram.png)
@@ -304,7 +313,7 @@ class OrderCreatedEvent:
         self.amount = amount
 ```
 
-> **Note importante** : La synchronisation du modèle de lecture s'effectue de manière asynchrone via Kafka ou RabbitMQ.
+> **Note importante** : La synchronisation du modèle se fait via Kafka.
 """
         images_payload = [
             {
@@ -344,7 +353,10 @@ class OrderCreatedEvent:
 
         assert data["lesson_type"] == LessonType.TEXT
         assert data["content_format"] == "markdown"
-        assert data["cover_image_url"] == "https://storage.kodinga.com/assets/cqrs-cover.webp"
+        assert (
+            data["cover_image_url"]
+            == "https://storage.kodinga.com/assets/cqrs-cover.webp"
+        )
         assert data["has_images"] is True
         assert data["has_video"] is False
         assert len(data["images"]) == 2
@@ -360,22 +372,35 @@ class OrderCreatedEvent:
         assert res_get.status_code == status.HTTP_200_OK
         detail_data = res_get.json()["data"]
         assert "# CQRS & Event Sourcing Architecture" in detail_data["content"]
-        assert detail_data["cover_image_url"] == "https://storage.kodinga.com/assets/cqrs-cover.webp"
-        assert detail_data["images"][0]["caption"] == "Flux CQRS : Séparation commandes et requêtes"
+        assert (
+            detail_data["cover_image_url"]
+            == "https://storage.kodinga.com/assets/cqrs-cover.webp"
+        )
+        assert (
+            detail_data["images"][0]["caption"]
+            == "Flux CQRS : Séparation commandes et requêtes"
+        )
 
-        # 4. Also test creating a lesson directly via /courses/{course_slug}/lessons/ with module_id in payload
+        # 4. Direct lesson creation with module_id in payload
+        direct_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/"
+            "system-design-handbook/lessons/"
+        )
         res_direct_lesson = api_client.post(
-            f"/api/v1/communities/{test_community.slug}/courses/system-design-handbook/lessons/",
+            direct_url,
             {
                 "module_id": module_id,
                 "title": "Saga Pattern & Distributed Transactions",
                 "lesson_type": LessonType.TEXT,
-                "content": "# Saga Pattern\nManaging distributed state across microservices...",
+                "content": "# Saga Pattern\nManaging distributed state...",
             },
             format="json",
         )
         assert res_direct_lesson.status_code == status.HTTP_201_CREATED
-        assert res_direct_lesson.json()["data"]["slug"] == "saga-pattern-distributed-transactions"
+        assert (
+            res_direct_lesson.json()["data"]["slug"]
+            == "saga-pattern-distributed-transactions"
+        )
 
     def test_only_connected_active_members_can_see_courses_and_progress(
         self, api_client, user_owner, user_student, user_outsider, test_community
@@ -404,10 +429,20 @@ class OrderCreatedEvent:
         )
 
         courses_url = f"/api/v1/communities/{test_community.slug}/courses/"
-        course_detail_url = f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/"
-        lesson_detail_url = f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/lessons/{lesson.id}/"
-        progress_url = f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/lessons/{lesson.id}/progress/"
-        enroll_url = f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/enroll/"
+        course_detail_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/"
+        )
+        lesson_detail_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/"
+            f"{course.slug}/lessons/{lesson.id}/"
+        )
+        progress_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/"
+            f"{course.slug}/lessons/{lesson.id}/progress/"
+        )
+        enroll_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/enroll/"
+        )
 
         # 2. Case: Anonymous / Unconnected visitor -> 401 Unauthorized
         api_client.logout()
@@ -421,13 +456,15 @@ class OrderCreatedEvent:
         res_anon_lesson = api_client.get(lesson_detail_url)
         assert res_anon_lesson.status_code == status.HTTP_401_UNAUTHORIZED
 
-        res_anon_progress = api_client.post(progress_url, {"is_completed": True}, format="json")
+        res_anon_progress = api_client.post(
+            progress_url, {"is_completed": True}, format="json"
+        )
         assert res_anon_progress.status_code == status.HTTP_401_UNAUTHORIZED
 
         res_anon_enroll = api_client.post(enroll_url, format="json")
         assert res_anon_enroll.status_code == status.HTTP_401_UNAUTHORIZED
 
-        # 3. Case: Authenticated Outsider (not a member of the community) -> 403 Forbidden
+        # 3. Case: Authenticated Outsider (non-member) -> 403 Forbidden
         api_client.force_authenticate(user=user_outsider)
 
         res_out_courses = api_client.get(courses_url)
@@ -441,7 +478,9 @@ class OrderCreatedEvent:
         res_out_lesson = api_client.get(lesson_detail_url)
         assert res_out_lesson.status_code == status.HTTP_403_FORBIDDEN
 
-        res_out_progress = api_client.post(progress_url, {"is_completed": True}, format="json")
+        res_out_progress = api_client.post(
+            progress_url, {"is_completed": True}, format="json"
+        )
         assert res_out_progress.status_code == status.HTTP_403_FORBIDDEN
 
         res_out_enroll = api_client.post(enroll_url, format="json")
@@ -507,7 +546,7 @@ class OrderCreatedEvent:
             description="Configuration du dev environment",
             order=1,
         )
-        module_2 = CourseModule.objects.create(
+        CourseModule.objects.create(
             course=course,
             title="Module 2: Async Handlers & Pydantic v2",
             description="Création des routes",
@@ -534,18 +573,26 @@ class OrderCreatedEvent:
         assert any(c["slug"] == "fastapi-microservices" for c in courses_data)
 
         # 2. Test get all modules for a course
-        modules_url = f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/modules/"
+        modules_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/modules/"
+        )
         res_modules = api_client.get(modules_url)
         assert res_modules.status_code == status.HTTP_200_OK
         modules_data = res_modules.json()["data"]
         assert len(modules_data) == 2
         assert modules_data[0]["title"] == "Module 1: Setup & Dockerization"
         assert len(modules_data[0]["lessons"]) == 1
-        assert modules_data[0]["lessons"][0]["title"] == "Lesson 1.1: Docker Compose Multi-services"
+        assert (
+            modules_data[0]["lessons"][0]["title"]
+            == "Lesson 1.1: Docker Compose Multi-services"
+        )
         assert modules_data[1]["title"] == "Module 2: Async Handlers & Pydantic v2"
 
         # 3. Test get single module by ID
-        single_module_url = f"/api/v1/communities/{test_community.slug}/courses/{course.slug}/modules/{module_1.id}/"
+        single_module_url = (
+            f"/api/v1/communities/{test_community.slug}/courses/"
+            f"{course.slug}/modules/{module_1.id}/"
+        )
         res_single = api_client.get(single_module_url)
         assert res_single.status_code == status.HTTP_200_OK
         single_data = res_single.json()["data"]
@@ -553,5 +600,3 @@ class OrderCreatedEvent:
         assert single_data["title"] == "Module 1: Setup & Dockerization"
         assert len(single_data["lessons"]) == 1
         assert single_data["lessons"][0]["slug"] == "docker-compose-multi-services"
-
-

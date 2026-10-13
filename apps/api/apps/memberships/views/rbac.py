@@ -35,7 +35,8 @@ class CommunityRbacView(APIView):
         is_owner = request.user.is_superuser or community.owner_id == request.user.id
         is_admin = is_owner or (my_membership and my_membership.is_admin)
         is_moderator = is_owner or (my_membership and my_membership.is_moderator)
-        can_manage_roles = is_owner or (my_membership and my_membership.can_manage_roles)
+        can_manage_roles = is_owner or is_admin
+
 
         roles_catalog = [
             {
@@ -91,10 +92,8 @@ class CommunityRbacView(APIView):
 
         privileged_members = CommunityMember.objects.filter(
             community=community,
-            status=MembershipStatus.ACTIVE
-        ).filter(
-            models.Q(role__in=[CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]) |
-            models.Q(can_manage_roles=True)
+            status=MembershipStatus.ACTIVE,
+            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
         ).select_related('user')
 
         return success_response(
