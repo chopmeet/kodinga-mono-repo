@@ -2,6 +2,7 @@ import { EyeOff, Globe, Lock, Users } from 'lucide-react';
 
 import type { CommunityCategory } from '@/utils/api/community/community.type';
 import type { CommunityValues } from '../form/UseCreateCommunity';
+import { nameInitials } from '@/utils/Utils';
 
 const privacy = {
   public: { label: 'Publique', icon: Globe },
@@ -9,14 +10,6 @@ const privacy = {
   secret: { label: 'Secrète', icon: EyeOff },
 } as const;
 
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase() || 'K';
 
 type Props = { values: CommunityValues; slug: string; category?: CommunityCategory };
 
@@ -37,7 +30,7 @@ export function CommunityPreview({ values, slug, category }: Props) {
           style={{ backgroundColor: values.brand_color }}
           aria-hidden
         >
-          {initials(values.name)}
+          {nameInitials(values.name, 'K')}
         </div>
         <p className={`mt-3 text-lg font-bold break-words ${values.name.trim() ? 'text-slate-900' : 'text-slate-400'}`}>{name}</p>
         <p className={`mt-1 text-sm break-words ${values.tagline.trim() ? 'text-slate-600' : 'text-slate-400'}`}>

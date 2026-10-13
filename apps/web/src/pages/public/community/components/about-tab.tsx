@@ -2,15 +2,8 @@ import { Check, Globe, Lock, Tag, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, cn } from '@kodinga-mono-repo/ui';
 import type { CommunityDetails } from '@/data/community.data';
-import { formatCompact } from '@/utils/Utils';
+import { formatCompact, nameInitials } from '@/utils/Utils';
 
-const initials = (name: string) =>
-  name
-    .split(/[\s-]+/)
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 
 export function AboutTab({ community }: { community: CommunityDetails }) {
   const isPrivate = community.access.kind === 'application';
@@ -49,7 +42,7 @@ export function AboutTab({ community }: { community: CommunityDetails }) {
         ))}
         <span className="flex items-center gap-2">
           <Avatar className="size-6">
-            <AvatarFallback className="text-[10px]">{initials(community.owner.name)}</AvatarFallback>
+            <AvatarFallback className="text-[10px]">{nameInitials(community.owner.name)}</AvatarFallback>
           </Avatar>
           Par <strong className="font-semibold text-slate-900">{community.owner.name}</strong>
         </span>

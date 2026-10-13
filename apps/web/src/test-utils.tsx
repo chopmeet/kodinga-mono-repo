@@ -6,6 +6,7 @@ import { vi } from 'vitest';
 import { Toaster } from '@kodinga-mono-repo/ui';
 import store from '@/redux/store';
 import { AppRoutes } from '@/routes/router';
+import type { CommunityCategory, CommunityListItem } from '@/utils/api/community/community.type';
 
 export const SLOW = { timeout: 3000 };
 
@@ -45,4 +46,44 @@ export function stubApi(routes: Record<string, { status?: number; body: unknown 
     });
   });
   return calls;
+}
+
+/**
+ * Fake GET communities/ over a list (q, category, privacy, pricing, is_featured, page, page_size:
+ * 9 by default, like the api), GET communities/categories/ and DELETE communities/<slug>/
+ * (archived: leaves the list). Returns the requested urls.
+ */
+export function stubDirectory(initial: CommunityListItem[], categories: CommunityCategory[] = []) {
+  let communities = [...initial];
+  const urls: URL[] = [];
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const request = input as Request;
+    const url = new URL(request.url);
+    urls.push(url);
+    const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
+    if (url.pathname.endsWith('communities/categories/')) return json({ success: true, data: categories });
+    if (request.method === 'DELETE') {
+      const slug = url.pathname.split('/').filter(Boolean).at(-1);
+      communities = communities.filter((c) => c.slug !== slug);
+      return json({ success: true, message: 'Archived' });
+    }
+    const p = url.searchParams;
+    const q = (p.get('q') ?? '').toLowerCase();
+    const found = communities.filter(
+      (c) =>
+        (!q || `${c.name} ${c.tagline} ${c.slug}`.toLowerCase().includes(q)) &&
+        (!p.get('category') || c.category?.slug === p.get('category')) &&
+        (!p.get('privacy') || c.privacy_type === p.get('privacy')) &&
+        (!p.get('pricing') || c.pricing_type === p.get('pricing')) &&
+        (!p.get('is_featured') || c.is_featured)
+    );
+    const page = Number(p.get('page') ?? 1);
+    const size = Number(p.get('page_size') ?? 9);
+    return json({
+      success: true,
+      pagination: { count: found.length, total_pages: Math.ceil(found.length / size), current_page: page, next: null, previous: null, page_size: size },
+      results: found.slice((page - 1) * size, page * size),
+    });
+  });
+  return urls;
 }

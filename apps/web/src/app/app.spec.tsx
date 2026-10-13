@@ -1,9 +1,12 @@
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import { onSetHeroSearchVisible, onSetSearchQuery } from '@/redux/slice/Search.slice';
 import store from '@/redux/store';
+import { adminCommunities } from '@/data/admin-communities.data';
+import { stubDirectory } from '@/test-utils';
+import { CommunityApi } from '@/utils/api/community/community.api';
 import i18n from '@/utils/i18n';
 import App from './app';
 
@@ -24,6 +27,16 @@ describe('App', () => {
   beforeEach(() => {
     store.dispatch(onSetSearchQuery(''));
     store.dispatch(onSetHeroSearchVisible(true));
+    // The home directory reads GET communities/: never the real api in tests
+    stubDirectory(adminCommunities);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    act(() => {
+      store.dispatch(CommunityApi.util.resetApiState());
+    });
   });
 
   it('renders the public home page', () => {
@@ -47,8 +60,8 @@ describe('App', () => {
     expect(getByRole('link', { name: /se connecter/i })).toBeTruthy();
   });
 
-  it('moves the search bar into the header once the hero search scrolls away', () => {
-    const { getAllByRole, getByRole, queryByRole } = renderAt('/');
+  it('moves the search bar into the header once the hero search scrolls away', async () => {
+    const { getAllByRole, getByRole, findByRole, queryByRole } = renderAt('/');
     expect(getAllByRole('searchbox')).toHaveLength(1);
 
     act(() => {
@@ -58,18 +71,18 @@ describe('App', () => {
     expect(headerSearch).toBeTruthy();
 
     fireEvent.change(headerSearch as Element, { target: { value: 'kigali' } });
-    expect(getByRole('heading', { level: 3, name: 'Kigali Green & Embedded Tech' })).toBeTruthy();
-    expect(queryByRole('heading', { level: 3, name: 'Python Africa Core' })).toBeNull();
+    expect(await findByRole('heading', { level: 3, name: 'Kigali Green & Embedded Tech' }, { timeout: 3000 })).toBeTruthy();
+    await waitFor(() => expect(queryByRole('heading', { level: 3, name: 'Python Africa Core' })).toBeNull());
   });
 
-  it('filters communities from the hero search bar', () => {
-    const { getByRole, queryByRole } = renderAt('/');
+  it('filters communities from the hero search bar', async () => {
+    const { getByRole, findByRole, queryByRole } = renderAt('/');
     fireEvent.change(getByRole('searchbox', { name: /rechercher une communauté/i }), {
       target: { value: 'nairobi' },
     });
     // Card titles are h3 (the leaderboard repeats some names as plain text)
-    expect(getByRole('heading', { level: 3, name: 'Nairobi Rustaceans' })).toBeTruthy();
-    expect(queryByRole('heading', { level: 3, name: 'Python Africa Core' })).toBeNull();
+    expect(await findByRole('heading', { level: 3, name: 'Nairobi Rustaceans' }, { timeout: 3000 })).toBeTruthy();
+    await waitFor(() => expect(queryByRole('heading', { level: 3, name: 'Python Africa Core' })).toBeNull());
   });
 
   it('renders a community details page on the About tab by default', () => {

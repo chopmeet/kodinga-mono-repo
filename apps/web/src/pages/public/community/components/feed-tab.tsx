@@ -3,14 +3,8 @@ import { Heart, MessageCircle, Pin } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@kodinga-mono-repo/ui';
 import type { CommunityDetails } from '@/data/community.data';
 import { JoinButton } from './community-sidebar';
+import { nameInitials } from '@/utils/Utils';
 
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 
 export function FeedTab({ community }: { community: CommunityDetails }) {
   return (
@@ -24,7 +18,7 @@ export function FeedTab({ community }: { community: CommunityDetails }) {
         <article key={post.id} className="rounded-xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-sm">
           <header className="flex items-center gap-3">
             <Avatar className="size-9">
-              <AvatarFallback className="text-xs">{initials(post.author)}</AvatarFallback>
+              <AvatarFallback className="text-xs">{nameInitials(post.author)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900">{post.author}</p>

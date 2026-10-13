@@ -1,14 +1,23 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Ban, CircleCheck, PauseCircle, PlayCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Ban, CircleCheck, CircleX, PauseCircle, RotateCw } from 'lucide-react';
+import { useState } from 'react';
 
-import { Badge, cn, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
-import { type AdminMember, getCommunityMembers, type MemberStatus } from '@/data/admin-community-details.data';
+import { Badge, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
+import SanctionModal, { type SanctionTarget } from '@/pages/community-space/members/modals/sanction-modal';
 import { memberRoleLabel as roleLabel, memberStatusStyle as statusStyle } from '@/pages/shared/community-labels';
-import { useDetailsCommunity } from '../form/UseCommunityFromParams';
+import { FilterChip } from '@/pages/shared/filter-chip';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
+import {
+  useDecideMemberMutation,
+  useGetCommunityMembersQuery,
+  useSanctionMemberMutation,
+} from '@/utils/api/community/community.api';
+import type { CommunityMemberItem, MembershipStatus } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
+import { getName } from '@/utils/Utils';
+import { useDetailsCommunity } from '../form/UseCommunityFromParams';
 
-const FILTERS: { id: MemberStatus | 'all'; label: string }[] = [
+const FILTERS: { id: MembershipStatus | 'all'; label: string }[] = [
   { id: 'all', label: 'Tous' },
   { id: 'active', label: 'Actifs' },
   { id: 'pending', label: 'En attente' },
@@ -16,44 +25,70 @@ const FILTERS: { id: MemberStatus | 'all'; label: string }[] = [
   { id: 'banned', label: 'Bannis' },
 ];
 
+type Target = CommunityMemberItem & { name: string };
+
 function CommunityMembersTab() {
   const community = useDetailsCommunity();
-  // Mock: moderation changes live in local state
-  const [members, setMembers] = useState(() => getCommunityMembers(community));
-  const [filter, setFilter] = useState<MemberStatus | 'all'>('all');
+  const [filter, setFilter] = useState<MembershipStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [sanctionTarget, setSanctionTarget] = useState<SanctionTarget<Target> | null>(null);
 
-  const filtered = useMemo(() => members.filter((m) => filter === 'all' || m.status === filter), [members, filter]);
-  const visible = filtered.slice((page - 1) * size, page * size);
+  const { data, isLoading, isFetching, error, refetch } = useGetCommunityMembersQuery({
+    slug: community.slug,
+    status: filter === 'all' ? undefined : filter,
+    page,
+    page_size: size,
+  });
+  const [decideMember] = useDecideMemberMutation();
+  const [sanctionMember] = useSanctionMemberMutation();
 
-  const setStatus = (member: AdminMember, status: MemberStatus, message: string) => {
-    setMembers((list) => list.map((m) => (m.id === member.id ? { ...m, status } : m)));
-    customToast.success({ message });
+  const run = async (action: Promise<unknown>, message: string) => {
+    try {
+      await action;
+      customToast.success({ message });
+    } catch (err) {
+      customToast.error({ message: parseApiError(err).message });
+    }
   };
 
-  const actionsFor = (m: AdminMember): RowAction[] => {
+  const decide = (m: Target, approve: boolean) =>
+    run(
+      decideMember({ slug: community.slug, memberId: m.id, approve }).unwrap(),
+      approve ? `${m.name} a été approuvé.` : `La demande de ${m.name} a été refusée.`
+    );
+
+  // No action on the owner. Lifting a sanction has no api endpoint yet.
+  const actionsFor = (m: Target): RowAction[] => {
     if (m.role === 'owner') return [];
     const actions: RowAction[] = [];
-    if (m.status === 'pending') actions.push({ label: 'Approuver', icon: <CircleCheck />, onSelect: () => setStatus(m, 'active', `${m.name} a été approuvé.`) });
-    if (m.status === 'active') actions.push({ label: 'Suspendre', icon: <PauseCircle />, onSelect: () => setStatus(m, 'suspended', `${m.name} est suspendu.`) });
-    if (m.status === 'suspended' || m.status === 'banned') actions.push({ label: 'Réactiver', icon: <PlayCircle />, onSelect: () => setStatus(m, 'active', `${m.name} est de nouveau actif.`) });
-    if (m.status !== 'banned') actions.push({ label: 'Bannir', icon: <Ban />, danger: true, onSelect: () => setStatus(m, 'banned', `${m.name} a été banni.`) });
+    if (m.status === 'pending') {
+      actions.push({ label: 'Approuver', icon: <CircleCheck />, onSelect: () => decide(m, true) });
+      actions.push({ label: 'Refuser', icon: <CircleX />, onSelect: () => decide(m, false) });
+    }
+    if (m.status === 'active') actions.push({ label: 'Suspendre', icon: <PauseCircle />, onSelect: () => setSanctionTarget({ member: m, type: 'suspension' }) });
+    if (m.status === 'active' || m.status === 'suspended') {
+      actions.push({ label: 'Bannir', icon: <Ban />, danger: true, onSelect: () => setSanctionTarget({ member: m, type: 'ban' }) });
+    }
     return actions;
   };
 
-  const columns: ColumnDef<AdminMember>[] = [
+  const columns: ColumnDef<Target>[] = [
     {
       id: 'member',
       header: 'Membre',
       cell: ({ row }) => (
         <div className="min-w-44">
           <p className="font-medium text-slate-900">{row.original.name}</p>
-          <p className="text-xs text-slate-500">@{row.original.username} · {row.original.city}</p>
+          <p className="text-xs text-slate-500">@{row.original.user.username}</p>
         </div>
       ),
     },
-    { id: 'role', header: 'Rôle', cell: ({ row }) => <span className="text-slate-700">{roleLabel[row.original.role]}</span> },
+    {
+      id: 'role',
+      header: 'Rôle',
+      cell: ({ row }) => <span className="text-slate-700">{row.original.custom_title || roleLabel[row.original.role]}</span>,
+    },
     {
       id: 'status',
       header: 'Statut',
@@ -63,9 +98,9 @@ function CommunityMembersTab() {
       },
     },
     {
-      id: 'posts',
-      header: () => <span className="block text-right">Publications</span>,
-      cell: ({ row }) => <span className="block text-right text-slate-700 tabular-nums">{row.original.posts_count}</span>,
+      id: 'reputation',
+      header: () => <span className="block text-right">Réputation</span>,
+      cell: ({ row }) => <span className="block text-right text-slate-700 tabular-nums">{row.original.reputation_score}</span>,
     },
     {
       id: 'joined',
@@ -79,41 +114,70 @@ function CommunityMembersTab() {
     },
   ];
 
+  const members: Target[] = (data?.results ?? []).map((m) => ({ ...m, name: getName(m.user) || m.user.email }));
+  const total = data?.pagination.count ?? 0;
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer par statut">
-        {FILTERS.map((f) => {
-          const count = f.id === 'all' ? members.length : members.filter((m) => m.status === f.id).length;
-          return (
-            <button
-              key={f.id}
-              type="button"
-              aria-pressed={filter === f.id}
-              onClick={() => {
-                setFilter(f.id);
-                setPage(1);
-              }}
-              className={cn(
-                'rounded-full border px-3 py-1 text-sm transition-colors',
-                filter === f.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-              )}
-            >
-              {f.label} <span className="tabular-nums opacity-70">{count}</span>
-            </button>
-          );
-        })}
+        {FILTERS.map((f) => (
+          <FilterChip
+            key={f.id}
+            active={filter === f.id}
+            onClick={() => {
+              setFilter(f.id);
+              setPage(1);
+            }}
+          >
+            {f.label}
+          </FilterChip>
+        ))}
       </div>
-      {filtered.length === 0 ? (
+      {error && !data ? (
+        <div className="flex flex-col items-start gap-3">
+          <EmptyAlert text={parseApiError(error).message} />
+          <button type="button" onClick={() => refetch()} className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+            <RotateCw className="size-4" />
+            Réessayer
+          </button>
+        </div>
+      ) : !isLoading && members.length === 0 ? (
         <EmptyAlert text="Aucun membre avec ce statut." />
       ) : (
-        <>
-          <DataTable columns={columns} data={visible} isLoading={false} />
-          <Pagination totalItems={filtered.length} currentPage={page} perPage={size} onPageChange={setPage} onPageSizeChange={(n) => { setSize(n); setPage(1); }} />
-        </>
+        <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : undefined} aria-busy={isFetching}>
+          <DataTable columns={columns} data={members} isLoading={isLoading} />
+          {total > 0 && (
+            <Pagination
+              totalItems={total}
+              currentPage={page}
+              perPage={size}
+              onPageChange={setPage}
+              onPageSizeChange={(n) => {
+                setSize(n);
+                setPage(1);
+              }}
+            />
+          )}
+        </div>
       )}
-      <p className="mt-2 text-xs text-slate-500">
-        Échantillon de démonstration : {members.length} membres sur {community.members_count.toLocaleString('fr-FR')}.
-      </p>
+
+      <SanctionModal<Target>
+        target={sanctionTarget}
+        onCancel={() => setSanctionTarget(null)}
+        onConfirm={async (member, sanction) => {
+          await run(
+            sanctionMember({
+              slug: community.slug,
+              memberId: member.id,
+              sanction_type: sanction.type,
+              reason: sanction.reason,
+              duration_days: sanction.duration_days ?? null,
+            }).unwrap(),
+            sanction.type === 'ban' ? `${member.name} a été banni.` : `${member.name} est suspendu pour ${sanction.duration_days} jours.`
+          );
+          setSanctionTarget(null);
+        }}
+      />
     </div>
   );
 }

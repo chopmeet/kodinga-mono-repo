@@ -1,72 +1,37 @@
 import { cn } from '@kodinga-mono-repo/ui';
 
-import {
-  categories,
-  type CategoryId,
-  type SortId,
-  sortOptions,
-} from '@/data/home.data';
+export type DiscoverFilter = { id: string; label: string; emoji?: string };
 
 type Props = {
-  category: CategoryId;
-  onCategoryChange: (id: CategoryId) => void;
-  sort: SortId;
-  onSortChange: (id: SortId) => void;
+  filters: DiscoverFilter[];
+  active: string;
+  onChange: (id: string) => void;
 };
 
-export function DiscoverFilters({
-  category,
-  onCategoryChange,
-  sort,
-  onSortChange,
-}: Props) {
+/** Sticky filter strip above the directory: quick filters, then the api categories */
+export function DiscoverFilters({ filters, active, onChange }: Props) {
   return (
-    <section
-      id="grille-communautes"
-      className="sticky top-16 z-40 scroll-mt-16 border-b border-slate-200 bg-white"
-    >
+    <section id="grille-communautes" className="sticky top-16 z-40 scroll-mt-16 border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-[1440px] flex-col px-4 py-3 sm:px-6 lg:px-8">
-        <div className="no-scrollbar flex items-center justify-between gap-4 overflow-x-auto">
-          <div className="flex shrink-0 items-center gap-1.5">
-            {categories.map((c) => {
-              const active = c.id === category;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => onCategoryChange(c.id)}
-                  className={cn(
-                    'flex items-center gap-1 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors sm:text-sm',
-                    active
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  )}
-                >
-                  {c.emoji && <span aria-hidden>{c.emoji}</span>}
-                  <span>{c.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <label htmlFor="community-sort" className="hidden text-xs font-medium text-slate-400 md:inline">
-              Trier par :
-            </label>
-            <select
-              id="community-sort"
-              value={sort}
-              onChange={(e) => onSortChange(e.target.value as SortId)}
-              className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-brand"
-            >
-              {sortOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto" role="group" aria-label="Filtrer les communautés">
+          {filters.map((f) => {
+            const isActive = f.id === active;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => onChange(f.id)}
+                className={cn(
+                  'flex shrink-0 items-center gap-1 rounded-lg px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors sm:text-sm',
+                  isActive ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                )}
+              >
+                {f.emoji && <span aria-hidden>{f.emoji}</span>}
+                <span>{f.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>

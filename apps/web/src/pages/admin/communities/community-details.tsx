@@ -1,4 +1,4 @@
-import { Archive, BadgeCheck, CalendarDays, ExternalLink, EyeOff, Globe, Lock, Star, Tag, UserRound } from 'lucide-react';
+import { Archive, BadgeCheck, CalendarDays, ExternalLink, EyeOff, Globe, Lock, RotateCw, Star, Tag, UserRound } from 'lucide-react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 
 import {
@@ -16,6 +16,8 @@ import CommunityOverview from './components/community-overview';
 import UseArchiveCommunity from './form/UseArchiveCommunity';
 import { UseCommunityFromParams } from './form/UseCommunityFromParams';
 import ArchiveCommunityModal from './modals/archive-community-modal';
+import { parseApiError } from '@/utils/api/errors';
+import { nameInitials } from '@/utils/Utils';
 
 const tabs: Tab[] = [
   { id: 'members', title: 'Membres', link: 'members' },
@@ -32,21 +34,26 @@ const privacyLabel: Record<CommunityPrivacy, { label: string; icon: typeof Globe
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 function CommunityDetails() {
-  const { community, isLoading } = UseCommunityFromParams();
+  const { community, isLoading, error, refetch } = UseCommunityFromParams();
   const navigate = useNavigate();
-  // Mock: archiving brings back to the list (the item stays in the mock data)
+  // Archived: back to the list (it no longer shows the community)
   const archiveFlow = UseArchiveCommunity(() => navigate('/admin/communities'));
 
   if (isLoading) return <DetailsPageSkeleton />;
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <EmptyAlert text={parseApiError(error).message} />
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <RotateCw />
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
 
   if (!community) {
     return (
@@ -83,7 +90,7 @@ function CommunityDetails() {
                 style={community.brand_color ? { backgroundColor: community.brand_color } : undefined}
                 aria-hidden
               >
-                {initials(community.name)}
+                {nameInitials(community.name)}
               </div>
             )}
             <div className="min-w-0">

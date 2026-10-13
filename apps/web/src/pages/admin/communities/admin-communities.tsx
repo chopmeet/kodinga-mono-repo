@@ -1,6 +1,8 @@
+import { RotateCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga-mono-repo/ui';
+import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 import CommunitiesToolbar, { ALL, type CommunityFilters } from './components/communities-toolbar';
 import UseArchiveCommunity from './form/UseArchiveCommunity';
@@ -16,20 +18,15 @@ function AdminCommunities() {
   const [size, setSize] = useState(10);
   const search = useDebounced(filters.search.trim(), SEARCH_DEBOUNCE_MS);
 
-  // Mock data for now (see form/UseCommunitiesList.ts to plug the api)
-  const [archivedIds, setArchivedIds] = useState<string[]>([]);
-  const { data, categories, isLoading, isFetching } = UseCommunitiesList(
-    {
-      q: search,
-      category: filters.category === ALL ? undefined : filters.category,
-      privacy: filters.privacy === ALL ? undefined : filters.privacy,
-      pricing: filters.pricing === ALL ? undefined : filters.pricing,
-      page,
-      page_size: size,
-    },
-    archivedIds
-  );
-  const archiveFlow = UseArchiveCommunity((community) => setArchivedIds((ids) => [...ids, community.id]));
+  const { data, categories, isLoading, isFetching, error, refetch } = UseCommunitiesList({
+    q: search,
+    category: filters.category === ALL ? undefined : filters.category,
+    privacy: filters.privacy === ALL ? undefined : filters.privacy,
+    pricing: filters.pricing === ALL ? undefined : filters.pricing,
+    page,
+    page_size: size,
+  });
+  const archiveFlow = UseArchiveCommunity();
 
   // Any new filter or search starts again from the first page
   const updateFilters = (patch: Partial<CommunityFilters>) => {
@@ -53,7 +50,19 @@ function AdminCommunities() {
         <CommunitiesToolbar filters={filters} categories={categories} onChange={updateFilters} />
 
         <div className="mt-4" aria-busy={isFetching}>
-          {!isLoading && communities.length === 0 ? (
+          {error && !data ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
+              <p>{parseApiError(error).message}</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 font-semibold text-primary hover:underline"
+              >
+                <RotateCw className="size-4" />
+                Réessayer
+              </button>
+            </div>
+          ) : !isLoading && communities.length === 0 ? (
             <EmptyAlert
               text={hasFilters ? 'Aucune communauté ne correspond à ces filtres.' : 'Aucune communauté pour le moment.'}
             />

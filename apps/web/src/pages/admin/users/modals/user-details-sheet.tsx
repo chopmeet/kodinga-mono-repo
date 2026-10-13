@@ -3,7 +3,8 @@ import { PauseCircle, PlayCircle, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Badge, Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kodinga-mono-repo/ui';
 import { type AdminUser, userRole } from '@/data/admin-users.data';
 import { dateFormat } from '@/pages/shared/row-actions';
-import { formatLastLogin, initials, roleStyle } from '../tables/users-table';
+import { formatLastLogin, roleStyle } from '../tables/users-table';
+import { nameInitials } from '@/utils/Utils';
 
 type Props = {
   user: AdminUser | null;
@@ -21,7 +22,7 @@ function UserDetailsSheet({ user, onClose, onToggleActive, onToggleStaff }: Prop
             <SheetHeader>
               <div className="flex items-center gap-3">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-slate-800 font-semibold text-white" aria-hidden>
-                  {initials(user.full_name)}
+                  {nameInitials(user.full_name)}
                 </span>
                 <div className="min-w-0">
                   <SheetTitle>{user.full_name}</SheetTitle>

@@ -24,16 +24,17 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>;
 
-export type SanctionTarget = { member: AdminMember; type: Sanction['type'] };
+/** Any member shape with a display name (mock AdminMember, or an api member mapped by the caller) */
+export type SanctionTarget<M extends { name: string } = AdminMember> = { member: M; type: Sanction['type'] };
 
-type Props = {
-  target: SanctionTarget | null;
+type Props<M extends { name: string }> = {
+  target: SanctionTarget<M> | null;
   onCancel: () => void;
-  onConfirm: (member: AdminMember, sanction: Sanction) => void;
+  onConfirm: (member: M, sanction: Sanction) => void | Promise<void>;
 };
 
 /** The api requires a reason for every sanction; a suspension also has a duration */
-function SanctionModal({ target, onCancel, onConfirm }: Props) {
+function SanctionModal<M extends { name: string } = AdminMember>({ target, onCancel, onConfirm }: Props<M>) {
   const {
     register,
     handleSubmit,
@@ -49,8 +50,7 @@ function SanctionModal({ target, onCancel, onConfirm }: Props) {
 
   const onSubmit = async (values: Values) => {
     if (!target) return;
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    onConfirm(target.member, {
+    await onConfirm(target.member, {
       type: target.type,
       reason: values.reason,
       duration_days: isBan ? undefined : Number(values.duration_days),

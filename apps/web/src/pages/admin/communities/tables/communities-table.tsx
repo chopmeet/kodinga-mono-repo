@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@kodinga-mono-repo/ui';
 import type { CommunityListItem, CommunityPrivacy } from '@/utils/api/community/community.type';
-import { formatCompact, getName } from '@/utils/Utils';
+import { formatCompact, getName, nameInitials } from '@/utils/Utils';
 
 const privacyBadge: Record<CommunityPrivacy, { label: string; icon: typeof Globe }> = {
   public: { label: 'Publique', icon: Globe },
@@ -22,13 +22,6 @@ const privacyBadge: Record<CommunityPrivacy, { label: string; icon: typeof Globe
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 function CommunityCell({ community }: { community: CommunityListItem }) {
   return (
@@ -41,7 +34,7 @@ function CommunityCell({ community }: { community: CommunityListItem }) {
           style={community.brand_color ? { backgroundColor: community.brand_color } : undefined}
           aria-hidden
         >
-          {initials(community.name)}
+          {nameInitials(community.name)}
         </div>
       )}
       <div className="min-w-0">

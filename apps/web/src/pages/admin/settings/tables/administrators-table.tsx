@@ -4,7 +4,8 @@ import { MailCheck, ShieldOff } from 'lucide-react';
 import { Badge, DataTable } from '@kodinga-mono-repo/ui';
 import type { AdminUser } from '@/data/admin-users.data';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
-import { formatLastLogin, initials } from '../../users/tables/users-table';
+import { formatLastLogin } from '../../users/tables/users-table';
+import { nameInitials } from '@/utils/Utils';
 
 /** An invited account that never signed in yet */
 export const isPending = (admin: AdminUser) => !admin.is_email_verified && !admin.last_login;
@@ -31,7 +32,7 @@ function AdministratorsTable({ admins, currentUserId, onResendInvite, onRevoke }
       cell: ({ row }) => (
         <div className="flex min-w-56 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-700 text-xs font-semibold text-white" aria-hidden>
-            {initials(row.original.full_name)}
+            {nameInitials(row.original.full_name)}
           </span>
           <div className="min-w-0">
             <p className="truncate font-medium text-slate-900">

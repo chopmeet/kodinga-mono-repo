@@ -4,6 +4,7 @@ import { Eye, PauseCircle, PlayCircle, ShieldCheck, ShieldOff } from 'lucide-rea
 import { Badge, DataTable } from '@kodinga-mono-repo/ui';
 import { type AdminUser, userRole } from '@/data/admin-users.data';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
+import { nameInitials } from '@/utils/Utils';
 
 export const roleStyle = {
   staff: { label: 'Administrateur', className: 'border-violet-200 bg-violet-50 text-violet-800' },
@@ -11,13 +12,6 @@ export const roleStyle = {
   member: { label: 'Membre', className: 'border-slate-200 bg-slate-50 text-slate-700' },
 } as const;
 
-export const initials = (name: string) =>
-  name
-    .split(/[\s-]+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 export function formatLastLogin(iso: string | null) {
   if (!iso) return 'Jamais';
@@ -53,7 +47,7 @@ function UsersTable({ users, isLoading, onView, onToggleActive, onToggleStaff }:
       cell: ({ row }) => (
         <button type="button" onClick={() => onView(row.original)} className="flex min-w-56 items-center gap-3 text-left">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-white" aria-hidden>
-            {initials(row.original.full_name)}
+            {nameInitials(row.original.full_name)}
           </span>
           <span className="min-w-0">
             <span className="block truncate font-medium text-slate-900 hover:text-primary hover:underline">{row.original.full_name}</span>

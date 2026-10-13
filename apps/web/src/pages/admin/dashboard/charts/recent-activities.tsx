@@ -2,6 +2,7 @@ import { ChevronDown, CreditCard, FileText, Flag, LogIn, UserPlus, UsersRound } 
 import { useState } from 'react';
 
 import { type ActivityType, type DashboardActivity, recentActivities } from '@/data/admin-dashboard.data';
+import { nameInitials } from '@/utils/Utils';
 
 const ACTION_CONFIG: Record<ActivityType, { icon: typeof UserPlus; color: string; bg: string }> = {
   community: { icon: UsersRound, color: 'text-blue-700', bg: 'bg-blue-50' },
@@ -22,13 +23,6 @@ function formatRelativeTime(iso: string) {
   return diffDay === 1 ? 'hier' : `il y a ${diffDay} j`;
 }
 
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 const PAGE = 5;
 
@@ -64,7 +58,7 @@ export default function RecentActivities({ activities = recentActivities }: { ac
                 className="flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-semibold text-white"
                 aria-hidden
               >
-                {initials(activity.actor)}
+                {nameInitials(activity.actor)}
               </div>
             </li>
           );

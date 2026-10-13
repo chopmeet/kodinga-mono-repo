@@ -12,21 +12,25 @@ import {
 } from '@kodinga-mono-repo/ui';
 import type { AdminPost } from '@/data/admin-community-details.data';
 
-type Props = {
-  post: AdminPost | null;
+type DeletablePost = Pick<AdminPost, 'title' | 'author' | 'comments_count'>;
+
+type Props<P extends DeletablePost> = {
+  post: P | null;
   onCancel: () => void;
-  onConfirm: (post: AdminPost) => void;
+  onConfirm: (post: P) => void | Promise<void>;
 };
 
-function DeletePostModal({ post, onCancel, onConfirm }: Props) {
+function DeletePostModal<P extends DeletablePost = AdminPost>({ post, onCancel, onConfirm }: Props<P>) {
   const [isLoading, setIsLoading] = useState(false);
 
   const confirm = async () => {
     if (!post) return;
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    setIsLoading(false);
-    onConfirm(post);
+    try {
+      await onConfirm(post);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

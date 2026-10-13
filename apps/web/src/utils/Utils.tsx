@@ -12,12 +12,14 @@ export const getName = (user?: User | null) =>
   user?.username ||
   '';
 
-export function getInitials(user?: User | null): string {
-  const parts = getName(user).trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
+export function nameInitials(name: string, fallback = '?'): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return fallback;
   if (parts.length === 1) return parts[0][0].toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
+
+export const getInitials = (user?: User | null) => nameInitials(getName(user));
 
 /** Builds `path/?a=1&b=2`, skipping empty values. */
 export const QueryUrl = (path: string, query: object = {}) => {
