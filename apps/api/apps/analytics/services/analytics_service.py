@@ -36,9 +36,12 @@ class AnalyticsService:
         """
         cache_key = "analytics:overview"
         if not force_refresh:
-            cached = cache.get(cache_key)
-            if cached is not None:
-                return cached
+            try:
+                cached = cache.get(cache_key)
+                if cached is not None:
+                    return cached
+            except Exception as e:
+                logger.warning("Cache get error for key %s: %s", cache_key, e)
 
         now = timezone.now()
         thirty_days_ago = now - timedelta(days=30)
@@ -136,9 +139,12 @@ class AnalyticsService:
         """
         cache_key = "analytics:financial"
         if not force_refresh:
-            cached = cache.get(cache_key)
-            if cached is not None:
-                return cached
+            try:
+                cached = cache.get(cache_key)
+                if cached is not None:
+                    return cached
+            except Exception as e:
+                logger.warning("Cache get error for key %s: %s", cache_key, e)
 
         now = timezone.now()
         thirty_days_ago = now - timedelta(days=30)
@@ -200,9 +206,12 @@ class AnalyticsService:
         """
         cache_key = "analytics:engagement"
         if not force_refresh:
-            cached = cache.get(cache_key)
-            if cached is not None:
-                return cached
+            try:
+                cached = cache.get(cache_key)
+                if cached is not None:
+                    return cached
+            except Exception as e:
+                logger.warning("Cache get error for key %s: %s", cache_key, e)
 
         now = timezone.now()
         one_day_ago = now - timedelta(days=1)
@@ -265,4 +274,9 @@ class AnalyticsService:
         """
         Invalidates cached analytics views.
         """
-        cache.delete_many(["analytics:overview", "analytics:financial", "analytics:engagement"])
+        try:
+            cache.delete_many(
+                ["analytics:overview", "analytics:financial", "analytics:engagement"]
+            )
+        except Exception as e:
+            logger.warning("Failed to invalidate analytics cache: %s", e)

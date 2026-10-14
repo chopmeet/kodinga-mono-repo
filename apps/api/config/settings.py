@@ -275,6 +275,11 @@ if IS_TESTING:
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
 elif RESEND_API_KEY:
     # Prioritize Resend backend when RESEND_API_KEY is configured
     configured_backend = env('EMAIL_BACKEND', default='common.services.email_service.ResendEmailBackend')
@@ -301,12 +306,13 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if DEBUG else 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/1'),
+if 'CACHES' not in globals() or not IS_TESTING:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if (DEBUG or IS_TESTING) else 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/1'),
+        }
     }
-}
 
 # External OAuth Credentials
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
