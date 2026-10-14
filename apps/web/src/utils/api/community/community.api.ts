@@ -26,8 +26,16 @@ const cleanParams = (query: CommunityListQuery) =>
 
 export const CommunityApi = createApi({
   reducerPath: 'communityApi',
-  tagTypes: ['communities', 'categories', 'members', 'posts'],
-  baseQuery: fetchBaseQuery({ baseUrl: ApiBaseUrl, prepareHeaders }),
+  tagTypes: [
+    'communities', 
+    'categories', 
+    'members', 
+    'posts',
+  ],
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: ApiBaseUrl, 
+    prepareHeaders 
+  }),
   endpoints: (builder) => ({
     getCommunities: builder.query<ApiPaginated<CommunityListItem>, CommunityListQuery>({
       query: (query) => ({ url: 'communities/', params: cleanParams(query) }),
@@ -63,15 +71,10 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityDetail>,
       providesTags: (_result, _error, slug) => [{ type: 'communities', id: slug }],
     }),
-    /**
-     * Communities the signed-in user manages (owner / admin / moderator), with the role.
-     * communities/my/ lists every active membership but without the role: the role comes from
-     * each community detail (user_membership). One request per community until the list
-     * endpoint returns it.
-     */
+    //
     getMyManagedCommunities: builder.query<ManagedCommunity[], void>({
       async queryFn(_arg, _api, _extra, baseQuery) {
-        const list = await baseQuery({ url: 'communities/my/', params: { page_size: 100 } });
+        const list = await baseQuery({ url: 'communities/my/', params: { page_size: 10 } });
         if (list.error) return { error: list.error };
         const items = (list.data as ApiPaginated<CommunityListItem>).results ?? [];
         const details = await Promise.all(items.map((c) => baseQuery(`communities/${c.slug}/`)));

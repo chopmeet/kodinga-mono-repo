@@ -34,3 +34,11 @@ export type UserFormData = Partial<
     'timezone'
   >
 >;
+
+/** GET users/: `active` = active with a verified email, `inactive` = suspended account */
+export type UsersQuery = {
+  search?: string;
+  status?: 'active' | 'unverified' | 'inactive';
+  page?: number;
+  page_size?: number;
+};
