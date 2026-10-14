@@ -1,30 +1,26 @@
 from decimal import Decimal
+
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
 from apps.affiliates.models.link import AffiliateLink
-from apps.affiliates.models.payout import PayoutMethod, PayoutStatus
+from apps.affiliates.models.payout import PayoutStatus
 from apps.affiliates.services.affiliate_service import AffiliateService
 from apps.communities.models.community import Community
 from apps.gamification.models.reputation import UserReputation
-from apps.messaging.models.conversation import Conversation, ConversationType
 from apps.messaging.models.message import Message
 from apps.notifications.models.notification import Notification
 from apps.opportunities.models.application import (
     ApplicationStatus,
-    OpportunityApplication,
 )
 from apps.opportunities.models.opportunity import (
     ExperienceLevel,
-    Opportunity,
-    OpportunityStatus,
     OpportunityType,
     WorkplaceType,
 )
 from apps.profiles.models.technology import Technology, TechnologyCategory
-from apps.projects.models.project import Project, ProjectStatus
 
 
 @pytest.fixture
@@ -99,7 +95,9 @@ def tech_react(db):
 
 
 @pytest.mark.django_db
-def test_messaging_direct_and_group_conversations(api_client, user_alice, user_bob, user_charlie, community):
+def test_messaging_direct_and_group_conversations(
+    api_client, user_alice, user_bob, user_charlie, community
+):
     # Authenticate as Alice
     api_client.force_authenticate(user=user_alice)
 
@@ -201,7 +199,10 @@ def test_affiliates_link_clicks_and_payouts(api_client, user_alice):
     # 1. Create custom affiliate link
     create_link_resp = api_client.post(
         "/api/v1/affiliates/links/",
-        {"custom_slug": "alice-python", "target_url": "https://kodinga.com/courses/python"},
+        {
+            "custom_slug": "alice-python",
+            "target_url": "https://kodinga.com/courses/python",
+        },
         format="json",
     )
     assert create_link_resp.status_code == status.HTTP_201_CREATED
@@ -267,7 +268,9 @@ def test_affiliates_link_clicks_and_payouts(api_client, user_alice):
 
 
 @pytest.mark.django_db
-def test_projects_showcase_and_upvotes(api_client, user_alice, user_bob, community, tech_django, tech_react):
+def test_projects_showcase_and_upvotes(
+    api_client, user_alice, user_bob, community, tech_django, tech_react
+):
     api_client.force_authenticate(user=user_alice)
 
     # 1. Create Project
@@ -334,7 +337,9 @@ def test_projects_showcase_and_upvotes(api_client, user_alice, user_bob, communi
 
 
 @pytest.mark.django_db
-def test_opportunities_jobboard_and_applications(api_client, user_alice, user_bob, community, tech_django):
+def test_opportunities_jobboard_and_applications(
+    api_client, user_alice, user_bob, community, tech_django
+):
     # Alice (poster) creates a job opportunity
     api_client.force_authenticate(user=user_alice)
 
@@ -359,7 +364,6 @@ def test_opportunities_jobboard_and_applications(api_client, user_alice, user_bo
     )
     assert create_opp_resp.status_code == status.HTTP_201_CREATED
     opp_slug = create_opp_resp.data["slug"]
-    opp_id = create_opp_resp.data["id"]
 
     # Explore opportunities with workplace filter
     api_client.logout()

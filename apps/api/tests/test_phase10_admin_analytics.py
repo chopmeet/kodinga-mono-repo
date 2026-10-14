@@ -3,12 +3,15 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
+from apps.administration.models.audit import PlatformAuditLog
+from apps.analytics.models.metric import MetricType
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.settings import CommunitySettings
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
-from apps.administration.models.audit import PlatformAuditLog
-from apps.administration.models.setting import SystemSetting
-from apps.analytics.models.metric import PlatformMetric, MetricType
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 
 
 @pytest.fixture
@@ -67,7 +70,9 @@ def test_community(db, superadmin_user):
 
 @pytest.mark.django_db
 class TestPhase10AnalyticsAPI:
-    def test_analytics_overview_permissions(self, api_client, regular_user, superadmin_user):
+    def test_analytics_overview_permissions(
+        self, api_client, regular_user, superadmin_user
+    ):
         # 1. Unauthenticated -> 401
         res = api_client.get("/api/v1/analytics/overview/")
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
@@ -115,7 +120,9 @@ class TestPhase10AnalyticsAPI:
         assert res_post.json()["data"]["metric_name"] == "custom_course_completions"
 
         # List metrics
-        res_list = api_client.get("/api/v1/analytics/metrics/?metric_name=custom_course_completions")
+        res_list = api_client.get(
+            "/api/v1/analytics/metrics/?metric_name=custom_course_completions"
+        )
         assert res_list.status_code == status.HTTP_200_OK
         assert len(res_list.json()["results"]) >= 1
 
@@ -204,7 +211,9 @@ class TestPhase10AdministrationAPI:
         assert res_audit.status_code == status.HTTP_200_OK
         assert len(res_audit.json()["results"]) >= 2
 
-    def test_user_list_admin_protection(self, api_client, regular_user, superadmin_user):
+    def test_user_list_admin_protection(
+        self, api_client, regular_user, superadmin_user
+    ):
         # Unauthenticated -> 401
         res_unauth = api_client.get("/api/v1/users/")
         assert res_unauth.status_code == status.HTTP_401_UNAUTHORIZED
@@ -224,16 +233,22 @@ class TestPhase10AdministrationAPI:
         self, api_client, regular_user, superadmin_user, test_community
     ):
         # 1. Unauthenticated -> 401
-        res_unauth = api_client.get(f"/api/v1/communities/{test_community.slug}/members/")
+        res_unauth = api_client.get(
+            f"/api/v1/communities/{test_community.slug}/members/"
+        )
         assert res_unauth.status_code == status.HTTP_401_UNAUTHORIZED
 
         # 2. Regular user (not owner/admin/mod) -> 403
         api_client.force_authenticate(user=regular_user)
-        res_forbid = api_client.get(f"/api/v1/communities/{test_community.slug}/members/")
+        res_forbid = api_client.get(
+            f"/api/v1/communities/{test_community.slug}/members/"
+        )
         assert res_forbid.status_code == status.HTTP_403_FORBIDDEN
 
         # 3. Community owner / platform superadmin -> 200
         api_client.force_authenticate(user=superadmin_user)
-        res_owner = api_client.get(f"/api/v1/communities/{test_community.slug}/members/")
+        res_owner = api_client.get(
+            f"/api/v1/communities/{test_community.slug}/members/"
+        )
         assert res_owner.status_code == status.HTTP_200_OK
         assert len(res_owner.json()["results"]) >= 1
