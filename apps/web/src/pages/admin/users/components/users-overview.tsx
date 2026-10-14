@@ -1,26 +1,25 @@
-import { MailWarning, ShieldCheck, UserPlus, Users, UserX, Crown } from 'lucide-react';
+import { Crown, MailWarning, UserCheck, UserPlus, Users, UserX } from 'lucide-react';
 
 import { type CardType, OverviewCardItem } from '@kodinga-mono-repo/ui';
-import { type AdminUser, userRole } from '@/data/admin-users.data';
+import { useGetUsersQuery } from '@/utils/api/user/user.api';
+import type { UsersQuery } from '@/utils/api/user/user.type';
 import { formatCompact } from '@/utils/Utils';
 
-const THIRTY_DAYS = 30 * 86_400_000;
+/** Only the total of each status is needed: one user per page */
+function useCount(status?: UsersQuery['status']) {
+  const { data } = useGetUsersQuery({ status, page_size: 1 });
+  return data ? formatCompact(data.pagination.count) : '…';
+}
 
-function UsersOverview({ users }: { users: AdminUser[] }) {
-  const now = Date.UTC(2026, 9, 9, 10);
+function UsersOverview() {
   const cards: CardType[] = [
-    { id: 'total', label: 'Utilisateurs', value: formatCompact(users.length), icon: <Users size={18} />, color: '#1D4ED8' },
-    {
-      id: 'new',
-      label: 'Nouveaux (30 j)',
-      value: users.filter((u) => now - new Date(u.date_joined).getTime() <= THIRTY_DAYS).length,
-      icon: <UserPlus size={18} />,
-      color: '#0f766e',
-    },
-    { id: 'creators', label: 'Créateurs de communauté', value: users.filter((u) => userRole(u) === 'creator').length, icon: <Crown size={18} />, color: '#b45309' },
-    { id: 'staff', label: 'Administrateurs', value: users.filter((u) => u.is_staff).length, icon: <ShieldCheck size={18} />, color: '#7c3aed' },
-    { id: 'unverified', label: 'Emails non vérifiés', value: users.filter((u) => !u.is_email_verified).length, icon: <MailWarning size={18} />, color: '#c2410c' },
-    { id: 'suspended', label: 'Comptes suspendus', value: users.filter((u) => !u.is_active).length, icon: <UserX size={18} />, color: '#b91c1c' },
+    { id: 'total', label: 'Utilisateurs', value: useCount(), icon: <Users size={18} />, color: '#1D4ED8' },
+    // Not plugged yet: the api has no filter on the join date, nor on community owners
+    { id: 'new', label: 'Nouveaux (30 j)', value: '—', icon: <UserPlus size={18} />, color: '#0f766e' },
+    { id: 'creators', label: 'Créateurs de communauté', value: '—', icon: <Crown size={18} />, color: '#b45309' },
+    { id: 'active', label: 'Comptes actifs et vérifiés', value: useCount('active'), icon: <UserCheck size={18} />, color: '#15803d' },
+    { id: 'unverified', label: 'Emails non vérifiés', value: useCount('unverified'), icon: <MailWarning size={18} />, color: '#c2410c' },
+    { id: 'suspended', label: 'Comptes suspendus', value: useCount('inactive'), icon: <UserX size={18} />, color: '#b91c1c' },
   ];
 
   return (
