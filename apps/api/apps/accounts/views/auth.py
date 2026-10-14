@@ -88,6 +88,7 @@ class LoginView(APIView):
                 'access': result['access'],
                 'refresh': result['refresh'],
                 'token': result['access'],
+                'is_superadmin': getattr(result['user'], 'is_superadmin', False),
                 'status': user_data.get('status', 'active'),
                 'session_id': result['session_id'],
                 'user': user_data,

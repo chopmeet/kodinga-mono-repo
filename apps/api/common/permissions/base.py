@@ -29,3 +29,21 @@ class IsOwnerOrReadOnly(BasePermission):
         if hasattr(obj, 'owner'):
             return obj.owner == request.user
         return False
+
+
+class IsPlatformAdmin(BasePermission):
+    """
+    Allows access only to authenticated users who are platform superadmins,
+    superusers, or staff members.
+    """
+    def has_permission(self, request, view):
+        return bool(
+            request.user and
+            request.user.is_authenticated and
+            (
+                getattr(request.user, 'is_superadmin', False) or
+                getattr(request.user, 'is_superuser', False) or
+                getattr(request.user, 'is_staff', False)
+            )
+        )
+

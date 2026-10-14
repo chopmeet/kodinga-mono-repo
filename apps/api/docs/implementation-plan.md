@@ -109,23 +109,45 @@
      - `/api/v1/billing/affiliate/join/` (POST activation du statut affilié)
    - Tests validés (100% pass, 7 tests complets couvrant création, confirmation IPN, idempotence, sécurité prix, cross-user privacy, adhésion auto).
 
-## Phase 6 : Classroom & Formations
+## Phase 6 : Classroom & Formations (TERMINE)
 1. Cours & Leçons (`apps/classroom`) : Modules, streaming vidéo Mux, progression par leçon, déblocage séquentiel.
 
-## Phase 7 : Événements & Salles Live
-1. Événements programmés (`apps/events`) : Calendrier, rappels, fuseaux horaires.
-2. Salons LiveKit (`apps/live`) : Sessions interactives, attribution de tokens vidéo temps réel.
+## Phase 7 : Événements & Salles Live (TERMINE)
+1. Événements programmés (`apps/events`) : Calendrier ICS, rappels par email, inscriptions RSVP.
+2. Salons LiveKit interactifs : Sessions temps réel, attribution de jetons JWT sécurisés (`LIVEKIT_API_SECRET`), webhooks temps réel.
 
-## Phase 8 : Gamification, Découverte & Notifications
-1. Système de points, niveaux et badges (`apps/gamification`).
-2. Moteur de recherche et découverte de communautés (`apps/discovery`).
-3. Notifications in-app et push (`apps/notifications`).
+## Phase 8 : Gamification, Découverte & Notifications (TERMINE)
+1. Système de points, niveaux et badges (`apps/gamification`) : Classements global et par communauté, historique de réputation.
+2. Moteur de recherche et découverte (`apps/discovery`) : Recherche unifiée et flux tendance.
+3. Notifications in-app (`apps/notifications`) : Cycle de vie lu/non lu, décompte en temps réel.
 
-## Phase 9 : Messagerie, Affiliation, Projets & Opportunités
-1. Messagerie privée directe (`apps/messaging`).
-2. Programme d'affiliation créateur (`apps/affiliates`).
-3. Vitrine projets et hackathons tech (`apps/projects`, `apps/challenges`, `apps/opportunities`).
+## Phase 9 : Messagerie, Affiliation, Projets & Opportunités (TERMINE)
+1. Messagerie privée directe (`apps/messaging`) : Conversations 1-to-1 et de groupe, pièces jointes.
+2. Programme d'affiliation créateur (`apps/affiliates`) : Génération de liens, traçage des clics et demandes de retrait (payouts).
+3. Vitrine projets et opportunités tech (`apps/projects`, `apps/opportunities`) : Showcases, upvotes, offres d'emploi/missions et candidatures.
 
-## Phase 10 : Administration Globale & Optimisation de Production
-1. Super-administration, dashboards d'analytique (`apps/analytics`, `apps/administration`).
-2. Optimisations PostgreSQL (index composite, requêtes optimisées), cache Redis fin et monitoring.
+## Phase 10 : Administration Globale & Optimisation de Production (TERMINE)
+1. **Analytique & Statistiques Plateforme (`apps/analytics`)**
+   - Modèle `PlatformMetric` avec indexation composite (`['metric_name', 'recorded_at']`, `['metric_type', 'recorded_at']`).
+   - Service d'agrégation `AnalyticsService` avec cache Redis fin (TTL 300s) : KPI utilisateurs (DAU, WAU, MAU, ratio DAU/MAU), communautés, contenus, complétion de formations, et monétisation (MRR, devises).
+   - Endpoints complets :
+     - `GET /api/v1/analytics/overview/` (Vue macroscopique)
+     - `GET /api/v1/analytics/financial/` (Ventilation financière)
+     - `GET /api/v1/analytics/engagement/` (Activité & rétention)
+     - `GET /api/v1/analytics/metrics/` & `POST /api/v1/analytics/metrics/` (Historique et snapshots)
+2. **Super-Administration & Gouvernance (`apps/administration`)**
+   - Modèles `PlatformAuditLog` et `SystemSetting` avec indexation composite d'audit (`['action', 'created_at']`, `['target_type', 'target_id']`).
+   - Service `AdministrationService` : Journalisation d'audit systématique, bilan de santé système (PostgreSQL, Redis, Storage) avec mesure de latence en temps réel, activation/suspension d'utilisateurs et promotion superadmin.
+   - Endpoints complets :
+     - `GET /api/v1/admin/dashboard/` (Synthèse superadmin avec 10 derniers logs d'audit)
+     - `GET /api/v1/admin/audit-logs/` (Journal d'audit filtrable par action et cible)
+     - `GET /api/v1/admin/system/health/` (Santé des composants PostgreSQL, Redis, Storage)
+     - `GET /api/v1/admin/settings/` & `PATCH /api/v1/admin/settings/` (Feature flags globaux)
+     - `POST /api/v1/admin/users/<id>/toggle-status/` (Activation / suspension de compte)
+     - `POST /api/v1/admin/users/<id>/toggle-admin/` (Attribution / révocation privilège superadmin)
+3. **Sécurité & Permissions RBAC**
+   - Permission `IsPlatformAdmin` stricte (`is_superadmin`, `is_superuser`, `is_staff`).
+   - Protection de `UserListView` (`GET /api/v1/users/`) réservée aux administrateurs avec filtres de statut (`active`, `unverified`, `inactive`).
+   - Protection de `CommunityMemberListView` (`GET /api/v1/communities/<slug>/members/`) réservée aux propriétaires, modérateurs et superadmins.
+4. **Validation des Tests**
+   - 100% des tests validés (Phase 1 à Phase 10).

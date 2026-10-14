@@ -64,6 +64,16 @@ INSTALLED_APPS = [
     'apps.posts.apps.PostsConfig',
     'apps.billing.apps.BillingConfig',
     'apps.classroom.apps.ClassroomConfig',
+    'apps.events.apps.EventsConfig',
+    'apps.gamification.apps.GamificationConfig',
+    'apps.discovery.apps.DiscoveryConfig',
+    'apps.notifications.apps.NotificationsConfig',
+    'apps.messaging.apps.MessagingConfig',
+    'apps.affiliates.apps.AffiliatesConfig',
+    'apps.projects.apps.ProjectsConfig',
+    'apps.opportunities.apps.OpportunitiesConfig',
+    'apps.analytics.apps.AnalyticsConfig',
+    'apps.administration.apps.AdministrationConfig',
     'api',
 ]
 
@@ -323,4 +333,10 @@ PAYDUNYA_TOKEN = env('PAYDUNYA_TOKEN', default='')
 PAYDUNYA_CALLBACK_URL = env('PAYDUNYA_CALLBACK_URL', default='')
 PAYDUNYA_SUCCESS_URL = env('PAYDUNYA_SUCCESS_URL', default='')
 PAYDUNYA_CANCEL_URL = env('PAYDUNYA_CANCEL_URL', default='')
+
+# LiveKit Real-Time Video & Streaming Configuration
+LIVEKIT_URL = env('LIVEKIT_URL', default='wss://live.kodinga.com')
+LIVEKIT_API_KEY = env('LIVEKIT_API_KEY', default='devkey')
+LIVEKIT_API_SECRET = env('LIVEKIT_API_SECRET', default='secret_kodinga_livekit_2026_super_key')
+
 
