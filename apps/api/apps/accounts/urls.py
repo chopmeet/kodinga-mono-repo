@@ -13,7 +13,12 @@ from apps.accounts.views.auth import (
 )
 from apps.accounts.views.oauth import OAuthCallbackView, OAuthStartView
 from apps.accounts.views.session import UserSessionDetailView, UserSessionListView
-from apps.accounts.views.user import UserConsentView, UserListView, UserProfileMeView
+from apps.accounts.views.user import (
+    UserConsentView,
+    UserDetailAdminView,
+    UserListView,
+    UserProfileMeView,
+)
 
 app_name = 'accounts'
 
@@ -42,4 +47,5 @@ urlpatterns = [
     path('users/', UserListView.as_view(), name='user_list'),
     path('users/me/', UserProfileMeView.as_view(), name='user_me'),
     path('users/me/consents/', UserConsentView.as_view(), name='user_consents'),
+    path('users/<uuid:user_id>/', UserDetailAdminView.as_view(), name='user_detail_admin'),
 ]

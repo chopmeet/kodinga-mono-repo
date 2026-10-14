@@ -1,0 +1,14 @@
+Rappel d'événement !
+
+Bonjour {{ first_name|default:username }},
+
+L'événement "{{ event_title }}" dans la communauté {{ community_name }} va débuter très bientôt.
+
+Date : {{ event_date }} à {{ event_time }} ({{ timezone }})
+Format : {{ event_format }}
+
+Rejoindre l'événement :
+{{ event_url }}
+
+L'équipe {{ app_name }}
+{{ support_email }}

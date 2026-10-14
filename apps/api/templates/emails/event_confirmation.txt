@@ -1,0 +1,14 @@
+Inscription confirmée !
+
+Bonjour {{ first_name|default:username }},
+
+Votre inscription à l'événement "{{ event_title }}" dans la communauté {{ community_name }} a bien été enregistrée.
+
+Date : {{ event_date }} à {{ event_time }} ({{ timezone }})
+Format : {{ event_format }}
+
+Accéder à l'événement :
+{{ event_url }}
+
+L'équipe {{ app_name }}
+{{ support_email }}

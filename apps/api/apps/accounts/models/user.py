@@ -33,6 +33,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, username, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_superadmin', True)
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('email_verified_at', django_timezone.now())
 
@@ -82,6 +83,10 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     is_superuser = models.BooleanField(
         default=False,
         help_text="Designates whether the user has all permissions without explicitly assigning them."
+    )
+    is_superadmin = models.BooleanField(
+        default=False,
+        help_text="Designates whether the user is a platform superadmin."
     )
     email_verified_at = models.DateTimeField(
         null=True,

@@ -100,8 +100,9 @@ class MyMembershipView(APIView):
 class CommunityMemberListView(APIView):
     """
     List members of a community with filters and search.
+    Requires authentication and owner/admin/moderator rights on the community.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
@@ -119,6 +120,25 @@ class CommunityMemberListView(APIView):
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        is_platform_admin = bool(
+            getattr(request.user, 'is_superadmin', False) or
+            getattr(request.user, 'is_superuser', False) or
+            getattr(request.user, 'is_staff', False)
+        )
+        is_owner = (community.owner_id == request.user.id)
+        current_membership = MembershipSelector.get_member(community, request.user)
+        has_community_permission = (
+            current_membership is not None and
+            current_membership.status == 'active' and
+            current_membership.role in ['owner', 'admin', 'moderator']
+        )
+
+        if not (is_platform_admin or is_owner or has_community_permission):
+            return error_response(
+                "Vous devez être propriétaire, administrateur ou modérateur de la communauté pour consulter la liste des membres.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
 
         role = request.query_params.get('role')
         status_filter = request.query_params.get('status')

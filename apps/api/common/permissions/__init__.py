@@ -1,3 +1,4 @@
-from common.permissions.base import IsOwner, IsOwnerOrReadOnly
+from common.permissions.base import IsOwner, IsOwnerOrReadOnly, IsPlatformAdmin
 
-__all__ = ['IsOwner', 'IsOwnerOrReadOnly']
+__all__ = ['IsOwner', 'IsOwnerOrReadOnly', 'IsPlatformAdmin']
+

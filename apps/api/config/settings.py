@@ -64,6 +64,16 @@ INSTALLED_APPS = [
     'apps.posts.apps.PostsConfig',
     'apps.billing.apps.BillingConfig',
     'apps.classroom.apps.ClassroomConfig',
+    'apps.events.apps.EventsConfig',
+    'apps.gamification.apps.GamificationConfig',
+    'apps.discovery.apps.DiscoveryConfig',
+    'apps.notifications.apps.NotificationsConfig',
+    'apps.messaging.apps.MessagingConfig',
+    'apps.affiliates.apps.AffiliatesConfig',
+    'apps.projects.apps.ProjectsConfig',
+    'apps.opportunities.apps.OpportunitiesConfig',
+    'apps.analytics.apps.AnalyticsConfig',
+    'apps.administration.apps.AdministrationConfig',
     'api',
 ]
 
@@ -265,6 +275,11 @@ if IS_TESTING:
     PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
 elif RESEND_API_KEY:
     # Prioritize Resend backend when RESEND_API_KEY is configured
     configured_backend = env('EMAIL_BACKEND', default='common.services.email_service.ResendEmailBackend')
@@ -291,12 +306,13 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if DEBUG else 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/1'),
+if 'CACHES' not in globals() or not IS_TESTING:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if (DEBUG or IS_TESTING) else 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/1'),
+        }
     }
-}
 
 # External OAuth Credentials
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
@@ -323,4 +339,10 @@ PAYDUNYA_TOKEN = env('PAYDUNYA_TOKEN', default='')
 PAYDUNYA_CALLBACK_URL = env('PAYDUNYA_CALLBACK_URL', default='')
 PAYDUNYA_SUCCESS_URL = env('PAYDUNYA_SUCCESS_URL', default='')
 PAYDUNYA_CANCEL_URL = env('PAYDUNYA_CANCEL_URL', default='')
+
+# LiveKit Real-Time Video & Streaming Configuration
+LIVEKIT_URL = env('LIVEKIT_URL', default='wss://live.kodinga.com')
+LIVEKIT_API_KEY = env('LIVEKIT_API_KEY', default='devkey')
+LIVEKIT_API_SECRET = env('LIVEKIT_API_SECRET', default='secret_kodinga_livekit_2026_super_key')
+
 

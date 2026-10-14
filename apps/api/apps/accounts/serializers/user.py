@@ -27,6 +27,9 @@ class UserSerializer(BaseModelSerializer):
             'full_name',
             'status',
             'is_active',
+            'is_staff',
+            'is_superuser',
+            'is_superadmin',
             'is_email_verified',
             'preferred_language',
             'timezone',
@@ -41,6 +44,8 @@ class UserSerializer(BaseModelSerializer):
             'username',
             'status',
             'is_active',
+            'is_staff',
+            'is_superuser',
             'is_email_verified',
             'date_joined',
             'last_login',
@@ -57,7 +62,21 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'last_name',
             'preferred_language',
             'timezone',
+            'is_superadmin',
+            'is_active',
         ]
+
+    def validate_is_superadmin(self, value):
+        request = self.context.get('request')
+        # Only admins/superadmins can alter superadmin rights
+        if request and request.user and not (
+            getattr(request.user, 'is_superadmin', False) or
+            getattr(request.user, 'is_superuser', False) or
+            getattr(request.user, 'is_staff', False)
+        ):
+            raise serializers.ValidationError("Only platform administrators can modify the is_superadmin attribute.")
+        return value
+
 
 
 class ConsentSerializer(BaseModelSerializer):
