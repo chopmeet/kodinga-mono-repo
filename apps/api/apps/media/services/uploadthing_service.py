@@ -12,6 +12,7 @@ from apps.media.models.media_asset import (
     MediaPurpose,
     MediaStatus,
 )
+from common.permissions.base import is_superadmin_user
 
 logger = logging.getLogger('kodinga.media')
 
@@ -149,7 +150,7 @@ class UploadThingService:
             raise NotFound("Fichier média introuvable.")
 
         # If owned by user, verify permission
-        if asset.user and user and asset.user_id != user.id and not user.is_staff:
+        if asset.user and user and asset.user_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise ValidationError("Action non autorisée sur cette ressource.")
 
         asset.file_url = file_url
@@ -179,7 +180,7 @@ class UploadThingService:
         except MediaAsset.DoesNotExist:
             raise NotFound("Média introuvable.")
 
-        if asset.user and user and asset.user_id != user.id and not user.is_staff:
+        if asset.user and user and asset.user_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise ValidationError("Vous n'êtes pas propriétaire de ce média.")
 
         asset.status = MediaStatus.DELETED

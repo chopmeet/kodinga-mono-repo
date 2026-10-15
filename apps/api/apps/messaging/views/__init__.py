@@ -4,6 +4,7 @@ from apps.messaging.views.messaging_views import (
     ConversationMarkReadView,
     ConversationMessagesView,
     MessageDetailView,
+    ToggleMessagePinView,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "ConversationMessagesView",
     "ConversationMarkReadView",
     "MessageDetailView",
+    "ToggleMessagePinView",
 ]

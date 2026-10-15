@@ -8,13 +8,15 @@ from apps.billing.views import (
     PayDunyaIPNView,
     PaymentStatusView,
     PlansListView,
+    CommunityPlanDetailView,
 )
 
 app_name = 'billing'
 
 urlpatterns = [
-    # Plans catalogue
+    # Plans catalogue & Community plans management
     path('billing/plans/', PlansListView.as_view(), name='plans_list'),
+    path('billing/plans/<uuid:plan_id>/', CommunityPlanDetailView.as_view(), name='community_plan_detail'),
 
     # PayDunya Checkout & Server IPN
     path('billing/checkout/', CreateCheckoutView.as_view(), name='create_checkout'),

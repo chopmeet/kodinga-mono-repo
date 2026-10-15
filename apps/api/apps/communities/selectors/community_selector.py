@@ -42,11 +42,12 @@ class CommunitySelector:
         else:
             community = qs.get(slug__iexact=identifier)
 
-        # If secret community, ensure user is active member, owner, or superuser
+        # If secret community, ensure user is active member, owner, or superadmin
         if community.privacy_type == CommunityPrivacy.SECRET:
             if not user or not user.is_authenticated:
                 raise Community.DoesNotExist("Communauté introuvable.")
-            if not user.is_superuser and community.owner_id != user.id:
+            from common.permissions.base import is_superadmin_user
+            if not is_superadmin_user(user) and community.owner_id != user.id:
                 if not CommunityMember.objects.filter(
                     community=community, user=user, status=MembershipStatus.ACTIVE
                 ).exists():

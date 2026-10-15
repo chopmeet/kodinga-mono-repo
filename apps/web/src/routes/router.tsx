@@ -33,6 +33,7 @@ import SpaceAccessTab from '@/pages/community-space/settings/tabs/access';
 import SpaceDangerTab from '@/pages/community-space/settings/tabs/danger';
 import SpaceGeneralTab from '@/pages/community-space/settings/tabs/general';
 import SpaceRulesTab from '@/pages/community-space/settings/tabs/rules';
+import SpaceAITab from '@/pages/community-space/settings/tabs/ai';
 import SectionGuard from '@/pages/community-space/section-guard';
 import AdminUsers from '@/pages/admin/users/admin-users';
 import AdminSettings from '@/pages/admin/settings/admin-settings';
@@ -149,6 +150,7 @@ export const AppRoutes: RouteObject[] = [
           { path: 'general', element: <SpaceGeneralTab /> },
           { path: 'access', element: <SpaceAccessTab /> },
           { path: 'rules', element: <SpaceRulesTab /> },
+          { path: 'ai', element: <SpaceAITab /> },
           { path: 'danger', element: <SectionGuard section="danger"><SpaceDangerTab /></SectionGuard> },
         ],
       },

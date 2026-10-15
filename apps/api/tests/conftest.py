@@ -19,3 +19,34 @@ def configure_test_settings(settings):
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         }
     }
+
+
+@pytest.fixture(autouse=True)
+def reset_ai_circuit_breaker():
+    """Reset AI circuit breaker state before and after every test."""
+    from apps.ai.providers.circuit_breaker import gemini_circuit_breaker
+
+    gemini_circuit_breaker.reset()
+    yield
+    gemini_circuit_breaker.reset()
+
+
+@pytest.fixture(autouse=True)
+def mock_default_ai_moderation():
+    """
+    Ensure hermetic tests without external AI API dependencies for general
+    posting and messaging tests. Individual AI tests can override this patch.
+    """
+    from unittest.mock import patch
+
+    from apps.ai.schemas import ModerationResult
+
+    with patch("apps.ai.router.ai_router.moderate_content") as mock_mod:
+        mock_mod.return_value = ModerationResult(
+            decision="allow",
+            flagged=False,
+            categories=[],
+            confidence=1.0,
+            provider="mock_test",
+        )
+        yield mock_mod

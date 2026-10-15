@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
+from apps.communities.models.community import CommunityPrivacy
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
 from apps.events.models.event import Event, EventFormat, EventStatus
@@ -57,12 +58,13 @@ class EventJoinLiveView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Ensure membership
-        try:
-            EventService.check_active_member(request.user, community)
-        except Exception as e:
-            msg = getattr(e, "detail", str(e))
-            return error_response(str(msg), status_code=status.HTTP_403_FORBIDDEN)
+        # Ensure membership or public event access
+        if not event.is_public or community.privacy_type == CommunityPrivacy.SECRET:
+            try:
+                EventService.check_active_member(request.user, community)
+            except Exception as e:
+                msg = getattr(e, "detail", str(e))
+                return error_response(str(msg), status_code=status.HTTP_403_FORBIDDEN)
 
         # Mark or create attendance & check-in
         attendee, _ = EventAttendee.objects.get_or_create(
@@ -74,10 +76,11 @@ class EventJoinLiveView(APIView):
             attendee.checked_in_at = timezone.now()
             attendee.save(update_fields=["checked_in_at", "updated_at"])
 
+        from common.permissions.base import is_superadmin_user
         # Determine host privileges
         is_host = (
             event.host_id == request.user.id
-            or request.user.is_superuser
+            or is_superadmin_user(request.user)
             or community.owner_id == request.user.id
         )
 

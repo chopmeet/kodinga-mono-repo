@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/v1/', include('apps.opportunities.urls', namespace='opportunities')),
     path('api/v1/', include('apps.analytics.urls', namespace='analytics')),
     path('api/v1/', include('apps.administration.urls', namespace='administration')),
+    path('api/v1/', include('apps.ai.urls', namespace='ai')),
 
     # OpenAPI / Swagger Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

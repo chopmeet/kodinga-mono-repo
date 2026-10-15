@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from django.utils.text import slugify
 from apps.communities.models.community import Community
 from apps.media.models.video_asset import VideoAsset
 from common.models.base import BaseModel
@@ -19,6 +20,7 @@ class EventFormat(models.TextChoices):
     LIVEKIT = "livekit", "Salon LiveKit interactif intégré"
     EXTERNAL = "external", "Lien externe (Google Meet, Zoom, YouTube)"
     IN_PERSON = "in_person", "Présentiel"
+    HYBRID = "hybrid", "Hybride (Présentiel & En ligne)"
 
 
 class EventStatus(models.TextChoices):
@@ -71,10 +73,33 @@ class Event(BaseModel):
     end_time = models.DateTimeField(db_index=True)
     timezone = models.CharField(max_length=50, default="UTC")
 
+    # Physical location fields (for in_person and hybrid events)
+    venue_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nom du lieu ou de la salle physique (ex: Tech Hub Dakar, Salle B)",
+    )
+    location_address = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Adresse physique pour un événement en présentiel",
+    )
+    location_city = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Ville où se déroule l'événement en présentiel",
+    )
+    location_country = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Pays où se déroule l'événement en présentiel",
+    )
+
+    # Online webinar link (for external, webinar and hybrid events)
     location_url = models.URLField(
         max_length=1000,
         blank=True,
-        help_text="Lien externe si format=external (ex: Google Meet, Zoom)",
+        help_text="Lien externe webinaire ou réunion (ex: Google Meet, Zoom, YouTube Live)",
     )
     live_room_name = models.CharField(
         max_length=255,
@@ -113,6 +138,21 @@ class Event(BaseModel):
         verbose_name_plural = "Events"
         unique_together = ("community", "slug")
         ordering = ["start_time"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title) or "event"
+            candidate = base_slug
+            idx = 1
+            while (
+                Event.objects.filter(community=self.community, slug=candidate)
+                .exclude(id=self.id)
+                .exists()
+            ):
+                candidate = f"{base_slug}-{idx}"
+                idx += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"[{self.community.name}] {self.title} ({self.get_status_display()})"

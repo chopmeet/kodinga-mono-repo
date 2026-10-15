@@ -2,6 +2,8 @@ from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from common.permissions.base import is_superadmin_user
+
 from apps.gamification.models.reputation import ReputationAction
 from apps.gamification.services.gamification_service import GamificationService
 from apps.notifications.models.notification import NotificationType
@@ -39,7 +41,7 @@ class ProjectService:
     @classmethod
     @transaction.atomic
     def update_project(cls, project, user, validated_data, technology_ids=None):
-        if project.owner_id != user.id and not user.is_staff:
+        if project.owner_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à modifier ce projet.")
 
         for key, value in validated_data.items():
@@ -53,7 +55,7 @@ class ProjectService:
 
     @classmethod
     def delete_project(cls, project, user):
-        if project.owner_id != user.id and not user.is_staff:
+        if project.owner_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à supprimer ce projet.")
         project.delete()
         return True

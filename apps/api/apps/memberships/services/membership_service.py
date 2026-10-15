@@ -14,6 +14,7 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from apps.memberships.models.sanction import MemberSanction, SanctionType
+from common.permissions.base import is_superadmin_user
 
 
 class MembershipService:
@@ -55,8 +56,23 @@ class MembershipService:
                 raise ValidationError("Ce lien d'invitation est invalide ou a expiré.")
             initial_role = invitation.role
 
-        # Check approval setting if no invite
-        elif hasattr(community, 'settings') and community.settings.require_approval_to_join:
+        # Check paid community restriction: direct free join is blocked (superadmins bypass)
+        if community.pricing_type == 'paid' and not invite_code and not is_superadmin_user(user) and user.id != community.owner_id:
+            from apps.billing.models.subscription import Subscription, SubscriptionStatus
+            from django.utils import timezone
+            has_valid_sub = Subscription.objects.filter(
+                user=user,
+                community=community,
+                status=SubscriptionStatus.ACTIVE,
+                current_period_end__gt=timezone.now()
+            ).exists()
+            if not has_valid_sub:
+                raise PermissionDenied(
+                    "Cette communauté est payante. Vous devez souscrire à un abonnement (mensuel ou définitif) pour y adhérer."
+                )
+
+        # Check approval setting if no invite (superadmin is instantly active)
+        elif hasattr(community, 'settings') and community.settings.require_approval_to_join and not is_superadmin_user(user):
             initial_status = MembershipStatus.PENDING
 
         with transaction.atomic():
@@ -118,7 +134,7 @@ class MembershipService:
             status=MembershipStatus.ACTIVE
         ).first()
 
-        if not actor_user.is_superuser:
+        if not is_superadmin_user(actor_user):
             if not actor_membership or actor_membership.role not in [CommunityRole.OWNER, CommunityRole.ADMIN]:
                 raise PermissionDenied("Droits administrateur requis.")
 
@@ -155,7 +171,7 @@ class MembershipService:
             status=MembershipStatus.ACTIVE
         ).first()
 
-        if not actor_user.is_superuser and (not actor_membership or not actor_membership.is_moderator):
+        if not is_superadmin_user(actor_user) and (not actor_membership or not actor_membership.is_moderator):
             raise PermissionDenied("Droits de modération requis.")
 
         with transaction.atomic():
@@ -189,13 +205,13 @@ class MembershipService:
             status=MembershipStatus.ACTIVE
         ).first()
 
-        if not actor_user.is_superuser and (not actor_membership or not actor_membership.is_moderator):
+        if not is_superadmin_user(actor_user) and (not actor_membership or not actor_membership.is_moderator):
             raise PermissionDenied("Droits de modération requis.")
 
-        if member.role == CommunityRole.OWNER:
+        if member.role == CommunityRole.OWNER and not is_superadmin_user(actor_user):
             raise PermissionDenied("Impossible de sanctionner le propriétaire de la communauté.")
 
-        if member.role == CommunityRole.ADMIN and not actor_user.is_superuser:
+        if member.role == CommunityRole.ADMIN and not is_superadmin_user(actor_user):
             if actor_membership.role != CommunityRole.OWNER:
                 raise PermissionDenied("Seul le propriétaire de la communauté peut sanctionner un administrateur.")
 
@@ -239,7 +255,7 @@ class MembershipService:
             status=MembershipStatus.ACTIVE
         ).first()
 
-        if not actor_user.is_superuser:
+        if not is_superadmin_user(actor_user):
             if not actor_membership:
                 raise PermissionDenied("Vous n'êtes pas membre de cette communauté.")
             if not actor_membership.is_admin and not getattr(community.settings, 'allow_member_invites', True):

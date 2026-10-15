@@ -12,6 +12,7 @@ const schema = z.object({
   require_approval_to_join: z.boolean(),
   allow_member_invites: z.boolean(),
   default_post_permission: z.enum(['all_members', 'moderators_only', 'admins_only']),
+  is_read_only: z.boolean().default(false),
   welcome_message: z.string().trim().max(500, '500 caractères maximum'),
 });
 
@@ -69,6 +70,18 @@ function AccessTab() {
       </div>
 
       <div className="mt-2 divide-y divide-slate-100 border-y border-slate-100">
+        <Controller
+          control={control}
+          name="is_read_only"
+          render={({ field }) => (
+            <SettingSwitch
+              label="Mode lecture seule"
+              description="Les membres ordinaires peuvent seulement lire les discussions et messages sans pouvoir écrire."
+              checked={!!field.value}
+              onCheckedChange={field.onChange}
+            />
+          )}
+        />
         <Controller
           control={control}
           name="require_approval_to_join"

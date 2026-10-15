@@ -8,6 +8,7 @@ import { SubmitButton } from '@/pages/auth/components/submit-button';
 import { useGetCommunityCategoriesQuery } from '@/utils/api/community/community.api';
 import { CommunityPreview } from './components/community-preview';
 import { AccessStep, AccountStep, LookStep, NameStep, TopicStep } from './components/steps';
+import { AIWizardModal } from './components/ai-wizard-modal';
 import UseCreateCommunity, { type StepId } from './form/UseCreateCommunity';
 
 const headings: Record<StepId, { title: string; subtitle: string }> = {
@@ -91,6 +92,8 @@ function CreateCommunity() {
           }}
           className="max-w-xl"
         >
+          {flow.step.id === 'name' && <AIWizardModal flow={flow} />}
+
           <p className="text-sm font-semibold text-brand">
             Étape {flow.index + 1} sur {flow.steps.length}
           </p>

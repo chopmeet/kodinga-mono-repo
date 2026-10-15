@@ -32,7 +32,8 @@ class CommunityRbacView(APIView):
             status=MembershipStatus.ACTIVE
         ).first()
 
-        is_owner = request.user.is_superuser or community.owner_id == request.user.id
+        from common.permissions.base import is_superadmin_user
+        is_owner = is_superadmin_user(request.user) or community.owner_id == request.user.id
         is_admin = is_owner or (my_membership and my_membership.is_admin)
         is_moderator = is_owner or (my_membership and my_membership.is_moderator)
         can_manage_roles = is_owner or is_admin

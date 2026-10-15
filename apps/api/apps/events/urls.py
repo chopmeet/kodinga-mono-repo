@@ -4,6 +4,7 @@ from apps.events.views.attendee import EventAttendeeListView, EventRSVPView
 from apps.events.views.event import (
     CommunityEventDetailView,
     CommunityEventListView,
+    PublicEventListView,
     UserAttendingEventListView,
 )
 from apps.events.views.live import (
@@ -17,6 +18,12 @@ from apps.events.views.live import (
 app_name = "events"
 
 urlpatterns = [
+    # Global public events discovery
+    path(
+        "events/",
+        PublicEventListView.as_view(),
+        name="public-events-list",
+    ),
     # User's registered events
     path(
         "events/my/",

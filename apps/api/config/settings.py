@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'apps.opportunities.apps.OpportunitiesConfig',
     'apps.analytics.apps.AnalyticsConfig',
     'apps.administration.apps.AdministrationConfig',
+    'apps.ai.apps.AIConfig',
     'api',
 ]
 
@@ -344,5 +345,29 @@ PAYDUNYA_CANCEL_URL = env('PAYDUNYA_CANCEL_URL', default='')
 LIVEKIT_URL = env('LIVEKIT_URL', default='wss://live.kodinga.com')
 LIVEKIT_API_KEY = env('LIVEKIT_API_KEY', default='devkey')
 LIVEKIT_API_SECRET = env('LIVEKIT_API_SECRET', default='secret_kodinga_livekit_2026_super_key')
+
+# ==============================================================================
+# AI Provider Configuration (Google Gemini Primary with OpenAI Fallback)
+# ==============================================================================
+GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
+GEMINI_TEXT_MODEL = env('GEMINI_TEXT_MODEL', default='gemini-2.5-flash')
+
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
+OPENAI_TEXT_MODEL = env('OPENAI_TEXT_MODEL', default='gpt-4o-mini')
+OPENAI_MODERATION_MODEL = env('OPENAI_MODERATION_MODEL', default='omni-moderation-latest')
+
+AI_PRIMARY_PROVIDER = env('AI_PRIMARY_PROVIDER', default='gemini')
+AI_FALLBACK_PROVIDER = env('AI_FALLBACK_PROVIDER', default='openai')
+AI_FALLBACK_ENABLED = env.bool('AI_FALLBACK_ENABLED', default=True)
+AI_PROVIDER_TIMEOUT_MS = env.int('AI_PROVIDER_TIMEOUT_MS', default=15000)
+AI_MAX_RETRIES = env.int('AI_MAX_RETRIES', default=1)
+
+# Supported language codes and names (extensible)
+AI_SUPPORTED_LANGUAGES = {
+    'fr': 'Français',
+    'en': 'English',
+    'wo': 'Wolof',
+    'bm': 'Bambara',
+}
 
 

@@ -1,6 +1,7 @@
 from typing import Optional
 from django.db.models import Prefetch, Q, QuerySet
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
+from common.permissions.base import is_superadmin_user
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.classroom.models.course import Course
@@ -21,7 +22,7 @@ class ClassroomSelector:
     def check_active_member(cls, community: Community, user: Optional[User]) -> bool:
         if not user or not user.is_authenticated:
             raise NotAuthenticated("Connexion requise pour consulter les cours de cette communauté.")
-        if user.is_superuser or community.owner_id == user.id:
+        if is_superadmin_user(user) or community.owner_id == user.id:
             return True
         is_active = CommunityMember.objects.filter(
             community=community,
@@ -36,7 +37,7 @@ class ClassroomSelector:
     def is_manager(cls, community: Community, user: Optional[User]) -> bool:
         if not user or not user.is_authenticated:
             return False
-        if user.is_superuser or community.owner_id == user.id:
+        if is_superadmin_user(user) or community.owner_id == user.id:
             return True
         return CommunityMember.objects.filter(
             community=community,

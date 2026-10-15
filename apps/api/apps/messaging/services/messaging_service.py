@@ -11,6 +11,7 @@ from apps.messaging.models.participant import (
 )
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from common.permissions.base import is_superadmin_user
 
 
 class MessagingService:
@@ -90,10 +91,43 @@ class MessagingService:
             conversation=conversation, user=sender
         ).first()
         if not participant:
-            raise PermissionDenied("Vous ne faites pas partie de cette conversation.")
+            if is_superadmin_user(sender):
+                participant = ConversationParticipant.objects.create(
+                    conversation=conversation,
+                    user=sender,
+                    role=ParticipantRole.ADMIN
+                )
+            else:
+                raise PermissionDenied("Vous ne faites pas partie de cette conversation.")
+
+        if conversation.community:
+            settings = getattr(conversation.community, "settings", None)
+            if settings and settings.is_read_only and not is_superadmin_user(sender):
+                is_owner = conversation.community.owner_id == sender.id
+                from apps.memberships.models.member import (
+                    CommunityMember,
+                    MembershipStatus,
+                )
+
+                membership = CommunityMember.objects.filter(
+                    community=conversation.community,
+                    user=sender,
+                    status=MembershipStatus.ACTIVE,
+                ).first()
+                if not (is_owner or (membership and membership.is_moderator)):
+                    raise PermissionDenied(
+                        "Cette communauté est en mode lecture seule. Seul le propriétaire ou un administrateur peut envoyer des messages."
+                    )
 
         if not content and not attachments_data:
             raise ValidationError("Le message ne peut pas être vide.")
+
+        # Mandatory pre-publication content moderation
+        if content:
+            from apps.ai.services.moderation_service import ModerationService
+            ModerationService.enforce_pre_publication(
+                content, community=conversation.community, author=sender
+            )
 
         message = Message.objects.create(
             conversation=conversation,
@@ -147,7 +181,7 @@ class MessagingService:
 
     @classmethod
     def edit_message(cls, message, user, new_content):
-        if message.sender_id != user.id:
+        if not is_superadmin_user(user) and message.sender_id != user.id:
             raise PermissionDenied("Vous ne pouvez modifier que vos propres messages.")
         if message.is_deleted:
             raise ValidationError("Impossible de modifier un message supprimé.")
@@ -161,7 +195,7 @@ class MessagingService:
 
     @classmethod
     def delete_message(cls, message, user):
-        if message.sender_id != user.id:
+        if not is_superadmin_user(user) and message.sender_id != user.id:
             # Check if user is group admin
             participant = ConversationParticipant.objects.filter(
                 conversation=message.conversation, user=user
@@ -174,3 +208,41 @@ class MessagingService:
         message.deleted_at = timezone.now()
         message.save(update_fields=["is_deleted", "content", "deleted_at", "updated_at"])
         return message
+
+    @classmethod
+    def toggle_message_pin(cls, message, user):
+        conversation = message.conversation
+        is_allowed = False
+        if is_superadmin_user(user):
+            is_allowed = True
+        elif conversation.community:
+            if conversation.community.owner_id == user.id:
+                is_allowed = True
+            else:
+                from apps.memberships.models.member import (
+                    CommunityMember,
+                    MembershipStatus,
+                )
+
+                membership = CommunityMember.objects.filter(
+                    community=conversation.community,
+                    user=user,
+                    status=MembershipStatus.ACTIVE,
+                ).first()
+                if membership and membership.is_moderator:
+                    is_allowed = True
+        elif conversation.created_by_id == user.id:
+            is_allowed = True
+        else:
+            participant = ConversationParticipant.objects.filter(
+                conversation=conversation, user=user
+            ).first()
+            if participant and participant.role == ParticipantRole.ADMIN:
+                is_allowed = True
+
+        if not is_allowed:
+            raise PermissionDenied("Seul le propriétaire ou un modérateur peut épingler un message.")
+
+        message.is_pinned = not message.is_pinned
+        message.save(update_fields=["is_pinned", "updated_at"])
+        return message.is_pinned

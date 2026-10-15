@@ -13,7 +13,7 @@ const schema = z.object({
   default_language: z.enum(['fr', 'en']),
   registrations_open: z.boolean(),
   require_email_verification: z.boolean(),
-  community_creation: z.enum(['everyone', 'verified', 'approval']),
+  community_creation: z.enum(['everyone', 'pro_only', 'verified', 'approval']),
 });
 
 type Values = z.infer<typeof schema>;
@@ -61,9 +61,10 @@ function GeneralSettingsTab() {
         />
         <SelectInput
           label="Création de communautés"
-          fieldHelp="Qui peut ouvrir une nouvelle communauté."
+          fieldHelp="Qui peut ouvrir une nouvelle communauté (Hobby ou Pro)."
           options={[
-            { label: 'Tous les membres', value: 'everyone' },
+            { label: 'Tous les membres (Hobby & Pro - Actuel)', value: 'everyone' },
+            { label: 'Abonnés Pro uniquement (5 000 FCFA/mois)', value: 'pro_only' },
             { label: 'Membres avec email vérifié', value: 'verified' },
             { label: 'Sur validation d’un administrateur', value: 'approval' },
           ]}

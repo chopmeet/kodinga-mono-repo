@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from common.permissions import IsPlatformAdmin
 from common.utils.pagination import StandardResultsSetPagination
@@ -134,6 +134,24 @@ class AdminSystemSettingsView(APIView):
             data=SystemSettingSerializer(setting).data,
             message=f"Paramètre '{key}' mis à jour avec succès."
         )
+
+
+class PublicSystemSettingsView(APIView):
+    """
+    Public platform settings (community creation permissions, public feature flags).
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['Administration'],
+        summary='Consulter les paramètres système publics',
+        description='Renvoie la configuration publique de la plateforme (création de communauté autorisée pour Hobby/Pro, etc.).',
+        responses={200: SystemSettingSerializer(many=True)}
+    )
+    def get(self, request):
+        public_qs = SystemSetting.objects.filter(is_public=True).order_by('key')
+        return success_response(data=SystemSettingSerializer(public_qs, many=True).data)
+
 
 
 class AdminUserToggleStatusView(APIView):

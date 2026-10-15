@@ -2,7 +2,7 @@ from datetime import timezone as dt_tz
 
 from django.utils import timezone
 
-from apps.events.models.event import Event
+from apps.events.models.event import Event, EventFormat
 
 
 class CalendarService:
@@ -32,11 +32,38 @@ class CalendarService:
         # Sanitize summary and description
         summary = event.title.replace("\n", " ")
         description = (event.description or "").replace("\n", "\\n").replace("\r", "")
-        location = event.location_url or (
-            f"LiveKit: {event.live_room_name}"
-            if event.live_room_name
-            else "Kodinga Community Space"
-        )
+
+        physical_parts = [
+            p
+            for p in [
+                event.venue_name,
+                event.location_address,
+                event.location_city,
+                event.location_country,
+            ]
+            if p
+        ]
+        physical_location = ", ".join(physical_parts)
+
+        if event.format == EventFormat.IN_PERSON:
+            location = physical_location or "Présentiel"
+        elif event.format == EventFormat.HYBRID:
+            online_part = event.location_url or (
+                f"LiveKit: {event.live_room_name}"
+                if event.live_room_name
+                else "En ligne"
+            )
+            location = (
+                f"{physical_location} | En ligne: {online_part}"
+                if physical_location
+                else online_part
+            )
+        elif event.format == EventFormat.LIVEKIT:
+            location = (
+                f"LiveKit: {event.live_room_name or 'En direct sur Kodinga'}"
+            )
+        else:
+            location = event.location_url or "En ligne"
 
         uid = f"event-{event.id}@kodinga.com"
 

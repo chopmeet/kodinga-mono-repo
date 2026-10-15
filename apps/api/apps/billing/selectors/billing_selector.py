@@ -1,6 +1,7 @@
 from typing import Optional
 from django.db.models import QuerySet
 from rest_framework.exceptions import PermissionDenied, NotFound
+from common.permissions.base import is_superadmin_user
 from apps.accounts.models.user import User
 from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment
@@ -38,7 +39,7 @@ class BillingSelector:
         except Payment.DoesNotExist:
             raise NotFound("Paiement introuvable.")
 
-        if not user.is_superuser and payment.user_id != user.id:
+        if not is_superadmin_user(user) and payment.user_id != user.id:
             raise PermissionDenied("Vous n'avez pas l'autorisation d'accéder à ce paiement.")
 
         return payment

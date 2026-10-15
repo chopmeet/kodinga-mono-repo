@@ -198,6 +198,17 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
     rules = CommunityRuleInputSerializer(many=True, required=False, write_only=True)
     settings = CommunitySettingsInputSerializer(required=False, write_only=True)
 
+    # Optional initial membership plan for paid communities
+    membership_price = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, allow_null=True, write_only=True
+    )
+    membership_interval = serializers.ChoiceField(
+        choices=['month', 'one_time', 'year'], default='month', required=False, write_only=True
+    )
+    membership_plan_name = serializers.CharField(
+        max_length=120, required=False, allow_blank=True, write_only=True
+    )
+
     class Meta:
         model = Community
         fields = [
@@ -219,9 +230,38 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
             'telegram_url',
             'rules',
             'settings',
+            'membership_price',
+            'membership_interval',
+            'membership_plan_name',
         ]
 
     def validate(self, attrs):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+
+        # 1. Check platform setting: is community creation open to Hobby or restricted to Pro only?
+        if not self.instance and user and user.is_authenticated:
+            from apps.administration.services.admin_service import AdministrationService
+            raw_setting = AdministrationService.get_setting('community_creation_allowed_for', 'all')
+            tier = raw_setting.get('tier') if isinstance(raw_setting, dict) else str(raw_setting).lower()
+            if tier == 'pro_only' and not user.is_pro:
+                raise serializers.ValidationError(
+                    "La création de communauté est actuellement réservée aux abonnés Pro (5 000 FCFA/mois). Veuillez passer au forfait Pro pour créer un espace."
+                )
+
+        # 2. Check monetization: Only Pro users can create or configure paid communities
+        pricing_type = attrs.get('pricing_type', getattr(self.instance, 'pricing_type', CommunityPricing.FREE))
+        if pricing_type == CommunityPricing.PAID:
+            if user and user.is_authenticated and not user.is_pro:
+                raise serializers.ValidationError({
+                    'pricing_type': "Seuls les utilisateurs avec un abonnement Pro actif (5 000 FCFA/mois) peuvent créer ou configurer une communauté payante."
+                })
+            price = attrs.get('membership_price')
+            if price is not None and price < 500:
+                raise serializers.ValidationError({
+                    'membership_price': "Le montant d'adhésion minimum pour une communauté payante est de 500 FCFA."
+                })
+
         url_fields = [
             'avatar_url',
             'banner_url',

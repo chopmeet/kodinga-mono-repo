@@ -25,6 +25,7 @@ class Message(BaseModel):
     content = models.TextField()
     is_edited = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    is_pinned = models.BooleanField(default=False, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
