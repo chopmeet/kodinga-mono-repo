@@ -21,6 +21,7 @@ from apps.posts.models.reaction import (
     PostReaction,
     ReactionType,
 )
+from common.permissions.base import is_superadmin_user
 
 
 class PostService:
@@ -30,7 +31,7 @@ class PostService:
 
     @classmethod
     def _verify_post_permission(cls, user: User, community: Community, category: Optional[PostCategory] = None) -> CommunityMember:
-        if user.is_superuser:
+        if is_superadmin_user(user):
             return None
 
         membership = CommunityMember.objects.filter(
@@ -42,8 +43,15 @@ class PostService:
         if not membership:
             raise PermissionDenied("Vous devez être membre actif de la communauté pour publier.")
 
-        # Check community-wide posting permission
+        # Check read-only mode: only owner and moderators/admins can post
         settings = getattr(community, 'settings', None)
+        if settings and settings.is_read_only:
+            is_owner = (community.owner_id == user.id)
+            is_moderator = membership and membership.is_moderator
+            if not (is_owner or is_moderator):
+                raise PermissionDenied("Cette communauté est en mode lecture seule. Seuls les administrateurs peuvent publier.")
+
+        # Check community-wide posting permission
         if settings:
             if settings.default_post_permission == PostPermissionType.ADMINS_ONLY and not membership.is_admin:
                 raise PermissionDenied("Seuls les administrateurs peuvent publier dans cette communauté.")
@@ -75,6 +83,11 @@ class PostService:
                 raise ValidationError({'category_id': "Catégorie / Canal introuvable."})
 
         cls._verify_post_permission(author, community, category)
+
+        # Mandatory pre-publication content moderation
+        from apps.ai.services.moderation_service import ModerationService
+        text_to_moderate = f"{data.get('title', '')}\n{data.get('content', '')}".strip()
+        ModerationService.enforce_pre_publication(text_to_moderate, community=community, author=author)
 
         with transaction.atomic():
             post = Post.objects.create(
@@ -123,7 +136,7 @@ class PostService:
         data: Dict[str, Any],
         media_ids: Optional[List[str]] = None
     ) -> Post:
-        if not user.is_superuser and post.author_id != user.id:
+        if not is_superadmin_user(user) and post.author_id != user.id:
             raise PermissionDenied("Vous n'êtes pas l'auteur de cette publication.")
 
         category_id = data.pop('category_id', None)
@@ -148,7 +161,7 @@ class PostService:
 
     @classmethod
     def delete_post(cls, user: User, post: Post) -> None:
-        if not user.is_superuser and post.author_id != user.id:
+        if not is_superadmin_user(user) and post.author_id != user.id:
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=user,
@@ -164,14 +177,14 @@ class PostService:
 
     @classmethod
     def toggle_post_pin(cls, user: User, post: Post) -> bool:
-        if not user.is_superuser:
+        if not is_superadmin_user(user) and post.community.owner_id != user.id:
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=user,
                 status=MembershipStatus.ACTIVE
             ).first()
             if not membership or not membership.is_moderator:
-                raise PermissionDenied("Droits de modération requis.")
+                raise PermissionDenied("Seul le propriétaire ou un modérateur peut épingler une publication.")
 
         post.is_pinned = not post.is_pinned
         post.save(update_fields=['is_pinned', 'updated_at'])
@@ -179,7 +192,7 @@ class PostService:
 
     @classmethod
     def toggle_post_lock(cls, user: User, post: Post) -> bool:
-        if not user.is_superuser:
+        if not is_superadmin_user(user):
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=user,
@@ -203,10 +216,10 @@ class PostService:
         parent_id: Optional[str] = None,
         media_ids: Optional[List[str]] = None,
     ) -> Comment:
-        if post.is_locked:
+        if post.is_locked and not is_superadmin_user(author):
             raise ValidationError("Les commentaires sont verrouillés sur cette publication.")
 
-        if not author.is_superuser:
+        if not is_superadmin_user(author):
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=author,
@@ -215,12 +228,23 @@ class PostService:
             if not membership:
                 raise PermissionDenied("Vous devez être membre actif pour commenter.")
 
+            settings = getattr(post.community, 'settings', None)
+            if settings and settings.is_read_only:
+                is_owner = (post.community.owner_id == author.id)
+                is_moderator = membership.is_moderator
+                if not (is_owner or is_moderator):
+                    raise PermissionDenied("Cette communauté est en mode lecture seule. Seul le propriétaire ou un modérateur peut commenter.")
+
         parent = None
         if parent_id:
             try:
                 parent = Comment.objects.get(id=parent_id, post=post)
             except Comment.DoesNotExist:
                 raise ValidationError({'parent_id': "Commentaire parent introuvable."})
+
+        # Mandatory pre-publication content moderation
+        from apps.ai.services.moderation_service import ModerationService
+        ModerationService.enforce_pre_publication(content, community=post.community, author=author)
 
         with transaction.atomic():
             comment = Comment.objects.create(
@@ -237,7 +261,7 @@ class PostService:
 
     @classmethod
     def delete_comment(cls, user: User, comment: Comment) -> None:
-        if not user.is_superuser and comment.author_id != user.id:
+        if not is_superadmin_user(user) and comment.author_id != user.id:
             membership = CommunityMember.objects.filter(
                 community=comment.post.community,
                 user=user,
@@ -254,7 +278,7 @@ class PostService:
     @classmethod
     def mark_accepted_answer(cls, user: User, comment: Comment) -> Comment:
         post = comment.post
-        if not user.is_superuser and post.author_id != user.id:
+        if not is_superadmin_user(user) and post.author_id != user.id:
             raise PermissionDenied("Seul l'auteur de la question peut valider la réponse acceptée.")
 
         with transaction.atomic():

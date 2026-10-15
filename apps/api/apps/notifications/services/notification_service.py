@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from apps.accounts.models.user import User
 from apps.notifications.models.notification import Notification, NotificationType
+from common.permissions.base import is_superadmin_user
 
 logger = logging.getLogger("kodinga.notifications")
 
@@ -55,9 +56,10 @@ class NotificationService:
 
     @classmethod
     def mark_as_read(cls, notification_id: str, user: User) -> bool:
-        updated = Notification.objects.filter(
-            id=notification_id, recipient=user, is_read=False
-        ).update(is_read=True, read_at=timezone.now(), updated_at=timezone.now())
+        qs = Notification.objects.filter(id=notification_id, is_read=False)
+        if not is_superadmin_user(user):
+            qs = qs.filter(recipient=user)
+        updated = qs.update(is_read=True, read_at=timezone.now(), updated_at=timezone.now())
         return bool(updated)
 
     @classmethod
@@ -70,7 +72,8 @@ class NotificationService:
 
     @classmethod
     def delete_notification(cls, notification_id: str, user: User) -> bool:
-        deleted_count, _ = Notification.objects.filter(
-            id=notification_id, recipient=user
-        ).delete()
+        qs = Notification.objects.filter(id=notification_id)
+        if not is_superadmin_user(user):
+            qs = qs.filter(recipient=user)
+        deleted_count, _ = qs.delete()
         return deleted_count > 0

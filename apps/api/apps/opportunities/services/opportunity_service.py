@@ -2,6 +2,8 @@ from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from common.permissions.base import is_superadmin_user
+
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 from apps.opportunities.models.application import (
@@ -30,7 +32,7 @@ class OpportunityService:
     @classmethod
     @transaction.atomic
     def update_opportunity(cls, opportunity, user, validated_data, technology_ids=None):
-        if opportunity.poster_id != user.id and not user.is_staff:
+        if opportunity.poster_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à modifier cette offre.")
 
         for key, value in validated_data.items():
@@ -44,7 +46,7 @@ class OpportunityService:
 
     @classmethod
     def close_opportunity(cls, opportunity, user):
-        if opportunity.poster_id != user.id and not user.is_staff:
+        if opportunity.poster_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à clôturer cette offre.")
 
         opportunity.status = OpportunityStatus.CLOSED
@@ -92,7 +94,7 @@ class OpportunityService:
     @classmethod
     @transaction.atomic
     def update_application_status(cls, application, user, new_status):
-        if application.opportunity.poster_id != user.id and not user.is_staff:
+        if application.opportunity.poster_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à gérer cette candidature.")
 
         application.status = new_status

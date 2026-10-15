@@ -41,6 +41,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "content",
             "is_edited",
             "is_deleted",
+            "is_pinned",
             "deleted_at",
             "attachments",
             "created_at",

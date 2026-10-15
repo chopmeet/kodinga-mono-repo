@@ -26,10 +26,11 @@ class ProgressService:
         if not user or not user.is_authenticated:
             return not lesson.is_free_preview
 
-        # Superusers and community managers (owner / admin) have bypass access
+        # Superusers/superadmins and community managers (owner / admin) have bypass access
         course = lesson.module.course
         community = course.community
-        if user.is_superuser or community.owner_id == user.id:
+        from common.permissions.base import is_superadmin_user
+        if is_superadmin_user(user) or community.owner_id == user.id:
             return False
 
         is_manager = CommunityMember.objects.filter(
@@ -87,7 +88,8 @@ class ProgressService:
         if not user or not user.is_authenticated:
             raise PermissionDenied("Connexion requise pour enregistrer la progression.")
 
-        if not user.is_superuser and community.owner_id != user.id:
+        from common.permissions.base import is_superadmin_user
+        if not is_superadmin_user(user) and community.owner_id != user.id:
             is_active = CommunityMember.objects.filter(
                 community=community,
                 user=user,
@@ -160,7 +162,8 @@ class ProgressService:
         if not user or not user.is_authenticated:
             raise PermissionDenied("Connexion requise pour s'inscrire à ce cours.")
 
-        if not user.is_superuser and community.owner_id != user.id:
+        from common.permissions.base import is_superadmin_user
+        if not is_superadmin_user(user) and community.owner_id != user.id:
             is_active = CommunityMember.objects.filter(
                 community=community,
                 user=user,

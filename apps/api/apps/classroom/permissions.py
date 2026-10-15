@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from common.permissions.base import is_superadmin_user
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
 
@@ -6,11 +7,15 @@ from apps.memberships.models.member import CommunityMember, CommunityRole, Membe
 class IsCommunityClassroomManager(BasePermission):
     """
     Allows only community owners and administrators to create, update, or delete courses/lessons.
+    Superadmins have full bypass permissions.
     """
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
     def has_object_permission(self, request, view, obj):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.user.is_superuser:
+        if is_superadmin_user(request.user):
             return True
 
         community = obj if isinstance(obj, Community) else getattr(obj, 'community', None)
@@ -35,7 +40,7 @@ class IsCommunityClassroomManager(BasePermission):
 
 class IsActiveCommunityMember(BasePermission):
     """
-    Allows access ONLY to connected active community members (or owner/superuser).
+    Allows access ONLY to connected active community members (or owner/superadmin).
     """
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated)
@@ -44,7 +49,7 @@ class IsActiveCommunityMember(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        if request.user.is_superuser:
+        if is_superadmin_user(request.user):
             return True
 
         community = obj if isinstance(obj, Community) else getattr(obj, 'community', None)

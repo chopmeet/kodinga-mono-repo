@@ -6,6 +6,7 @@ from apps.messaging.views import (
     ConversationMarkReadView,
     ConversationMessagesView,
     MessageDetailView,
+    ToggleMessagePinView,
 )
 
 app_name = "messaging"
@@ -28,4 +29,5 @@ urlpatterns = [
         name="conversation_mark_read",
     ),
     path("messages/<uuid:message_id>/", MessageDetailView.as_view(), name="message_detail"),
+    path("messages/<uuid:message_id>/pin/", ToggleMessagePinView.as_view(), name="message_pin"),
 ]

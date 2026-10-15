@@ -33,8 +33,9 @@ class CommunityInvitationsView(APIView):
         except Exception:
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
+        from common.permissions.base import is_superadmin_user
         member = MembershipSelector.get_member(community, request.user)
-        if not request.user.is_superuser and (not member or not member.is_admin):
+        if not is_superadmin_user(request.user) and (not member or not member.is_admin):
             return error_response("Droits administrateur requis.", status_code=status.HTTP_403_FORBIDDEN)
 
         invitations = CommunityInvitation.objects.filter(

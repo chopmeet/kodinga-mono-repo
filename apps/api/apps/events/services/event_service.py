@@ -6,7 +6,7 @@ from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community
+from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
 from apps.events.models.event import Event, EventFormat, EventStatus
 from apps.media.models.video_asset import VideoAsset
@@ -27,7 +27,8 @@ class EventService:
     def check_is_manager(cls, actor_user: User, community: Community) -> bool:
         if not actor_user or not actor_user.is_authenticated:
             raise PermissionDenied("Authentification requise.")
-        if actor_user.is_superuser or community.owner_id == actor_user.id:
+        from common.permissions.base import is_superadmin_user
+        if is_superadmin_user(actor_user) or community.owner_id == actor_user.id:
             return True
         is_mgr = CommunityMember.objects.filter(
             community=community,
@@ -45,7 +46,8 @@ class EventService:
     def check_active_member(cls, user: User, community: Community) -> bool:
         if not user or not user.is_authenticated:
             raise PermissionDenied("Connexion requise pour accéder aux événements.")
-        if user.is_superuser or community.owner_id == user.id:
+        from common.permissions.base import is_superadmin_user
+        if is_superadmin_user(user) or community.owner_id == user.id:
             return True
         is_active = CommunityMember.objects.filter(
             community=community, user=user, status=MembershipStatus.ACTIVE
@@ -90,6 +92,10 @@ class EventService:
             start_time=data["start_time"],
             end_time=data["end_time"],
             timezone=data.get("timezone", "UTC"),
+            venue_name=data.get("venue_name", ""),
+            location_address=data.get("location_address", ""),
+            location_city=data.get("location_city", ""),
+            location_country=data.get("location_country", ""),
             location_url=data.get("location_url", ""),
             live_room_name=live_room_name,
             max_attendees=data.get("max_attendees"),
@@ -124,6 +130,10 @@ class EventService:
             "start_time",
             "end_time",
             "timezone",
+            "venue_name",
+            "location_address",
+            "location_city",
+            "location_country",
             "location_url",
             "max_attendees",
             "is_recorded",
@@ -153,7 +163,14 @@ class EventService:
     def rsvp_event(
         cls, user: User, event: Event, status: str = AttendeeStatus.ATTENDING
     ) -> EventAttendee:
-        cls.check_active_member(user, event.community)
+        if not user or not user.is_authenticated:
+            raise PermissionDenied("Connexion requise pour s'inscrire à l'événement.")
+
+        # If the event is NOT public, user must be active member of community.
+        # If community is secret, user must also be active member.
+        # If the event IS public (even in a private community), any user can register!
+        if not event.is_public or event.community.privacy_type == CommunityPrivacy.SECRET:
+            cls.check_active_member(user, event.community)
 
         with transaction.atomic():
             attendee, created = EventAttendee.objects.get_or_create(
@@ -197,7 +214,11 @@ class EventService:
 
     @classmethod
     def cancel_rsvp(cls, user: User, event: Event) -> None:
-        cls.check_active_member(user, event.community)
+        if not user or not user.is_authenticated:
+            raise PermissionDenied("Connexion requise.")
+
+        if not event.is_public or event.community.privacy_type == CommunityPrivacy.SECRET:
+            cls.check_active_member(user, event.community)
 
         with transaction.atomic():
             EventAttendee.objects.filter(event=event, user=user).delete()

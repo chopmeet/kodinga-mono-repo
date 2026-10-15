@@ -1,5 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -158,6 +159,9 @@ class CommunityEventDetailView(APIView):
             event = EventSelector.get_event_by_id_or_slug(
                 community, event_id, user=request.user
             )
+        except PermissionDenied as e:
+            msg = getattr(e, "detail", str(e))
+            return error_response(str(msg), status_code=status.HTTP_403_FORBIDDEN)
         except Exception as e:
             msg = getattr(e, "detail", "Événement introuvable.")
             return error_response(str(msg), status_code=status.HTTP_404_NOT_FOUND)
@@ -251,3 +255,78 @@ class UserAttendingEventListView(APIView):
         paginated_events = paginator.paginate_queryset(events, request)
         serializer = EventSerializer(paginated_events, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
+class PublicEventListView(APIView):
+    """
+    List all public events across communities, including public events hosted in private communities.
+    Accessible to all users (authenticated or anonymous).
+    """
+
+    permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
+
+    @extend_schema(
+        tags=["Events"],
+        summary="Découvrir les événements publics (y compris des communautés privées)",
+        parameters=[
+            OpenApiParameter(
+                name="format",
+                description="Filtrer par format (livekit, external, in_person, hybrid)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="event_type",
+                description="Filtrer par type d'événement (webinar, workshop, ama, meetup, etc.)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="upcoming",
+                description="Filtrer événements à venir (true) ou passés (false)",
+                required=False,
+                type=bool,
+            ),
+            OpenApiParameter(
+                name="search",
+                description="Recherche textuelle dans le titre, description, lieu ou communauté",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="all",
+                description="Retourner sans pagination (défaut: false)",
+                required=False,
+                type=bool,
+            ),
+        ],
+        responses={200: EventSerializer(many=True)},
+    )
+    def get(self, request):
+        format_param = request.query_params.get("format")
+        event_type = request.query_params.get("event_type")
+        upcoming_param = request.query_params.get("upcoming")
+        search = request.query_params.get("search")
+
+        upcoming = None
+        if upcoming_param is not None:
+            upcoming = upcoming_param.lower() in ["true", "1"]
+
+        events = EventSelector.list_public_events(
+            user=request.user if request.user.is_authenticated else None,
+            format_val=format_param,
+            event_type=event_type,
+            upcoming=upcoming,
+            search=search,
+        )
+
+        if request.query_params.get("all", "").lower() in ["true", "1"]:
+            serializer = EventSerializer(events, many=True)
+            return success_response(data=serializer.data)
+
+        paginator = self.pagination_class()
+        paginated_events = paginator.paginate_queryset(events, request)
+        serializer = EventSerializer(paginated_events, many=True)
+        return paginator.get_paginated_response(serializer.data)
+

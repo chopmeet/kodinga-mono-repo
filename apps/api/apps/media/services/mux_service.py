@@ -10,6 +10,7 @@ from django.conf import settings
 from rest_framework.exceptions import NotFound, ValidationError
 from apps.accounts.models.user import User
 from apps.media.models.video_asset import VideoAsset, VideoStatus
+from common.permissions.base import is_superadmin_user
 
 logger = logging.getLogger('kodinga.media')
 
@@ -203,7 +204,7 @@ class MuxVideoService:
     @classmethod
     def delete_video(cls, user: User, video_id: str) -> None:
         video = cls.get_video_by_id(video_id)
-        if video.user and user and video.user_id != user.id and not user.is_staff:
+        if video.user and user and video.user_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise ValidationError("Vous n'êtes pas propriétaire de cette vidéo.")
 
         # Delete on Mux if auth configured

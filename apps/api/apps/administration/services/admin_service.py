@@ -156,7 +156,12 @@ class AdministrationService:
         """
         prev_val = target_user.is_superadmin
         target_user.is_superadmin = is_superadmin
-        target_user.save(update_fields=['is_superadmin'])
+        if is_superadmin:
+            target_user.is_superuser = True
+            target_user.is_staff = True
+            target_user.save(update_fields=['is_superadmin', 'is_superuser', 'is_staff'])
+        else:
+            target_user.save(update_fields=['is_superadmin'])
 
         action = 'user.promote_superadmin' if is_superadmin else 'user.demote_superadmin'
         cls.log_action(

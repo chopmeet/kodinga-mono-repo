@@ -43,6 +43,10 @@ class EventSerializer(BaseModelSerializer):
             "start_time",
             "end_time",
             "timezone",
+            "venue_name",
+            "location_address",
+            "location_city",
+            "location_country",
             "attendees_count",
             "max_attendees",
             "is_full",
@@ -84,6 +88,22 @@ class EventCreateUpdateSerializer(serializers.Serializer):
     start_time = serializers.DateTimeField()
     end_time = serializers.DateTimeField()
     timezone = serializers.CharField(max_length=50, default="UTC")
+
+    # Physical location fields (presentiel)
+    venue_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    location_address = serializers.CharField(
+        max_length=500, required=False, allow_blank=True, default=""
+    )
+    location_city = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, default=""
+    )
+    location_country = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, default=""
+    )
+
+    # Online webinar fields
     location_url = serializers.URLField(
         max_length=1000, required=False, allow_blank=True, default=""
     )

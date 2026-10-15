@@ -1,6 +1,8 @@
 from django.db.models import F, Q
 from rest_framework.exceptions import PermissionDenied
 
+from common.permissions.base import is_superadmin_user
+
 from apps.opportunities.models.application import OpportunityApplication
 from apps.opportunities.models.opportunity import (
     Opportunity,
@@ -98,7 +100,7 @@ class OpportunitySelector:
 
     @classmethod
     def get_opportunity_applications(cls, opportunity, user):
-        if opportunity.poster_id != user.id and not user.is_staff:
+        if opportunity.poster_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à voir ces candidatures.")
 
         return (

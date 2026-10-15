@@ -36,16 +36,18 @@ class MessagingSelector:
         if not conversation:
             return None
 
+        from common.permissions.base import is_superadmin_user
         is_participant = conversation.participants.filter(user=user).exists()
-        if not is_participant:
+        if not is_participant and not is_superadmin_user(user):
             raise PermissionDenied("Vous n'avez pas accès à cette conversation.")
 
         return conversation
 
     @classmethod
     def get_conversation_messages(cls, conversation, user):
+        from common.permissions.base import is_superadmin_user
         is_participant = conversation.participants.filter(user=user).exists()
-        if not is_participant:
+        if not is_participant and not is_superadmin_user(user):
             raise PermissionDenied("Vous n'avez pas accès à cette conversation.")
 
         return (
@@ -54,6 +56,10 @@ class MessagingSelector:
             .prefetch_related("attachments")
             .order_by("created_at")
         )
+
+    @classmethod
+    def get_pinned_messages(cls, conversation, user):
+        return cls.get_conversation_messages(conversation, user).filter(is_pinned=True)
 
     @classmethod
     def get_unread_count_for_conversation(cls, conversation, user):

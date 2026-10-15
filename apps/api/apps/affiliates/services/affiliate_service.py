@@ -4,6 +4,8 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from common.permissions.base import is_superadmin_user
+
 from apps.affiliates.models.click import AffiliateClick
 from apps.affiliates.models.link import AffiliateLink
 from apps.affiliates.models.payout import PayoutRequest, PayoutStatus
@@ -104,7 +106,7 @@ class AffiliateService:
 
     @classmethod
     def process_payout(cls, payout_id, admin_user, new_status, notes=""):
-        if not admin_user.is_staff:
+        if not (admin_user.is_staff or is_superadmin_user(admin_user)):
             raise PermissionDenied("Action réservée aux administrateurs.")
 
         payout = PayoutRequest.objects.filter(id=payout_id).first()

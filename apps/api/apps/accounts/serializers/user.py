@@ -6,6 +6,7 @@ from apps.accounts.models.consent import UserConsent
 
 class UserSerializer(BaseModelSerializer):
     is_email_verified = serializers.BooleanField(read_only=True)
+    is_pro = serializers.BooleanField(read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     status = serializers.SerializerMethodField(read_only=True)
 
@@ -31,6 +32,7 @@ class UserSerializer(BaseModelSerializer):
             'is_superuser',
             'is_superadmin',
             'is_email_verified',
+            'is_pro',
             'preferred_language',
             'timezone',
             'date_joined',
@@ -47,6 +49,7 @@ class UserSerializer(BaseModelSerializer):
             'is_staff',
             'is_superuser',
             'is_email_verified',
+            'is_pro',
             'date_joined',
             'last_login',
             'created_at',

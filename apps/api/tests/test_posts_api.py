@@ -1,7 +1,9 @@
 import pytest
+from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from apps.ai.schemas import ModerationResult
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import (
@@ -23,6 +25,19 @@ from apps.posts.models.reaction import ReactionType
 @pytest.fixture
 def api_client():
     return APIClient()
+
+
+@pytest.fixture(autouse=True)
+def mock_ai_moderation_allow():
+    with patch("apps.ai.router.ai_router.moderate_content") as mock_mod:
+        mock_mod.return_value = ModerationResult(
+            decision="allow",
+            flagged=False,
+            categories=[],
+            confidence=1.0,
+            provider="mock_test",
+        )
+        yield mock_mod
 
 
 @pytest.fixture

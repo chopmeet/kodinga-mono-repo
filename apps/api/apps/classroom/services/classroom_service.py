@@ -22,7 +22,8 @@ class ClassroomService:
         """
         Enforces that only community owners or administrators can manage classroom content.
         """
-        if user.is_superuser or community.owner_id == user.id:
+        from common.permissions.base import is_superadmin_user
+        if is_superadmin_user(user) or community.owner_id == user.id:
             return
 
         is_manager = CommunityMember.objects.filter(

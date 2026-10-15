@@ -152,3 +152,27 @@ class MessageDetailView(APIView):
 
         MessagingService.delete_message(message, request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=["Messaging"])
+class ToggleMessagePinView(APIView):
+    """
+    Pin or unpin a message within a conversation (Owner or Moderator only).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary="Épingler ou désépingler un message (Propriétaire / Modérateur)",
+        responses={200: dict}
+    )
+    def post(self, request, message_id):
+        message = Message.objects.filter(id=message_id).first()
+        if not message:
+            return Response({"detail": "Message introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        is_pinned = MessagingService.toggle_message_pin(message, request.user)
+        return Response({
+            "status": "success",
+            "data": {"is_pinned": is_pinned},
+            "message": "Message épinglé." if is_pinned else "Message désépinglé."
+        })
