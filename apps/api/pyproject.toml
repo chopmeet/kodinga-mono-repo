@@ -9,6 +9,8 @@ show_missing = true
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+norecursedirs = [".venv", "venv", "dist", "scratch", ".git"]
 addopts = "-v --reuse-db"
 
 [project]
