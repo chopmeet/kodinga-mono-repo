@@ -1,10 +1,11 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.ai.schemas import ModerationResult
 from apps.accounts.models.user import User
+from apps.ai.schemas import ModerationResult
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import (
     Community,

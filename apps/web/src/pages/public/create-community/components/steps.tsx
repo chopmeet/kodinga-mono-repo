@@ -121,12 +121,12 @@ export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
       <fieldset>
         <legend className="custom-form-label mb-2 block">Accès</legend>
         <div className="grid gap-3 sm:grid-cols-2">
-          <OptionCard icon={Gift} title="Gratuite" description="Idéal pour lancer et fédérer." value="free" {...register('pricing_type')} />
-          <OptionCard icon={Wallet} title="Payante" description="Abonnement par Mobile Money ou carte." value="paid" {...register('pricing_type')} />
+          <OptionCard icon={Gift} title="Gratuite" description="Idéal pour lancer et fédérer librement." value="free" {...register('pricing_type')} />
+          <OptionCard icon={Wallet} title="Payante" description="Réservé aux membres Pro (5 000 FCFA/m)." value="paid" {...register('pricing_type')} />
         </div>
         {flow.values.pricing_type === 'paid' && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Vous fixerez vos prix et formules juste après la création, dans « Abonnements & paiements ».
+            <strong>Réservé aux membres Pro :</strong> Vous fixerez vos tarifs d'adhésion (formule mensuelle ou prix définitif à vie réglé par Mobile Money ou carte via PayDunya) dans « Abonnements & paiements ».
           </p>
         )}
       </fieldset>

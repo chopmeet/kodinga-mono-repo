@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 import pytest
 from django.utils import timezone
 from rest_framework import status
@@ -7,7 +8,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
-from apps.events.models.event import Event, EventFormat, EventStatus, EventType
+from apps.events.models.event import Event, EventFormat, EventType
 from apps.memberships.models.member import (
     CommunityMember,
     CommunityRole,
@@ -122,9 +123,7 @@ class TestPublicEventsInPrivateCommunity:
         assert data["location_city"] == "Dakar"
         assert data["location_country"] == "Sénégal"
 
-    def test_create_online_webinar_event(
-        self, api_client, owner, private_community
-    ):
+    def test_create_online_webinar_event(self, api_client, owner, private_community):
         api_client.force_authenticate(user=owner)
         start = timezone.now() + timedelta(days=3)
         end = start + timedelta(hours=2)
@@ -189,13 +188,17 @@ class TestPublicEventsInPrivateCommunity:
         assert str(priv_event.id) not in ids
 
         # Stranger requests single event detail
-        detail_url = f"/api/v1/communities/{private_community.slug}/events/{pub_event.slug}/"
+        detail_url = (
+            f"/api/v1/communities/{private_community.slug}/events/{pub_event.slug}/"
+        )
         detail_resp = api_client.get(detail_url)
         assert detail_resp.status_code == status.HTTP_200_OK
         assert detail_resp.data["data"]["id"] == str(pub_event.id)
 
         # Stranger cannot request private event detail
-        priv_detail_url = f"/api/v1/communities/{private_community.slug}/events/{priv_event.slug}/"
+        priv_detail_url = (
+            f"/api/v1/communities/{private_community.slug}/events/{priv_event.slug}/"
+        )
         priv_resp = api_client.get(priv_detail_url)
         assert priv_resp.status_code == status.HTTP_403_FORBIDDEN
 
@@ -220,7 +223,9 @@ class TestPublicEventsInPrivateCommunity:
 
         # Stranger RSVPs
         api_client.force_authenticate(user=stranger)
-        rsvp_url = f"/api/v1/communities/{private_community.slug}/events/{pub_event.id}/rsvp/"
+        rsvp_url = (
+            f"/api/v1/communities/{private_community.slug}/events/{pub_event.id}/rsvp/"
+        )
         response = api_client.post(rsvp_url, {"status": "attending"}, format="json")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["data"]["status"] == AttendeeStatus.ATTENDING
@@ -338,7 +343,9 @@ class TestPublicEventsInPrivateCommunity:
             is_public=True,
         )
 
-        url = f"/api/v1/communities/{private_community.slug}/events/{ev.id}/calendar.ics"
+        url = (
+            f"/api/v1/communities/{private_community.slug}/events/{ev.id}/calendar.ics"
+        )
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         ics_text = response.content.decode("utf-8")

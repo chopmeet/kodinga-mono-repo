@@ -16,6 +16,11 @@ import type {
   ManagedCommunity,
   ManagedRole,
   SanctionData,
+  CommunityRecommendationResult,
+  CommunityProposalResult,
+  ContentSuggestionResult,
+  CommunityAnalysisResult,
+  AssistantChatResult,
 } from './community.type';
 
 const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
@@ -132,6 +137,22 @@ export const CommunityApi = createApi({
       query: (slug) => ({ url: `communities/${slug}/`, method: 'DELETE' }),
       invalidatesTags: ['communities'],
     }),
+    // AI Community Assistant Endpoints
+    recommendCommunities: builder.mutation<ApiSuccess<CommunityRecommendationResult>, { interests: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/recommend-communities/', method: 'POST', body }),
+    }),
+    planCommunity: builder.mutation<ApiSuccess<CommunityProposalResult>, { idea: string; language?: string; context?: Record<string, any> }>({
+      query: (body) => ({ url: 'ai-assistant/plan-community/', method: 'POST', body }),
+    }),
+    suggestContent: builder.mutation<ApiSuccess<ContentSuggestionResult>, { community: string; goal?: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/suggest-content/', method: 'POST', body }),
+    }),
+    analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
+    }),
+    assistantChat: builder.mutation<ApiSuccess<AssistantChatResult>, { message: string; conversation_id?: string; community?: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/chat/', method: 'POST', body }),
+    }),
   }),
 });
 
@@ -150,4 +171,10 @@ export const {
   useTogglePostPinMutation,
   useTogglePostLockMutation,
   useDeletePostMutation,
+  useRecommendCommunitiesMutation,
+  usePlanCommunityMutation,
+  useSuggestContentMutation,
+  useAnalyzeCommunityMutation,
+  useAssistantChatMutation,
 } = CommunityApi;
+

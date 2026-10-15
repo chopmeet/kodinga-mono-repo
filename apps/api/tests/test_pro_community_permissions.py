@@ -1,5 +1,6 @@
-from decimal import Decimal
 from datetime import timedelta
+from decimal import Decimal
+
 import pytest
 from django.utils import timezone
 from rest_framework import status
@@ -7,11 +8,19 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
 from apps.administration.models.setting import SystemSetting
-from apps.billing.models.plan import Plan, BillingInterval
+from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
 from apps.communities.models.category import CommunityCategory
-from apps.communities.models.community import Community, CommunityPricing, CommunityPrivacy
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.communities.models.community import (
+    Community,
+    CommunityPricing,
+    CommunityPrivacy,
+)
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 
 
 @pytest.fixture
@@ -84,7 +93,8 @@ class TestProCommunityPermissions:
         self, api_client, user_hobby, category_tech
     ):
         SystemSetting.objects.update_or_create(
-            key="community_creation_allowed_for", defaults={"value": "all", "is_public": True}
+            key="community_creation_allowed_for",
+            defaults={"value": "all", "is_public": True},
         )
         api_client.force_authenticate(user=user_hobby)
         payload = {
@@ -105,7 +115,11 @@ class TestProCommunityPermissions:
         api_client.force_authenticate(user=user_superadmin)
         res = api_client.patch(
             "/api/v1/admin/settings/",
-            {"key": "community_creation_allowed_for", "value": "pro_only", "is_public": True},
+            {
+                "key": "community_creation_allowed_for",
+                "value": "pro_only",
+                "is_public": True,
+            },
             format="json",
         )
         assert res.status_code == status.HTTP_200_OK
@@ -117,7 +131,8 @@ class TestProCommunityPermissions:
         self, api_client, user_hobby, category_tech
     ):
         SystemSetting.objects.update_or_create(
-            key="community_creation_allowed_for", defaults={"value": "pro_only", "is_public": True}
+            key="community_creation_allowed_for",
+            defaults={"value": "pro_only", "is_public": True},
         )
         api_client.force_authenticate(user=user_hobby)
         payload = {
@@ -127,14 +142,18 @@ class TestProCommunityPermissions:
             "pricing_type": CommunityPricing.FREE,
         }
         res = api_client.post("/api/v1/communities/", payload, format="json")
-        assert res.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN]
+        assert res.status_code in [
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_403_FORBIDDEN,
+        ]
         assert not Community.objects.filter(slug="forbidden-space").exists()
 
     def test_pro_user_can_create_community_when_setting_is_pro_only(
         self, api_client, user_pro, category_tech
     ):
         SystemSetting.objects.update_or_create(
-            key="community_creation_allowed_for", defaults={"value": "pro_only", "is_public": True}
+            key="community_creation_allowed_for",
+            defaults={"value": "pro_only", "is_public": True},
         )
         api_client.force_authenticate(user=user_pro)
         payload = {
@@ -145,13 +164,16 @@ class TestProCommunityPermissions:
         }
         res = api_client.post("/api/v1/communities/", payload, format="json")
         assert res.status_code == status.HTTP_201_CREATED
-        assert Community.objects.filter(slug="pro-allowed-space", owner=user_pro).exists()
+        assert Community.objects.filter(
+            slug="pro-allowed-space", owner=user_pro
+        ).exists()
 
     def test_hobby_user_cannot_create_paid_community(
         self, api_client, user_hobby, category_tech
     ):
         SystemSetting.objects.update_or_create(
-            key="community_creation_allowed_for", defaults={"value": "all", "is_public": True}
+            key="community_creation_allowed_for",
+            defaults={"value": "all", "is_public": True},
         )
         api_client.force_authenticate(user=user_hobby)
         payload = {
@@ -162,7 +184,10 @@ class TestProCommunityPermissions:
             "membership_price": 5000,
         }
         res = api_client.post("/api/v1/communities/", payload, format="json")
-        assert res.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN]
+        assert res.status_code in [
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_403_FORBIDDEN,
+        ]
         assert not Community.objects.filter(slug="hobby-trying-paid").exists()
 
     def test_pro_user_can_create_paid_community_with_pricing(
@@ -208,7 +233,9 @@ class TestProCommunityPermissions:
         api_client.force_authenticate(user=user_hobby)
         res = api_client.post(f"/api/v1/communities/{comm.slug}/join/")
         assert res.status_code == status.HTTP_403_FORBIDDEN
-        assert not CommunityMember.objects.filter(community=comm, user=user_hobby).exists()
+        assert not CommunityMember.objects.filter(
+            community=comm, user=user_hobby
+        ).exists()
 
     def test_user_with_active_subscription_can_be_active_in_paid_community(
         self, user_hobby, user_pro, category_tech
@@ -240,6 +267,7 @@ class TestProCommunityPermissions:
 
         # Joining now succeeds
         from apps.memberships.services.membership_service import MembershipService
+
         member = MembershipService.join_community(user=user_hobby, community=comm)
         assert member.status == MembershipStatus.ACTIVE
 
@@ -254,7 +282,10 @@ class TestProCommunityPermissions:
             pricing_type=CommunityPricing.PAID,
         )
         CommunityMember.objects.create(
-            community=comm, user=user_pro, role=CommunityRole.OWNER, status=MembershipStatus.ACTIVE
+            community=comm,
+            user=user_pro,
+            role=CommunityRole.OWNER,
+            status=MembershipStatus.ACTIVE,
         )
 
         api_client.force_authenticate(user=user_pro)

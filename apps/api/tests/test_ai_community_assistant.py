@@ -1,15 +1,14 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 import pytest
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
-from apps.ai.models.assistant import AssistantConversation, AssistantMessage
 from apps.ai.providers.exceptions import (
     AllProvidersFailedError,
     QuotaExhaustedError,
-    RecoverableProviderError,
 )
 from apps.ai.schemas import (
     AssistantChatResult,
@@ -30,7 +29,6 @@ from apps.communities.models.community import (
     CommunityPrivacy,
 )
 from apps.communities.models.settings import CommunitySettings
-from apps.events.models.event import Event, EventFormat
 from apps.memberships.models.member import (
     CommunityMember,
     CommunityRole,
@@ -161,6 +159,7 @@ def mock_moderation_clean():
 # 1. PERSONALIZED COMMUNITY RECOMMENDATIONS (GROUNDED)
 # ==============================================================================
 
+
 @pytest.mark.django_db
 class TestPersonalizedCommunityRecommendations:
     def test_recommends_real_relevant_communities_from_database(
@@ -229,7 +228,9 @@ class TestPersonalizedCommunityRecommendations:
             # Public community is included
             assert str(public_community.id) in candidate_ids
 
-    def test_grounding_rejects_hallucinated_communities(self, stranger, public_community):
+    def test_grounding_rejects_hallucinated_communities(
+        self, stranger, public_community
+    ):
         """3. Discards hallucinated or non-existent communities not present in database."""
         with patch("apps.ai.router.ai_router.recommend_communities") as mock_rec:
             # Model hallucinated a fake community
@@ -268,18 +269,31 @@ class TestPersonalizedCommunityRecommendations:
 # 2. COMMUNITY CREATION WIZARD (PROPOSAL GENERATOR)
 # ==============================================================================
 
+
 @pytest.mark.django_db
 class TestCommunityCreationWizard:
     def test_user_describes_idea_receives_structured_proposal(self, stranger):
         """4. Transforms user's natural language concept into structured proposal."""
         with patch("apps.ai.router.ai_router.plan_community") as mock_plan:
             mock_plan.return_value = CommunityProposalResult(
-                name_suggestions=["AfroAI Hub", "Senegal Machine Learning", "Kodinga AI Pioneers"],
+                name_suggestions=[
+                    "AfroAI Hub",
+                    "Senegal Machine Learning",
+                    "Kodinga AI Pioneers",
+                ],
                 description="Réseau d'ingénieurs et entrepreneurs IA en Afrique de l'Ouest.",
                 purpose="Démocratiser l'apprentissage et l'application concrète de l'IA en Afrique.",
                 target_audience="Développeurs, data scientists, et fondateurs tech",
-                suggested_categories=["#general", "#modeles-llm", "#offres-emploi", "#projets"],
-                suggested_rules=["Bienveillance et respect", "Partage constructif sans spam"],
+                suggested_categories=[
+                    "#general",
+                    "#modeles-llm",
+                    "#offres-emploi",
+                    "#projets",
+                ],
+                suggested_rules=[
+                    "Bienveillance et respect",
+                    "Partage constructif sans spam",
+                ],
                 recommended_language="fr",
                 recommended_visibility="public",
                 welcome_message="Bienvenue sur AfroAI Hub ! Présentez votre parcours et votre projet actuel.",
@@ -288,12 +302,18 @@ class TestCommunityCreationWizard:
                     "Partagez votre outil d'IA préféré du moment !",
                     "Quel framework utilisez-vous : PyTorch, TensorFlow ou Scikit-learn ?",
                 ],
-                initial_event_ideas=["Atelier live : Déployer un LLM localement", "AMA avec un chercheur IA"],
+                initial_event_ideas=[
+                    "Atelier live : Déployer un LLM localement",
+                    "AMA avec un chercheur IA",
+                ],
                 first_week_launch_plan=[
                     FirstWeekPlanItem(
                         day="Jour 1",
                         focus="Lancement & Accueil",
-                        action_items=["Publier le message de bienvenue", "Inviter 10 premiers pionniers"],
+                        action_items=[
+                            "Publier le message de bienvenue",
+                            "Inviter 10 premiers pionniers",
+                        ],
                     )
                 ],
                 follow_up_questions=[],
@@ -348,6 +368,7 @@ class TestCommunityCreationWizard:
 # 3. CONTENT & ACTIVITY SUGGESTIONS
 # ==============================================================================
 
+
 @pytest.mark.django_db
 class TestContentAndActivitySuggestions:
     def test_content_suggestions_tailored_to_community(self, public_community, owner):
@@ -361,14 +382,25 @@ class TestContentAndActivitySuggestions:
                     "type": "discussion",
                 },
                 weekly_activities=[
-                    {"title": "Code Review Mercredi", "description": "Partagez votre fonction ou notebook pour retours"}
+                    {
+                        "title": "Code Review Mercredi",
+                        "description": "Partagez votre fonction ou notebook pour retours",
+                    }
                 ],
                 monthly_events=[
-                    {"title": "Webinaire IA Générative", "format": "online", "description": "Session démo live"}
+                    {
+                        "title": "Webinaire IA Générative",
+                        "format": "online",
+                        "description": "Session démo live",
+                    }
                 ],
                 onboarding_prompt="Bienvenue parmi nous !",
                 weekly_content_calendar=[
-                    {"day": "Lundi", "topic": "Présentation des nouveaux", "type": "discussion"}
+                    {
+                        "day": "Lundi",
+                        "topic": "Présentation des nouveaux",
+                        "type": "discussion",
+                    }
                 ],
                 provider="gemini",
             )
@@ -382,12 +414,16 @@ class TestContentAndActivitySuggestions:
             assert res.first_post["title"] == "Bienvenue sur Python & IA Dakar !"
             assert len(res.weekly_activities) == 1
             # Does not write post to database
-            assert Post.objects.filter(title="Bienvenue sur Python & IA Dakar !").count() == 0
+            assert (
+                Post.objects.filter(title="Bienvenue sur Python & IA Dakar !").count()
+                == 0
+            )
 
 
 # ==============================================================================
 # 4. COMMUNITY IMPROVEMENT & HEALTH ANALYSIS
 # ==============================================================================
+
 
 @pytest.mark.django_db
 class TestCommunityImprovementAnalysis:
@@ -407,8 +443,14 @@ class TestCommunityImprovementAnalysis:
             mock_ana.return_value = CommunityAnalysisResult(
                 community_name=public_community.name,
                 overview_assessment="Communauté jeune avec une bonne base de membres mais peu d'événements programmés.",
-                strengths=["Thématique porteuse et attractive", "Membres fondateurs actifs"],
-                improvement_areas=["Absence d'événements à venir", "Questions restées sans réponse"],
+                strengths=[
+                    "Thématique porteuse et attractive",
+                    "Membres fondateurs actifs",
+                ],
+                improvement_areas=[
+                    "Absence d'événements à venir",
+                    "Questions restées sans réponse",
+                ],
                 actionable_recommendations=[
                     ImprovementRecommendation(
                         category="events",
@@ -433,7 +475,9 @@ class TestCommunityImprovementAnalysis:
             assert res.metrics_summary["members_count"] == 42
             assert res.metrics_summary["unanswered_questions_count"] == 1
 
-    def test_unauthorized_user_cannot_analyze_community(self, public_community, stranger):
+    def test_unauthorized_user_cannot_analyze_community(
+        self, public_community, stranger
+    ):
         """8. Permission check: strangers cannot access owner/moderator analytics."""
         with pytest.raises(PermissionDenied) as exc_info:
             AIAssistantService.analyze_community(
@@ -447,32 +491,38 @@ class TestCommunityImprovementAnalysis:
 # 5. AI PROVIDER FALLBACK & SAFETY ENFORCEMENT
 # ==============================================================================
 
+
 @pytest.mark.django_db
 class TestAssistantProviderRoutingAndSafety:
     def test_gemini_primary_used_openai_fallback_on_quota_exhausted(self, stranger):
-        """9. Gemini primary with transparent OpenAI fallback when Gemini quota exhausted."""
-        with patch("apps.ai.router.ai_router.gemini.assistant_chat") as mock_gemini:
-            with patch("apps.ai.router.ai_router.openai.assistant_chat") as mock_openai:
-                # Gemini throws QuotaExhaustedError
-                mock_gemini.side_effect = QuotaExhaustedError("Resource exhausted: 429 quota")
-                # OpenAI fallback returns response
-                mock_openai.return_value = AssistantChatResult(
-                    reply="Bonjour, voici comment je peux vous orienter.",
-                    suggested_follow_ups=["Quels sont vos langages favoris ?"],
-                    provider="openai",
-                )
+        with (
+            patch("apps.ai.router.ai_router.gemini.assistant_chat") as mock_gemini,
+            patch("apps.ai.router.ai_router.openai.assistant_chat") as mock_openai,
+        ):
+            # Gemini throws QuotaExhaustedError
+            mock_gemini.side_effect = QuotaExhaustedError(
+                "Resource exhausted: 429 quota"
+            )
+            # OpenAI fallback returns response
+            mock_openai.return_value = AssistantChatResult(
+                reply="Bonjour, voici comment je peux vous orienter.",
+                suggested_follow_ups=["Quels sont vos langages favoris ?"],
+                provider="openai",
+            )
 
-                reply = AIAssistantService.chat(
-                    message="Bonjour, peux-tu m'aider ?",
-                    user=stranger,
-                )
+            reply = AIAssistantService.chat(
+                message="Bonjour, peux-tu m'aider ?",
+                user=stranger,
+            )
 
-                assert reply["provider"] == "openai"
-                assert "voici comment" in reply["reply"]
-                assert mock_gemini.call_count == 1
-                assert mock_openai.call_count == 1
+            assert reply["provider"] == "openai"
+            assert "voici comment" in reply["reply"]
+            assert mock_gemini.call_count == 1
+            assert mock_openai.call_count == 1
 
-    def test_both_providers_fail_returns_handled_service_error(self, stranger, api_client):
+    def test_both_providers_fail_returns_handled_service_error(
+        self, stranger, api_client
+    ):
         """10. Fail-closed / controlled error when both providers fail."""
         api_client.force_authenticate(user=stranger)
         with patch("apps.ai.router.ai_router.assistant_chat") as mock_chat:
@@ -489,7 +539,9 @@ class TestAssistantProviderRoutingAndSafety:
 
     def test_assistant_blocks_sexual_harassment_and_prohibited_content(self, stranger):
         """11. Mandatory platform safety rules block abusive or harassing input."""
-        with patch("apps.ai.services.moderation_service.ModerationService.evaluate_content") as mock_eval:
+        with patch(
+            "apps.ai.services.moderation_service.ModerationService.evaluate_content"
+        ) as mock_eval:
             mock_eval.return_value = ModerationResult(
                 decision="reject",
                 flagged=True,

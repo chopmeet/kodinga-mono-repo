@@ -17,8 +17,6 @@ from apps.memberships.models.member import (
 )
 from apps.messaging.models.conversation import Conversation, ConversationType
 from apps.messaging.models.participant import ConversationParticipant, ParticipantRole
-from apps.messaging.models.message import Message
-from apps.posts.models.post import Post, PostType
 
 
 @pytest.fixture
@@ -77,8 +75,9 @@ def community(db, user_owner, user_member):
 
 @pytest.mark.django_db
 class TestCommunityReadOnlyAndPin:
-
-    def test_owner_can_toggle_community_read_only_setting(self, api_client, user_owner, user_member, community):
+    def test_owner_can_toggle_community_read_only_setting(
+        self, api_client, user_owner, user_member, community
+    ):
         url = f"/api/v1/communities/{community.slug}/settings/"
 
         # Member tries to change settings -> 403 Forbidden
@@ -130,19 +129,27 @@ class TestCommunityReadOnlyAndPin:
         api_client.force_authenticate(user=user_member)
         feed_get = api_client.get(feed_url)
         assert feed_get.status_code == status.HTTP_200_OK
-        feed_results = feed_get.data.get("results") if "results" in feed_get.data else feed_get.data
+        feed_results = (
+            feed_get.data.get("results")
+            if "results" in feed_get.data
+            else feed_get.data
+        )
         assert len(feed_results) == 1
         assert feed_results[0]["title"] == "Annonce Importante"
 
         # 5. Member tries to comment on the post -> 403 Forbidden
         comment_url = f"/api/v1/posts/{post_id}/comments/"
-        comment_fail = api_client.post(comment_url, {"content": "Mon commentaire"}, format="json")
+        comment_fail = api_client.post(
+            comment_url, {"content": "Mon commentaire"}, format="json"
+        )
         assert comment_fail.status_code == status.HTTP_403_FORBIDDEN
         assert "lecture seule" in str(comment_fail.data)
 
         # 6. Owner CAN comment
         api_client.force_authenticate(user=user_owner)
-        comment_ok = api_client.post(comment_url, {"content": "Note additionnelle du créateur"}, format="json")
+        comment_ok = api_client.post(
+            comment_url, {"content": "Note additionnelle du créateur"}, format="json"
+        )
         assert comment_ok.status_code == status.HTTP_201_CREATED
 
         # 7. Member CAN read comments
@@ -176,7 +183,11 @@ class TestCommunityReadOnlyAndPin:
 
         # Initially Discussion 2 is top because it is newer
         feed_before = api_client.get(feed_url)
-        results = feed_before.data.get("results") if "results" in feed_before.data else feed_before.data
+        results = (
+            feed_before.data.get("results")
+            if "results" in feed_before.data
+            else feed_before.data
+        )
         assert results[0]["id"] == p2_id
 
         # Member tries to pin Discussion 1 -> 403 Forbidden
@@ -192,7 +203,11 @@ class TestCommunityReadOnlyAndPin:
 
         # Now Discussion 1 is pinned and appears at the top!
         feed_after = api_client.get(feed_url)
-        results_after = feed_after.data.get("results") if "results" in feed_after.data else feed_after.data
+        results_after = (
+            feed_after.data.get("results")
+            if "results" in feed_after.data
+            else feed_after.data
+        )
         assert results_after[0]["id"] == p1_id
         assert results_after[0]["is_pinned"] is True
 
@@ -252,6 +267,10 @@ class TestCommunityReadOnlyAndPin:
         api_client.force_authenticate(user=user_member)
         msgs_res = api_client.get(f"/api/v1/conversations/{conv.id}/messages/")
         assert msgs_res.status_code == status.HTTP_200_OK
-        msgs = msgs_res.data if isinstance(msgs_res.data, list) else (msgs_res.data.get("data") or msgs_res.data)
+        msgs = (
+            msgs_res.data
+            if isinstance(msgs_res.data, list)
+            else (msgs_res.data.get("data") or msgs_res.data)
+        )
         assert len(msgs) == 1
         assert msgs[0]["is_pinned"] is True

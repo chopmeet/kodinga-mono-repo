@@ -1,24 +1,36 @@
-import pytest
-from rest_framework.test import APIClient
-from rest_framework import status
-from django.utils import timezone
 from datetime import timedelta
 
+import pytest
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community, CommunityPrivacy, CommunityPricing
-from apps.communities.models.rule import CommunityRule
+from apps.billing.models.plan import Plan
+from apps.communities.models.community import (
+    Community,
+    CommunityPricing,
+    CommunityPrivacy,
+)
 from apps.communities.models.settings import CommunitySettings
-from apps.posts.models.post import Post, PostType
-from apps.posts.models.comment import Comment
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.messaging.models.conversation import Conversation, ConversationType
-from apps.messaging.models.participant import ConversationParticipant
 from apps.messaging.models.message import Message
-from apps.projects.models.project import Project
-from apps.opportunities.models.opportunity import Opportunity, OpportunityType, WorkplaceType
-from apps.billing.models.plan import Plan, BillingInterval
+from apps.messaging.models.participant import ConversationParticipant
 from apps.notifications.models.notification import Notification, NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from apps.opportunities.models.opportunity import (
+    Opportunity,
+    OpportunityType,
+    WorkplaceType,
+)
+from apps.posts.models.comment import Comment
+from apps.posts.models.post import Post, PostType
+from apps.projects.models.project import Project
 
 
 @pytest.fixture
@@ -80,7 +92,6 @@ def secret_community(db, regular_user):
 
 @pytest.mark.django_db
 class TestSuperadminFullAccess:
-
     def test_superadmin_user_model_flags(self, superadmin_user):
         """Verify model-level flags and permissions for superadmin."""
         assert superadmin_user.is_superadmin is True
@@ -93,7 +104,9 @@ class TestSuperadminFullAccess:
     # -------------------------------------------------------------------------
     # 1. COMMUNITIES: GET, POST, PATCH, DELETE
     # -------------------------------------------------------------------------
-    def test_superadmin_can_access_and_manage_secret_community(self, api_client, superadmin_user, secret_community):
+    def test_superadmin_can_access_and_manage_secret_community(
+        self, api_client, superadmin_user, secret_community
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # 1. GET secret community details
@@ -103,7 +116,10 @@ class TestSuperadminFullAccess:
         # 2. PATCH secret community owned by alice
         patch_response = api_client.patch(
             f"/api/v1/communities/{secret_community.slug}/",
-            {"name": "Alice Secret Club Overridden by Admin", "tagline": "Updated by Superadmin"},
+            {
+                "name": "Alice Secret Club Overridden by Admin",
+                "tagline": "Updated by Superadmin",
+            },
             format="json",
         )
         assert patch_response.status_code == status.HTTP_200_OK
@@ -113,15 +129,27 @@ class TestSuperadminFullAccess:
         # 3. POST community rule
         rule_response = api_client.post(
             f"/api/v1/communities/{secret_community.slug}/rules/",
-            {"title": "Admin Rule", "description": "Respect platform rules", "order": 1},
+            {
+                "title": "Admin Rule",
+                "description": "Respect platform rules",
+                "order": 1,
+            },
             format="json",
         )
-        assert rule_response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED]
+        assert rule_response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_201_CREATED,
+        ]
         rule_id = rule_response.data["data"]["id"]
 
         # 4. DELETE community rule
-        del_rule_response = api_client.delete(f"/api/v1/communities/{secret_community.slug}/rules/{rule_id}/")
-        assert del_rule_response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
+        del_rule_response = api_client.delete(
+            f"/api/v1/communities/{secret_community.slug}/rules/{rule_id}/"
+        )
+        assert del_rule_response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
+        ]
 
         # 5. PATCH community settings
         settings_response = api_client.patch(
@@ -132,13 +160,20 @@ class TestSuperadminFullAccess:
         assert settings_response.status_code == status.HTTP_200_OK
 
         # 6. DELETE community
-        del_community_response = api_client.delete(f"/api/v1/communities/{secret_community.slug}/")
-        assert del_community_response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
+        del_community_response = api_client.delete(
+            f"/api/v1/communities/{secret_community.slug}/"
+        )
+        assert del_community_response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
+        ]
 
     # -------------------------------------------------------------------------
     # 2. POSTS & COMMENTS: GET, POST, PATCH, DELETE, PIN, LOCK
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_posts_and_comments(self, api_client, superadmin_user, secret_community, regular_user):
+    def test_superadmin_can_manage_posts_and_comments(
+        self, api_client, superadmin_user, secret_community, regular_user
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # Alice creates a post
@@ -191,16 +226,24 @@ class TestSuperadminFullAccess:
 
         # 6. DELETE alice's comment
         del_comment_res = api_client.delete(f"/api/v1/comments/{alice_comment.id}/")
-        assert del_comment_res.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
+        assert del_comment_res.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
+        ]
 
         # 7. DELETE alice's post
         del_post_res = api_client.delete(f"/api/v1/posts/{alice_post.id}/")
-        assert del_post_res.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
+        assert del_post_res.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
+        ]
 
     # -------------------------------------------------------------------------
     # 3. CLASSROOM: GET, POST, PATCH, DELETE
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_classroom(self, api_client, superadmin_user, secret_community):
+    def test_superadmin_can_manage_classroom(
+        self, api_client, superadmin_user, secret_community
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # 1. POST create course
@@ -218,7 +261,9 @@ class TestSuperadminFullAccess:
         course_slug = course_res.data["data"]["slug"]
 
         # 2. GET list courses
-        list_res = api_client.get(f"/api/v1/communities/{secret_community.slug}/courses/")
+        list_res = api_client.get(
+            f"/api/v1/communities/{secret_community.slug}/courses/"
+        )
         assert list_res.status_code == status.HTTP_200_OK
 
         # 3. PATCH update course
@@ -230,13 +275,17 @@ class TestSuperadminFullAccess:
         assert patch_res.status_code == status.HTTP_200_OK
 
         # 4. DELETE course
-        del_res = api_client.delete(f"/api/v1/communities/{secret_community.slug}/courses/{course_slug}/")
+        del_res = api_client.delete(
+            f"/api/v1/communities/{secret_community.slug}/courses/{course_slug}/"
+        )
         assert del_res.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
 
     # -------------------------------------------------------------------------
     # 4. EVENTS: GET, POST, PATCH, DELETE
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_events(self, api_client, superadmin_user, secret_community):
+    def test_superadmin_can_manage_events(
+        self, api_client, superadmin_user, secret_community
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         start_time = (timezone.now() + timedelta(days=2)).isoformat()
@@ -260,7 +309,9 @@ class TestSuperadminFullAccess:
         event_id = event_res.data["data"]["id"]
 
         # 2. GET list community events
-        list_res = api_client.get(f"/api/v1/communities/{secret_community.slug}/events/")
+        list_res = api_client.get(
+            f"/api/v1/communities/{secret_community.slug}/events/"
+        )
         assert list_res.status_code == status.HTTP_200_OK
 
         # 3. PATCH event
@@ -272,13 +323,17 @@ class TestSuperadminFullAccess:
         assert patch_res.status_code == status.HTTP_200_OK
 
         # 4. DELETE event
-        del_res = api_client.delete(f"/api/v1/communities/{secret_community.slug}/events/{event_id}/")
+        del_res = api_client.delete(
+            f"/api/v1/communities/{secret_community.slug}/events/{event_id}/"
+        )
         assert del_res.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
 
     # -------------------------------------------------------------------------
     # 5. MEMBERSHIPS & RBAC: PUT (approve), PATCH (role), DELETE
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_memberships(self, api_client, superadmin_user, secret_community, member_user):
+    def test_superadmin_can_manage_memberships(
+        self, api_client, superadmin_user, secret_community, member_user
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # Bob joins secret community as pending
@@ -320,7 +375,9 @@ class TestSuperadminFullAccess:
     # -------------------------------------------------------------------------
     # 6. MESSAGING: POST, PATCH, DELETE, PIN
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_messages(self, api_client, superadmin_user, secret_community, regular_user):
+    def test_superadmin_can_manage_messages(
+        self, api_client, superadmin_user, secret_community, regular_user
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         conv = Conversation.objects.create(
@@ -375,7 +432,9 @@ class TestSuperadminFullAccess:
     # -------------------------------------------------------------------------
     # 7. BILLING PLANS: POST, PATCH, DELETE
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_billing_plans(self, api_client, superadmin_user, secret_community):
+    def test_superadmin_can_manage_billing_plans(
+        self, api_client, superadmin_user, secret_community
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # 1. POST create plan for secret_community without having to be a Pro user
@@ -409,7 +468,9 @@ class TestSuperadminFullAccess:
     # -------------------------------------------------------------------------
     # 8. PROJECTS & OPPORTUNITIES: PATCH, DELETE
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_projects_and_opportunities(self, api_client, superadmin_user, regular_user):
+    def test_superadmin_can_manage_projects_and_opportunities(
+        self, api_client, superadmin_user, regular_user
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # Alice creates a project
@@ -466,11 +527,15 @@ class TestSuperadminFullAccess:
     # -------------------------------------------------------------------------
     # 9. AI & HEALTH APIS: GET, PATCH
     # -------------------------------------------------------------------------
-    def test_superadmin_can_access_ai_and_health_apis(self, api_client, superadmin_user, secret_community):
+    def test_superadmin_can_access_ai_and_health_apis(
+        self, api_client, superadmin_user, secret_community
+    ):
         api_client.force_authenticate(user=superadmin_user)
 
         # 1. GET AI settings for secret community
-        ai_get = api_client.get(f"/api/v1/communities/{secret_community.slug}/ai-settings/")
+        ai_get = api_client.get(
+            f"/api/v1/communities/{secret_community.slug}/ai-settings/"
+        )
         assert ai_get.status_code == status.HTTP_200_OK
 
         # 2. PATCH AI settings for secret community
@@ -492,7 +557,9 @@ class TestSuperadminFullAccess:
     # -------------------------------------------------------------------------
     # 10. NOTIFICATIONS: READ & DELETE ANY NOTIFICATION
     # -------------------------------------------------------------------------
-    def test_superadmin_can_manage_any_notification(self, superadmin_user, regular_user):
+    def test_superadmin_can_manage_any_notification(
+        self, superadmin_user, regular_user
+    ):
         # Create a notification belonging to regular_user
         notif = Notification.objects.create(
             recipient=regular_user,
@@ -507,5 +574,8 @@ class TestSuperadminFullAccess:
         assert notif.is_read is True
 
         # Superadmin can delete notification
-        assert NotificationService.delete_notification(str(notif.id), superadmin_user) is True
+        assert (
+            NotificationService.delete_notification(str(notif.id), superadmin_user)
+            is True
+        )
         assert not Notification.objects.filter(id=notif.id).exists()

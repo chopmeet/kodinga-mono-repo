@@ -1,4 +1,6 @@
+import contextlib
 from unittest.mock import MagicMock, patch
+
 import pytest
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -25,12 +27,9 @@ from apps.ai.schemas import (
     SentimentResult,
     TranslationResult,
 )
-from apps.ai.services.health_service import ProviderHealthService
 from apps.ai.services.moderation_service import ModerationService
-from apps.ai.services.sentiment_service import SentimentService
 from apps.ai.services.translation_service import TranslationService
 from apps.communities.models.community import Community, CommunityPrivacy
-from apps.communities.models.settings import CommunitySettings
 from apps.memberships.models.member import (
     CommunityMember,
     CommunityRole,
@@ -124,6 +123,7 @@ def other_community(stranger):
 # 1. UNIT & ROUTER TESTS (Gemini-First with OpenAI Fallback)
 # ==============================================================================
 
+
 @pytest.mark.django_db
 class TestAIRouterAndProviders:
     def test_gemini_succeeds_openai_not_called(self):
@@ -192,7 +192,9 @@ class TestAIRouterAndProviders:
         openai_mock = MagicMock(spec=OpenAIAdapter)
         cb = QuotaCircuitBreaker(cooldown_seconds=60)
 
-        gemini_mock.detect_language.side_effect = RateLimitError("429 Too Many Requests")
+        gemini_mock.detect_language.side_effect = RateLimitError(
+            "429 Too Many Requests"
+        )
         openai_mock.detect_language.return_value = LanguageDetectionResult(
             language_code="wo", confidence=0.98, provider="openai"
         )
@@ -260,8 +262,12 @@ class TestAIRouterAndProviders:
         openai_mock = MagicMock(spec=OpenAIAdapter)
         cb = QuotaCircuitBreaker(cooldown_seconds=60)
 
-        gemini_mock.moderate_content.side_effect = RecoverableProviderError("Gemini 503")
-        openai_mock.moderate_content.side_effect = RecoverableProviderError("OpenAI 503")
+        gemini_mock.moderate_content.side_effect = RecoverableProviderError(
+            "Gemini 503"
+        )
+        openai_mock.moderate_content.side_effect = RecoverableProviderError(
+            "OpenAI 503"
+        )
 
         router = ProviderRouter(
             gemini_adapter=gemini_mock,
@@ -299,6 +305,7 @@ class TestAIRouterAndProviders:
 # 2. MULTILINGUAL TRANSLATION (French, English, Wolof, Bambara)
 # ==============================================================================
 
+
 @pytest.mark.django_db
 class TestMultilingualTranslation:
     def test_french_english_wolof_bambara_translation_flow(self):
@@ -312,7 +319,9 @@ class TestMultilingualTranslation:
                 confidence=0.96,
             )
 
-            res = TranslationService.translate("Bonjour tout le monde", target_lang="wo")
+            res = TranslationService.translate(
+                "Bonjour tout le monde", target_lang="wo"
+            )
             assert res.translated_text == "Naka subaka ci (Bonjour en Wolof)"
             assert res.target_language == "wo"
             assert mock_trans.call_count == 1
@@ -364,6 +373,7 @@ class TestMultilingualTranslation:
 # ==============================================================================
 # 3. CONTENT MODERATION & PLATFORM SAFETY ENFORCEMENT
 # ==============================================================================
+
 
 @pytest.mark.django_db
 class TestContentModerationAndSafety:
@@ -431,7 +441,10 @@ class TestContentModerationAndSafety:
         data = response.data["data"]
         assert "platform_locked_rules" in data
         assert data["platform_locked_rules"]["prohibit_sexual_harassment"] is True
-        assert data["platform_locked_rules"]["mandatory_pre_publication_moderation"] is True
+        assert (
+            data["platform_locked_rules"]["mandatory_pre_publication_moderation"]
+            is True
+        )
         assert data["platform_locked_rules"]["is_customizable_by_owner"] is False
 
         # Attempt to inject disabling parameters
@@ -450,7 +463,10 @@ class TestContentModerationAndSafety:
         assert res_data["ai_translation_enabled"] is False
         # Platform locked rules remain strictly active!
         assert res_data["platform_locked_rules"]["prohibit_sexual_harassment"] is True
-        assert res_data["platform_locked_rules"]["mandatory_pre_publication_moderation"] is True
+        assert (
+            res_data["platform_locked_rules"]["mandatory_pre_publication_moderation"]
+            is True
+        )
 
     def test_repeated_violations_audit_logging(self, owner, community):
         """14. Moderation decisions are logged in ModerationAuditLog for transparency."""
@@ -464,12 +480,10 @@ class TestContentModerationAndSafety:
                 provider="gemini",
             )
 
-            try:
+            with contextlib.suppress(PermissionDenied):
                 ModerationService.enforce_pre_publication(
                     "Contenu toxique répété", community=community, author=owner
                 )
-            except PermissionDenied:
-                pass
 
             log = ModerationAuditLog.objects.filter(
                 user=owner, decision=ModerationDecision.REJECT
@@ -482,6 +496,7 @@ class TestContentModerationAndSafety:
 # ==============================================================================
 # 4. TENANT BOUNDARIES & OBSERVABILITY
 # ==============================================================================
+
 
 @pytest.mark.django_db
 class TestTenantBoundariesAndObservability:

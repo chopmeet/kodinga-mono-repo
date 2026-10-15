@@ -49,6 +49,7 @@ export type CommunityRules = {
     require_approval_to_join: boolean;
     allow_member_invites: boolean;
     default_post_permission: 'all_members' | 'moderators_only' | 'admins_only';
+    is_read_only?: boolean;
     welcome_message: string;
   };
 };
@@ -165,6 +166,7 @@ export function getCommunityRules(community: CommunityListItem): CommunityRules 
       require_approval_to_join: community.privacy_type !== 'public',
       allow_member_invites: community.privacy_type === 'public',
       default_post_permission: community.members_count > 3000 ? 'moderators_only' : 'all_members',
+      is_read_only: false,
       welcome_message: `Bienvenue dans ${community.name} ! Présentez-vous dans le fil.`,
     },
   };
