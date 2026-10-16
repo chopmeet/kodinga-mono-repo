@@ -14,7 +14,7 @@ function GeneralSettingsTab() {
     isSubmitting, 
     settingsLoading, 
     onSubmit, 
-    onReset 
+    onReset, 
   } = UseManageSystemSettings();
 
   return (
