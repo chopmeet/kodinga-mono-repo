@@ -3,11 +3,13 @@ from django.urls import path
 from apps.ai.views import (
     AIAssistantAnalyzeCommunityView,
     AIAssistantChatView,
+    AIAssistantConversationClearView,
     AIAssistantConversationDetailView,
     AIAssistantConversationListView,
     AIAssistantPlanCommunityView,
     AIAssistantRecommendCommunitiesView,
     AIAssistantSuggestContentView,
+    AILanguageListView,
     AIModerationAuditListView,
     AIProviderHealthView,
     AITranslateView,
@@ -17,6 +19,8 @@ from apps.ai.views import (
 app_name = "ai"
 
 urlpatterns = [
+    # Supported Languages Directory
+    path("ai/languages/", AILanguageListView.as_view(), name="ai-languages"),
     # Multilingual Translation
     path("ai/translate/", AITranslateView.as_view(), name="ai-translate"),
     # Observability & Health
@@ -64,6 +68,11 @@ urlpatterns = [
         "ai-assistant/conversations/<uuid:conversation_id>/",
         AIAssistantConversationDetailView.as_view(),
         name="ai-assistant-conversation-detail",
+    ),
+    path(
+        "ai-assistant/conversations/<uuid:conversation_id>/clear/",
+        AIAssistantConversationClearView.as_view(),
+        name="ai-assistant-conversation-clear",
     ),
 ]
 
