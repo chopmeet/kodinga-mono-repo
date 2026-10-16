@@ -5,24 +5,26 @@ import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
 import { prepareHeaders } from '../user/user.api';
 import type {
   AdminCategoryItem,
+  AssistantChatResult,
   CategoryWriteData,
+  CommunityAISettings,
+  CommunityAISettingsWrite,
+  CommunityAnalysisResult,
   CommunityCategory,
   CommunityCreateData,
+  CommunityDetail,
   CommunityFeedQuery,
+  CommunityListItem,
+  CommunityListQuery,
   CommunityMemberItem,
   CommunityMembersQuery,
   CommunityPostItem,
-  CommunityDetail,
-  CommunityListItem,
-  CommunityListQuery,
+  CommunityProposalResult,
+  CommunityRecommendationResult,
+  ContentSuggestionResult,
   ManagedCommunity,
   ManagedRole,
   SanctionData,
-  CommunityRecommendationResult,
-  CommunityProposalResult,
-  ContentSuggestionResult,
-  CommunityAnalysisResult,
-  AssistantChatResult,
 } from './community.type';
 
 const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
@@ -38,6 +40,7 @@ export const CommunityApi = createApi({
     'categories', 
     'members', 
     'posts',
+    'ai-settings',
   ],
   baseQuery: fetchBaseQuery({ 
     baseUrl: ApiBaseUrl, 
@@ -165,11 +168,21 @@ export const CommunityApi = createApi({
     recommendCommunities: builder.mutation<ApiSuccess<CommunityRecommendationResult>, { interests: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/recommend-communities/', method: 'POST', body }),
     }),
-    planCommunity: builder.mutation<ApiSuccess<CommunityProposalResult>, { idea: string; language?: string; context?: Record<string, any> }>({
+    planCommunity: builder.mutation<ApiSuccess<CommunityProposalResult>, { idea: string; language?: string; context?: Record<string, unknown> }>({
       query: (body) => ({ url: 'ai-assistant/plan-community/', method: 'POST', body }),
     }),
     suggestContent: builder.mutation<ApiSuccess<ContentSuggestionResult>, { community: string; goal?: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/suggest-content/', method: 'POST', body }),
+    }),
+    getCommunityAISettings: builder.query<CommunityAISettings, string>({
+      query: (slug) => `communities/${slug}/ai-settings/`,
+      transformResponse: unwrap<CommunityAISettings>,
+      providesTags: (_result, _error, slug) => [{ type: 'ai-settings', id: slug }],
+    }),
+    updateCommunityAISettings: builder.mutation<CommunityAISettings, { slug: string } & CommunityAISettingsWrite>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/ai-settings/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityAISettings>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'ai-settings', id: slug }],
     }),
     analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
@@ -204,5 +217,7 @@ export const {
   useSuggestContentMutation,
   useAnalyzeCommunityMutation,
   useAssistantChatMutation,
+  useGetCommunityAISettingsQuery,
+  useUpdateCommunityAISettingsMutation,
 } = CommunityApi;
 

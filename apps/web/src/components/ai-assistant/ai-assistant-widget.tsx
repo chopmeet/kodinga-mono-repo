@@ -1,27 +1,23 @@
 import {
   ArrowRight,
   Bot,
-  Calendar,
   Check,
-  ChevronDown,
   Copy,
   Globe,
-  HelpCircle,
   Lightbulb,
   Maximize2,
   MessageSquare,
   Minimize2,
-  RefreshCw,
   Send,
   Sparkles,
   TrendingUp,
   Users,
   X,
 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
+import { cn, customToast } from '@kodinga-mono-repo/ui';
 import {
   useAssistantChatMutation,
   usePlanCommunityMutation,
@@ -113,7 +109,7 @@ export function AIAssistantWidget() {
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    customToast.success('Copié dans le presse-papier !');
+    customToast.success({ message: 'Copié dans le presse-papier !' });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -337,7 +333,7 @@ export function AIAssistantWidget() {
                             </div>
 
                             <p className="mt-2 text-xs text-emerald-800 bg-emerald-50/80 rounded-md p-1.5 font-medium">
-                              💡 {rec.relevance_reason}
+                              <span role="img" aria-label="Pourquoi">💡</span> {rec.relevance_reason}
                             </p>
 
                             <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500">

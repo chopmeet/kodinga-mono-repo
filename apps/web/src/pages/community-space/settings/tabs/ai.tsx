@@ -2,82 +2,52 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { customToast, SelectInput } from '@kodinga-mono-repo/ui';
 import SettingSwitch from '@/pages/shared/setting-switch';
+import {
+  useAnalyzeCommunityMutation,
+  useGetCommunityAISettingsQuery,
+  useUpdateCommunityAISettingsMutation,
+} from '@/utils/api/community/community.api';
+import type { CommunityAISettings, CommunityAnalysisResult } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
 
-interface AISettingsData {
-  ai_translation_enabled: boolean;
-  default_community_language: string;
-  supported_languages: string[];
-  sentiment_analytics_enabled: boolean;
-  non_mandatory_moderation: Record<string, boolean>;
-  moderation_strictness: string;
-  platform_locked_rules?: {
-    prohibit_sexual_harassment: boolean;
-    prohibit_targeted_harassment: boolean;
-    prohibit_hate_speech_and_bullying: boolean;
-    mandatory_pre_publication_moderation: boolean;
-    fail_closed_on_outage: boolean;
-    notice: string;
-  };
-}
+const DEFAULT_SETTINGS: CommunityAISettings = {
+  ai_translation_enabled: true,
+  default_community_language: 'fr',
+  supported_languages: ['fr', 'en', 'wo', 'bm'],
+  sentiment_analytics_enabled: true,
+  non_mandatory_moderation: { profanity: false, spam: true },
+  moderation_strictness: 'standard',
+};
 
 export function SpaceAITab() {
-  const { slug } = useParams<{ slug: string }>();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<AISettingsData>({
-    ai_translation_enabled: true,
-    default_community_language: 'fr',
-    supported_languages: ['fr', 'en', 'wo', 'bm'],
-    sentiment_analytics_enabled: true,
-    non_mandatory_moderation: { profanity: false, spam: true },
-    moderation_strictness: 'standard',
-  });
+  const { slug = '' } = useParams<{ slug: string }>();
+  // GET / PATCH communities/<slug>/ai-settings/ through the api client (token + api url)
+  const { data: stored, isLoading: loading } = useGetCommunityAISettingsQuery(slug, { skip: !slug });
+  const [updateSettings, { isLoading: saving }] = useUpdateCommunityAISettingsMutation();
+  const [settings, setSettings] = useState<CommunityAISettings>(DEFAULT_SETTINGS);
 
+  // The form edits a local copy of what the api stored
   useEffect(() => {
-    if (!slug) return;
-    fetch(`/api/v1/communities/${slug}/ai-settings/`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((res) => {
-        if (res?.data) {
-          setSettings(res.data);
-        }
-      })
-      .catch((err) => console.error('Error fetching AI settings:', err))
-      .finally(() => setLoading(false));
-  }, [slug]);
+    if (stored) setSettings(stored);
+  }, [stored]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!slug) return;
-    setSaving(true);
-
     try {
-      const res = await fetch(`/api/v1/communities/${slug}/ai-settings/`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ai_translation_enabled: settings.ai_translation_enabled,
-          default_community_language: settings.default_community_language,
-          supported_languages: settings.supported_languages,
-          sentiment_analytics_enabled: settings.sentiment_analytics_enabled,
-          non_mandatory_moderation: settings.non_mandatory_moderation,
-          moderation_strictness: settings.moderation_strictness,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.data) {
-          setSettings(data.data);
-        }
-        customToast.success({ message: 'Paramètres d’intelligence artificielle enregistrés.' });
-      } else {
-        customToast.error({ message: 'Échec de l’enregistrement des paramètres IA.' });
-      }
-    } catch {
-      customToast.error({ message: 'Erreur réseau lors de l’enregistrement.' });
-    } finally {
-      setSaving(false);
+      const updated = await updateSettings({
+        slug,
+        ai_translation_enabled: settings.ai_translation_enabled,
+        default_community_language: settings.default_community_language,
+        supported_languages: settings.supported_languages,
+        sentiment_analytics_enabled: settings.sentiment_analytics_enabled,
+        non_mandatory_moderation: settings.non_mandatory_moderation,
+        moderation_strictness: settings.moderation_strictness,
+      }).unwrap();
+      setSettings(updated);
+      customToast.success({ message: 'Paramètres d’intelligence artificielle enregistrés.' });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
     }
   };
 
@@ -110,7 +80,7 @@ export function SpaceAITab() {
           label="Traduction multilingue automatique"
           description="Traduit automatiquement les messages vers la langue préférée de chaque membre (Wolof, Bambara, Français, Anglais) avec conservation de l'original."
           checked={settings.ai_translation_enabled}
-          onChange={(checked) => setSettings({ ...settings, ai_translation_enabled: checked })}
+          onCheckedChange={(checked) => setSettings({ ...settings, ai_translation_enabled: checked })}
         />
 
         <div className="grid gap-4 md:grid-cols-2 pt-2">
@@ -151,7 +121,7 @@ export function SpaceAITab() {
           label="Activer l'analyse de sentiment de la communauté"
           description="Mesure les tendances positives, neutres et négatives de manière anonymisée. La critique technique légitime n'est jamais censurée."
           checked={settings.sentiment_analytics_enabled}
-          onChange={(checked) => setSettings({ ...settings, sentiment_analytics_enabled: checked })}
+          onCheckedChange={(checked) => setSettings({ ...settings, sentiment_analytics_enabled: checked })}
         />
       </div>
 
@@ -165,7 +135,7 @@ export function SpaceAITab() {
           label="Filtrer la vulgarité & gros mots légers"
           description="Place en file d'attente de modération les messages contenant des vulgarités ou jurons répétés."
           checked={Boolean(settings.non_mandatory_moderation?.profanity)}
-          onChange={(checked) =>
+          onCheckedChange={(checked) =>
             setSettings({
               ...settings,
               non_mandatory_moderation: { ...settings.non_mandatory_moderation, profanity: checked },
@@ -177,7 +147,7 @@ export function SpaceAITab() {
           label="Filtrer le spam et démarchage commercial"
           description="Détecte et bloque automatiquement les liens suspects, le phishing et la promotion abusive."
           checked={Boolean(settings.non_mandatory_moderation?.spam ?? true)}
-          onChange={(checked) =>
+          onCheckedChange={(checked) =>
             setSettings({
               ...settings,
               non_mandatory_moderation: { ...settings.non_mandatory_moderation, spam: checked },
@@ -189,7 +159,7 @@ export function SpaceAITab() {
       {/* 4. Protections Plateforme Verrouillées (Invariants non modifiables) */}
       <div className="mt-8 p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-3">
         <div className="flex items-center gap-2 text-blue-900 font-semibold text-sm">
-          <span>🔒</span>
+          <span role="img" aria-label="Verrouillé">🔒</span>
           <span>Règles de Sécurité Verrouillées (Non désactivables)</span>
         </div>
         <p className="text-xs text-blue-800 leading-relaxed">
@@ -228,29 +198,17 @@ export function SpaceAITab() {
 }
 
 function CommunityImprovementSection({ slug }: { slug?: string }) {
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analyzeCommunity, { isLoading: analyzing }] = useAnalyzeCommunityMutation();
+  const [analysis, setAnalysis] = useState<CommunityAnalysisResult | null>(null);
 
   const runAnalysis = async () => {
     if (!slug || analyzing) return;
-    setAnalyzing(true);
     try {
-      const res = await fetch('/api/v1/ai-assistant/analyze-community/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ community: slug, language: 'fr' }),
-      });
-      const data = await res.json();
-      if (data?.data) {
-        setAnalysis(data.data);
-        customToast.success('Diagnostic communautaire généré avec succès !');
-      } else {
-        customToast.error(data?.error || 'Erreur lors du diagnostic.');
-      }
-    } catch {
-      customToast.error("Service d'analyse IA indisponible.");
-    } finally {
-      setAnalyzing(false);
+      const res = await analyzeCommunity({ community: slug, language: 'fr' }).unwrap();
+      setAnalysis(res.data);
+      customToast.success({ message: 'Diagnostic communautaire généré avec succès !' });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
     }
   };
 
@@ -259,7 +217,7 @@ function CommunityImprovementSection({ slug }: { slug?: string }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <span>🚀</span>
+            <span role="img" aria-label="Diagnostic">🚀</span>
             <span>Assistant d'Amélioration & Diagnostic Communautaire</span>
           </h3>
           <p className="text-xs text-slate-500 mt-1">
@@ -311,7 +269,7 @@ function CommunityImprovementSection({ slug }: { slug?: string }) {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Recommandations d'Actions :</h4>
               <div className="space-y-2">
-                {analysis.actionable_recommendations.map((rec: any, idx: number) => (
+                {analysis.actionable_recommendations.map((rec, idx) => (
                   <div key={idx} className="rounded-xl bg-white border border-slate-200 p-3.5 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-900">{rec.title}</span>

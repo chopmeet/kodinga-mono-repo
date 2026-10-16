@@ -12,7 +12,7 @@ const schema = z.object({
   require_approval_to_join: z.boolean(),
   allow_member_invites: z.boolean(),
   default_post_permission: z.enum(['all_members', 'moderators_only', 'admins_only']),
-  is_read_only: z.boolean().default(false),
+  is_read_only: z.boolean(),
   welcome_message: z.string().trim().max(500, '500 caractères maximum'),
 });
 
@@ -33,7 +33,7 @@ function AccessTab() {
     reset,
     watch,
     formState: { errors, isDirty, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: access });
+  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { ...access, is_read_only: access.is_read_only ?? false } });
 
   const onSubmit = async (values: Values) => {
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -118,7 +118,7 @@ function AccessTab() {
         {...register('welcome_message')}
       />
 
-      <FormActions isDirty={isDirty} isSaving={isSubmitting} onReset={() => reset(access)} />
+      <FormActions isDirty={isDirty} isSaving={isSubmitting} onReset={() => reset({ ...access, is_read_only: access.is_read_only ?? false })} />
     </form>
   );
 }
