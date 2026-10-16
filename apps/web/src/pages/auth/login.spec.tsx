@@ -1,12 +1,20 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 
+import { onLogout } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
 import { renderAppAt, SLOW, stubApi } from '@/test-utils';
 
 // Full app tree + network stubs: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
 
-afterEach(() => vi.restoreAllMocks());
+// Each test starts as a visitor: the login page now sends signed-in users away (RedirectAuthRoute)
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  act(() => {
+    store.dispatch(onLogout());
+  });
+});
 
 const submit = (email: string, password: string) => {
   fireEvent.change(screen.getByLabelText(/^Adresse email/), { target: { value: email } });

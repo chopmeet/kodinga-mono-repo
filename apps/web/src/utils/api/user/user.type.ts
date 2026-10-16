@@ -16,6 +16,8 @@ export type User = {
   avatar?: string;
   /** Not exposed by the api yet: admin area stays closed until it is */
   is_staff?: boolean;
+  is_superadmin?: boolean;
+  is_superuser?: boolean;
 };
 
 export interface AuthState {

@@ -1,44 +1,29 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { Controller } from 'react-hook-form';
 
-import { customToast, Input, SelectInput } from '@kodinga-mono-repo/ui';
-import { useSettings } from '../admin-settings';
+import { Input, SelectInput } from '@kodinga-mono-repo/ui';
 import FormActions from '@/pages/shared/form-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
-
-const schema = z.object({
-  platform_name: z.string().trim().min(2, 'Au moins 2 caractères'),
-  support_email: z.string().trim().min(1, "Saisissez l'email de support").email('Adresse email invalide'),
-  default_language: z.enum(['fr', 'en']),
-  registrations_open: z.boolean(),
-  require_email_verification: z.boolean(),
-  community_creation: z.enum(['everyone', 'verified', 'approval']),
-});
-
-type Values = z.infer<typeof schema>;
+import UseManageSystemSettings from '../form/UseManageSystemSettings';
 
 function GeneralSettingsTab() {
-  const { general, saveGeneral } = useSettings();
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isDirty, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: general });
-
-  const onSubmit = async (values: Values) => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    saveGeneral(values);
-    reset(values);
-    customToast.success({ message: 'Paramètres généraux enregistrés.' });
-  };
+  const { 
+    register, 
+    control, 
+    errors, 
+    isDirty, 
+    isSubmitting, 
+    settingsLoading, 
+    onSubmit, 
+    onReset, 
+  } = UseManageSystemSettings();
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <h2 className="text-lg font-semibold text-slate-900">Général</h2>
-      <p className="mb-5 text-sm text-slate-500">Identité de la plateforme et règles d'inscription.</p>
+      <p className="text-sm text-slate-500">Identité de la plateforme et règles d'inscription.</p>
+      <p className="mt-2 mb-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+        Seule la « Création de communautés » est enregistrée sur la plateforme pour l'instant ; les autres réglages restent locaux.
+      </p>
 
       <div className="grid gap-x-4 md:grid-cols-2">
         <Input id="platform_name" label="Nom de la plateforme" required error={errors.platform_name?.message} {...register('platform_name')} />
@@ -61,11 +46,11 @@ function GeneralSettingsTab() {
         />
         <SelectInput
           label="Création de communautés"
-          fieldHelp="Qui peut ouvrir une nouvelle communauté."
+          fieldHelp={settingsLoading ? 'Chargement du réglage…' : 'Appliqué par la plateforme à chaque création de communauté.'}
+          disabled={settingsLoading}
           options={[
-            { label: 'Tous les membres', value: 'everyone' },
-            { label: 'Membres avec email vérifié', value: 'verified' },
-            { label: 'Sur validation d’un administrateur', value: 'approval' },
+            { label: 'Tous les membres (Hobby & Pro)', value: 'all' },
+            { label: 'Abonnés Pro uniquement (5 000 FCFA/mois)', value: 'pro_only' },
           ]}
           {...register('community_creation')}
         />
@@ -98,7 +83,7 @@ function GeneralSettingsTab() {
         />
       </div>
 
-      <FormActions isDirty={isDirty} isSaving={isSubmitting} onReset={() => reset(general)} />
+      <FormActions isDirty={isDirty} isSaving={isSubmitting} onReset={onReset} />
     </form>
   );
 }

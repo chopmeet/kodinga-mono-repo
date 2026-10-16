@@ -15,6 +15,12 @@ export type CommunityCategory = {
   created_at: string;
 };
 
+/** CommunityCategorySerializer as the admin sees it (GET communities/categories/?include_inactive=true) */
+export type AdminCategoryItem = CommunityCategory & { is_active: boolean; communities_count: number };
+
+/** CommunityCategoryCreateUpdateSerializer: the slug is built from the name when omitted */
+export type CategoryWriteData = Partial<Pick<AdminCategoryItem, 'name' | 'slug' | 'description' | 'icon_url' | 'is_active' | 'order'>>;
+
 /** CommunityListSerializer */
 export type CommunityListItem = {
   id: string;
@@ -64,6 +70,7 @@ export type CommunitySettings = {
   require_approval_to_join: boolean;
   welcome_message: string;
   default_post_permission: 'all_members' | 'moderators_only' | 'admins_only';
+  is_read_only?: boolean;
 };
 
 export type CommunityRuleItem = { id: string; title: string; description: string; order: number };
@@ -154,3 +161,119 @@ export type CommunityFeedQuery = {
   page?: number;
   page_size?: number;
 };
+
+// ==============================================================================
+// AI Community Assistant Types
+// ==============================================================================
+
+export type CommunityRecommendationCard = {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  description: string;
+  category: string;
+  privacy_type: string;
+  pricing_type: string;
+  members_count: number;
+  language: string;
+  relevance_reason: string;
+  match_score: number;
+};
+
+export type CommunityRecommendationResult = {
+  recommendations: CommunityRecommendationCard[];
+  reasoning: string;
+  suggested_alternatives: string[];
+  provider: string;
+};
+
+export type FirstWeekPlanItem = {
+  day: string;
+  focus: string;
+  action_items: string[];
+};
+
+export type CommunityProposalResult = {
+  name_suggestions: string[];
+  description: string;
+  purpose: string;
+  target_audience: string;
+  suggested_categories: string[];
+  suggested_rules: string[];
+  recommended_language: string;
+  recommended_visibility: string;
+  welcome_message: string;
+  first_discussion_prompts: string[];
+  initial_event_ideas: string[];
+  first_week_launch_plan: FirstWeekPlanItem[];
+  follow_up_questions: string[];
+  provider: string;
+};
+
+export type ContentSuggestionResult = {
+  discussion_categories: string[];
+  first_post: { title: string; content: string; type: string };
+  weekly_activities: { title: string; description: string }[];
+  monthly_events: { title: string; format: string; description: string }[];
+  onboarding_prompt: string;
+  weekly_content_calendar: { day: string; topic: string; type: string }[];
+  provider: string;
+};
+
+export type ImprovementRecommendation = {
+  category: string;
+  title: string;
+  action_draft: string;
+  rationale: string;
+};
+
+export type CommunityAnalysisResult = {
+  community_name: string;
+  overview_assessment: string;
+  strengths: string[];
+  improvement_areas: string[];
+  actionable_recommendations: ImprovementRecommendation[];
+  event_suggestions: string[];
+  engagement_tactics: string[];
+  /** Figures the diagnosis is based on (the api may add others) */
+  metrics_summary: {
+    members_count?: number;
+    recent_posts_30d?: number;
+    unanswered_questions_count?: number;
+    upcoming_events_count?: number;
+    [key: string]: unknown;
+  };
+  provider: string;
+};
+
+export type AssistantChatResult = {
+  conversation_id: string;
+  reply: string;
+  suggested_follow_ups: string[];
+  suggested_action?: string;
+  data?: unknown;
+  provider: string;
+};
+
+
+/** GET / PATCH communities/<slug>/ai-settings/ (apps/ai) */
+export type CommunityAISettings = {
+  ai_translation_enabled: boolean;
+  default_community_language: string;
+  supported_languages: string[];
+  sentiment_analytics_enabled: boolean;
+  non_mandatory_moderation: Record<string, boolean>;
+  moderation_strictness: string;
+  /** Platform rules, always on (read only) */
+  platform_locked_rules?: {
+    prohibit_sexual_harassment: boolean;
+    prohibit_targeted_harassment: boolean;
+    prohibit_hate_speech_and_bullying: boolean;
+    mandatory_pre_publication_moderation: boolean;
+    fail_closed_on_outage: boolean;
+    notice: string;
+  };
+};
+
+export type CommunityAISettingsWrite = Omit<CommunityAISettings, 'platform_locked_rules'>;

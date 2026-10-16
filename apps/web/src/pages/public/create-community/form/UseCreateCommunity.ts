@@ -54,7 +54,7 @@ export type AccountValues = z.input<typeof accountSchema>;
 
 export const STEPS = [
   { id: 'name', label: 'Nom' },
-  { id: 'topic', label: 'Sujet' },
+  { id: 'topic', label: 'Thème' },
   { id: 'access', label: 'Accès' },
   { id: 'look', label: 'Identité' },
   { id: 'account', label: 'Compte' },

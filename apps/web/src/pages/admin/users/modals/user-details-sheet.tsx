@@ -1,16 +1,16 @@
 import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kodinga-mono-repo/ui';
-import { dateFormat, SoonBadge } from '@/pages/shared/row-actions';
+import { dateFormat } from '@/pages/shared/row-actions';
 import type { User } from '@/utils/api/user/user.type';
 import { getName, nameInitials } from '@/utils/Utils';
-import { formatLastLogin, upcomingActions, UserStatusBadges } from '../tables/users-table';
+import { type AccountHandlers, accountActions, formatLastLogin, UserStatusBadges } from '../tables/users-table';
 
-type Props = {
+type Props = AccountHandlers & {
   user: User | null;
   onClose: () => void;
 };
 
-/** Profile of an account. Admin rights and suspension are shown, disabled until the api supports them */
-function UserDetailsSheet({ user, onClose }: Props) {
+/** Profile of an account, with its admin rights and suspension */
+function UserDetailsSheet({ user, onClose, ...handlers }: Props) {
   const name = user ? getName(user) || user.email : '';
   return (
     <Sheet open={!!user} onOpenChange={(open) => !open && onClose()}>
@@ -48,11 +48,10 @@ function UserDetailsSheet({ user, onClose }: Props) {
               </dl>
 
               <div className="flex flex-col gap-2">
-                {upcomingActions(user).map((action) => (
-                  <Button key={action.label} variant={action.danger ? 'danger' : 'outline'} disabled>
+                {accountActions(user, handlers).map((action) => (
+                  <Button key={action.label} variant={action.danger ? 'danger' : 'outline'} onClick={action.onSelect}>
                     {action.icon}
                     {action.label}
-                    <SoonBadge className="ml-1 bg-white/80" />
                   </Button>
                 ))}
               </div>

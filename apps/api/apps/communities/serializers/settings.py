@@ -10,6 +10,7 @@ class CommunitySettingsSerializer(BaseModelSerializer):
             'require_approval_to_join',
             'welcome_message',
             'default_post_permission',
+            'is_read_only',
             'enabled_features',
             'updated_at',
         ]

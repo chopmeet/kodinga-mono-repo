@@ -1,0 +1,130 @@
+from django.db import transaction
+from django.db.models import F
+from rest_framework.exceptions import PermissionDenied, ValidationError
+
+from common.permissions.base import is_superadmin_user
+
+from apps.gamification.models.reputation import ReputationAction
+from apps.gamification.services.gamification_service import GamificationService
+from apps.notifications.models.notification import NotificationType
+from apps.notifications.services.notification_service import NotificationService
+from apps.projects.models.comment import ProjectComment
+from apps.projects.models.project import Project, ProjectStatus
+from apps.projects.models.upvote import ProjectUpvote
+
+
+class ProjectService:
+    """
+    Business logic for developer project showcase, upvotes, and comments.
+    """
+
+    @classmethod
+    @transaction.atomic
+    def create_project(cls, owner, validated_data, technology_ids=None):
+        project = Project.objects.create(owner=owner, **validated_data)
+        if technology_ids:
+            project.technologies.set(technology_ids)
+
+        # Gamification reward: publishing a showcase project
+        try:
+            GamificationService.award_points(
+                user=owner,
+                action=ReputationAction.POST_CREATED,
+                points=25,
+                description=f"Publication du projet vitrine: {project.title}",
+            )
+        except Exception:
+            pass
+
+        return project
+
+    @classmethod
+    @transaction.atomic
+    def update_project(cls, project, user, validated_data, technology_ids=None):
+        if project.owner_id != user.id and not (user.is_staff or is_superadmin_user(user)):
+            raise PermissionDenied("Vous n'êtes pas autorisé à modifier ce projet.")
+
+        for key, value in validated_data.items():
+            setattr(project, key, value)
+        project.save()
+
+        if technology_ids is not None:
+            project.technologies.set(technology_ids)
+
+        return project
+
+    @classmethod
+    def delete_project(cls, project, user):
+        if project.owner_id != user.id and not (user.is_staff or is_superadmin_user(user)):
+            raise PermissionDenied("Vous n'êtes pas autorisé à supprimer ce projet.")
+        project.delete()
+        return True
+
+    @classmethod
+    @transaction.atomic
+    def toggle_upvote(cls, project, user):
+        existing_upvote = ProjectUpvote.objects.filter(project=project, user=user).first()
+        if existing_upvote:
+            existing_upvote.delete()
+            Project.objects.filter(id=project.id).update(upvotes_count=F("upvotes_count") - 1)
+            project.refresh_from_db(fields=["upvotes_count"])
+            return False, project.upvotes_count
+
+        ProjectUpvote.objects.create(project=project, user=user)
+        Project.objects.filter(id=project.id).update(upvotes_count=F("upvotes_count") + 1)
+        project.refresh_from_db(fields=["upvotes_count"])
+
+        if project.owner_id != user.id:
+            try:
+                GamificationService.award_points(
+                    user=project.owner,
+                    action=ReputationAction.UPVOTE_RECEIVED,
+                    points=5,
+                    description=f"Vote reçu sur le projet: {project.title}",
+                )
+                NotificationService.create_notification(
+                    recipient=project.owner,
+                    title="Nouveau vote reçu",
+                    body=f"{user.username} a voté pour votre projet '{project.title}' !",
+                    notification_type=NotificationType.POST_INTERACTION,
+                    actor=user,
+                    action_url=f"/projects/{project.slug}",
+                    metadata={"project_id": str(project.id), "slug": project.slug},
+                )
+            except Exception:
+                pass
+
+        return True, project.upvotes_count
+
+    @classmethod
+    @transaction.atomic
+    def add_comment(cls, project, author, content, parent_id=None):
+        if not content:
+            raise ValidationError("Le commentaire ne peut pas être vide.")
+
+        parent = None
+        if parent_id:
+            parent = ProjectComment.objects.filter(project=project, id=parent_id).first()
+
+        comment = ProjectComment.objects.create(
+            project=project,
+            author=author,
+            content=content,
+            parent=parent,
+        )
+
+        if project.owner_id != author.id:
+            try:
+                NotificationService.create_notification(
+                    recipient=project.owner,
+                    title=f"Commentaire de {author.username}",
+                    body=f"{author.username} a commenté votre projet '{project.title}' : {content[:50]}",
+                    notification_type=NotificationType.COMMENT_REPLY,
+                    actor=author,
+                    action_url=f"/projects/{project.slug}",
+                    metadata={"project_id": str(project.id), "comment_id": str(comment.id)},
+                )
+            except Exception:
+                pass
+
+        return comment

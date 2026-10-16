@@ -23,6 +23,7 @@ export type CommunityAccess = {
   require_approval_to_join: boolean;
   allow_member_invites: boolean;
   default_post_permission: PostPermission;
+  is_read_only?: boolean;
   welcome_message: string;
 };
 

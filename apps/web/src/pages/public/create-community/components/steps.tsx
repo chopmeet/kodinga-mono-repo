@@ -1,4 +1,4 @@
-import { Check, EyeOff, Gift, Globe, Lock, Mail, Pencil, Wallet } from 'lucide-react';
+import { Check, EyeOff, Gift, Globe, Lock, Mail, Wallet } from 'lucide-react';
 
 import { cn, Input, InputPassword } from '@kodinga-mono-repo/ui';
 import { PasswordCheck } from '@/pages/auth/components/password-check';
@@ -15,41 +15,37 @@ export function NameStep({ flow }: { flow: CreateCommunityFlow }) {
       <Input
         id="community-name"
         label="Nom de la communauté"
-        placeholder="Ex. : Dakar DevOps & Cloud"
+        placeholder="Ex. Dakar Data Women"
         autoComplete="off"
         autoFocus
         required
         maxLength={150}
-        customClassInput="text-lg py-3"
+        customClassInput="py-3"
+        customClassLabel="normal-case! tracking-normal! text-[15px]! font-semibold! text-slate-900!"
         error={formState.errors.name?.message}
         {...register('name')}
       />
-      <div className="mt-1 rounded-xl bg-slate-50 px-4 py-3 text-sm">
-        <p className="text-slate-500">Adresse de votre communauté</p>
-        {flow.slugEdited ? (
-          <div className="mt-2 flex items-center gap-1 font-mono">
-            <label htmlFor="community-slug" className="shrink-0 text-slate-500">
-              kodinga.com/communities/
-            </label>
-            <input
-              id="community-slug"
-              className="custom-form-control min-w-0 flex-1 bg-white px-2 py-1"
-              {...register('slug')}
-            />
-          </div>
-        ) : (
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 font-mono text-slate-900">
-            <span className="break-all">kodinga.com/communities/{flow.slug || '…'}</span>
-            <button
-              type="button"
-              onClick={flow.editSlug}
-              className="inline-flex items-center gap-1 font-sans text-sm font-semibold text-brand hover:underline"
-            >
-              <Pencil className="size-3.5" />
-              Modifier
-            </button>
-          </p>
-        )}
+      <div className="mt-2">
+        <p className="mb-2 block text-[15px] font-semibold text-slate-900" id="community-address-label">
+          Adresse de votre communauté
+        </p>
+        <div className="rounded-lg border border-slate-200 bg-slate-100/80 px-4 py-3.5" aria-labelledby="community-address-label">
+          {flow.slugEdited ? (
+            <div className="flex items-center gap-1">
+              <label htmlFor="community-slug" className="shrink-0 text-slate-600">
+                kodinga.com/communities/
+              </label>
+              <input id="community-slug" className="custom-form-control min-w-0 flex-1 bg-white px-2 py-1" {...register('slug')} />
+            </div>
+          ) : (
+            <p className="flex flex-wrap items-center gap-x-4 text-slate-600">
+              <span className="break-all">kodinga.com/communities/{flow.slug || '…'}</span>
+              <button type="button" onClick={flow.editSlug} className="text-sm font-semibold text-blue-800 hover:underline">
+                Modifier
+              </button>
+            </p>
+          )}
+        </div>
         {fieldError(formState.errors.slug?.message)}
       </div>
     </div>
@@ -121,12 +117,12 @@ export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
       <fieldset>
         <legend className="custom-form-label mb-2 block">Accès</legend>
         <div className="grid gap-3 sm:grid-cols-2">
-          <OptionCard icon={Gift} title="Gratuite" description="Idéal pour lancer et fédérer." value="free" {...register('pricing_type')} />
-          <OptionCard icon={Wallet} title="Payante" description="Abonnement par Mobile Money ou carte." value="paid" {...register('pricing_type')} />
+          <OptionCard icon={Gift} title="Gratuite" description="Idéal pour lancer et fédérer librement." value="free" {...register('pricing_type')} />
+          <OptionCard icon={Wallet} title="Payante" description="Réservé aux membres Pro (5 000 FCFA/m)." value="paid" {...register('pricing_type')} />
         </div>
         {flow.values.pricing_type === 'paid' && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Vous fixerez vos prix et formules juste après la création, dans « Abonnements & paiements ».
+            <strong>Réservé aux membres Pro :</strong> Vous fixerez vos tarifs d'adhésion (formule mensuelle ou prix définitif à vie réglé par Mobile Money ou carte via PayDunya) dans « Abonnements & paiements ».
           </p>
         )}
       </fieldset>

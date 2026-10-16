@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from common.utils.responses import error_response, success_response
+from apps.billing.models.payment import PaymentStatus
 from apps.billing.selectors.billing_selector import BillingSelector
 from apps.billing.serializers.payment import (
     PaymentDetailSerializer,
@@ -60,6 +61,14 @@ class PaymentStatusView(APIView):
     def get(self, request, payment_id):
         try:
             payment = BillingSelector.get_payment_for_user(payment_id=payment_id, user=request.user)
+            # Active on-demand verification fallback:
+            # If still PENDING and has a token, query PayDunya directly in case IPN callback was missed/blocked
+            if payment.status == PaymentStatus.PENDING and payment.provider_token:
+                try:
+                    from apps.billing.services.billing_service import BillingService
+                    payment = BillingService.process_paydunya_ipn(token=payment.provider_token)
+                except Exception:
+                    pass
         except Exception as e:
             return error_response(str(e), status_code=status.HTTP_404_NOT_FOUND)
 

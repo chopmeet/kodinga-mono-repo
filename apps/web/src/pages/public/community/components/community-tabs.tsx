@@ -19,7 +19,7 @@ type Props = {
 
 export function CommunityTabs({ community, activeTab }: Props) {
   return (
-    <div className="sticky top-16 z-40 border-b border-slate-200 bg-white">
+    <div className="sticky top-[72px] z-40 border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-[1140px] flex-col gap-3 px-4 pt-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <div

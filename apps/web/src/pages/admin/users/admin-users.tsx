@@ -1,14 +1,17 @@
 import { RotateCw, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, customToast, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
-import { SoonBadge } from '@/pages/shared/row-actions';
 import { parseApiError } from '@/utils/api/errors';
+import { useToggleUserAdminMutation, useToggleUserStatusMutation } from '@/utils/api/user/user.api';
 import type { User } from '@/utils/api/user/user.type';
 import { useDebounced } from '@/utils/hooks/useDebounced';
+import { getName, isAdmin, useUser } from '@/utils/Utils';
+import PromoteAdminModal from '../shared/promote-admin-modal';
 import UsersOverview from './components/users-overview';
 import UseUsersList, { type UserStatusFilter } from './form/UseUsersList';
+import SuspendUserModal from './modals/suspend-user-modal';
 import UserDetailsSheet from './modals/user-details-sheet';
 import UsersTable from './tables/users-table';
 
@@ -36,6 +39,57 @@ function AdminUsers() {
   const page = paging.key === searchKey ? paging.page : 1;
 
   const list = UseUsersList({ search: debouncedSearch, status, page, size });
+  const currentUser = useUser();
+  const [toggleAdmin] = useToggleUserAdminMutation();
+  const [toggleStatus, { isLoading: isSuspending }] = useToggleUserStatusMutation();
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [suspending, setSuspending] = useState<User | null>(null);
+
+  // Each action answers the updated account: the open profile sheet follows it
+  const run = async (action: Promise<User>, message: string) => {
+    try {
+      const updated = await action;
+      setSelected((current) => (current?.id === updated.id ? updated : current));
+      customToast.success({ message });
+      return true;
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+      return false;
+    }
+  };
+
+  const onToggleAdmin = (u: User) => {
+    const name = getName(u) || u.email;
+    if (isAdmin(u) && u.id === currentUser?.id) {
+      customToast.error({ message: 'Vous ne pouvez pas retirer vos propres droits.' });
+      return;
+    }
+    run(
+      toggleAdmin({ id: u.id, is_superadmin: !isAdmin(u) }).unwrap(),
+      isAdmin(u) ? `${name} n'est plus super-administrateur.` : `${name} est maintenant super-administrateur.`
+    );
+  };
+
+  const onToggleStatus = (u: User) => {
+    if (u.is_active) {
+      if (u.id === currentUser?.id) {
+        customToast.error({ message: 'Vous ne pouvez pas suspendre votre propre compte.' });
+        return;
+      }
+      setSuspending(u);
+      return;
+    }
+    run(toggleStatus({ id: u.id, is_active: true }).unwrap(), `Le compte de ${getName(u) || u.email} est réactivé.`);
+  };
+
+  const suspend = async (reason: string) => {
+    if (!suspending) return;
+    const ok = await run(
+      toggleStatus({ id: suspending.id, is_active: false, reason }).unwrap(),
+      `Le compte de ${getName(suspending) || suspending.email} est suspendu.`
+    );
+    if (ok) setSuspending(null);
+  };
 
   return (
     <div className="admin__users">
@@ -57,10 +111,9 @@ function AdminUsers() {
             value={search}
             onValueChange={setSearch}
           />
-          <Button disabled title="Bientôt disponible : l'API ne permet pas encore d'inviter un administrateur">
+          <Button onClick={() => setPromoteOpen(true)}>
             <UserPlus />
-            Inviter un administrateur
-            <SoonBadge className="ml-1 bg-white/80" />
+            Ajouter un administrateur
           </Button>
         </div>
 
@@ -100,7 +153,13 @@ function AdminUsers() {
           ) : (
             <>
               <div className={list.isFetching && !list.isLoading ? 'opacity-60 transition-opacity' : undefined}>
-                <UsersTable users={list.results} isLoading={list.isLoading} onView={setSelected} />
+                <UsersTable
+                  users={list.results}
+                  isLoading={list.isLoading}
+                  onView={setSelected}
+                  onToggleAdmin={onToggleAdmin}
+                  onToggleStatus={onToggleStatus}
+                />
               </div>
               {list.total > 0 && (
                 <Pagination
@@ -116,7 +175,14 @@ function AdminUsers() {
         </div>
       </ColgateWrapper>
 
-      <UserDetailsSheet user={selected} onClose={() => setSelected(null)} />
+      <UserDetailsSheet
+        user={selected}
+        onClose={() => setSelected(null)}
+        onToggleAdmin={onToggleAdmin}
+        onToggleStatus={onToggleStatus}
+      />
+      <SuspendUserModal user={suspending} isLoading={isSuspending} onCancel={() => setSuspending(null)} onConfirm={suspend} />
+      <PromoteAdminModal open={promoteOpen} onOpenChange={setPromoteOpen} />
     </div>
   );
 }

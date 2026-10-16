@@ -4,7 +4,7 @@ import { Eye, PauseCircle, PlayCircle, ShieldCheck, ShieldOff } from 'lucide-rea
 import { Badge, DataTable } from '@kodinga-mono-repo/ui';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import type { User } from '@/utils/api/user/user.type';
-import { getName, nameInitials } from '@/utils/Utils';
+import { getName, isAdmin, nameInitials } from '@/utils/Utils';
 
 export function formatLastLogin(iso: string | null) {
   if (!iso) return 'Jamais';
@@ -23,6 +23,7 @@ export function UserStatusBadges({ user }: { user: User }) {
       ) : (
         <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Suspendu</Badge>
       )}
+      {isAdmin(user) && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-800">Super-admin</Badge>}
       {!user.is_email_verified && (
         <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-800">Email non vérifié</Badge>
       )}
@@ -34,22 +35,28 @@ type Props = {
   users: User[];
   isLoading: boolean;
   onView: (user: User) => void;
+  onToggleAdmin: (user: User) => void;
+  onToggleStatus: (user: User) => void;
 };
 
-/** Admin rights and suspension: shown, not available until the api supports them */
-export function upcomingActions(user: User): RowAction[] {
-  const noop = () => undefined;
+export type AccountHandlers = {
+  onToggleAdmin: (user: User) => void;
+  onToggleStatus: (user: User) => void;
+};
+
+/** Admin rights and suspension (POST admin/users/<id>/toggle-admin/ and toggle-status/) */
+export function accountActions(user: User, { onToggleAdmin, onToggleStatus }: AccountHandlers): RowAction[] {
   return [
-    user.is_staff
-      ? { label: 'Retirer les droits admin', icon: <ShieldOff />, onSelect: noop, soon: true }
-      : { label: 'Nommer administrateur', icon: <ShieldCheck />, onSelect: noop, soon: true },
+    isAdmin(user)
+      ? { label: 'Retirer les droits admin', icon: <ShieldOff />, onSelect: () => onToggleAdmin(user) }
+      : { label: 'Nommer administrateur', icon: <ShieldCheck />, onSelect: () => onToggleAdmin(user) },
     user.is_active
-      ? { label: 'Suspendre le compte', icon: <PauseCircle />, danger: true, onSelect: noop, soon: true }
-      : { label: 'Réactiver le compte', icon: <PlayCircle />, onSelect: noop, soon: true },
+      ? { label: 'Suspendre le compte', icon: <PauseCircle />, danger: true, onSelect: () => onToggleStatus(user) }
+      : { label: 'Réactiver le compte', icon: <PlayCircle />, onSelect: () => onToggleStatus(user) },
   ];
 }
 
-function UsersTable({ users, isLoading, onView }: Props) {
+function UsersTable({ users, isLoading, onView, ...handlers }: Props) {
   const columns: ColumnDef<User>[] = [
     {
       id: 'user',
@@ -87,7 +94,7 @@ function UsersTable({ users, isLoading, onView }: Props) {
       cell: ({ row }) => (
         <RowActions
           label={`Actions pour ${getName(row.original) || row.original.email}`}
-          actions={[{ label: 'Voir le profil', icon: <Eye />, onSelect: () => onView(row.original) }, ...upcomingActions(row.original)]}
+          actions={[{ label: 'Voir le profil', icon: <Eye />, onSelect: () => onView(row.original) }, ...accountActions(row.original, handlers)]}
         />
       ),
     },

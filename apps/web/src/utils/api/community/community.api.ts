@@ -4,15 +4,24 @@ import { ApiBaseUrl } from '@/utils/http';
 import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
 import { prepareHeaders } from '../user/user.api';
 import type {
+  AdminCategoryItem,
+  AssistantChatResult,
+  CategoryWriteData,
+  CommunityAISettings,
+  CommunityAISettingsWrite,
+  CommunityAnalysisResult,
   CommunityCategory,
   CommunityCreateData,
+  CommunityDetail,
   CommunityFeedQuery,
+  CommunityListItem,
+  CommunityListQuery,
   CommunityMemberItem,
   CommunityMembersQuery,
   CommunityPostItem,
-  CommunityDetail,
-  CommunityListItem,
-  CommunityListQuery,
+  CommunityProposalResult,
+  CommunityRecommendationResult,
+  ContentSuggestionResult,
   ManagedCommunity,
   ManagedRole,
   SanctionData,
@@ -31,6 +40,7 @@ export const CommunityApi = createApi({
     'categories', 
     'members', 
     'posts',
+    'ai-settings',
   ],
   baseQuery: fetchBaseQuery({ 
     baseUrl: ApiBaseUrl, 
@@ -60,6 +70,28 @@ export const CommunityApi = createApi({
       },
       forceRefetch: ({ currentArg, previousArg }) => currentArg?.page !== previousArg?.page,
       providesTags: ['communities'],
+    }),
+    // Admin: every category (inactive ones too), with its communities count
+    getAdminCategories: builder.query<AdminCategoryItem[], void>({
+      query: () => ({ url: 'communities/categories/', params: { include_inactive: true } }),
+      transformResponse: unwrap<AdminCategoryItem[]>,
+      providesTags: ['categories'],
+    }),
+    createCategory: builder.mutation<AdminCategoryItem, CategoryWriteData>({
+      query: (body) => ({ url: 'communities/categories/', method: 'POST', body }),
+      transformResponse: unwrap<AdminCategoryItem>,
+      invalidatesTags: ['categories'],
+    }),
+    // currentSlug: the category to edit (its slug may change through `slug`)
+    updateCategory: builder.mutation<AdminCategoryItem, { currentSlug: string } & CategoryWriteData>({
+      query: ({ currentSlug, ...body }) => ({ url: `communities/categories/${currentSlug}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<AdminCategoryItem>,
+      invalidatesTags: ['categories'],
+    }),
+    // hard_delete: removed for good (only sensible without communities); otherwise deactivated
+    deleteCategory: builder.mutation<unknown, { slug: string; hard?: boolean }>({
+      query: ({ slug, hard }) => ({ url: `communities/categories/${slug}/`, method: 'DELETE', params: hard ? { hard_delete: true } : {} }),
+      invalidatesTags: ['categories'],
     }),
     getCommunityCategories: builder.query<CommunityCategory[], void>({
       query: () => 'communities/categories/',
@@ -132,6 +164,32 @@ export const CommunityApi = createApi({
       query: (slug) => ({ url: `communities/${slug}/`, method: 'DELETE' }),
       invalidatesTags: ['communities'],
     }),
+    // AI Community Assistant Endpoints
+    recommendCommunities: builder.mutation<ApiSuccess<CommunityRecommendationResult>, { interests: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/recommend-communities/', method: 'POST', body }),
+    }),
+    planCommunity: builder.mutation<ApiSuccess<CommunityProposalResult>, { idea: string; language?: string; context?: Record<string, unknown> }>({
+      query: (body) => ({ url: 'ai-assistant/plan-community/', method: 'POST', body }),
+    }),
+    suggestContent: builder.mutation<ApiSuccess<ContentSuggestionResult>, { community: string; goal?: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/suggest-content/', method: 'POST', body }),
+    }),
+    getCommunityAISettings: builder.query<CommunityAISettings, string>({
+      query: (slug) => `communities/${slug}/ai-settings/`,
+      transformResponse: unwrap<CommunityAISettings>,
+      providesTags: (_result, _error, slug) => [{ type: 'ai-settings', id: slug }],
+    }),
+    updateCommunityAISettings: builder.mutation<CommunityAISettings, { slug: string } & CommunityAISettingsWrite>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/ai-settings/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityAISettings>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'ai-settings', id: slug }],
+    }),
+    analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
+    }),
+    assistantChat: builder.mutation<ApiSuccess<AssistantChatResult>, { message: string; conversation_id?: string; community?: string; language?: string }>({
+      query: (body) => ({ url: 'ai-assistant/chat/', method: 'POST', body }),
+    }),
   }),
 });
 
@@ -139,6 +197,10 @@ export const {
   useGetCommunitiesQuery,
   useDiscoverCommunitiesQuery,
   useGetCommunityCategoriesQuery,
+  useGetAdminCategoriesQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
   useGetCommunityQuery,
   useGetMyManagedCommunitiesQuery,
   useCreateCommunityMutation,
@@ -150,4 +212,12 @@ export const {
   useTogglePostPinMutation,
   useTogglePostLockMutation,
   useDeletePostMutation,
+  useRecommendCommunitiesMutation,
+  usePlanCommunityMutation,
+  useSuggestContentMutation,
+  useAnalyzeCommunityMutation,
+  useAssistantChatMutation,
+  useGetCommunityAISettingsQuery,
+  useUpdateCommunityAISettingsMutation,
 } = CommunityApi;
+

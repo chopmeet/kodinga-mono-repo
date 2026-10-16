@@ -23,6 +23,17 @@ urlpatterns = [
     path('api/v1/', include('apps.posts.urls', namespace='posts')),
     path('api/v1/', include('apps.billing.urls', namespace='billing')),
     path('api/v1/', include('apps.classroom.urls', namespace='classroom')),
+    path('api/v1/', include('apps.events.urls', namespace='events')),
+    path('api/v1/', include('apps.gamification.urls', namespace='gamification')),
+    path('api/v1/', include('apps.discovery.urls', namespace='discovery')),
+    path('api/v1/', include('apps.notifications.urls', namespace='notifications')),
+    path('api/v1/', include('apps.messaging.urls', namespace='messaging')),
+    path('api/v1/', include('apps.affiliates.urls', namespace='affiliates')),
+    path('api/v1/', include('apps.projects.urls', namespace='projects')),
+    path('api/v1/', include('apps.opportunities.urls', namespace='opportunities')),
+    path('api/v1/', include('apps.analytics.urls', namespace='analytics')),
+    path('api/v1/', include('apps.administration.urls', namespace='administration')),
+    path('api/v1/', include('apps.ai.urls', namespace='ai')),
 
     # OpenAPI / Swagger Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

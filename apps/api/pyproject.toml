@@ -9,6 +9,8 @@ show_missing = true
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+norecursedirs = [".venv", "venv", "dist", "scratch", ".git"]
 addopts = "-v --reuse-db"
 
 [project]
@@ -33,6 +35,8 @@ dependencies = [
     "psycopg[binary]>=3.2.13",
     "whitenoise>=6.11.0",
     "resend>=2.49.0",
+    "google-genai>=1.47.0",
+    "openai>=2.48.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -84,7 +88,7 @@ select = [
   # isort
   "I",
 ]
-ignore = []
+ignore = ["E501"]
 
 fixable = ["ALL"]
 unfixable = []

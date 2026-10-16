@@ -14,15 +14,8 @@ import {
   Input,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
-import type { AdminCategory } from '@/data/admin-settings.data';
-
-export const slugify = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+import type { AdminCategoryItem } from '@/utils/api/community/community.type';
+import { slugify } from '@/utils/Utils';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Au moins 2 caractères').max(100, '100 caractères maximum'),
@@ -33,10 +26,11 @@ type Values = z.infer<typeof schema>;
 
 type Props = {
   /** null: closed, 'new': creation, otherwise the category to edit */
-  category: AdminCategory | 'new' | null;
+  category: AdminCategoryItem | 'new' | null;
   existingSlugs: string[];
   onClose: () => void;
-  onSave: (values: { name: string; slug: string; description: string }) => void;
+  /** Resolves with the error to show under the name, or null once saved */
+  onSave: (values: { name: string; slug: string; description: string }) => Promise<string | null>;
 };
 
 function CategoryModal({ category, existingSlugs, onClose, onSave }: Props) {
@@ -61,8 +55,8 @@ function CategoryModal({ category, existingSlugs, onClose, onSave }: Props) {
       setError('name', { message: 'Une catégorie porte déjà ce nom.' });
       return;
     }
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    onSave({ ...values, slug });
+    const error = await onSave({ ...values, slug });
+    if (error) setError('name', { message: error });
   };
 
   return (

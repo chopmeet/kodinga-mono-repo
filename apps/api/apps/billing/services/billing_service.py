@@ -51,6 +51,9 @@ class BillingService:
         except Plan.DoesNotExist:
             raise NotFound("Plan de souscription introuvable ou inactif.")
 
+        if plan.price <= Decimal("0.00"):
+            raise ValidationError("Ce forfait est gratuit et ne nécessite aucun paiement.")
+
         with transaction.atomic():
             # Create local pending payment
             payment = Payment.objects.create(

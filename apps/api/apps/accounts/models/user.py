@@ -33,6 +33,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, username, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_superadmin', True)
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('email_verified_at', django_timezone.now())
 
@@ -83,6 +84,10 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         default=False,
         help_text="Designates whether the user has all permissions without explicitly assigning them."
     )
+    is_superadmin = models.BooleanField(
+        default=False,
+        help_text="Designates whether the user is a platform superadmin."
+    )
     email_verified_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -128,14 +133,51 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
             self.email = self.email.strip().lower()
         if self.username:
             self.username = self.username.strip().lower()
+        if self.is_superadmin:
+            self.is_staff = True
+            self.is_superuser = True
 
     def save(self, *args, **kwargs):
+        if self.is_superadmin:
+            self.is_staff = True
+            self.is_superuser = True
         self.clean()
         super().save(*args, **kwargs)
+
+    def has_perm(self, perm, obj=None):
+        if self.is_active and (self.is_superuser or self.is_superadmin):
+            return True
+        return super().has_perm(perm, obj)
+
+    def has_perms(self, perm_list, obj=None):
+        if self.is_active and (self.is_superuser or self.is_superadmin):
+            return True
+        return super().has_perms(perm_list, obj)
+
+    def has_module_perms(self, app_label):
+        if self.is_active and (self.is_superuser or self.is_superadmin):
+            return True
+        return super().has_module_perms(app_label)
 
     @property
     def is_email_verified(self) -> bool:
         return self.email_verified_at is not None
+
+    @property
+    def is_pro(self) -> bool:
+        """
+        Returns True if user has an active platform Pro subscription or is a staff/superadmin.
+        Hobby users return False.
+        """
+        if self.is_superuser or self.is_staff or self.is_superadmin:
+            return True
+        from apps.billing.models.subscription import Subscription, SubscriptionStatus
+        return Subscription.objects.filter(
+            user=self,
+            community__isnull=True,
+            status__in=[SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+            current_period_end__gt=django_timezone.now()
+        ).exists()
 
     def mark_email_verified(self):
         self.email_verified_at = django_timezone.now()
