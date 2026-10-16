@@ -15,6 +15,12 @@ export type CommunityCategory = {
   created_at: string;
 };
 
+/** CommunityCategorySerializer as the admin sees it (GET communities/categories/?include_inactive=true) */
+export type AdminCategoryItem = CommunityCategory & { is_active: boolean; communities_count: number };
+
+/** CommunityCategoryCreateUpdateSerializer: the slug is built from the name when omitted */
+export type CategoryWriteData = Partial<Pick<AdminCategoryItem, 'name' | 'slug' | 'description' | 'icon_url' | 'is_active' | 'order'>>;
+
 /** CommunityListSerializer */
 export type CommunityListItem = {
   id: string;

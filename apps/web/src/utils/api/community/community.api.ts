@@ -4,6 +4,8 @@ import { ApiBaseUrl } from '@/utils/http';
 import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
 import { prepareHeaders } from '../user/user.api';
 import type {
+  AdminCategoryItem,
+  CategoryWriteData,
   CommunityCategory,
   CommunityCreateData,
   CommunityFeedQuery,
@@ -65,6 +67,28 @@ export const CommunityApi = createApi({
       },
       forceRefetch: ({ currentArg, previousArg }) => currentArg?.page !== previousArg?.page,
       providesTags: ['communities'],
+    }),
+    // Admin: every category (inactive ones too), with its communities count
+    getAdminCategories: builder.query<AdminCategoryItem[], void>({
+      query: () => ({ url: 'communities/categories/', params: { include_inactive: true } }),
+      transformResponse: unwrap<AdminCategoryItem[]>,
+      providesTags: ['categories'],
+    }),
+    createCategory: builder.mutation<AdminCategoryItem, CategoryWriteData>({
+      query: (body) => ({ url: 'communities/categories/', method: 'POST', body }),
+      transformResponse: unwrap<AdminCategoryItem>,
+      invalidatesTags: ['categories'],
+    }),
+    // currentSlug: the category to edit (its slug may change through `slug`)
+    updateCategory: builder.mutation<AdminCategoryItem, { currentSlug: string } & CategoryWriteData>({
+      query: ({ currentSlug, ...body }) => ({ url: `communities/categories/${currentSlug}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<AdminCategoryItem>,
+      invalidatesTags: ['categories'],
+    }),
+    // hard_delete: removed for good (only sensible without communities); otherwise deactivated
+    deleteCategory: builder.mutation<unknown, { slug: string; hard?: boolean }>({
+      query: ({ slug, hard }) => ({ url: `communities/categories/${slug}/`, method: 'DELETE', params: hard ? { hard_delete: true } : {} }),
+      invalidatesTags: ['categories'],
     }),
     getCommunityCategories: builder.query<CommunityCategory[], void>({
       query: () => 'communities/categories/',
@@ -160,6 +184,10 @@ export const {
   useGetCommunitiesQuery,
   useDiscoverCommunitiesQuery,
   useGetCommunityCategoriesQuery,
+  useGetAdminCategoriesQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
   useGetCommunityQuery,
   useGetMyManagedCommunitiesQuery,
   useCreateCommunityMutation,

@@ -1,25 +1,29 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, EyeOff, Pencil } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 
 import { Badge, DataTable } from '@kodinga-mono-repo/ui';
-import type { AdminCategory } from '@/data/admin-settings.data';
+import type { AdminCategoryItem } from '@/utils/api/community/community.type';
 import { type RowAction, RowActions } from '@/pages/shared/row-actions';
 
 type Props = {
-  categories: AdminCategory[];
-  onEdit: (category: AdminCategory) => void;
-  onToggle: (category: AdminCategory) => void;
+  categories: AdminCategoryItem[];
+  onEdit: (category: AdminCategoryItem) => void;
+  onToggle: (category: AdminCategoryItem) => void;
+  onDelete: (category: AdminCategoryItem) => void;
+  isLoading?: boolean;
 };
 
-function CategoriesTable({ categories, onEdit, onToggle }: Props) {
-  const actionsFor = (c: AdminCategory): RowAction[] => [
+function CategoriesTable({ categories, onEdit, onToggle, onDelete, isLoading = false }: Props) {
+  const actionsFor = (c: AdminCategoryItem): RowAction[] => [
     { label: 'Modifier', icon: <Pencil />, onSelect: () => onEdit(c) },
     c.is_active
       ? { label: 'Désactiver', icon: <EyeOff />, danger: true, onSelect: () => onToggle(c) }
       : { label: 'Réactiver', icon: <Eye />, onSelect: () => onToggle(c) },
+    // Deleted for good only when no community uses it (otherwise: deactivate)
+    ...(c.communities_count === 0 ? [{ label: 'Supprimer', icon: <Trash2 />, danger: true, onSelect: () => onDelete(c) }] : []),
   ];
 
-  const columns: ColumnDef<AdminCategory>[] = [
+  const columns: ColumnDef<AdminCategoryItem>[] = [
     {
       id: 'name',
       header: 'Catégorie',
@@ -53,7 +57,7 @@ function CategoriesTable({ categories, onEdit, onToggle }: Props) {
     },
   ];
 
-  return <DataTable columns={columns} data={categories} isLoading={false} />;
+  return <DataTable columns={columns} data={categories} isLoading={isLoading} />;
 }
 
 export default CategoriesTable;

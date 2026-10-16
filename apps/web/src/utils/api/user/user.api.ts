@@ -37,6 +37,17 @@ export const UserApi = createApi({
       }),
       providesTags: ['users'],
     }),
+    // Platform governance (super-admins only), traced in the audit log by the api
+    toggleUserAdmin: builder.mutation<User, { id: string; is_superadmin: boolean }>({
+      query: ({ id, is_superadmin }) => ({ url: `admin/users/${id}/toggle-admin/`, method: 'POST', body: { is_superadmin } }),
+      transformResponse: unwrap<User>,
+      invalidatesTags: ['users'],
+    }),
+    toggleUserStatus: builder.mutation<User, { id: string; is_active: boolean; reason?: string }>({
+      query: ({ id, ...body }) => ({ url: `admin/users/${id}/toggle-status/`, method: 'POST', body }),
+      transformResponse: unwrap<User>,
+      invalidatesTags: ['users'],
+    }),
     updateMe: builder.mutation<User, UserFormData>({
       query: (body) => ({ url: 'users/me/', method: 'PATCH', body }),
       transformResponse: (res: ApiSuccess<User>) => res.data,
@@ -49,5 +60,7 @@ export const {
   useMeAccountQuery, 
   useUpdateMeMutation,
   useGetUsersQuery,
+  useToggleUserAdminMutation,
+  useToggleUserStatusMutation,
 
 } = UserApi;

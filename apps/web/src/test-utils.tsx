@@ -7,6 +7,7 @@ import { Toaster } from '@kodinga-mono-repo/ui';
 import store from '@/redux/store';
 import { AppRoutes } from '@/routes/router';
 import type { CommunityCategory, CommunityListItem } from '@/utils/api/community/community.type';
+import type { User } from '@/utils/api/user/user.type';
 
 export const SLOW = { timeout: 3000 };
 
@@ -86,4 +87,48 @@ export function stubDirectory(initial: CommunityListItem[], categories: Communit
     });
   });
   return urls;
+}
+
+/**
+ * Fake account governance api: GET users/ (search, status, page, page_size, like
+ * apps/accounts/views/user.py) and POST admin/users/<id>/toggle-admin/ | toggle-status/,
+ * which update the list. Returns the calls; unknown urls answer 404.
+ */
+export function stubUsersAdmin(initial: User[]) {
+  let users = [...initial];
+  const calls: { method: string; url: URL; body: unknown }[] = [];
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const request = input as Request;
+    const url = new URL(request.url);
+    const text = request.method === 'GET' ? '' : await request.text();
+    const body = text ? JSON.parse(text) : null;
+    calls.push({ method: request.method, url, body });
+    const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+
+    const toggle = url.pathname.match(/admin\/users\/([^/]+)\/toggle-(admin|status)\/$/);
+    if (toggle) {
+      const [, id, kind] = toggle;
+      users = users.map((u) =>
+        u.id !== id ? u : kind === 'admin' ? { ...u, is_superadmin: body.is_superadmin } : { ...u, is_active: body.is_active }
+      );
+      return json({ success: true, data: users.find((u) => u.id === id) });
+    }
+    if (url.pathname.endsWith('/users/')) {
+      const p = url.searchParams;
+      const q = (p.get('search') ?? '').toLowerCase();
+      const status = p.get('status');
+      const found = users.filter(
+        (u) =>
+          (!q || `${u.email} ${u.username} ${u.first_name} ${u.last_name}`.toLowerCase().includes(q)) &&
+          (status !== 'active' || (u.is_active && u.is_email_verified)) &&
+          (status !== 'unverified' || (u.is_active && !u.is_email_verified)) &&
+          (status !== 'inactive' || !u.is_active)
+      );
+      const page = Number(p.get('page') ?? 1);
+      const size = Number(p.get('page_size') ?? 20);
+      return json({ success: true, pagination: { count: found.length, page_size: size }, results: found.slice((page - 1) * size, page * size) });
+    }
+    return json({ success: false, code: 'not_found', message: 'Introuvable.' }, 404);
+  });
+  return calls;
 }

@@ -2,7 +2,7 @@ import { useAppSelector } from '@/redux/hook';
 import type { User } from './api/user/user.type';
 
 /** The api does not expose roles yet (see User.is_staff) */
-export const isAdmin = (user?: User | null) => !!user?.is_staff;
+export const isAdmin = (user?: User | null) => !!user?.is_superadmin || !!user?.is_superuser;
 
 export const useUser = () => useAppSelector((s) => s.user.user);
 

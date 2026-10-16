@@ -3,7 +3,6 @@ import { Outlet, useOutletContext } from 'react-router-dom';
 
 import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga-mono-repo/ui';
 import {
-  type AdminCategory,
   type LegalPage,
   type LegalPageId,
   legalPages,
@@ -11,9 +10,7 @@ import {
   monetizationSettings,
   platformSettings,
   type PlatformSettings,
-  settingsCategories,
 } from '@/data/admin-settings.data';
-import { type AdminUser, adminUsers } from '@/data/admin-users.data';
 
 const tabs: Tab[] = [
   { id: 'administrators', title: 'Super-administrateurs', link: 'administrators' },
@@ -26,12 +23,8 @@ const tabs: Tab[] = [
 ];
 
 export type SettingsContext = {
-  admins: AdminUser[];
-  setAdmins: (update: (list: AdminUser[]) => AdminUser[]) => void;
   general: PlatformSettings;
   saveGeneral: (value: PlatformSettings) => void;
-  categories: AdminCategory[];
-  setCategories: (update: (list: AdminCategory[]) => AdminCategory[]) => void;
   monetization: MonetizationSettings;
   saveMonetization: (value: MonetizationSettings) => void;
   legal: Record<LegalPageId, LegalPage>;
@@ -42,19 +35,13 @@ export type SettingsContext = {
 export const useSettings = () => useOutletContext<SettingsContext>();
 
 function AdminSettings() {
-  const [admins, setAdmins] = useState(() => adminUsers.filter((u) => u.is_staff));
   const [general, saveGeneral] = useState(platformSettings);
-  const [categories, setCategories] = useState(settingsCategories);
   const [monetization, saveMonetization] = useState(monetizationSettings);
   const [legal, setLegal] = useState(legalPages);
 
   const context: SettingsContext = {
-    admins,
-    setAdmins,
     general,
     saveGeneral,
-    categories,
-    setCategories,
     monetization,
     saveMonetization,
     legal,

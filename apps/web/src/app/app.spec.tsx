@@ -44,8 +44,7 @@ describe('App', () => {
     expect(getByRole('heading', { level: 1, name: /trouvez votre communauté tech/i })).toBeTruthy();
   });
 
-  // TODO: réactiver quand le login et les gardes (IsAdminAllow / RedirectAuthRoute) seront rebranchés
-  it.skip('redirects anonymous users from /admin to login', () => {
+  it('redirects anonymous users from /admin to login', () => {
     const { getByRole } = renderAt('/admin');
     expect(getByRole('button', { name: /se connecter/i })).toBeTruthy();
   });
