@@ -6,6 +6,8 @@ import store from '@/redux/store';
 import { adminUsers } from '@/data/admin-users.data';
 import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
 import { must, stubUsersAdmin } from '@/test-utils';
+import { AdminApi } from '@/utils/api/admin/admin.api';
+import { CommunityApi } from '@/utils/api/community/community.api';
 import { UserApi } from '@/utils/api/user/user.api';
 import AdminSettings from './admin-settings';
 import AdministratorsSettingsTab from './tabs/administrators';
@@ -93,6 +95,8 @@ describe('AdminSettings', () => {
     act(() => {
       store.dispatch(onLogout());
       store.dispatch(UserApi.util.resetApiState());
+      store.dispatch(AdminApi.util.resetApiState());
+      store.dispatch(CommunityApi.util.resetApiState());
     });
   });
 
@@ -171,6 +175,32 @@ describe('AdminSettings', () => {
     for (const sw of getAllByRole('checkbox')) if ((sw as HTMLInputElement).checked) fireEvent.click(sw);
     fireEvent.click(getByRole('button', { name: 'Enregistrer' }));
     expect((await findByRole('alert')).textContent).toBe('Gardez au moins un moyen de paiement actif.');
+  });
+
+  it('reads and saves who may create a community through the api', async () => {
+    const calls: { method: string; body: unknown }[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const request = input as Request;
+      const text = request.method === 'GET' ? '' : await request.text();
+      calls.push({ method: request.method, body: text ? JSON.parse(text) : null });
+      const data =
+        request.method === 'PATCH'
+          ? JSON.parse(text)
+          : [{ key: 'community_creation_allowed_for', value: 'pro_only', description: '', is_public: true }];
+      return new Response(JSON.stringify({ success: true, data }), { headers: { 'Content-Type': 'application/json' } });
+    });
+    const { findByLabelText, getByRole } = renderAt('general');
+    const select = (await findByLabelText('Création de communautés')) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe('pro_only'), SLOW);
+
+    fireEvent.change(select, { target: { value: 'all' } });
+    fireEvent.click(getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'PATCH')).toBe(true), SLOW);
+    expect(calls.find((c) => c.method === 'PATCH')?.body).toMatchObject({
+      key: 'community_creation_allowed_for',
+      value: 'all',
+      is_public: true,
+    });
   });
 
   it('creates a category through the api, which refuses a duplicate name', async () => {
