@@ -6,6 +6,7 @@ import { adminUsers } from '@/data/admin-users.data';
 import store from '@/redux/store';
 import { UserApi } from '@/utils/api/user/user.api';
 import type { User } from '@/utils/api/user/user.type';
+import { must, stubUsersAdmin } from '@/test-utils';
 import AdminUsers from './admin-users';
 
 // Network stubs + Radix sheet: slow when the whole suite runs in parallel
@@ -21,33 +22,9 @@ const renderPage = () =>
     </Provider>
   );
 
-const users: User[] = adminUsers;
+const users: User[] = adminUsers.map((u) => ({ ...u, is_superadmin: u.is_staff }));
 
-/** Fake GET users/ (search, status, page, page_size), like apps/accounts/views/user.py */
-function stubUsersApi() {
-  const urls: URL[] = [];
-  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-    const url = new URL((input as Request).url);
-    urls.push(url);
-    const p = url.searchParams;
-    const q = (p.get('search') ?? '').toLowerCase();
-    const status = p.get('status');
-    const found = users.filter(
-      (u) =>
-        (!q || `${u.email} ${u.username} ${u.first_name} ${u.last_name}`.toLowerCase().includes(q)) &&
-        (status !== 'active' || (u.is_active && u.is_email_verified)) &&
-        (status !== 'unverified' || (u.is_active && !u.is_email_verified)) &&
-        (status !== 'inactive' || !u.is_active)
-    );
-    const page = Number(p.get('page') ?? 1);
-    const size = Number(p.get('page_size') ?? 20);
-    return new Response(
-      JSON.stringify({ success: true, pagination: { count: found.length, page_size: size }, results: found.slice((page - 1) * size, page * size) }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-  });
-  return urls;
-}
+const stubUsersApi = () => stubUsersAdmin(users);
 
 const rows = (container: HTMLElement) => Array.from(container.querySelectorAll('tbody tr'));
 
@@ -73,25 +50,25 @@ describe('AdminUsers', () => {
   });
 
   it('sends the search to the api and starts again from page 1', async () => {
-    const urls = stubUsersApi();
+    const calls = stubUsersApi();
     const { container } = renderPage();
     await screen.findByText(users[0].email, {}, SLOW);
     const target = users[5];
     fireEvent.change(screen.getByRole('searchbox', { name: /rechercher un utilisateur/i }), { target: { value: target.email } });
     await waitFor(() => expect(rows(container)).toHaveLength(1), SLOW);
-    const last = urls.filter((u) => u.searchParams.get('page_size') === '10').at(-1);
+    const last = calls.map((c) => c.url).filter((u) => u.searchParams.get('page_size') === '10').at(-1);
     expect(last?.searchParams.get('search')).toBe(target.email);
     expect(last?.searchParams.get('page')).toBe('1');
   });
 
   it('maps the "Suspendus" filter to the api inactive status', async () => {
-    const urls = stubUsersApi();
+    const calls = stubUsersApi();
     const { container } = renderPage();
     await screen.findByText(users[0].email, {}, SLOW);
     fireEvent.click(screen.getByRole('button', { name: 'Suspendus' }));
     const suspended = users.filter((u) => !u.is_active);
     await waitFor(() => expect(rows(container)).toHaveLength(Math.min(10, suspended.length)), SLOW);
-    expect(urls.some((u) => u.searchParams.get('status') === 'inactive' && u.searchParams.get('page_size') === '10')).toBe(true);
+    expect(calls.map((c) => c.url).some((u) => u.searchParams.get('status') === 'inactive' && u.searchParams.get('page_size') === '10')).toBe(true);
   });
 
   it('opens the profile sheet from the name', async () => {
@@ -104,24 +81,44 @@ describe('AdminUsers', () => {
     expect(within(sheet).getByText(target.timezone)).toBeTruthy();
   });
 
-  it('shows the actions and filters the api does not support yet, disabled', async () => {
+  it('keeps the role filters disabled: the api does not filter on roles', async () => {
     stubUsersApi();
     renderPage();
-    const target = users[0];
-    await screen.findByText(target.email, {}, SLOW);
-
-    expect((screen.getByRole('button', { name: /Inviter un administrateur/ }) as HTMLButtonElement).disabled).toBe(true);
+    await screen.findByText(users[0].email, {}, SLOW);
     const roles = screen.getByRole('group', { name: 'Filtrer par rôle' });
     expect((within(roles).getByRole('button', { name: 'Créateurs' }) as HTMLButtonElement).disabled).toBe(true);
     expect((within(roles).getByRole('button', { name: 'Membres' }) as HTMLButtonElement).disabled).toBe(true);
+  });
 
-    const [trigger] = screen.getAllByRole('button', { name: /^Actions pour/ });
+  it('appoints a super admin from the actions menu', async () => {
+    const target = must(users.find((u) => !u.is_superadmin && u.is_active));
+    const calls = stubUsersApi();
+    renderPage();
+    const trigger = await screen.findByRole('button', { name: `Actions pour ${target.full_name}` }, SLOW);
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'Enter' });
-    const menu = await screen.findByRole('menu', {}, SLOW);
-    expect(within(menu).getByRole('menuitem', { name: /Nommer administrateur/ }).getAttribute('aria-disabled')).toBe('true');
-    expect(within(menu).getByRole('menuitem', { name: /Suspendre le compte/ }).getAttribute('aria-disabled')).toBe('true');
-    expect(within(menu).getByRole('menuitem', { name: 'Voir le profil' }).getAttribute('aria-disabled')).toBeNull();
+    fireEvent.click(within(await screen.findByRole('menu', {}, SLOW)).getByRole('menuitem', { name: 'Nommer administrateur' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true), SLOW);
+    const post = must(calls.find((c) => c.method === 'POST'));
+    expect(post.url.pathname).toMatch(new RegExp(`admin/users/${target.id}/toggle-admin/$`));
+    expect(post.body).toEqual({ is_superadmin: true });
+  });
+
+  it('suspends an account with a reason, after confirmation', async () => {
+    const target = must(users.find((u) => !u.is_superadmin && u.is_active));
+    const calls = stubUsersApi();
+    renderPage();
+    const trigger = await screen.findByRole('button', { name: `Actions pour ${target.full_name}` }, SLOW);
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    fireEvent.click(within(await screen.findByRole('menu', {}, SLOW)).getByRole('menuitem', { name: 'Suspendre le compte' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/Motif/), { target: { value: 'Spam' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Suspendre' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), SLOW);
+    const post = must(calls.find((c) => c.method === 'POST'));
+    expect(post.url.pathname).toMatch(new RegExp(`admin/users/${target.id}/toggle-status/$`));
+    expect(post.body).toEqual({ is_active: false, reason: 'Spam' });
   });
 
   it('offers to retry when the api cannot be reached', async () => {

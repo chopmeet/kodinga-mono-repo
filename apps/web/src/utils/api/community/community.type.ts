@@ -15,6 +15,12 @@ export type CommunityCategory = {
   created_at: string;
 };
 
+/** CommunityCategorySerializer as the admin sees it (GET communities/categories/?include_inactive=true) */
+export type AdminCategoryItem = CommunityCategory & { is_active: boolean; communities_count: number };
+
+/** CommunityCategoryCreateUpdateSerializer: the slug is built from the name when omitted */
+export type CategoryWriteData = Partial<Pick<AdminCategoryItem, 'name' | 'slug' | 'description' | 'icon_url' | 'is_active' | 'order'>>;
+
 /** CommunityListSerializer */
 export type CommunityListItem = {
   id: string;
@@ -230,7 +236,14 @@ export type CommunityAnalysisResult = {
   actionable_recommendations: ImprovementRecommendation[];
   event_suggestions: string[];
   engagement_tactics: string[];
-  metrics_summary: Record<string, any>;
+  /** Figures the diagnosis is based on (the api may add others) */
+  metrics_summary: {
+    members_count?: number;
+    recent_posts_30d?: number;
+    unanswered_questions_count?: number;
+    upcoming_events_count?: number;
+    [key: string]: unknown;
+  };
   provider: string;
 };
 
@@ -239,7 +252,28 @@ export type AssistantChatResult = {
   reply: string;
   suggested_follow_ups: string[];
   suggested_action?: string;
-  data?: any;
+  data?: unknown;
   provider: string;
 };
 
+
+/** GET / PATCH communities/<slug>/ai-settings/ (apps/ai) */
+export type CommunityAISettings = {
+  ai_translation_enabled: boolean;
+  default_community_language: string;
+  supported_languages: string[];
+  sentiment_analytics_enabled: boolean;
+  non_mandatory_moderation: Record<string, boolean>;
+  moderation_strictness: string;
+  /** Platform rules, always on (read only) */
+  platform_locked_rules?: {
+    prohibit_sexual_harassment: boolean;
+    prohibit_targeted_harassment: boolean;
+    prohibit_hate_speech_and_bullying: boolean;
+    mandatory_pre_publication_moderation: boolean;
+    fail_closed_on_outage: boolean;
+    notice: string;
+  };
+};
+
+export type CommunityAISettingsWrite = Omit<CommunityAISettings, 'platform_locked_rules'>;

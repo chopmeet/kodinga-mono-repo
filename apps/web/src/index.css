@@ -1,3 +1,6 @@
+/* Font of the app (url imports must come before any other rule) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 /* Tailwind + shadcn theme from the shared ui lib */
 @import '../../../libs/ui/src/index.css';
 
@@ -6,6 +9,8 @@
 /* Kodinga brand = shadcn primary (libs/ui/src/index.css), so light/dark follow the theme.
    bg-brand, text-brand, hover:bg-brand-hover, text-brand-soft... */
 @theme inline {
+  /* Plus Jakarta Sans (imported above), system fonts while it loads */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
   --color-brand: var(--primary);
   --color-brand-hover: color-mix(in oklch, var(--primary), black 18%);
   --color-brand-soft: color-mix(in oklch, var(--primary), white 60%);

@@ -11,6 +11,7 @@ import ResetPassword from '@/pages/auth/reset-password';
 import OAuthCallback from '@/pages/auth/oauth-callback';
 import Register from '@/pages/auth/register';
 import CreateCommunity from '@/pages/public/create-community/create-community';
+import PublicProfile from '@/pages/public/profile/public-profile';
 import VerifyEmail from '@/pages/auth/verify-email';
 import AdminCommunities from '@/pages/admin/communities/admin-communities';
 import AdminCommunityDetails from '@/pages/admin/communities/community-details';
@@ -45,7 +46,7 @@ import MonetizationSettingsTab from '@/pages/admin/settings/tabs/monetization';
 import NotFound from '@/pages/extra/not-found';
 
 import { 
-  // IsAdminAllow, 
+  IsAdminAllow, 
   RedirectAuthRoute 
 } from './routerUtils';
 
@@ -62,9 +63,9 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'login',
         element: (
-          // <RedirectAuthRoute>
+          <RedirectAuthRoute>
             <Login />
-          // </RedirectAuthRoute>
+          </RedirectAuthRoute>
         ),
       },
       {
@@ -110,6 +111,10 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:id',
         element: <CommunityDetails />,
+      },
+      {
+        path: 'profiles/:username',
+        element: <PublicProfile />,
       },
       {
         // Communities managed by the signed-in user (owner / admin / moderator)
@@ -160,9 +165,9 @@ export const AppRoutes: RouteObject[] = [
   {
     path: '/admin',
     element: (
-      // <IsAdminAllow>
+      <IsAdminAllow>
         <DashboardLayout />
-      // </IsAdminAllow>
+      </IsAdminAllow>
     ),
     children: [
       {

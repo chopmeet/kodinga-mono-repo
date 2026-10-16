@@ -1,60 +1,57 @@
-import { EyeOff, Globe, Lock, Users } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 
+import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
-import type { CommunityValues } from '../form/UseCreateCommunity';
 import { nameInitials } from '@/utils/Utils';
-
-const privacy = {
-  public: { label: 'Publique', icon: Globe },
-  private: { label: 'Privée', icon: Lock },
-  secret: { label: 'Secrète', icon: EyeOff },
-} as const;
-
+import type { CommunityValues } from '../form/UseCreateCommunity';
 
 type Props = { values: CommunityValues; slug: string; category?: CommunityCategory };
 
-/** Live card of the community being created: what visitors will see in the directory */
+/** Live card of the community being created, as it will look in "Toutes les communautés" */
 export function CommunityPreview({ values, slug, category }: Props) {
-  const { label: privacyLabel, icon: PrivacyIcon } = privacy[values.privacy_type];
-  const name = values.name.trim() || 'Votre communauté';
+  const isPrivate = values.privacy_type !== 'public';
+  const name = values.name.trim() || 'Nom de votre communauté';
+  const access =
+    values.pricing_type === 'paid'
+      ? { label: 'Payante', className: 'border-slate-200 bg-slate-50 text-slate-700' }
+      : isPrivate
+        ? { label: 'Sur demande', className: 'border-amber-200 bg-amber-50 text-amber-800' }
+        : { label: 'Accès gratuit', className: 'border-blue-100 bg-blue-50 text-blue-800' };
+  const tags = [category?.name ?? 'Thème', 'Nouvelle'];
 
   return (
-    <figure aria-label="Aperçu de la communauté" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div
-        className="h-24 transition-colors duration-300"
-        style={{ background: `linear-gradient(135deg, ${values.brand_color}, ${values.brand_color}99)` }}
-      />
-      <div className="px-5 pb-5">
-        <div
-          className="-mt-8 flex size-16 items-center justify-center rounded-2xl border-4 border-white text-xl font-bold text-white shadow-sm transition-colors duration-300"
-          style={{ backgroundColor: values.brand_color }}
-          aria-hidden
-        >
-          {nameInitials(values.name, 'K')}
-        </div>
-        <p className={`mt-3 text-lg font-bold break-words ${values.name.trim() ? 'text-slate-900' : 'text-slate-400'}`}>{name}</p>
-        <p className={`mt-1 text-sm break-words ${values.tagline.trim() ? 'text-slate-600' : 'text-slate-400'}`}>
-          {values.tagline.trim() || 'Votre accroche apparaîtra ici.'}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
-          {category && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{category.name}</span>}
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
-            <PrivacyIcon className="size-3" />
-            {privacyLabel}
-          </span>
-          <span
-            className={`rounded-full px-2.5 py-1 ${values.pricing_type === 'paid' ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}
-          >
-            {values.pricing_type === 'paid' ? 'Payante' : 'Gratuite'}
-          </span>
-        </div>
-        <p className="mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
-          <Users className="size-3.5" />1 membre · vous, fondateur
-        </p>
+    <figure aria-label="Aperçu de la communauté" className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="relative h-52 overflow-hidden">
+        <GlassBackdrop fade={false} />
+        <span className="relative m-4 inline-flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-700 uppercase shadow-2xs">
+          {isPrivate ? <Lock className="size-3.5" /> : <Globe className="size-3.5" />}
+          {isPrivate ? 'Privée' : 'Communauté'}
+        </span>
       </div>
-      <figcaption className="truncate border-t border-slate-100 bg-slate-50 px-5 py-2.5 font-mono text-xs text-slate-500">
-        kodinga.com/communities/<span className="text-slate-900">{slug || 'votre-communaute'}</span>
-      </figcaption>
+      <div className="p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <span
+            aria-hidden
+            className="flex size-12 items-center justify-center rounded-lg text-base font-bold text-white transition-colors duration-300"
+            style={{ backgroundColor: values.brand_color }}
+          >
+            {nameInitials(values.name, 'K')}
+          </span>
+          <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${access.className}`}>{access.label}</span>
+        </div>
+        <p className={`mt-4 text-xl font-bold break-words ${values.name.trim() ? 'text-slate-900' : 'text-slate-900/90'}`}>{name}</p>
+        <p className="mt-2 text-[15px] break-words text-slate-600">{values.tagline.trim() || 'Votre description apparaîtra ici.'}</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span key={tag} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <figcaption className="mt-6 truncate border-t border-slate-100 pt-4 text-sm text-slate-600">
+          kodinga.com/communities/<span className="text-slate-900">{slug || '…'}</span>
+        </figcaption>
+      </div>
     </figure>
   );
 }

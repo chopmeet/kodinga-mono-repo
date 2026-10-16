@@ -1,16 +1,4 @@
-import {
-  ArrowRight,
-  Bot,
-  Calendar,
-  Check,
-  ChevronRight,
-  Globe,
-  Lightbulb,
-  Loader2,
-  Sparkles,
-  Target,
-  X,
-} from 'lucide-react';
+import { Bot, Check, Globe, Loader2, Sparkles, X } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
@@ -47,9 +35,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
         }
       }
     } catch {
-      customToast.error(
-        'Impossible de générer la proposition pour le moment. Veuillez réessayer.'
-      );
+      customToast.error({ message: 'Impossible de générer la proposition pour le moment. Veuillez réessayer.' });
     }
   };
 
@@ -73,9 +59,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
       flow.form.setValue('privacy_type', 'public');
     }
 
-    customToast.success(
-      'Proposition IA appliquée ! Vérifiez et personnalisez chaque champ avant de valider.'
-    );
+    customToast.success({ message: 'Proposition IA appliquée ! Vérifiez et personnalisez chaque champ avant de valider.' });
     setIsOpen(false);
   };
 
@@ -250,7 +234,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
 
                   <div className="border-t border-slate-200 pt-3">
                     <p className="text-[11px] text-slate-500">
-                      ⚠️ <strong>Confirmation requise :</strong> Cliquer sur « Appliquer au formulaire » pré-remplit les champs du formulaire. Rien ne sera créé ou publié avant votre validation finale.
+                      <span role="img" aria-label="Attention">⚠️</span> <strong>Confirmation requise :</strong> Cliquer sur « Appliquer au formulaire » pré-remplit les champs du formulaire. Rien ne sera créé ou publié avant votre validation finale.
                     </p>
                   </div>
                 </div>

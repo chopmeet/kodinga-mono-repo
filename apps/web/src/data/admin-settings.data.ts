@@ -9,7 +9,8 @@ export type PlatformSettings = {
   default_language: 'fr' | 'en';
   registrations_open: boolean;
   require_email_verification: boolean;
-  community_creation: 'everyone' | 'verified' | 'approval';
+  /** Plugged to the api: community_creation_allowed_for */
+  community_creation: 'all' | 'pro_only';
 };
 
 export type AdminCategory = CommunityCategory & {
@@ -47,7 +48,7 @@ export const platformSettings: PlatformSettings = {
   default_language: 'fr',
   registrations_open: true,
   require_email_verification: true,
-  community_creation: 'verified',
+  community_creation: 'all',
 };
 
 export const settingsCategories: AdminCategory[] = adminCategories.map((c) => ({

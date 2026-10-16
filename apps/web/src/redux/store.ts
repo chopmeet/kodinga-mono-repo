@@ -5,6 +5,7 @@ import {
 } from '@reduxjs/toolkit';
 
 import { AuthApi } from '@/utils/api/auth/auth.api';
+import { AdminApi } from '@/utils/api/admin/admin.api';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import { UserApi } from '@/utils/api/user/user.api';
 import { isDev } from '@/utils/http';
@@ -29,6 +30,7 @@ export const store = configureStore({
     [AuthApi.reducerPath]: AuthApi.reducer,
     [UserApi.reducerPath]: UserApi.reducer,
     [CommunityApi.reducerPath]: CommunityApi.reducer,
+    [AdminApi.reducerPath]: AdminApi.reducer,
   },
   devTools: isDev,
   middleware: (getDefaultMiddleware) =>
@@ -36,7 +38,8 @@ export const store = configureStore({
       .concat(authMiddleware)
       .concat(AuthApi.middleware)
       .concat(UserApi.middleware)
-      .concat(CommunityApi.middleware),
+      .concat(CommunityApi.middleware)
+      .concat(AdminApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

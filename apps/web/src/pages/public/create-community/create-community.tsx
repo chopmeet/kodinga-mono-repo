@@ -1,10 +1,10 @@
-import { ArrowLeft, ArrowRight, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, LoaderCircle, Sparkles } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga-mono-repo/ui';
+import { Logo } from '@/layouts/components/header';
 import { FormAlert } from '@/pages/auth/components/form-alert';
-import { SubmitButton } from '@/pages/auth/components/submit-button';
 import { useGetCommunityCategoriesQuery } from '@/utils/api/community/community.api';
 import { CommunityPreview } from './components/community-preview';
 import { AccessStep, AccountStep, LookStep, NameStep, TopicStep } from './components/steps';
@@ -37,70 +37,48 @@ function CreateCommunity() {
     titleRef.current?.focus();
   }, [flow.step.id]);
 
-  const progress = ((flow.index + 1) / flow.steps.length) * 100;
+  // Step 1 waits for a usable name, like in the design (the button lights up once it is typed)
+  const canContinue = flow.step.id !== 'name' || flow.values.name.trim().length >= 3;
 
   return (
     <div className="min-h-svh bg-slate-50">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link to="/" className="inline-flex items-center gap-2" title="Kodinga">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-brand">K</span>
-            <span className="hidden text-xl font-bold tracking-tight text-slate-900 sm:inline">
-              kodinga<span className="text-brand">.</span>
-            </span>
-          </Link>
-          <ol className="hidden items-center gap-2 text-sm md:flex" aria-label="Étapes">
-            {flow.steps.map((s, i) => (
-              <li key={s.id} className="flex items-center gap-2">
-                <span
-                  aria-current={i === flow.index ? 'step' : undefined}
-                  className={cn(
-                    'flex items-center gap-1.5 font-medium',
-                    i === flow.index ? 'text-slate-900' : i < flow.index ? 'text-brand' : 'text-slate-400'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex size-5 items-center justify-center rounded-full text-[11px] font-bold',
-                      i <= flow.index ? 'bg-brand text-white' : 'bg-slate-200 text-slate-500'
-                    )}
-                  >
-                    {i + 1}
-                  </span>
-                  {s.label}
-                </span>
-                {i < flow.steps.length - 1 && <span className="h-px w-5 bg-slate-200" aria-hidden />}
-              </li>
-            ))}
-          </ol>
-          <Link to="/" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
-            <X className="size-4" />
-            Quitter
-          </Link>
-        </div>
-        <div className="h-1 bg-slate-100">
-          <div className="h-full bg-brand transition-[width] duration-300" style={{ width: `${progress}%` }} />
-        </div>
+      <header className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Logo />
+        <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 font-medium text-slate-700 hover:bg-white hover:text-slate-900">
+          <ArrowLeft className="size-4.5" />
+          Quitter
+        </Link>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-14">
+      <main className="mx-auto grid max-w-6xl items-start gap-8 px-4 pt-4 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-10">
         <form
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            flow.next();
+            if (canContinue) flow.next();
           }}
-          className="max-w-xl"
+          className="rounded-2xl bg-white p-6 shadow-sm sm:p-10"
         >
-          {flow.step.id === 'name' && <AIWizardModal flow={flow} />}
+          {/* One segment per step: done and current steps are filled */}
+          <div className="flex gap-2" role="progressbar" aria-valuemin={1} aria-valuemax={flow.steps.length} aria-valuenow={flow.index + 1} aria-label="Progression">
+            {flow.steps.map((s, i) => (
+              <span key={s.id} className={cn('h-1 flex-1 rounded-full transition-colors', i <= flow.index ? 'bg-blue-800' : 'bg-slate-200')} />
+            ))}
+          </div>
 
-          <p className="text-sm font-semibold text-brand">
+          {flow.step.id === 'name' && (
+            <div className="mt-6">
+              <AIWizardModal flow={flow} />
+            </div>
+          )}
+
+          <p className="mt-7 text-sm font-semibold text-blue-800">
             Étape {flow.index + 1} sur {flow.steps.length}
           </p>
-          <h1 ref={titleRef} tabIndex={-1} className="mt-2 text-3xl font-bold tracking-tight text-slate-900 outline-none sm:text-4xl">
+          <h1 ref={titleRef} tabIndex={-1} className="mt-2 text-3xl leading-tight font-bold tracking-tight text-slate-900 outline-none sm:text-4xl">
             {heading.title}
           </h1>
-          <p className="mt-3 text-[15px] text-slate-500">{heading.subtitle}</p>
+          <p className="mt-3 text-[15px] text-slate-600">{heading.subtitle}</p>
 
           <div className="mt-8">
             {flow.formError && (
@@ -115,39 +93,68 @@ function CreateCommunity() {
             {flow.step.id === 'account' && <AccountStep flow={flow} />}
           </div>
 
-          <div className="mt-8 flex items-center gap-3">
-            {flow.index > 0 && (
+          <div className="mt-8 flex items-center justify-between gap-3">
+            {flow.index > 0 ? (
               <button
                 type="button"
                 onClick={flow.back}
                 disabled={flow.isSubmitting}
-                className="inline-flex h-13 items-center gap-2 rounded-xl px-4 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                className="inline-flex h-12 items-center gap-2 rounded-lg px-4 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
               >
                 <ArrowLeft className="size-4" />
                 Retour
               </button>
+            ) : (
+              <span />
             )}
-            <div className="flex-1">
-              <SubmitButton isLoading={flow.isSubmitting}>
-                {flow.isLast ? (
-                  <>
-                    <Sparkles className="size-5" />
-                    Créer ma communauté
-                  </>
-                ) : (
-                  <>
-                    Continuer
-                    <ArrowRight className="size-5" />
-                  </>
-                )}
-              </SubmitButton>
-            </div>
+            <button
+              type="submit"
+              disabled={!canContinue || flow.isSubmitting}
+              className="inline-flex h-12 items-center gap-2 rounded-lg bg-blue-900 px-5 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-950 disabled:cursor-not-allowed disabled:bg-blue-900/45"
+            >
+              {flow.isSubmitting && <LoaderCircle className="size-4.5 animate-spin" />}
+              {flow.isLast ? (
+                <>
+                  <Sparkles className="size-4.5" />
+                  Créer ma communauté
+                </>
+              ) : (
+                <>
+                  Continuer
+                  <ArrowRight className="size-4.5" />
+                </>
+              )}
+            </button>
           </div>
         </form>
 
-        <aside className="lg:sticky lg:top-28 lg:self-start">
-          <p className="mb-3 text-xs font-semibold tracking-wider text-slate-500 uppercase">Aperçu en direct</p>
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-8">
+          <p className="text-[15px] font-semibold text-blue-800">Aperçu dans « Toutes les communautés »</p>
           <CommunityPreview values={flow.values} slug={flow.slug} category={category} />
+
+          <ol className="space-y-1 rounded-xl bg-white p-4 shadow-2xs" aria-label="Étapes">
+            {flow.steps.map((s, i) => (
+              <li
+                key={s.id}
+                aria-current={i === flow.index ? 'step' : undefined}
+                className={cn('flex items-center gap-3 py-1 text-[15px]', i === flow.index ? 'font-semibold text-slate-900' : 'text-slate-600')}
+              >
+                <span
+                  className={cn(
+                    'flex size-6 items-center justify-center rounded-full border text-xs',
+                    i < flow.index
+                      ? 'border-blue-800 bg-blue-800 text-white'
+                      : i === flow.index
+                        ? 'border-blue-800 text-blue-800'
+                        : 'border-slate-300 text-slate-500'
+                  )}
+                >
+                  {i < flow.index ? <Check className="size-3.5" /> : i + 1}
+                </span>
+                {s.label}
+              </li>
+            ))}
+          </ol>
         </aside>
       </main>
     </div>

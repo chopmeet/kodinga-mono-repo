@@ -1,4 +1,4 @@
-import { ShieldOff, UserPlus } from 'lucide-react';
+import { RotateCw, ShieldOff, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -10,28 +10,33 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyAlert,
 } from '@kodinga-mono-repo/ui';
-import type { AdminUser } from '@/data/admin-users.data';
-import { useUser } from '@/utils/Utils';
-import InviteAdminModal from '../../shared/invite-admin-modal';
-import { useSettings } from '../admin-settings';
-import AdministratorsTable, { isPending } from '../tables/administrators-table';
+import { parseApiError } from '@/utils/api/errors';
+import { useGetUsersQuery, useToggleUserAdminMutation } from '@/utils/api/user/user.api';
+import type { User } from '@/utils/api/user/user.type';
+import { getName, isAdmin, useUser } from '@/utils/Utils';
+import PromoteAdminModal from '../../shared/promote-admin-modal';
+import AdministratorsTable from '../tables/administrators-table';
 
 function AdministratorsSettingsTab() {
-  const { admins, setAdmins } = useSettings();
   const currentUser = useUser();
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [revoking, setRevoking] = useState<AdminUser | null>(null);
-  const [isRevoking, setIsRevoking] = useState(false);
+  // The api has no role filter on users/: the super-admins are picked from the first 100 accounts
+  const { data, isLoading, error, refetch } = useGetUsersQuery({ page_size: 100 });
+  const admins = (data?.results ?? []).filter(isAdmin);
+  const [toggleAdmin, { isLoading: isRevoking }] = useToggleUserAdminMutation();
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [revoking, setRevoking] = useState<User | null>(null);
+  const revokingName = revoking ? getName(revoking) || revoking.email : '';
 
   // Guards: the platform always keeps one super admin, and nobody removes their own access
-  const revokeBlockedReason = (admin: AdminUser) => {
+  const revokeBlockedReason = (admin: User) => {
     if (admins.length <= 1) return 'Impossible de retirer le dernier super-administrateur.';
     if (currentUser && admin.id === currentUser.id) return 'Vous ne pouvez pas retirer votre propre accès.';
     return null;
   };
 
-  const askRevoke = (admin: AdminUser) => {
+  const askRevoke = (admin: User) => {
     const reason = revokeBlockedReason(admin);
     if (reason) customToast.error({ message: reason });
     else setRevoking(admin);
@@ -39,12 +44,13 @@ function AdministratorsSettingsTab() {
 
   const revoke = async () => {
     if (!revoking) return;
-    setIsRevoking(true);
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    setAdmins((list) => list.filter((a) => a.id !== revoking.id));
-    customToast.success({ message: `${revoking.full_name} n'est plus super-administrateur.` });
-    setIsRevoking(false);
-    setRevoking(null);
+    try {
+      await toggleAdmin({ id: revoking.id, is_superadmin: false }).unwrap();
+      customToast.success({ message: `${revokingName} n'est plus super-administrateur.` });
+      setRevoking(null);
+    } catch (err) {
+      customToast.error({ message: parseApiError(err).message });
+    }
   };
 
   return (
@@ -56,35 +62,37 @@ function AdministratorsSettingsTab() {
             Accès complet à l'administration : communautés, utilisateurs, paiements et paramètres. Gardez cette liste courte.
           </p>
         </div>
-        <Button onClick={() => setInviteOpen(true)}>
+        <Button onClick={() => setPromoteOpen(true)}>
           <UserPlus />
-          Inviter un super-administrateur
+          Ajouter un super-administrateur
         </Button>
       </div>
 
-      <AdministratorsTable
-        admins={admins}
-        currentUserId={currentUser?.id}
-        onResendInvite={(admin) => customToast.success({ message: `Invitation renvoyée à ${admin.email}.` })}
-        onRevoke={askRevoke}
-      />
-      <p className="mt-2 text-xs text-slate-500">
-        {admins.length} super-administrateur{admins.length > 1 ? 's' : ''}
-        {admins.some(isPending) && ` · ${admins.filter(isPending).length} invitation(s) en attente`}
-      </p>
+      {error && !data ? (
+        <div className="flex flex-col items-start gap-3">
+          <EmptyAlert text={parseApiError(error).message} />
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RotateCw />
+            Réessayer
+          </Button>
+        </div>
+      ) : (
+        <>
+          <AdministratorsTable admins={admins} isLoading={isLoading} currentUserId={currentUser?.id} onRevoke={askRevoke} />
+          {data && (
+            <p className="mt-2 text-xs text-slate-500">
+              {admins.length} super-administrateur{admins.length > 1 ? 's' : ''}
+            </p>
+          )}
+        </>
+      )}
 
-      <InviteAdminModal
-        title="Inviter un super-administrateur"
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
-        existingEmails={admins.map((a) => a.email)}
-        onInvited={(admin) => setAdmins((list) => [...list, admin])}
-      />
+      <PromoteAdminModal open={promoteOpen} onOpenChange={setPromoteOpen} />
 
       <Dialog open={!!revoking} onOpenChange={(open) => !open && !isRevoking && setRevoking(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Retirer l'accès de {revoking?.full_name} ?</DialogTitle>
+            <DialogTitle>Retirer l'accès de {revokingName} ?</DialogTitle>
             <DialogDescription>
               Ce compte perdra immédiatement l'accès à l'administration. Il restera un compte membre classique.
             </DialogDescription>
