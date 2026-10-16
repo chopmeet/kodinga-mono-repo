@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'apps.analytics.apps.AnalyticsConfig',
     'apps.administration.apps.AdministrationConfig',
     'apps.ai.apps.AIConfig',
+    'apps.hackathons.apps.HackathonsConfig',
     'api',
 ]
 
@@ -249,6 +250,14 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Communities', 'description': 'Tech communities, spaces, discovery, settings, and charter rules.'},
         {'name': 'Memberships', 'description': 'Community RBAC memberships, invitations, and moderation sanctions.'},
         {'name': 'Feed & Posts', 'description': 'Community posts, code snippets, rich media, interactive polls, threaded comments, and emoji reactions.'},
+        {'name': 'AI Assistant', 'description': 'Community planning wizard, smart recommendations, content ideas, analytics, and interactive chat.'},
+        {'name': 'AI Services', 'description': 'Multilingual translation (Wolof, Bambara, French, English), content moderation audit, and provider health.'},
+        {'name': 'Hackathons - Découverte', 'description': 'Exploration et découverte publique des hackathons.'},
+        {'name': 'Hackathons - Organisation', 'description': 'Création, configuration, dashboard et cycle de vie par les organisateurs de communauté.'},
+        {'name': 'Hackathons - Candidatures', 'description': 'Gestion des candidatures et sélection des participants.'},
+        {'name': 'Hackathons - Équipes', 'description': 'Formation d\'équipes, invitations et gestion des membres.'},
+        {'name': 'Hackathons - Projets & Soumissions', 'description': 'Dépôt des projets, gestion des pièces jointes et soumission finale.'},
+        {'name': 'Hackathons - Jury & Évaluation', 'description': 'Notation multicritère, délibération du jury et proclamation des résultats.'},
     ],
 }
 

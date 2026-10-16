@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
+from apps.ai.models import AssistantConversation, AssistantMessage
 from apps.ai.providers.exceptions import (
     AllProvidersFailedError,
     QuotaExhaustedError,
@@ -576,3 +577,109 @@ class TestAssistantProviderRoutingAndSafety:
             assert "Dalal ak jamm" in reply["reply"]
             # Verify language 'wo' was forwarded to router
             assert mock_chat.call_args[1]["language"] == "wo"
+
+
+@pytest.mark.django_db
+class TestAIAssistantConversationSessionManagement:
+    def test_chat_creates_new_session_and_preserves_history(self, stranger, api_client):
+        """Conversational chat initiates a session and maintains message history across turns."""
+        api_client.force_authenticate(user=stranger)
+
+        with patch("apps.ai.router.ai_router.assistant_chat") as mock_chat:
+            mock_chat.return_value = AssistantChatResult(
+                reply="Bonjour ! Comment puis-je vous aider ?",
+                suggested_follow_ups=["Créer une communauté", "Trouver des mentors"],
+                provider="gemini",
+            )
+
+            # Turn 1: No conversation_id provided -> Creates a new session
+            res1 = api_client.post(
+                "/api/v1/ai-assistant/chat/",
+                {"message": "Bonjour assistant"},
+                format="json",
+            )
+            assert res1.status_code == status.HTTP_200_OK
+            conv_id = res1.data["data"]["conversation_id"]
+            assert conv_id is not None
+
+            # Verify DB has 2 messages (user + assistant)
+            conversation = AssistantConversation.objects.get(id=conv_id)
+            assert conversation.user == stranger
+            assert conversation.messages.count() == 2
+            assert conversation.messages.filter(role="user").first().content == "Bonjour assistant"
+            assert conversation.messages.filter(role="assistant").first().content == "Bonjour ! Comment puis-je vous aider ?"
+
+            # Turn 2: Providing conversation_id -> Resumes existing session
+            mock_chat.return_value = AssistantChatResult(
+                reply="Pour créer une communauté, cliquez sur le bouton Créer.",
+                suggested_follow_ups=["Définir les règles"],
+                provider="gemini",
+            )
+            res2 = api_client.post(
+                "/api/v1/ai-assistant/chat/",
+                {
+                    "message": "Je veux créer une communauté",
+                    "conversation_id": conv_id,
+                },
+                format="json",
+            )
+            assert res2.status_code == status.HTTP_200_OK
+            assert res2.data["data"]["conversation_id"] == conv_id
+
+            conversation.refresh_from_db()
+            assert conversation.messages.count() == 4
+
+            # Verify history was forwarded to LLM router
+            history_arg = mock_chat.call_args[1]["history"]
+            assert len(history_arg) == 2  # Turn 1 user + Turn 1 assistant
+            assert history_arg[0]["role"] == "user"
+            assert history_arg[1]["role"] == "assistant"
+
+    def test_conversation_list_and_detail_crud_apis(self, stranger, api_client):
+        """API endpoints for listing, reading, renaming, clearing, and deleting conversations."""
+        api_client.force_authenticate(user=stranger)
+
+        # 1. Create session via POST /api/v1/ai-assistant/conversations/
+        create_res = api_client.post(
+            "/api/v1/ai-assistant/conversations/",
+            {"title": "Discussion Architecture", "context_type": "creation"},
+            format="json",
+        )
+        assert create_res.status_code == status.HTTP_201_CREATED
+        conv_id = create_res.data["data"]["id"]
+
+        # Add dummy messages
+        conv = AssistantConversation.objects.get(id=conv_id)
+        AssistantMessage.objects.create(conversation=conv, role="user", content="Comment scaler ?")
+        AssistantMessage.objects.create(conversation=conv, role="assistant", content="Utilisez un load balancer.")
+
+        # 2. List sessions via GET /api/v1/ai-assistant/conversations/
+        list_res = api_client.get("/api/v1/ai-assistant/conversations/")
+        assert list_res.status_code == status.HTTP_200_OK
+        assert len(list_res.data["data"]) >= 1
+        assert list_res.data["data"][0]["id"] == conv_id
+
+        # 3. Retrieve conversation detail via GET /api/v1/ai-assistant/conversations/<id>/
+        detail_res = api_client.get(f"/api/v1/ai-assistant/conversations/{conv_id}/")
+        assert detail_res.status_code == status.HTTP_200_OK
+        assert len(detail_res.data["data"]["messages"]) == 2
+
+        # 4. Rename conversation via PATCH /api/v1/ai-assistant/conversations/<id>/
+        patch_res = api_client.patch(
+            f"/api/v1/ai-assistant/conversations/{conv_id}/",
+            {"title": "Architecture Haute Disponibilité"},
+            format="json",
+        )
+        assert patch_res.status_code == status.HTTP_200_OK
+        assert patch_res.data["data"]["title"] == "Architecture Haute Disponibilité"
+
+        # 5. Clear messages via POST /api/v1/ai-assistant/conversations/<id>/clear/
+        clear_res = api_client.post(f"/api/v1/ai-assistant/conversations/{conv_id}/clear/")
+        assert clear_res.status_code == status.HTTP_200_OK
+        assert conv.messages.count() == 0
+
+        # 6. Delete conversation via DELETE /api/v1/ai-assistant/conversations/<id>/
+        delete_res = api_client.delete(f"/api/v1/ai-assistant/conversations/{conv_id}/")
+        assert delete_res.status_code == status.HTTP_200_OK
+        assert not AssistantConversation.objects.filter(id=conv_id).exists()
+

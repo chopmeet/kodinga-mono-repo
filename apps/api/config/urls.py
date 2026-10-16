@@ -34,6 +34,8 @@ urlpatterns = [
     path('api/v1/', include('apps.analytics.urls', namespace='analytics')),
     path('api/v1/', include('apps.administration.urls', namespace='administration')),
     path('api/v1/', include('apps.ai.urls', namespace='ai')),
+    path('api/v1/', include('apps.hackathons.urls', namespace='hackathons')),
+
 
     # OpenAPI / Swagger Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
