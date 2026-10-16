@@ -32,18 +32,32 @@ describe('Home directory', () => {
     expect(urls.some((u) => u.searchParams.get('page') === '2')).toBe(true);
   });
 
-  it('filters with the api categories and the quick filters', async () => {
+  it('filters on one line: category pills, the others in "Plus…", access in "Filtre"', async () => {
     const urls = stubDirectory(adminCommunities, adminCategories);
     renderAppAt('/');
     const strip = await screen.findByRole('group', { name: 'Filtrer les communautés' }, SLOW);
 
+    // Visible pill
     fireEvent.click(await within(strip).findByRole('button', { name: 'Cloud & DevOps' }, SLOW));
     const cloud = adminCommunities.filter((c) => c.category?.slug === 'cloud-devops');
     await waitFor(() => expect(cards()).toHaveLength(cloud.length), SLOW);
     expect(urls.at(-1)?.searchParams.get('category')).toBe('cloud-devops');
 
-    fireEvent.click(within(strip).getByRole('button', { name: /Gratuites/ }));
+    // A category beyond the visible pills, from "Plus…"
+    const more = within(strip).getByRole('button', { name: /Plus…/ });
+    more.focus();
+    fireEvent.keyDown(more, { key: 'Enter' });
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Carrière' }, SLOW));
+    await waitFor(() => expect(urls.at(-1)?.searchParams.get('category')).toBe('carriere'), SLOW);
+    expect(within(strip).getByRole('button', { name: /Carrière/ })).toBeTruthy();
+
+    // Access adds up with the category
+    const filter = screen.getByRole('button', { name: 'Filtre' });
+    filter.focus();
+    fireEvent.keyDown(filter, { key: 'Enter' });
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Gratuites' }, SLOW));
     await waitFor(() => expect(urls.at(-1)?.searchParams.get('pricing')).toBe('free'), SLOW);
+    expect(urls.at(-1)?.searchParams.get('category')).toBe('carriere');
   });
 
   it('searches by keyword from a hero stack', async () => {

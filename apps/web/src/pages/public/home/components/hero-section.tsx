@@ -5,20 +5,27 @@ import {
   Cog,
   Cpu,
   type LucideIcon,
+  ArrowRight,
+  ChevronDown,
+  Search,
   Shapes,
   ShieldCheck,
   Smartphone,
+  Users,
   Wallet,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { cn, SearchInput } from '@kodinga-mono-repo/ui';
+import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
+import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { type StackId, stacks } from '@/data/home.data';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetHeroSearchVisible, onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { scrollToResults } from '@/utils/Utils';
 
-const HEADER_HEIGHT = 64;
+const HEADER_HEIGHT = 72;
+// Stacks shown as buttons (after "Tout explorer"); the others go into "Plus…" so the row never wraps
+const VISIBLE_STACKS = 4;
 
 const stackIcons: Record<StackId, LucideIcon> = {
   rust: Cog,
@@ -53,10 +60,10 @@ function StackChip({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors sm:h-12 sm:px-5 sm:text-[15px]',
+        'flex h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-medium whitespace-nowrap shadow-2xs transition-colors sm:h-12 sm:px-5 sm:text-[15px]',
         active
-          ? 'border-slate-900 bg-slate-900 text-white'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900'
+          ? 'border-blue-900 bg-blue-900 text-white'
+          : 'border-white/80 bg-white/85 text-slate-700 backdrop-blur hover:border-slate-200 hover:text-slate-900'
       )}
     >
       <Icon className="size-4.5" />
@@ -88,30 +95,50 @@ export function HeroSection({ stack, onStackChange }: Props) {
   }, [dispatch]);
 
   return (
-    <section className="bg-linear-to-b from-stone-100/80 via-stone-50 to-white px-4 pt-14 pb-10 sm:px-6 sm:pt-20 sm:pb-12 lg:px-8">
+    <section className="relative isolate overflow-hidden px-4 pt-16 pb-14 sm:px-6 sm:pt-20 sm:pb-16 lg:px-8">
+      <GlassBackdrop className="-z-10" />
       <div className="mx-auto flex max-w-[1440px] flex-col items-center text-center">
-        <h1 className="max-w-4xl text-3xl leading-[1.1] font-bold tracking-tight text-slate-900 sm:text-5xl">
-          Trouvez votre{' '}
-          <span className="text-primary">communauté tech</span>
+        <p className="flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase">
+          <span className="size-1.5 rounded-full bg-primary" aria-hidden />
+          Les bonnes personnes. Les bonnes connexions.
+        </p>
+        <h1 className="mt-6 max-w-6xl text-4xl leading-[1.05] font-bold tracking-tight text-balance text-slate-900 sm:text-5xl lg:text-6xl 2xl:text-7xl">
+          Trouvez votre <span className="text-primary">communauté tech.</span>
         </h1>
 
-        <div ref={searchRef} role="search" className="mt-9 w-full max-w-3xl">
-          <SearchInput
-            id="community-search"
-            size="lg"
-            label="Rechercher une communauté"
-            clearLabel="Effacer la recherche"
-            placeholder="Une stack, une ville, une communauté…"
-            value={query}
-            onValueChange={(value) => dispatch(onSetSearchQuery(value))}
-            onSubmit={scrollToResults}
-            submitLabel="Voir les résultats"
-          />
+        <div ref={searchRef} role="search" className="mt-10 w-full max-w-3xl">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              scrollToResults();
+            }}
+            className="flex items-center gap-3 rounded-xl border border-white/80 bg-white/95 p-2 pl-5 shadow-lg shadow-blue-900/5"
+          >
+            <Search className="size-5 shrink-0 text-slate-500" aria-hidden />
+            <input
+              id="community-search"
+              type="search"
+              aria-label="Rechercher une communauté"
+              placeholder="Une stack, une ville, une communauté…"
+              value={query}
+              onChange={(e) => dispatch(onSetSearchQuery(e.target.value))}
+              className="h-12 min-w-0 flex-1 bg-transparent text-base text-slate-900 outline-none placeholder:text-slate-500"
+            />
+            <button
+              type="submit"
+              aria-label="Voir les résultats"
+              className="flex h-12 shrink-0 items-center gap-2 rounded-lg bg-blue-900 px-5 text-[15px] font-semibold text-white transition-colors hover:bg-blue-950"
+            >
+              <span className="hidden sm:inline">Explorer</span>
+              <ArrowRight className="size-4.5" />
+            </button>
+          </form>
         </div>
 
-        <div className="mt-8 flex max-w-5xl flex-wrap justify-center gap-2.5 sm:gap-3">
+        {/* Shrinks to its content: centered when it fits, scrolls from the start when it does not */}
+        <div className="no-scrollbar mx-auto mt-7 flex w-fit max-w-full gap-2.5 overflow-x-auto px-1 py-1 sm:gap-3">
           <StackChip active={stack === null} icon={Shapes} label="Tout explorer" onClick={() => onStackChange(null)} />
-          {stacks.map((s) => (
+          {stacks.slice(0, VISIBLE_STACKS).map((s) => (
             <StackChip
               key={s.id}
               active={stack === s.id}
@@ -120,7 +147,38 @@ export function HeroSection({ stack, onStackChange }: Props) {
               onClick={() => onStackChange(stack === s.id ? null : s.id)}
             />
           ))}
+          {stacks.length > VISIBLE_STACKS && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  'flex h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-medium whitespace-nowrap shadow-2xs transition-colors sm:h-12 sm:px-5 sm:text-[15px]',
+                  stacks.slice(VISIBLE_STACKS).some((s) => s.id === stack)
+                    ? 'border-blue-900 bg-blue-900 text-white'
+                    : 'border-white/80 bg-white/85 text-slate-700 backdrop-blur hover:border-slate-200 hover:text-slate-900'
+                )}
+              >
+                {stacks.slice(VISIBLE_STACKS).find((s) => s.id === stack)?.label ?? 'Plus…'}
+                <ChevronDown className="size-4" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {stacks.slice(VISIBLE_STACKS).map((s) => {
+                  const Icon = stackIcons[s.id];
+                  return (
+                    <DropdownMenuItem key={s.id} onSelect={() => onStackChange(stack === s.id ? null : s.id)}>
+                      <Icon />
+                      {s.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
+
+        <p className="mt-10 flex items-center gap-2 text-sm text-slate-500">
+          <Users className="size-4" aria-hidden />
+          Des communautés, des idées, et une place pour vous.
+        </p>
       </div>
     </section>
   );

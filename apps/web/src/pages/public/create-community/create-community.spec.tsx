@@ -92,8 +92,12 @@ describe('Create a community', () => {
   it('does not move on without a valid name', async () => {
     renderAppAt('/create-community');
     await screen.findByRole('heading', { name: 'Comment s’appelle votre communauté ?' }, SLOW);
-    fireEvent.click(continueButton());
-    expect(await screen.findByText('Au moins 3 caractères', {}, SLOW)).toBeTruthy();
+    // Like the design: "Continuer" stays off until the name has 3 characters
+    expect((continueButton() as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(/^Nom de la communauté/), { target: { value: 'Ab' } });
+    expect((continueButton() as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(/^Nom de la communauté/), { target: { value: 'Abc' } });
+    expect((continueButton() as HTMLButtonElement).disabled).toBe(false);
     expect(screen.getByText('Étape 1 sur 5')).toBeTruthy();
   });
 

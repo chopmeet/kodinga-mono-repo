@@ -1,9 +1,9 @@
-import { ChevronDown, LoaderCircle, RotateCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ChevronDown, LoaderCircle, RotateCw, ShieldCheck, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
 
 import { CommunityCard, CommunityCardSkeleton } from './components/community-card';
 import { CreatorCallout } from './components/creator-callout';
-import { type DiscoverFilter, DiscoverFilters } from './components/discover-filters';
+import { type AccessFilter, type DiscoverChip, DiscoverFilters, type PrivacyFilter } from './components/discover-filters';
 import { HeroSection } from './components/hero-section';
 import { LeaderboardCard } from './components/leaderboard-card';
 import type { StackId } from '@/data/home.data';
@@ -14,11 +14,10 @@ import type { CommunityListQuery } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 
-// Quick filters the api supports, before the categories
-const QUICK_FILTERS: (DiscoverFilter & { params: CommunityListQuery })[] = [
-  { id: 'all', label: 'Toutes les communautés', params: {} },
-  { id: 'featured', label: 'À la une', emoji: '🔥', params: { is_featured: true } },
-  { id: 'free', label: 'Gratuites', params: { pricing: 'free' } },
+// Exclusive pills of the strip: these two, then the api categories
+const QUICK_CHIPS: DiscoverChip[] = [
+  { id: 'all', label: 'Toutes' },
+  { id: 'featured', label: 'À la une', icon: TrendingUp },
 ];
 
 // The hero stacks search by keyword (the api searches name, tagline, description and slug)
@@ -38,20 +37,22 @@ function Home() {
   // Shared with the header's compact search (see Search.slice)
   const query = useAppSelector((s) => s.search.query);
   const search = useDebounced(query.trim(), 350);
-  const [filter, setFilter] = useState('all');
+  const [chip, setChip] = useState('all');
+  const [access, setAccess] = useState<AccessFilter>('all');
+  const [privacy, setPrivacy] = useState<PrivacyFilter>('all');
   // The page belongs to one search: a new search or filter starts again from page 1
-  const searchKey = `${filter}|${search}`;
+  const searchKey = `${chip}|${access}|${privacy}|${search}`;
   const [paging, setPaging] = useState({ key: searchKey, page: 1 });
   const page = paging.key === searchKey ? paging.page : 1;
 
   const { data: categories = [] } = useGetCommunityCategoriesQuery();
-  const filters = useMemo<DiscoverFilter[]>(
-    () => [...QUICK_FILTERS, ...categories.map((c) => ({ id: `category:${c.slug}`, label: c.name }))],
-    [categories]
-  );
-  const params: CommunityListQuery = filter.startsWith('category:')
-    ? { category: filter.slice('category:'.length) }
-    : (QUICK_FILTERS.find((f) => f.id === filter)?.params ?? {});
+  const chips: DiscoverChip[] = [...QUICK_CHIPS, ...categories.map((c) => ({ id: `category:${c.slug}`, label: c.name }))];
+  const params: CommunityListQuery = {
+    ...(chip === 'featured' ? { is_featured: true } : {}),
+    ...(chip.startsWith('category:') ? { category: chip.slice('category:'.length) } : {}),
+    ...(access !== 'all' ? { pricing: access } : {}),
+    ...(privacy !== 'all' ? { privacy } : {}),
+  };
 
   const { data, isLoading, isFetching, error, refetch } = useDiscoverCommunitiesQuery({ ...params, q: search, page });
   const results = data?.results ?? [];
@@ -61,19 +62,27 @@ function Home() {
   const stack = (Object.keys(STACK_KEYWORDS) as StackId[]).find((id) => STACK_KEYWORDS[id] === query.trim().toLowerCase()) ?? null;
 
   return (
-    <div className="bg-white text-slate-900">
+    <div className="bg-slate-50 text-slate-900">
       <HeroSection stack={stack} onStackChange={(id) => dispatch(onSetSearchQuery(id ? STACK_KEYWORDS[id] : ''))} />
 
-      <DiscoverFilters filters={filters} active={filter} onChange={setFilter} />
+      <DiscoverFilters
+        chips={chips}
+        active={chip}
+        onChange={setChip}
+        access={access}
+        onAccessChange={setAccess}
+        privacy={privacy}
+        onPrivacyChange={setPrivacy}
+      />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-          <div className="flex flex-col gap-6 lg:col-span-8 xl:col-span-9">
+          <div className="flex flex-col gap-6 lg:col-span-8">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-base font-bold tracking-tight text-slate-900">
-                <span>Communautés recommandées</span>
+              <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-900">
+                <span>Communautés à découvrir</span>
                 {data && (
-                  <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-600">
+                  <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium tracking-wide text-slate-500">
                     {total} RÉSULTAT{total > 1 ? 'S' : ''}
                   </span>
                 )}
@@ -82,7 +91,7 @@ function Home() {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Chargement des communautés">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2" aria-busy="true" aria-label="Chargement des communautés">
                 <CommunityCardSkeleton />
               </div>
             ) : error && !data ? (
@@ -98,7 +107,7 @@ function Home() {
                 </button>
               </div>
             ) : results.length > 0 ? (
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {results.map((community) => (
                   <CommunityCard key={community.id} community={community} />
                 ))}
@@ -124,9 +133,14 @@ function Home() {
                 </button>
               </div>
             )}
+
+            <p className="flex items-center gap-2 text-sm text-slate-500">
+              <ShieldCheck className="size-4.5" aria-hidden />
+              Votre prochaine rencontre peut tout changer.
+            </p>
           </div>
 
-          <aside id="leaderboard" className="flex flex-col gap-6 lg:col-span-4 xl:col-span-3">
+          <aside id="leaderboard" className="flex flex-col gap-6 lg:col-span-4 lg:sticky lg:top-40">
             <LeaderboardCard />
             <CreatorCallout />
           </aside>

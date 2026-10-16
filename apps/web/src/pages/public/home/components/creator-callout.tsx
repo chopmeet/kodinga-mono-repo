@@ -1,43 +1,23 @@
-import { ArrowRight, Rocket } from 'lucide-react';
+import { ArrowUpRight, Rocket } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-import { creatorSteps } from '@/data/home.data';
 
 export function CreatorCallout() {
   return (
-    <div
-      id="creer"
-      className="scroll-mt-36 rounded-xl border border-orange-200/80 bg-gradient-to-b from-orange-50/50 to-white p-5 shadow-2xs"
-    >
-      <div className="flex items-center gap-2 text-sm font-bold text-brand">
+    <section id="creer" aria-labelledby="creer-title" className="scroll-mt-36 rounded-xl border border-blue-100 bg-blue-50/70 p-6">
+      <span className="flex size-10 items-center justify-center rounded-lg bg-white text-primary shadow-2xs" aria-hidden>
         <Rocket className="size-5" />
-        <h4>Créateurs de communauté</h4>
-      </div>
-      <p className="mt-1 text-xs leading-relaxed text-slate-600">
-        Lancez votre propre guilde de développeurs africains en moins de 2 minutes.
-      </p>
-
-      <ol className="mt-4 space-y-3">
-        {creatorSteps.map((step, i) => (
-          <li key={step.title} className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">
-              {i + 1}
-            </div>
-            <div>
-              <h5 className="text-xs font-bold text-slate-900">{step.title}</h5>
-              <p className="text-[11px] text-slate-500">{step.description}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-
+      </span>
+      <h2 id="creer-title" className="mt-5 text-lg font-bold text-slate-900">
+        Et si vous créiez la vôtre ?
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-slate-600">Rassemblez les bonnes personnes autour de ce qui vous passionne.</p>
       <Link
         to="/create-community"
-        className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-hover"
+        className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-900 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-950"
       >
-        <span>Lancer ma guilde Kodinga</span>
-        <ArrowRight className="size-4" />
+        Créer ma communauté
+        <ArrowUpRight className="size-4" />
       </Link>
-    </div>
+    </section>
   );
 }

@@ -1,6 +1,8 @@
 export const fr = {
   header: {
     login: 'Se connecter',
+    explore: 'Explorer les communautés',
+    profile: 'Le profil',
     signup: "S'inscrire",
     mySpace: 'Mon espace',
     language: 'Changer de langue',
