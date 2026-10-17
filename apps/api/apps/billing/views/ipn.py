@@ -17,7 +17,7 @@ class PayDunyaIPNView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Webhook / IPN Callback PayDunya (Server-to-Server)",
         request=dict,
         responses={200: dict}

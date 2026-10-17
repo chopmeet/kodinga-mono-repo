@@ -11,6 +11,7 @@ from apps.hackathons.serializers.hackathon import (
     HackathonDetailSerializer,
     HackathonListSerializer,
     LifecycleTransitionSerializer,
+    UserHackathonParticipationSerializer,
 )
 from apps.hackathons.services.hackathon_service import HackathonService
 from common.utils.pagination import StandardResultsSetPagination
@@ -199,10 +200,12 @@ class CommunityHackathonPublishView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = HackathonDetailSerializer
 
     @extend_schema(
         tags=["Hackathons"],
         summary="Publier le hackathon",
+        request=None,
         responses={200: HackathonDetailSerializer},
     )
     def post(self, request, slug, hackathon_slug):
@@ -273,3 +276,27 @@ class CommunityHackathonDashboardView(APIView):
         )
         metrics = HackathonService.get_dashboard_metrics(request.user, hackathon)
         return success_response(data=metrics)
+
+
+class MyHackathonListView(APIView):
+    """
+    GET /api/v1/hackathons/my/
+    List hackathons where current user is registered, has a team, or submitted a project.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserHackathonParticipationSerializer
+
+    @extend_schema(
+        tags=["Hackathons"],
+        summary="Mes hackathons (Participant)",
+        description="Liste l'ensemble des hackathons auxquels l'utilisateur participe (candidature déposée, membre d'une équipe ou projet soumis).",
+        responses={200: UserHackathonParticipationSerializer(many=True)},
+    )
+    def get(self, request):
+        participations = HackathonSelector.get_user_registered_hackathons(request.user)
+        serializer = UserHackathonParticipationSerializer(
+            participations, many=True, context={"request": request}
+        )
+        return success_response(data=serializer.data)
+

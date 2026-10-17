@@ -1,10 +1,15 @@
 from django.urls import path
 
 from apps.hackathons.views import (
+    CommunityHackathonApplicationsExportView,
+    CommunityHackathonCriteriaView,
+    CommunityHackathonCriterionDetailView,
     CommunityHackathonDashboardView,
     CommunityHackathonDetailView,
     CommunityHackathonLifecycleView,
     CommunityHackathonListCreateView,
+    CommunityHackathonPrizeDetailView,
+    CommunityHackathonPrizesView,
     CommunityHackathonPublishView,
     HackathonApplicationListView,
     HackathonApplicationReviewView,
@@ -25,17 +30,23 @@ from apps.hackathons.views import (
     HackathonTeamInviteView,
     HackathonTeamListCreateView,
     HackathonTeamRespondInviteView,
+    MyHackathonListView,
     PublicHackathonListView,
 )
 
 app_name = "hackathons"
 
 urlpatterns = [
-    # Global Discovery
+    # Global Discovery & Participant Dashboard
     path(
         "hackathons/",
         PublicHackathonListView.as_view(),
         name="public-hackathons-list",
+    ),
+    path(
+        "hackathons/my/",
+        MyHackathonListView.as_view(),
+        name="my-hackathons-list",
     ),
     # Community Hackathons List & Create
     path(
@@ -63,6 +74,28 @@ urlpatterns = [
         CommunityHackathonDashboardView.as_view(),
         name="community-hackathon-dashboard",
     ),
+    # Criteria CRUD
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/criteria/",
+        CommunityHackathonCriteriaView.as_view(),
+        name="community-hackathon-criteria",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/criteria/<uuid:criterion_id>/",
+        CommunityHackathonCriterionDetailView.as_view(),
+        name="community-hackathon-criterion-detail",
+    ),
+    # Prizes CRUD
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/prizes/",
+        CommunityHackathonPrizesView.as_view(),
+        name="community-hackathon-prizes",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/prizes/<uuid:prize_id>/",
+        CommunityHackathonPrizeDetailView.as_view(),
+        name="community-hackathon-prize-detail",
+    ),
     # Applications
     path(
         "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/apply/",
@@ -78,6 +111,11 @@ urlpatterns = [
         "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/applications/",
         HackathonApplicationListView.as_view(),
         name="community-hackathon-applications",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/applications/export/",
+        CommunityHackathonApplicationsExportView.as_view(),
+        name="community-hackathon-applications-export",
     ),
     path(
         "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/applications/<uuid:app_id>/",

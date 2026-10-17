@@ -15,7 +15,7 @@ class MyAffiliateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Tableau de bord affilié et commissions",
         responses={200: AffiliateSerializer}
     )
@@ -38,7 +38,7 @@ class JoinAffiliateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Activer le programme d'affiliation (50% de commission)",
         request=None,
         responses={201: AffiliateSerializer}

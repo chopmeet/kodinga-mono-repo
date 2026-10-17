@@ -19,7 +19,7 @@ class AnalyticsOverviewView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Analytics'],
+        tags=['Administration & Analytics'],
         summary='Vue d\'ensemble analytique de la plateforme (Superadmin)',
         description='Renvoie les compteurs macroscopiques globaux (utilisateurs, communautés, posts, formations, revenus). Résultat mis en cache Redis 5 minutes.',
         parameters=[
@@ -41,7 +41,7 @@ class AnalyticsFinancialView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Analytics'],
+        tags=['Administration & Analytics'],
         summary='Statistiques financières et monétisation (Superadmin)',
         description='Renvoie la ventilation des revenus, volume de transactions, abonnements actifs et transactions récentes.',
         parameters=[
@@ -63,7 +63,7 @@ class AnalyticsEngagementView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Analytics'],
+        tags=['Administration & Analytics'],
         summary='Métriques d\'engagement et d\'activité utilisateurs (Superadmin)',
         description='Renvoie le DAU, WAU, MAU, ratio DAU/MAU, activité sociale et apprenants actifs.',
         parameters=[
@@ -86,7 +86,7 @@ class AnalyticsMetricsListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=['Analytics'],
+        tags=['Administration & Analytics'],
         summary='Historique des métriques enregistrées (Superadmin)',
         description='Liste paginée des instantanés de métriques enregistrés en base avec filtrage par nom ou type.',
         parameters=[
@@ -115,7 +115,7 @@ class AnalyticsMetricsListView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
-        tags=['Analytics'],
+        tags=['Administration & Analytics'],
         summary='Enregistrer un instantané de métrique (Superadmin)',
         description='Enregistre une métrique manuelle ou un snapshot dans la table des métriques.',
         request=PlatformMetricSerializer,

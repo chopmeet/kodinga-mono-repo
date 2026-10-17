@@ -14,7 +14,7 @@ class UserProfileMeView(APIView):
     serializer_class = UserSerializer
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Retrieve logged-in user profile',
         description='Fetches the complete user profile and verification status of the authenticated account.',
         responses={
@@ -27,7 +27,7 @@ class UserProfileMeView(APIView):
         return success_response(data=serializer.data)
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Update profile details (partial)',
         description='Updates personal details such as first name, last name, language, or timezone.',
         request=UserUpdateSerializer,
@@ -52,7 +52,7 @@ class UserProfileMeView(APIView):
         )
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Update profile details (full)',
         description='Replaces profile details with the provided payload.',
         request=UserUpdateSerializer,
@@ -82,7 +82,7 @@ class UserConsentView(APIView):
     serializer_class = ConsentSerializer
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Record user legal consent',
         description='Logs explicit user consent for GDPR, Terms of Service, or privacy policy updates.',
         request=ConsentSerializer,
@@ -113,7 +113,7 @@ class UserListView(APIView):
     serializer_class = UserSerializer
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Lister tous les utilisateurs de la plateforme (Admin)',
         description='Renvoie la liste paginée des utilisateurs avec possibilité de filtrer par recherche textuelle (email, nom, username). Nécessite des droits administrateur.',
         responses={
@@ -157,7 +157,7 @@ class UserDetailAdminView(APIView):
     serializer_class = UserSerializer
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Détails utilisateur par ID (Admin)',
         description='Consulte les détails complets d\'un compte utilisateur.',
         responses={
@@ -173,7 +173,7 @@ class UserDetailAdminView(APIView):
         return success_response(data=UserSerializer(target_user).data)
 
     @extend_schema(
-        tags=['Users'],
+        tags=['Authentication & Accounts'],
         summary='Modifier un utilisateur (Admin)',
         description='Modifie les attributs d\'un utilisateur (is_superadmin, is_active, etc.).',
         request=UserUpdateSerializer,

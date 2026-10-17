@@ -14,7 +14,7 @@ class OAuthStartView(APIView):
     serializer_class = EmptySerializer
 
     @extend_schema(
-        tags=['OAuth'],
+        tags=['Authentication & Accounts'],
         summary='Initialize OAuth Authorization URL',
         description='Generates a secure OAuth authorization URL with anti-CSRF state token for Google or GitHub.',
         responses={
@@ -33,7 +33,7 @@ class OAuthCallbackView(APIView):
     serializer_class = OAuthCallbackSerializer
 
     @extend_schema(
-        tags=['OAuth'],
+        tags=['Authentication & Accounts'],
         summary='Process OAuth authorization code callback',
         description='Exchanges provider authorization code for tokens, resolves user profile, links identity, and returns JWT credentials.',
         request=OAuthCallbackSerializer,

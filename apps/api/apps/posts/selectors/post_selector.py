@@ -3,6 +3,7 @@ from django.db.models import Prefetch, Q, QuerySet
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.memberships.models.member import CommunityMember, MembershipStatus
+from apps.memberships.permissions import check_community_read_permission
 from apps.posts.models.category import PostCategory
 from apps.posts.models.comment import Comment
 from apps.posts.models.poll import Poll, PollOption
@@ -43,6 +44,8 @@ class PostSelector:
         is_pinned: Optional[bool] = None,
         user: Optional[User] = None
     ) -> QuerySet[Post]:
+        if user is not None:
+            check_community_read_permission(user, community)
         qs = cls.get_base_post_queryset().filter(community=community)
 
         if category_slug:

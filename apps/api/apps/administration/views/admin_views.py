@@ -24,7 +24,7 @@ class AdminDashboardView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Tableau de bord Superadmin consolidé',
         description='Renvoie les indicateurs globaux majeurs de la plateforme ainsi que les 10 dernières actions d\'audit de gouvernance.',
         responses={
@@ -43,7 +43,7 @@ class AdminAuditLogListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Journal d\'audit de la gouvernance plateforme',
         description='Consulte l\'historique paginé des actions administratives (suspensions, promotions, changements de settings).',
         parameters=[
@@ -80,7 +80,7 @@ class AdminSystemHealthView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Vérification de l\'état de santé système (PostgreSQL, Redis, Storage)',
         description='Teste en temps réel la connectivité et latence de la base de données, du cache Redis et du stockage média.',
         responses={
@@ -98,7 +98,7 @@ class AdminSystemSettingsView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Lister les paramètres système globaux',
         description='Consulte l\'ensemble des feature flags et paramètres d\'administration.',
         responses={200: SystemSettingSerializer(many=True)}
@@ -108,7 +108,7 @@ class AdminSystemSettingsView(APIView):
         return success_response(data=SystemSettingSerializer(settings_qs, many=True).data)
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Créer ou mettre à jour un paramètre système',
         description='Définit ou met à jour la valeur JSON d\'un paramètre système global.',
         request=SystemSettingSerializer,
@@ -143,7 +143,7 @@ class PublicSystemSettingsView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Consulter les paramètres système publics',
         description='Renvoie la configuration publique de la plateforme (création de communauté autorisée pour Hobby/Pro, etc.).',
         responses={200: SystemSettingSerializer(many=True)}
@@ -158,7 +158,7 @@ class AdminUserToggleStatusView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Activer ou suspendre un utilisateur (Gouvernance)',
         description='Bannit ou réactive un compte utilisateur à l\'échelle de la plateforme, avec traçabilité complète dans le journal d\'audit.',
         request=UserToggleStatusSerializer,
@@ -198,7 +198,7 @@ class AdminUserToggleAdminView(APIView):
     permission_classes = [IsAuthenticated, IsPlatformAdmin]
 
     @extend_schema(
-        tags=['Administration'],
+        tags=['Administration & Analytics'],
         summary='Promouvoir ou révoquer le statut superadmin d\'un utilisateur',
         description='Accorde ou révoque les privilèges de super-administration plateforme.',
         request=UserToggleAdminSerializer,

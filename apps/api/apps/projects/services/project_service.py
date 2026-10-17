@@ -3,13 +3,13 @@ from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from common.permissions.base import is_superadmin_user
-
+from apps.memberships.permissions import check_community_membership
 from apps.gamification.models.reputation import ReputationAction
 from apps.gamification.services.gamification_service import GamificationService
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 from apps.projects.models.comment import ProjectComment
-from apps.projects.models.project import Project, ProjectStatus
+from apps.projects.models.project import Project
 from apps.projects.models.upvote import ProjectUpvote
 
 
@@ -21,6 +21,10 @@ class ProjectService:
     @classmethod
     @transaction.atomic
     def create_project(cls, owner, validated_data, technology_ids=None):
+        community = validated_data.get("community")
+        if community:
+            check_community_membership(owner, community, "publier un projet dans cette communauté")
+
         project = Project.objects.create(owner=owner, **validated_data)
         if technology_ids:
             project.technologies.set(technology_ids)
@@ -44,6 +48,10 @@ class ProjectService:
         if project.owner_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à modifier ce projet.")
 
+        community = validated_data.get("community")
+        if community:
+            check_community_membership(user, community, "associer ce projet à cette communauté")
+
         for key, value in validated_data.items():
             setattr(project, key, value)
         project.save()
@@ -63,6 +71,9 @@ class ProjectService:
     @classmethod
     @transaction.atomic
     def toggle_upvote(cls, project, user):
+        if project.community:
+            check_community_membership(user, project.community, "voter pour ce projet")
+
         existing_upvote = ProjectUpvote.objects.filter(project=project, user=user).first()
         if existing_upvote:
             existing_upvote.delete()
@@ -99,6 +110,9 @@ class ProjectService:
     @classmethod
     @transaction.atomic
     def add_comment(cls, project, author, content, parent_id=None):
+        if project.community:
+            check_community_membership(author, project.community, "commenter ce projet")
+
         if not content:
             raise ValidationError("Le commentaire ne peut pas être vide.")
 
@@ -128,3 +142,4 @@ class ProjectService:
                 pass
 
         return comment
+

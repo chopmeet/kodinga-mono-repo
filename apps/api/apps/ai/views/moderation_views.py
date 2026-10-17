@@ -21,7 +21,7 @@ class AIModerationAuditListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="Journaux d'audit de modération IA",
         parameters=[
             OpenApiParameter(name="community", type=str, description="Slug de la communauté", required=False),

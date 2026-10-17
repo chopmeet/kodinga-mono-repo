@@ -10,6 +10,11 @@ from apps.affiliates.models.payout import PayoutStatus
 from apps.affiliates.services.affiliate_service import AffiliateService
 from apps.communities.models.community import Community
 from apps.gamification.models.reputation import UserReputation
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.messaging.models.message import Message
 from apps.notifications.models.notification import Notification
 from apps.opportunities.models.application import (
@@ -271,6 +276,12 @@ def test_affiliates_link_clicks_and_payouts(api_client, user_alice):
 def test_projects_showcase_and_upvotes(
     api_client, user_alice, user_bob, community, tech_django, tech_react
 ):
+    CommunityMember.objects.create(
+        community=community,
+        user=user_bob,
+        role=CommunityRole.MEMBER,
+        status=MembershipStatus.ACTIVE,
+    )
     api_client.force_authenticate(user=user_alice)
 
     # 1. Create Project
@@ -371,7 +382,13 @@ def test_opportunities_jobboard_and_applications(
     assert list_resp.status_code == status.HTTP_200_OK
     assert len(list_resp.data) >= 1
 
-    # Bob applies to the opportunity
+    # Bob joins the community and applies to the opportunity
+    CommunityMember.objects.create(
+        community=community,
+        user=user_bob,
+        role=CommunityRole.MEMBER,
+        status=MembershipStatus.ACTIVE,
+    )
     api_client.force_authenticate(user=user_bob)
     apply_resp = api_client.post(
         f"/api/v1/opportunities/{opp_slug}/apply/",

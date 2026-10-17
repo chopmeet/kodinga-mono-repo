@@ -205,3 +205,51 @@ class HackathonSelector:
             .prefetch_related("won_prizes", "technologies")
             .order_by("-total_score", "submitted_at")
         )
+
+    @classmethod
+    def get_user_registered_hackathons(cls, user: User) -> list[dict[str, Any]]:
+        """
+        Retrieves all hackathons where user is registered (applied, in team, or submitted)
+        along with participation details.
+        """
+        if not user or not user.is_authenticated:
+            return []
+
+        applied_hackathon_ids = set(
+            HackathonApplication.objects.filter(applicant=user).values_list("hackathon_id", flat=True)
+        )
+        team_hackathon_ids = set(
+            user.hackathon_team_memberships.filter(
+                status=TeamInvitationStatus.ACCEPTED
+            ).values_list("team__hackathon_id", flat=True)
+        )
+        leader_hackathon_ids = set(
+            HackathonTeam.objects.filter(leader=user).values_list("hackathon_id", flat=True)
+        )
+        sub_hackathon_ids = set(
+            HackathonSubmission.objects.filter(applicant=user).values_list("hackathon_id", flat=True)
+        )
+
+        all_ids = applied_hackathon_ids | team_hackathon_ids | leader_hackathon_ids | sub_hackathon_ids
+        hackathons = (
+            Hackathon.objects.filter(id__in=all_ids)
+            .select_related("community", "organizer")
+            .prefetch_related("technologies", "prizes")
+            .order_by("-start_time")
+        )
+
+        results = []
+        for h in hackathons:
+            app = cls.get_user_application(h, user)
+            team = cls.get_user_team(h, user)
+            sub = cls.get_user_submission(h, user)
+            results.append({
+                "hackathon": h,
+                "application": app,
+                "team": team,
+                "submission": sub,
+                "application_status": app.status if app else None,
+                "has_submitted_project": bool(sub and sub.is_final),
+                "is_team_leader": bool(team and team.leader_id == user.id),
+            })
+        return results

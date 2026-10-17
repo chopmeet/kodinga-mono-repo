@@ -26,7 +26,7 @@ class NotificationListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=["Notifications"],
+        tags=["Messaging & Notifications"],
         summary="Lister les notifications de l'utilisateur",
         parameters=[
             OpenApiParameter(
@@ -75,7 +75,7 @@ class NotificationUnreadCountView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Notifications"],
+        tags=["Messaging & Notifications"],
         summary="Compteur de notifications non lues",
         responses={200: UnreadCountResponseSerializer},
     )
@@ -94,7 +94,7 @@ class NotificationMarkReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Notifications"],
+        tags=["Messaging & Notifications"],
         summary="Marquer une notification comme lue",
         responses={200: None},
     )
@@ -121,7 +121,7 @@ class NotificationMarkAllReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Notifications"],
+        tags=["Messaging & Notifications"],
         summary="Marquer toutes les notifications comme lues",
         responses={200: None},
     )
@@ -142,7 +142,7 @@ class NotificationDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Notifications"],
+        tags=["Messaging & Notifications"],
         summary="Supprimer une notification",
         responses={200: None},
     )

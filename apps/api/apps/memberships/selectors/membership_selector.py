@@ -31,6 +31,7 @@ class MembershipSelector:
         role: str = None,
         status: str = None,
         search: str = None,
+        is_manager: bool = False,
     ) -> QuerySet[CommunityMember]:
         qs = CommunityMember.objects.filter(community=community).select_related(
             'user',
@@ -41,8 +42,9 @@ class MembershipSelector:
             qs = qs.filter(role=role)
 
         if status:
-            qs = qs.filter(status=status)
-        else:
+            if status.lower() != 'all':
+                qs = qs.filter(status=status)
+        elif not is_manager:
             qs = qs.filter(status=MembershipStatus.ACTIVE)
 
         if search:
@@ -50,6 +52,7 @@ class MembershipSelector:
                 Q(user__username__icontains=search) |
                 Q(user__first_name__icontains=search) |
                 Q(user__last_name__icontains=search) |
+                Q(user__email__icontains=search) |
                 Q(custom_title__icontains=search)
             )
 

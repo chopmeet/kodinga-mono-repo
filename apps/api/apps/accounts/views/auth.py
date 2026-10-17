@@ -27,7 +27,7 @@ class RegisterView(APIView):
     serializer_class = RegisterSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Register a new developer account',
         description='Creates a new user account, stores legal consents, and sends an email verification link.',
         request=RegisterSerializer,
@@ -63,7 +63,7 @@ class LoginView(APIView):
     serializer_class = LoginSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Authenticate user and issue JWT tokens',
         description='Validates user credentials, creates a new session record, and returns Access & Refresh JWTs.',
         request=LoginSerializer,
@@ -102,7 +102,7 @@ class EmailVerificationView(APIView):
     serializer_class = EmailVerificationSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Verify account email address',
         description='Validates a single-use token and marks the associated user email as verified (via GET query param or POST payload).',
         request=EmailVerificationSerializer,
@@ -145,7 +145,7 @@ class ResendVerificationView(APIView):
     serializer_class = ResendVerificationSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Resend email verification link',
         description='Dispatches a new verification token to the specified email if unverified. Always returns 200 to prevent user enumeration.',
         request=ResendVerificationSerializer,
@@ -170,7 +170,7 @@ class PasswordResetRequestView(APIView):
     serializer_class = PasswordResetRequestSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Request password reset instructions',
         description='Sends a single-use password reset link to the email. Returns 200 regardless of existence to prevent enumeration.',
         request=PasswordResetRequestSerializer,
@@ -198,7 +198,7 @@ class PasswordResetConfirmView(APIView):
     serializer_class = PasswordResetConfirmSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Confirm password reset with token',
         description='Validates the reset token, updates password, and revokes all active sessions.',
         request=PasswordResetConfirmSerializer,
@@ -226,7 +226,7 @@ class ChangePasswordView(APIView):
     serializer_class = ChangePasswordSerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Change password for authenticated user',
         description='Validates current password and sets a new password for the currently logged-in user.',
         request=ChangePasswordSerializer,
@@ -252,7 +252,7 @@ class LogoutView(APIView):
     serializer_class = EmptySerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Log out current session',
         description='Blacklists the provided refresh token and invalidates current device session.',
         request=EmptySerializer,
@@ -277,7 +277,7 @@ class LogoutAllView(APIView):
     serializer_class = EmptySerializer
 
     @extend_schema(
-        tags=['Authentication'],
+        tags=['Authentication & Accounts'],
         summary='Log out from all devices / revoke all sessions',
         description='Revokes all active sessions and blacklists all outstanding refresh tokens for the user.',
         request=EmptySerializer,

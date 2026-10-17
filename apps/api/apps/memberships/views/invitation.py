@@ -23,7 +23,7 @@ class CommunityInvitationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Lister les invitations actives de la communauté",
         responses={200: CommunityInvitationSerializer(many=True)}
     )
@@ -46,7 +46,7 @@ class CommunityInvitationsView(APIView):
         return success_response(data=CommunityInvitationSerializer(invitations, many=True).data)
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Générer un lien ou une invitation par email",
         request=CreateInvitationRequestSerializer,
         responses={201: CommunityInvitationSerializer}
@@ -84,7 +84,7 @@ class AcceptInvitationView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Accepter une invitation par code d'invitation",
         request=AcceptInvitationSerializer,
         responses={200: CommunityMemberSerializer}

@@ -30,7 +30,7 @@ class CommunityListCreateView(APIView):
         return [AllowAny()]
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Explorer et rechercher des communautés",
         parameters=[
             OpenApiParameter(name='q', description="Recherche textuelle (nom, description, tag)", required=False, type=str),
@@ -81,7 +81,7 @@ class CommunityListCreateView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Créer un nouvel espace communautaire",
         request=CommunityCreateUpdateSerializer,
         responses={201: CommunityDetailSerializer}
@@ -117,7 +117,7 @@ class CommunityDetailView(APIView):
         return [AllowAny()]
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Consulter les détails d'une communauté par son slug",
         responses={200: CommunityDetailSerializer}
     )
@@ -131,7 +131,7 @@ class CommunityDetailView(APIView):
         return success_response(data=serializer.data)
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Mettre à jour les informations d'une communauté",
         request=CommunityCreateUpdateSerializer,
         responses={200: CommunityDetailSerializer}
@@ -152,7 +152,7 @@ class CommunityDetailView(APIView):
         )
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Archiver / Supprimer une communauté (Propriétaire uniquement)",
         responses={200: None}
     )
@@ -174,7 +174,7 @@ class MyCommunitiesListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Lister mes espaces communautaires",
         responses={200: CommunityListSerializer(many=True)}
     )

@@ -16,7 +16,7 @@ class CommunityRbacView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Consulter le RBAC, les rôles et permissions de la communauté",
         responses={200: dict}
     )

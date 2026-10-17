@@ -22,6 +22,7 @@ from apps.posts.models.reaction import (
     ReactionType,
 )
 from common.permissions.base import is_superadmin_user
+from apps.memberships.permissions import check_community_membership, is_active_community_member
 
 
 class PostService:
@@ -30,18 +31,17 @@ class PostService:
     """
 
     @classmethod
-    def _verify_post_permission(cls, user: User, community: Community, category: Optional[PostCategory] = None) -> CommunityMember:
+    def _verify_post_permission(cls, user: User, community: Community, category: Optional[PostCategory] = None) -> Optional[CommunityMember]:
         if is_superadmin_user(user):
             return None
+
+        check_community_membership(user, community, "publier dans cette communauté")
 
         membership = CommunityMember.objects.filter(
             community=community,
             user=user,
             status=MembershipStatus.ACTIVE
         ).first()
-
-        if not membership:
-            raise PermissionDenied("Vous devez être membre actif de la communauté pour publier.")
 
         # Check read-only mode: only owner and moderators/admins can post
         settings = getattr(community, 'settings', None)
@@ -220,18 +220,18 @@ class PostService:
             raise ValidationError("Les commentaires sont verrouillés sur cette publication.")
 
         if not is_superadmin_user(author):
+            check_community_membership(author, post.community, "commenter cette publication")
+
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=author,
                 status=MembershipStatus.ACTIVE
             ).first()
-            if not membership:
-                raise PermissionDenied("Vous devez être membre actif pour commenter.")
 
             settings = getattr(post.community, 'settings', None)
             if settings and settings.is_read_only:
                 is_owner = (post.community.owner_id == author.id)
-                is_moderator = membership.is_moderator
+                is_moderator = membership.is_moderator if membership else False
                 if not (is_owner or is_moderator):
                     raise PermissionDenied("Cette communauté est en mode lecture seule. Seul le propriétaire ou un modérateur peut commenter.")
 
@@ -302,6 +302,8 @@ class PostService:
 
     @classmethod
     def toggle_post_reaction(cls, user: User, post: Post, reaction_type: str) -> bool:
+        check_community_membership(user, post.community, "réagir à cette publication")
+
         if reaction_type not in dict(ReactionType.choices):
             raise ValidationError("Type de réaction invalide.")
 
@@ -318,6 +320,8 @@ class PostService:
 
     @classmethod
     def toggle_comment_reaction(cls, user: User, comment: Comment, reaction_type: str) -> bool:
+        check_community_membership(user, comment.post.community, "réagir à ce commentaire")
+
         if reaction_type not in dict(ReactionType.choices):
             raise ValidationError("Type de réaction invalide.")
 
@@ -336,6 +340,8 @@ class PostService:
 
     @classmethod
     def vote_poll(cls, user: User, poll: Poll, option_ids: List[str]) -> Poll:
+        check_community_membership(user, poll.post.community, "voter dans ce sondage")
+
         if poll.is_expired:
             raise ValidationError("Ce sondage est clôturé.")
 

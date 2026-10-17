@@ -17,6 +17,7 @@ from apps.hackathons.models.submission import (
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from apps.memberships.permissions import check_community_membership
 
 DEFAULT_ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "zip", "mp4", "webm", "gif"}
 DANGEROUS_EXTENSIONS = {"exe", "bat", "cmd", "sh", "php", "py", "js", "html", "htm", "vbs", "ps1"}
@@ -33,6 +34,8 @@ class HackathonSubmissionService:
         if not user or not user.is_authenticated:
             raise PermissionDenied("Authentification requise pour soumettre un projet.")
 
+        check_community_membership(user, hackathon.community, "soumettre un projet à ce hackathon")
+
         # Ensure user has an accepted application
         is_accepted = HackathonApplication.objects.filter(
             hackathon=hackathon,
@@ -41,6 +44,7 @@ class HackathonSubmissionService:
         ).exists()
         if not is_accepted:
             raise PermissionDenied("Vous devez être un participant accepté pour soumettre un projet.")
+
 
         # Server-side strict deadline check
         now = timezone.now()
