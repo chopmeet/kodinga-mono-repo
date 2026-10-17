@@ -145,6 +145,8 @@ export type CommunityPostItem = {
   title: string;
   content: string;
   post_type: PostType;
+  code_snippet?: string;
+  code_language?: string;
   is_pinned: boolean;
   is_locked: boolean;
   is_resolved: boolean;
@@ -152,6 +154,16 @@ export type CommunityPostItem = {
   reactions_count: number;
   comments_count: number;
   created_at: string;
+};
+
+/** PostCreateUpdateSerializer (PATCH takes any subset; the poll is only read on creation) */
+export type PostWriteData = {
+  title: string;
+  content: string;
+  post_type: PostType;
+  code_snippet: string;
+  code_language: string;
+  poll?: { question?: string; options: string[]; is_multiple_choice: boolean; duration_days: number };
 };
 
 export type CommunityFeedQuery = {

@@ -49,6 +49,7 @@ import type {
   InvitationWriteData,
   CommunityMembersQuery,
   CommunityPostItem,
+  PostWriteData,
   CommunityProposalResult,
   CommunityRecommendationResult,
   ContentSuggestionResult,
@@ -171,6 +172,26 @@ export const CommunityApi = createApi({
       query: ({ slug, ...params }) => ({ url: `communities/${slug}/members/`, params: cleanParams(params) }),
       providesTags: ['members'],
     }),
+    /**
+     * Join dates of the active members, for the growth chart of the dashboard. The api has no
+     * statistics per community and sorts members by reputation: the pages are read up to `max`.
+     */
+    getCommunityMemberJoins: builder.query<{ joined_at: string[]; total: number; complete: boolean }, { slug: string; max?: number }>({
+      async queryFn({ slug, max = 500 }, _api, _extra, baseQuery) {
+        const joined_at: string[] = [];
+        let total = 0;
+        for (let page = 1; joined_at.length < max; page += 1) {
+          const result = await baseQuery({ url: `communities/${slug}/members/`, params: { status: 'active', page, page_size: 100 } });
+          if (result.error) return { error: result.error };
+          const data = result.data as ApiPaginated<CommunityMemberItem>;
+          total = data.pagination.count;
+          joined_at.push(...data.results.map((m) => m.joined_at));
+          if (joined_at.length >= total || data.results.length === 0) break;
+        }
+        return { data: { joined_at, total, complete: joined_at.length >= total } };
+      },
+      providesTags: ['members'],
+    }),
     decideMember: builder.mutation<CommunityMemberItem, { slug: string; memberId: string; approve: boolean }>({
       query: ({ slug, memberId, approve }) => ({ url: `communities/${slug}/members/${memberId}/`, method: 'PUT', body: { approve } }),
       transformResponse: unwrap<CommunityMemberItem>,
@@ -206,6 +227,17 @@ export const CommunityApi = createApi({
     getCommunityFeed: builder.query<ApiPaginated<CommunityPostItem>, CommunityFeedQuery>({
       query: ({ slug, ...params }) => ({ url: `communities/${slug}/feed/`, params: cleanParams(params) }),
       providesTags: ['posts'],
+    }),
+    // Active members (community settings may keep it to the team); the author edits it afterwards
+    createPost: builder.mutation<CommunityPostItem, PostWriteData & { slug: string }>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/feed/`, method: 'POST', body }),
+      transformResponse: unwrap<CommunityPostItem>,
+      invalidatesTags: ['posts', 'communities'],
+    }),
+    updatePost: builder.mutation<CommunityPostItem, Partial<Omit<PostWriteData, 'poll'>> & { postId: string }>({
+      query: ({ postId, ...body }) => ({ url: `posts/${postId}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityPostItem>,
+      invalidatesTags: ['posts'],
     }),
     togglePostPin: builder.mutation<unknown, string>({
       query: (postId) => ({ url: `posts/${postId}/pin/`, method: 'POST' }),
@@ -561,6 +593,7 @@ export const {
   useArchiveCommunityMutation,
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
+  useGetCommunityMemberJoinsQuery,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
   useGetCommunityInvitationsQuery,
@@ -570,6 +603,8 @@ export const {
   useTogglePostPinMutation,
   useTogglePostLockMutation,
   useDeletePostMutation,
+  useCreatePostMutation,
+  useUpdatePostMutation,
   useRecommendCommunitiesMutation,
   usePlanCommunityMutation,
   useSuggestContentMutation,
