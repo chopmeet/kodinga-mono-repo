@@ -25,6 +25,18 @@ import CommunityDashboardPage from '@/pages/community-space/dashboard/community-
 import CommunityMembers from '@/pages/community-space/members/community-members';
 import MyCommunities from '@/pages/community-space/my-communities';
 import CommunityPosts from '@/pages/community-space/posts/community-posts';
+import CommunityEvents from '@/pages/community-space/events/community-events';
+import EventDetails from '@/pages/community-space/events/event-details';
+import CommunityHackathons from '@/pages/community-space/hackathons/community-hackathons';
+import HackathonDetails from '@/pages/community-space/hackathons/hackathon-details';
+import { EditHackathon, NewHackathon } from '@/pages/community-space/hackathons/hackathon-form';
+import CommunityCourses from '@/pages/community-space/courses/community-courses';
+import CourseBuilder from '@/pages/community-space/courses/course-builder';
+import CommunityOpportunities from '@/pages/community-space/opportunities/community-opportunities';
+import OpportunityDetails from '@/pages/community-space/opportunities/opportunity-details';
+import CommunityLeaderboard from '@/pages/community-space/leaderboard/community-leaderboard';
+import CommunityProjects from '@/pages/community-space/projects/community-projects';
+import ProjectDetails from '@/pages/community-space/projects/project-details';
 import CommunityPayments from '@/pages/community-space/payments/community-payments';
 import PlansTab from '@/pages/community-space/payments/tabs/plans';
 import SubscribersTab from '@/pages/community-space/payments/tabs/subscribers';
@@ -137,6 +149,19 @@ export const AppRoutes: RouteObject[] = [
       { path: 'dashboard', element: <CommunityDashboardPage /> },
       { path: 'members', element: <SectionGuard section="members"><CommunityMembers /></SectionGuard> },
       { path: 'posts', element: <SectionGuard section="posts"><CommunityPosts /></SectionGuard> },
+      { path: 'events', element: <SectionGuard section="events"><CommunityEvents /></SectionGuard> },
+      { path: 'events/:eventId', element: <SectionGuard section="events"><EventDetails /></SectionGuard> },
+      { path: 'hackathons', element: <SectionGuard section="hackathons"><CommunityHackathons /></SectionGuard> },
+      { path: 'hackathons/new', element: <SectionGuard section="hackathons"><NewHackathon /></SectionGuard> },
+      { path: 'hackathons/:hackathonSlug', element: <SectionGuard section="hackathons"><HackathonDetails /></SectionGuard> },
+      { path: 'hackathons/:hackathonSlug/edit', element: <SectionGuard section="hackathons"><EditHackathon /></SectionGuard> },
+      { path: 'courses', element: <SectionGuard section="courses"><CommunityCourses /></SectionGuard> },
+      { path: 'courses/:courseSlug', element: <SectionGuard section="courses"><CourseBuilder /></SectionGuard> },
+      { path: 'opportunities', element: <SectionGuard section="opportunities"><CommunityOpportunities /></SectionGuard> },
+      { path: 'opportunities/:opportunitySlug', element: <SectionGuard section="opportunities"><OpportunityDetails /></SectionGuard> },
+      { path: 'leaderboard', element: <SectionGuard section="leaderboard"><CommunityLeaderboard /></SectionGuard> },
+      { path: 'projects', element: <SectionGuard section="projects"><CommunityProjects /></SectionGuard> },
+      { path: 'projects/:projectSlug', element: <SectionGuard section="projects"><ProjectDetails /></SectionGuard> },
       {
         path: 'payments',
         element: <SectionGuard section="payments"><CommunityPayments /></SectionGuard>,

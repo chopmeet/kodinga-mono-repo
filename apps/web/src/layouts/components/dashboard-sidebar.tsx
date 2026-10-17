@@ -1,6 +1,6 @@
 import { FiSettings } from 'react-icons/fi';
 import { FaUsers } from 'react-icons/fa';
-import { LuFileText, LuLayoutDashboard, LuLogOut, LuUsers, LuWallet } from 'react-icons/lu';
+import { LuBriefcase, LuCalendarDays, LuMedal, LuRocket, LuFileText, LuGraduationCap, LuTrophy, LuLayoutDashboard, LuLogOut, LuUsers, LuWallet } from 'react-icons/lu';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { JSX } from 'react/jsx-runtime';
 
@@ -87,6 +87,12 @@ function communitySpace(space: MyCommunity): SidebarSpace {
       items: [
         { id: 'space-members', label: 'Membres', path: `${base}/members`, icon: <LuUsers /> },
         { id: 'space-posts', label: 'Publications', path: `${base}/posts`, icon: <LuFileText /> },
+        { id: 'space-events', label: 'Événements', path: `${base}/events`, icon: <LuCalendarDays /> },
+        { id: 'space-hackathons', label: 'Hackathons', path: `${base}/hackathons`, icon: <LuTrophy /> },
+        { id: 'space-courses', label: 'Formations', path: `${base}/courses`, icon: <LuGraduationCap /> },
+        { id: 'space-opportunities', label: 'Opportunités', path: `${base}/opportunities`, icon: <LuBriefcase /> },
+        { id: 'space-projects', label: 'Projets', path: `${base}/projects`, icon: <LuRocket /> },
+        { id: 'space-leaderboard', label: 'Classement', path: `${base}/leaderboard`, icon: <LuMedal /> },
       ],
     },
     ...(allowed('payments')
@@ -195,7 +201,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                       asChild
                       // Active link in the brand color (overrides the neutral sidebar-accent of the lib), also on hover
-                      className="py-5 data-[active=true]:bg-primary/10 data-[active=true]:font-semibold data-[active=true]:text-primary data-[active=true]:hover:bg-primary/10 data-[active=true]:hover:text-primary"
+                      className="py-5 text-slate-600 hover:text-slate-900 data-[active=true]:bg-blue-50 data-[active=true]:font-semibold data-[active=true]:text-blue-900 data-[active=true]:shadow-[inset_3px_0_0_var(--color-blue-900)] data-[active=true]:hover:bg-blue-50 data-[active=true]:hover:text-blue-900"
                       isActive={pathname.startsWith(item.path)}
                       tooltip={item.label}
                     >

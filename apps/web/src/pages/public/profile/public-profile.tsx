@@ -1,5 +1,5 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { ArrowLeft, ArrowUpRight, CalendarDays, Copy, MapPin, MessageCircle, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Copy, MapPin, MessageCircle, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -126,16 +126,6 @@ function PublicProfile() {
           </dl>
 
           <div className="mt-8 flex flex-col gap-3">
-            {/* No destination yet */}
-            <button
-              type="button"
-              aria-disabled="true"
-              title="Bientôt disponible"
-              className="flex h-13 w-full cursor-default items-center justify-center gap-2 rounded-lg bg-blue-900 font-semibold text-white"
-            >
-              Voir le profil original
-              <ArrowUpRight className="size-4.5" />
-            </button>
             <button
               type="button"
               onClick={share}
