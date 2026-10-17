@@ -232,13 +232,14 @@ export function AIAssistantWidget() {
         <div
           className={cn(
             'fixed bottom-4 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl transition-all duration-300',
+            // Never taller than the screen (minus the margins): the header (close, expand, language) stays visible
             isExpanded
-              ? 'h-[85vh] w-[95vw] sm:w-[650px]'
-              : 'h-[620px] w-[92vw] sm:w-[460px]'
+              ? 'h-[min(85dvh,calc(100dvh-2rem))] w-[95vw] sm:w-[650px]'
+              : 'h-[min(620px,calc(100dvh-2rem))] w-[92vw] sm:w-[460px]'
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-900 px-4 py-3 text-white">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-900 px-4 py-3 text-white">
             <div className="flex items-center gap-3">
               <div className="flex size-9 items-center justify-center rounded-xl bg-brand/20 text-brand ring-1 ring-brand/30">
                 <Bot className="size-5" />
@@ -292,7 +293,7 @@ export function AIAssistantWidget() {
           </div>
 
           {/* Messages Body */}
-          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm scrollbar-thin">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 text-sm scrollbar-thin">
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -461,7 +462,7 @@ export function AIAssistantWidget() {
 
           {/* Quick Starters (shown if only initial message) */}
           {messages.length === 1 && (
-            <div className="border-t border-slate-100 bg-slate-50/50 p-3">
+            <div className="max-h-[30dvh] shrink-0 overflow-y-auto border-t border-slate-100 bg-slate-50/50 p-3">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Actions rapides :
               </p>
@@ -489,7 +490,7 @@ export function AIAssistantWidget() {
               e.preventDefault();
               handleSend();
             }}
-            className="border-t border-slate-100 bg-white p-3"
+            className="shrink-0 border-t border-slate-100 bg-white p-3"
           >
             <div className="flex items-center gap-2">
               <input
