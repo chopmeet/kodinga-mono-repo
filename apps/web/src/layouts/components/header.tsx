@@ -25,8 +25,9 @@ function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2 text-[15px] font-medium text-slate-700" aria-label={t('header.language')}>
           <Globe className="size-4.5" />
-          <span className="hidden sm:inline">{current.short}</span>
-          <ChevronDown className="hidden size-4 opacity-70 sm:block" />
+          {/* Tablets / small laptops: the globe alone, the links need the room */}
+          <span className="hidden sm:inline md:hidden lg:inline">{current.short}</span>
+          <ChevronDown className="hidden size-4 opacity-70 sm:block md:hidden lg:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
@@ -46,7 +47,6 @@ function LanguageSwitcher() {
   );
 }
 
-/** Kodinga logo: blue "K" tile + wordmark (the wordmark hides when the search takes the room) */
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <NavLink to="/" title="Kodinga" className="flex items-center gap-2.5">
@@ -80,7 +80,7 @@ function Header() {
           <Logo compact={showSearch} />
         </div>
 
-        <div role={showSearch ? 'search' : undefined} className="min-w-0 lg:w-[34rem]">
+        <div role={showSearch ? 'search' : undefined} className={cn('min-w-0', showSearch && 'lg:w-[34rem]')}>
           {showSearch ? (
             <SearchInput
               id="header-search"
@@ -95,7 +95,7 @@ function Header() {
               submitLabel={t('header.seeResults')}
             />
           ) : (
-            <div className="hidden items-center justify-center gap-9 md:flex">
+            <div className="hidden items-center justify-center gap-6 md:flex lg:gap-9">
               <NavLink to={`/`} className={navLinkClassName}>
                   {t('header.home')}
                 </NavLink>
@@ -122,15 +122,17 @@ function Header() {
               {t('header.login')}
             </NavLink>
           )}
-          {/* Straight into the creation flow (open to visitors) */}
+          
           <NavLink
             to="/create-community"
             aria-label={t('header.create')}
-            className="flex h-11 shrink-0 items-center gap-2 rounded-lg bg-blue-900 px-3 text-[15px] font-semibold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-blue-950 sm:px-5"
+            title={t('header.create')}
+            className="flex h-11 shrink-0 items-center gap-2 rounded-lg bg-blue-900 px-3 text-[15px] font-semibold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-blue-950 xl:px-5"
           >
-            <Plus className="size-4 sm:hidden" />
-            <span className="hidden sm:inline">{t('header.create')}</span>
-            <ArrowUpRight className="hidden size-4 sm:block" />
+            {/* "+" alone up to the large screens: the full label needs ~230 px the header does not have below xl */}
+            <Plus className="size-4 xl:hidden" />
+            <span className="hidden xl:inline">{t('header.create')}</span>
+            <ArrowUpRight className="hidden size-4 xl:block" />
           </NavLink>
         </div>
       </nav>
