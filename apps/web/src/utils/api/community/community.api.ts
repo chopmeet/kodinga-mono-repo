@@ -274,6 +274,29 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityPostItem>,
       invalidatesTags: ['posts'],
     }),
+    // Like / unlike (signed-in users): the cached feeds are patched, no new GET
+    togglePostLike: builder.mutation<{ reacted: boolean }, string>({
+      query: (postId) => ({ url: `posts/${postId}/react/`, method: 'POST', body: { reaction_type: 'like' } }),
+      transformResponse: unwrap<{ reacted: boolean }>,
+      async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const post = feed.results.find((p) => p.id === postId);
+                if (!post) return;
+                const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
+                post.user_reactions = data.reacted ? [...others, 'like'] : others;
+                post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
+              }),
+            );
+          }
+        } catch {
+          // the caller shows the error
+        }
+      },
+    }),
     togglePostPin: builder.mutation<unknown, string>({
       query: (postId) => ({ url: `posts/${postId}/pin/`, method: 'POST' }),
       invalidatesTags: ['posts'],
@@ -645,6 +668,7 @@ export const {
   useTogglePostLockMutation,
   useDeletePostMutation,
   useCreatePostMutation,
+  useTogglePostLikeMutation,
   useUpdatePostMutation,
   useRecommendCommunitiesMutation,
   usePlanCommunityMutation,

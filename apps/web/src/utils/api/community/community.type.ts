@@ -149,6 +149,8 @@ export type CommunityPostItem = {
   post_type: PostType;
   code_snippet?: string;
   code_language?: string;
+  /** Reactions of the signed-in user ('like', 'fire'…) */
+  user_reactions?: string[];
   is_pinned: boolean;
   is_locked: boolean;
   is_resolved: boolean;

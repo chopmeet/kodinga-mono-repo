@@ -63,9 +63,17 @@ function stubCommunityApi(o: Options = {}) {
       return json({ success: true });
     }
     if (path.endsWith('/communities/abidjan-react/')) return json({ success: true, data: community(o, membership) });
+    if (path.endsWith('/posts/p1/react/')) return json({ success: true, data: { reacted: true } });
     if (path.endsWith('/communities/abidjan-react/feed/')) {
       const post = { id: 'p1', community_id: 'c1', author: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye' }, title: 'Retour sur React Conf', content: 'Les **Server Components** en prod.', post_type: 'discussion', is_pinned: true, is_locked: false, is_resolved: false, views_count: 1, reactions_count: 12, comments_count: 3, created_at: '2026-10-10T10:00:00Z' };
       return json({ success: true, pagination: { count: 1 }, results: [post] });
+    }
+    if (path.endsWith('/communities/abidjan-react/leaderboard/')) {
+      return json({ success: true, data: [{ rank: 1, user: { id: 'u2', username: 'awa', name: 'Awa Ndiaye', avatar_url: '' }, points: 820, level: 5, rank_title: 'Expert' }] });
+    }
+    if (path.endsWith('/communities/abidjan-react/hackathons/')) {
+      const h = (id: string, title: string, status: string) => ({ id, title, slug: id, tagline: 'Construire pour l’agriculture', cover_image_url: '', status, start_time: '2026-11-01T09:00:00Z', submission_deadline: '2026-11-03T18:00:00Z', participants_count: 42, is_registration_open: status === 'registration_open' });
+      return json({ success: true, pagination: { count: 2 }, results: [h('agri', 'Hackathon AgriTech', 'registration_open'), h('brouillon', 'Brouillon secret', 'draft')] });
     }
     if (path.endsWith('/billing/plans/')) {
       return json({ success: true, data: [{ id: 'plan-m', name: 'Mensuel', slug: 'mensuel', description: '', price: '5000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Abidjan React', features: ['Lives mensuels'], is_active: true, order: 1 }] });
@@ -101,7 +109,7 @@ describe('Public community page', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Abidjan React' }, SLOW)).toBeTruthy();
     expect(screen.getByText(/Meetup chaque mois à Cocody/)).toBeTruthy();
     expect(screen.getByText('Restez bienveillants')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Rejoindre' }).getAttribute('href')).toBe(`/auth/login?next=${encodeURIComponent('/communities/abidjan-react')}`);
+    expect(screen.getByRole('link', { name: 'Rejoindre la communauté' }).getAttribute('href')).toBe(`/auth/login?next=${encodeURIComponent('/communities/abidjan-react')}`);
   });
 
   it('opens the feed of a public and free community to everyone', async () => {
@@ -117,15 +125,21 @@ describe('Public community page', () => {
     const calls = stubCommunityApi();
     renderAppAt('/communities/abidjan-react');
     const aside = await screen.findByRole('complementary', {}, SLOW);
-    fireEvent.click(await within(aside).findByRole('button', { name: 'Rejoindre' }, SLOW));
-    expect(await within(aside).findByText('Vous êtes membre', {}, SLOW)).toBeTruthy();
+    fireEvent.click(await within(aside).findByRole('button', { name: 'Rejoindre la communauté' }, SLOW));
+    // The page turns into the member's space
+    expect(await screen.findByText('Votre espace communauté', {}, SLOW)).toBeTruthy();
+    expect(within(screen.getByRole('complementary')).getByText('Vous êtes membre de cette communauté')).toBeTruthy();
     expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/join/'))).toBe(true);
 
-    fireEvent.click(within(aside).getByRole('button', { name: /Quitter la communauté/ }));
+    // Leaving: from the role menu of the header
+    const trigger = screen.getByRole('button', { name: 'Votre rôle : Membre' });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    fireEvent.click(within(await screen.findByRole('menu', {}, SLOW)).getByRole('menuitem', { name: /Quitter la communauté/ }));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     fireEvent.click(within(dialog).getByRole('button', { name: /Quitter/ }));
     await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/leave/'))).toBe(true), SLOW);
-    expect(await within(aside).findByRole('button', { name: 'Rejoindre' }, SLOW)).toBeTruthy();
+    expect(await within(screen.getByRole('complementary')).findByRole('button', { name: 'Rejoindre la communauté' }, SLOW)).toBeTruthy();
   });
 
   it('keeps the feed of a private community for its members, and sends a join request', async () => {
@@ -166,5 +180,50 @@ describe('Public community page', () => {
     stubCommunityApi({ status: 404 });
     renderAppAt('/communities/abidjan-react');
     expect(await screen.findByRole('heading', { name: 'Communauté introuvable' }, SLOW)).toBeTruthy();
+  });
+
+  it('shows the members, the hackathons and the ranking of the community', async () => {
+    stubCommunityApi();
+    renderAppAt('/communities/abidjan-react');
+    // "Membres" sub-tab of "À propos": the count, the creator and the most active members
+    fireEvent.click(await screen.findByRole('tab', { name: /Membres/ }, SLOW));
+    expect(await screen.findByText('Créateur', {}, SLOW)).toBeTruthy();
+    expect(within(await screen.findByRole('list', { name: 'Membres les plus actifs' }, SLOW)).getByText('Awa Ndiaye')).toBeTruthy();
+    cleanup();
+
+    renderAppAt('/communities/abidjan-react?tab=hackathons');
+    const hackathons = await screen.findByRole('list', { name: 'Hackathons' }, SLOW);
+    expect(within(hackathons).getByText('Hackathon AgriTech')).toBeTruthy();
+    expect(within(hackathons).queryByText('Brouillon secret')).toBeNull();
+    cleanup();
+
+    // "Membres" tab: cards of the contributors, with their public profile
+    renderAppAt('/communities/abidjan-react?tab=members');
+    const members = await screen.findByRole('list', { name: 'Membres' }, SLOW);
+    expect(within(members).getByRole('link', { name: /Voir le profil/ }).getAttribute('href')).toBe('/profiles/awa');
+    cleanup();
+
+    renderAppAt('/communities/abidjan-react?tab=leaderboard');
+    const ranking = await screen.findByRole('list', { name: 'Classement' }, SLOW);
+    expect(within(ranking).getByText('820 pts')).toBeTruthy();
+  });
+
+  it('lets a member like a post and open the composer', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    // Members land on the feed
+    renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    expect(within(feed).getByText('Épinglé par l’équipe')).toBeTruthy();
+
+    const like = within(feed).getByRole('button', { name: 'J’aime' });
+    expect(like.textContent).toContain('12');
+    fireEvent.click(like);
+    await waitFor(() => expect(within(feed).getByRole('button', { name: 'Retirer mon j’aime' }).textContent).toContain('13'), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/posts/p1/react/'))?.body).toEqual({ reaction_type: 'like' });
+
+    fireEvent.click(screen.getByRole('button', { name: /Une question, une idée, un projet/ }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    expect(within(dialog).getByRole('radio', { name: /Discussion/ }).getAttribute('aria-checked')).toBe('true');
   });
 });

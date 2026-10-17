@@ -46,6 +46,9 @@ export type Course = {
   duration_minutes: number;
   created_at: string;
   modules?: CourseModule[];
+  /** Signed-in user: progress (0-100) and enrollment */
+  user_progress_percent?: number;
+  user_is_enrolled?: boolean;
 };
 
 export type CourseWriteData = {

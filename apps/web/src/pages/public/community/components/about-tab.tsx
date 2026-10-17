@@ -1,88 +1,129 @@
-import { CalendarDays, FileText, Globe, GraduationCap, Lock, Tag, Users } from 'lucide-react';
+import { ArrowUpRight, BookOpen, CalendarDays, Code2, Globe, GraduationCap, Image, Lock, MessageCircle, ShieldCheck, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
-import { formatCompact, getName, nameInitials } from '@/utils/Utils';
+import { formatCompact } from '@/utils/Utils';
+import { accessBadge } from './community-hero';
+import { MembersPanel } from './members-panel';
 
-const privacyLabel = { public: 'Publique', private: 'Privée', secret: 'Secrète' } as const;
+type SubTab = 'about' | 'members';
 
-export function AboutTab({ community }: { community: CommunityDetail }) {
-  const owner = getName(community.owner) || community.owner.username;
+export function AboutTab({ community, isTeam }: { community: CommunityDetail; isTeam: boolean }) {
+  const [sub, setSub] = useState<SubTab>('about');
+  const n = community.members_count;
+  const rules = [...(community.rules ?? [])].sort((a, b) => a.order - b.order);
   const meta = [
-    { icon: community.privacy_type === 'public' ? Globe : Lock, label: privacyLabel[community.privacy_type] },
-    { icon: Users, label: `${formatCompact(community.members_count)} membres` },
-    { icon: Tag, label: community.pricing_type === 'paid' ? 'Payante' : 'Gratuite' },
+    { icon: community.privacy_type === 'public' ? Globe : Lock, label: community.category?.name ?? 'Communauté' },
+    { icon: Users, label: `${formatCompact(n)} membre${n > 1 ? 's' : ''}` },
+    { icon: ShieldCheck, label: accessBadge(community).label },
   ];
   // What a member finds inside, from the counts of the api
-  const inside = [
-    { icon: FileText, count: community.posts_count, label: (n: number) => `${formatCompact(n)} publication${n > 1 ? 's' : ''} dans le fil` },
-    { icon: GraduationCap, count: community.courses_count, label: (n: number) => `${n} formation${n > 1 ? 's' : ''}` },
-    { icon: CalendarDays, count: community.events_count, label: (n: number) => `${n} événement${n > 1 ? 's' : ''} organisé${n > 1 ? 's' : ''}` },
-  ].filter((i) => i.count > 0);
-  const rules = [...(community.rules ?? [])].sort((a, b) => a.order - b.order);
+  const chips = [
+    { icon: Code2, label: community.category?.name, show: !!community.category },
+    { icon: MessageCircle, label: 'Échanges', show: true },
+    { icon: GraduationCap, label: 'Formations', show: community.courses_count > 0 },
+    { icon: CalendarDays, label: 'Événements', show: community.events_count > 0 },
+  ].filter((c) => c.show && c.label);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="relative aspect-video overflow-hidden rounded-xl" style={{ backgroundColor: community.brand_color || '#1D4ED8' }}>
+    <div className="flex flex-col">
+      <figure className="relative aspect-[16/8] overflow-hidden rounded-2xl" style={{ backgroundColor: community.brand_color || '#1D4ED8' }}>
         {community.banner_url ? (
-          <img src={community.banner_url} alt={`Couverture de ${community.name}`} className="absolute inset-0 size-full object-cover" />
+          <img src={community.banner_url} alt={`Illustration de ${community.name}`} className="absolute inset-0 size-full object-cover" />
         ) : (
           <GlassBackdrop fade={false} />
         )}
-        {community.category && (
-          <span className="absolute top-4 left-4 rounded border border-white/20 bg-black/40 px-2 py-0.5 font-mono text-xs font-bold tracking-wider text-white uppercase backdrop-blur-md">
-            {community.category.name}
-          </span>
-        )}
-      </div>
+        <figcaption className="absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-white/60 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs backdrop-blur">
+          <Image className="size-3.5" aria-hidden />
+          Illustration de la communauté
+        </figcaption>
+      </figure>
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+      <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-600">
         {meta.map(({ icon: Icon, label }) => (
-          <span key={label} className="flex items-center gap-1.5">
-            <Icon className="size-4 text-slate-400" />
+          <span key={label} className="flex items-center gap-2">
+            <Icon className="size-4 text-slate-500" />
             {label}
           </span>
         ))}
-        <span className="flex items-center gap-2">
-          <Avatar className="size-6">
-            <AvatarFallback className="text-[10px]">{nameInitials(owner)}</AvatarFallback>
-          </Avatar>
-          Par <strong className="font-semibold text-slate-900">{owner}</strong>
-        </span>
       </div>
 
-      <section className="text-[15px] leading-relaxed whitespace-pre-line text-slate-700">
-        {community.description || community.tagline || 'Cette communauté n’a pas encore de présentation.'}
-      </section>
+      <div role="tablist" aria-label="À propos de la communauté" className="mt-6 flex gap-6 border-y border-slate-200">
+        {(
+          [
+            { id: 'about', label: 'À propos' },
+            { id: 'members', label: 'Membres', count: n },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={sub === tab.id}
+            onClick={() => setSub(tab.id)}
+            className={cn(
+              '-mb-px flex items-center gap-2 border-b-2 px-1 py-4 text-[15px] transition-colors',
+              sub === tab.id ? 'border-blue-900 font-semibold text-blue-900' : 'border-transparent text-slate-700 hover:text-slate-900',
+            )}
+          >
+            {tab.label}
+            {'count' in tab && <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-xs font-medium text-slate-600 tabular-nums">{formatCompact(tab.count)}</span>}
+          </button>
+        ))}
+      </div>
 
-      {inside.length > 0 && (
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-bold text-slate-900">Ce que vous y trouverez</h2>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {inside.map(({ icon: Icon, count, label }) => (
-              <li key={label(count)} className="flex items-center gap-2 text-sm text-slate-600">
-                <Icon className="size-4 shrink-0 text-brand" />
-                {label(count)}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div role="tabpanel" className="pt-8">
+        {sub === 'members' ? (
+          <MembersPanel community={community} isTeam={isTeam} />
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">Un point de départ pour se connecter.</h2>
+            {community.tagline && <p className="mt-5 text-[17px] text-slate-900">{community.tagline}</p>}
+            <p className="mt-4 leading-relaxed whitespace-pre-line text-slate-500">
+              {community.description || `${community.name} rassemble ses membres sur Kodinga pour échanger, apprendre et construire ensemble.`}
+            </p>
 
-      {rules.length > 0 && (
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-bold text-slate-900">Règles de la communauté</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-slate-600 marker:font-mono marker:text-slate-400">
-            {rules.map((rule) => (
-              <li key={rule.id}>
-                <span className="font-medium text-slate-800">{rule.title}</span>
-                {rule.description && <span className="block text-slate-500">{rule.description}</span>}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+            {chips.length > 0 && (
+              <ul className="mt-6 flex flex-wrap gap-2" aria-label="Thèmes">
+                {chips.map(({ icon: Icon, label }) => (
+                  <li key={label} className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-100/70 px-3 py-2 text-sm text-slate-700">
+                    <Icon className="size-4" aria-hidden />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {rules.length > 0 && (
+              <section aria-labelledby="community-rules" className="mt-10">
+                <h3 id="community-rules" className="font-semibold text-slate-900">
+                  Règles de la communauté
+                </h3>
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-slate-600 marker:font-mono marker:text-slate-400">
+                  {rules.map((rule) => (
+                    <li key={rule.id}>
+                      <span className="font-medium text-slate-800">{rule.title}</span>
+                      {rule.description && <span className="block text-slate-500">{rule.description}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
+            <Link to="?tab=feed" replace className="group mt-10 flex items-start gap-4 border-t border-slate-200 pt-8">
+              <BookOpen className="mt-0.5 size-6 shrink-0 text-blue-900" aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block text-lg font-medium text-slate-900">Curieux d'en savoir plus ?</span>
+                <span className="mt-1 block text-sm text-slate-500">Découvrez la communauté et ses contenus sur Kodinga.</span>
+              </span>
+              <ArrowUpRight className="mt-1 size-5 shrink-0 text-slate-700 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+            </Link>
+          </>
+        )}
+      </div>
     </div>
   );
 }

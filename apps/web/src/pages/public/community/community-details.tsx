@@ -6,9 +6,13 @@ import { parseApiError } from '@/utils/api/errors';
 import { AboutTab } from './components/about-tab';
 import { ClassroomTab } from './components/classroom-tab';
 import { CommunitySidebar } from './components/community-sidebar';
+import { CommunityHero } from './components/community-hero';
 import { CommunityTabs } from './components/community-tabs';
 import { EventsTab } from './components/events-tab';
 import { FeedTab } from './components/feed-tab';
+import { HackathonsTab } from './components/hackathons-tab';
+import { LeaderboardTab } from './components/leaderboard-tab';
+import { MembersTab } from './components/members-tab';
 import UseCommunityPage from './form/UseCommunityPage';
 
 /** Back from PayDunya (?payment=done|cancelled) */
@@ -60,22 +64,31 @@ function CommunityDetails() {
     );
   }
 
-  return (
-    <div className="min-h-full bg-slate-50">
-      <CommunityTabs community={community} activeTab={activeTab} />
+  const fullWidth = activeTab === 'members';
 
-      <div className="mx-auto grid max-w-285 items-start gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
+  return (
+    <div className="min-h-full bg-slate-50/60">
+      <CommunityHero page={page} />
+      <CommunityTabs activeTab={activeTab} />
+
+      {/* The member cards take the whole width (no side column) */}
+      <div className={`mx-auto grid max-w-285 items-start gap-10 px-4 py-10 sm:px-6 lg:px-8 ${fullWidth ? '' : 'lg:grid-cols-[1fr_400px]'}`}>
         <div className="flex min-w-0 flex-col gap-4">
           <PaymentNotice status={page.payment} />
-          {activeTab === 'about' && <AboutTab community={community} />}
+          {activeTab === 'about' && <AboutTab community={community} isTeam={page.isTeam} />}
           {activeTab === 'feed' && <FeedTab page={page} />}
           {activeTab === 'classroom' && <ClassroomTab page={page} />}
+          {activeTab === 'members' && <MembersTab community={community} isTeam={page.isTeam} />}
           {activeTab === 'events' && <EventsTab slug={community.slug} />}
+          {activeTab === 'hackathons' && <HackathonsTab slug={community.slug} />}
+          {activeTab === 'leaderboard' && <LeaderboardTab slug={community.slug} />}
         </div>
 
-        <aside className="lg:sticky lg:top-44">
-          <CommunitySidebar page={page} />
-        </aside>
+        {!fullWidth && (
+          <aside className="lg:sticky lg:top-40">
+            <CommunitySidebar page={page} />
+          </aside>
+        )}
       </div>
     </div>
   );
