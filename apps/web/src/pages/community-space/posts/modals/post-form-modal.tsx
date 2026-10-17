@@ -42,10 +42,17 @@ const DURATIONS = [
   { value: '30', label: '30 jours' },
 ];
 
-type Props = { slug: string; open: boolean; /** null to create */ post: SpacePost | null; onClose: () => void };
+type Props = {
+  slug: string;
+  open: boolean;
+  /** null to create */
+  post: SpacePost | null;
+  onClose: () => void;
+  defaultType?: PostType;
+};
 
-function PostFormModal({ slug, open, post, onClose }: Props) {
-  const { form, options, type, withCode, titleOptional, onSubmit } = UsePostForm({ slug, post, open, onDone: onClose });
+function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
+  const { form, options, type, withCode, titleOptional, onSubmit } = UsePostForm({ slug, post, open, onDone: onClose, defaultType });
   const {
     register,
     control,

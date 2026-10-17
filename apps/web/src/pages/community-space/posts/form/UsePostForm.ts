@@ -62,7 +62,20 @@ const fromPost = (p: SpacePost): PostFormValues => ({
  * Publish in the community feed (POST communities/<slug>/feed/) or edit one's own post
  * (PATCH posts/<id>/, author only). The poll is only sent on creation: the api cannot change it.
  */
-function UsePostForm({ slug, post, open, onDone }: { slug: string; post: SpacePost | null; open: boolean; onDone: () => void }) {
+function UsePostForm({
+  slug,
+  post,
+  open,
+  onDone,
+  defaultType = DEFAULTS.post_type,
+}: {
+  slug: string;
+  post: SpacePost | null;
+  open: boolean;
+  onDone: () => void;
+  /** Type selected when creating (the team announces, the members discuss) */
+  defaultType?: PostFormValues['post_type'];
+}) {
   const [createPost] = useCreatePostMutation();
   const [updatePost] = useUpdatePostMutation();
   const form = useForm<PostFormValues>({ resolver: zodResolver(schema), defaultValues: DEFAULTS });
@@ -70,8 +83,8 @@ function UsePostForm({ slug, post, open, onDone }: { slug: string; post: SpacePo
   const options = useFieldArray({ control, name: 'poll_options' });
 
   useEffect(() => {
-    if (open) reset(post ? fromPost(post) : DEFAULTS);
-  }, [open, post, reset]);
+    if (open) reset(post ? fromPost(post) : { ...DEFAULTS, post_type: defaultType });
+  }, [open, post, reset, defaultType]);
 
   const onSubmit = async (v: PostFormValues) => {
     const body: PostWriteData = {

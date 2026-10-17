@@ -12,7 +12,7 @@ const signIn = (user: Partial<User>) =>
     store.dispatch(onSetUserToken({ user: { id: 'u1', first_name: 'Awa', ...user } as User, token: 'access', refresh: 'refresh' }));
   });
 
-// The admin area calls the api (e.g. the assistant): a neutral answer, never the real api
+// The admin area calls the api (lists, counters): a neutral answer, never the real api
 beforeEach(() => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(
     async () => new Response(JSON.stringify({ success: true, data: [], results: [] }), { headers: { 'Content-Type': 'application/json' } })
