@@ -1,6 +1,7 @@
 export const fr = {
   header: {
     login: 'Se connecter',
+    home: 'Accueil',
     explore: 'Explorer les communautés',
     profile: 'Le profil',
     signup: "S'inscrire",

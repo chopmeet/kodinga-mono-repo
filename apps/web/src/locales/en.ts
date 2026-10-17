@@ -3,6 +3,7 @@ import type { Translations } from './fr';
 export const en: Translations = {
   header: {
     login: 'Log in',
+    home: 'Home',
     explore: 'Explore communities',
     profile: 'Profile',
     signup: 'Sign up',
