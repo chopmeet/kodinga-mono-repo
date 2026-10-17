@@ -43,7 +43,10 @@ import type {
   CommunityFeedQuery,
   CommunityListItem,
   CommunityListQuery,
+  CommunityInvitation,
   CommunityMemberItem,
+  CommunityRole,
+  InvitationWriteData,
   CommunityMembersQuery,
   CommunityPostItem,
   CommunityProposalResult,
@@ -74,6 +77,7 @@ export const CommunityApi = createApi({
     'opportunities',
     'leaderboard',
     'projects',
+    'invitations',
   ],
   baseQuery: fetchBaseQuery({ 
     baseUrl: ApiBaseUrl, 
@@ -172,8 +176,31 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityMemberItem>,
       invalidatesTags: ['members', 'communities'],
     }),
+    // Owner and admins only; only the owner gives the "owner" role (ownership transfer)
+    changeMemberRole: builder.mutation<CommunityMemberItem, { slug: string; memberId: string; role: CommunityRole }>({
+      query: ({ slug, memberId, role }) => ({ url: `communities/${slug}/members/${memberId}/`, method: 'PATCH', body: { role } }),
+      transformResponse: unwrap<CommunityMemberItem>,
+      invalidatesTags: ['members'],
+    }),
     sanctionMember: builder.mutation<unknown, SanctionData>({
       query: ({ slug, memberId, ...body }) => ({ url: `communities/${slug}/members/${memberId}/sanctions/`, method: 'POST', body }),
+      invalidatesTags: ['members', 'communities'],
+    }),
+    // Not revoked invitations: owner and admins only (superusers everywhere)
+    getCommunityInvitations: builder.query<CommunityInvitation[], string>({
+      query: (slug) => `communities/${slug}/invitations/`,
+      transformResponse: unwrap<CommunityInvitation[]>,
+      providesTags: ['invitations'],
+    }),
+    createInvitation: builder.mutation<CommunityInvitation, InvitationWriteData & { slug: string }>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/invitations/`, method: 'POST', body }),
+      transformResponse: unwrap<CommunityInvitation>,
+      invalidatesTags: ['invitations'],
+    }),
+    // The signed-in user joins with the role of the invitation (no approval, no subscription)
+    acceptInvitation: builder.mutation<CommunityMemberItem, string>({
+      query: (invite_code) => ({ url: 'invitations/accept/', method: 'POST', body: { invite_code } }),
+      transformResponse: unwrap<CommunityMemberItem>,
       invalidatesTags: ['members', 'communities'],
     }),
     getCommunityFeed: builder.query<ApiPaginated<CommunityPostItem>, CommunityFeedQuery>({
@@ -535,6 +562,10 @@ export const {
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
   useSanctionMemberMutation,
+  useChangeMemberRoleMutation,
+  useGetCommunityInvitationsQuery,
+  useCreateInvitationMutation,
+  useAcceptInvitationMutation,
   useGetCommunityFeedQuery,
   useTogglePostPinMutation,
   useTogglePostLockMutation,

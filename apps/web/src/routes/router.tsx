@@ -11,6 +11,7 @@ import ResetPassword from '@/pages/auth/reset-password';
 import OAuthCallback from '@/pages/auth/oauth-callback';
 import Register from '@/pages/auth/register';
 import CreateCommunity from '@/pages/public/create-community/create-community';
+import AcceptInvitation from '@/pages/public/invitation/accept-invitation';
 import PublicProfile from '@/pages/public/profile/public-profile';
 import VerifyEmail from '@/pages/auth/verify-email';
 import AdminCommunities from '@/pages/admin/communities/admin-communities';
@@ -123,6 +124,10 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:id',
         element: <CommunityDetails />,
+      },
+      {
+        path: 'invitations/:code',
+        element: <AcceptInvitation />,
       },
       {
         path: 'profiles/:username',

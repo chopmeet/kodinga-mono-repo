@@ -1,19 +1,21 @@
+import { RotateCw } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { ColgateWrapper, EmptyAlert, Pagination, SearchInput, SelectInput, TopTitle } from '@kodinga-mono-repo/ui';
-import type { AdminPost, PostType } from '@/data/admin-community-details.data';
+import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, SelectInput, TopTitle } from '@kodinga-mono-repo/ui';
 import { postTypeLabel } from '@/pages/shared/community-labels';
 import { FilterChip } from '@/pages/shared/filter-chip';
+import { SoonBadge } from '@/pages/shared/row-actions';
+import type { PostType } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
 import { useCommunitySpace } from '../community-space-context';
-import UseSpacePosts, { type PostStateFilter, type PostTypeFilter } from './form/UseSpacePosts';
+import UseSpacePosts, { type PostStateFilter, type PostTypeFilter, type SpacePost } from './form/UseSpacePosts';
 import DeletePostModal from './modals/delete-post-modal';
 import PostsTable from './tables/posts-table';
 
 const stateFilters: { value: PostStateFilter; label: string }[] = [
   { value: 'all', label: 'Toutes' },
   { value: 'pinned', label: 'Épinglées' },
-  { value: 'locked', label: 'Verrouillées' },
 ];
 
 const typeOptions = [
@@ -23,20 +25,20 @@ const typeOptions = [
 
 const isState = (value: string | null): value is PostStateFilter => stateFilters.some((f) => f.value === value);
 
+/** /c/:slug/posts — moderation of the community feed */
 function CommunityPosts() {
   const { community } = useCommunitySpace();
-  // ?filter=locked: link from the dashboard "À traiter" panel
   const [params, setParams] = useSearchParams();
   const stateParam = params.get('filter');
+  // ?filter=locked (dashboard link) is not a filter of the api yet: all posts then
   const state: PostStateFilter = isState(stateParam) ? stateParam : 'all';
   const [type, setType] = useState<PostTypeFilter>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
-  const [toDelete, setToDelete] = useState<AdminPost | null>(null);
+  const [toDelete, setToDelete] = useState<SpacePost | null>(null);
 
-  const list = UseSpacePosts(community, { search, state, type });
-  const visible = list.filtered.slice((page - 1) * size, page * size);
+  const list = UseSpacePosts(community.slug, { search, state, type, page, size });
 
   return (
     <div className="community__posts">
@@ -50,7 +52,7 @@ function CommunityPosts() {
             className="md:max-w-sm"
             label="Rechercher une publication"
             clearLabel="Effacer la recherche"
-            placeholder="Titre, auteur…"
+            placeholder="Titre, contenu…"
             value={search}
             onValueChange={(value: string) => {
               setSearch(value);
@@ -81,38 +83,56 @@ function CommunityPosts() {
                 setPage(1);
               }}
             >
-              {f.label} <span className="tabular-nums opacity-70">{list.counts[f.value]}</span>
+              {f.label} {list.counts[f.value] !== undefined && <span className="tabular-nums opacity-70">{list.counts[f.value]}</span>}
             </FilterChip>
           ))}
+          <FilterChip active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
+            Verrouillées <SoonBadge />
+          </FilterChip>
         </div>
 
-        <div className="mt-5">
-          {list.filtered.length === 0 ? (
+        <div className="mt-5" aria-busy={list.isFetching}>
+          {list.error ? (
+            <div className="flex flex-col items-start gap-3">
+              <EmptyAlert text={parseApiError(list.error).message} />
+              <Button variant="outline" size="sm" onClick={() => list.refetch()}>
+                <RotateCw />
+                Réessayer
+              </Button>
+            </div>
+          ) : !list.isLoading && list.posts.length === 0 ? (
             <EmptyAlert text="Aucune publication ne correspond à ces critères." />
           ) : (
-            <>
-              <PostsTable posts={visible} onTogglePin={list.togglePin} onToggleLock={list.toggleLock} onDelete={setToDelete} />
-              <Pagination
-                totalItems={list.filtered.length}
-                currentPage={page}
-                perPage={size}
-                onPageChange={setPage}
-                onPageSizeChange={(n) => {
-                  setSize(n);
-                  setPage(1);
-                }}
+            <div className={list.isFetching && !list.isLoading ? 'opacity-60 transition-opacity' : undefined}>
+              <PostsTable
+                posts={list.posts}
+                isLoading={list.isLoading}
+                onTogglePin={list.togglePin}
+                onToggleLock={list.toggleLock}
+                onDelete={setToDelete}
               />
-            </>
+              {list.total > 0 && (
+                <Pagination
+                  totalItems={list.total}
+                  currentPage={page}
+                  perPage={size}
+                  onPageChange={setPage}
+                  onPageSizeChange={(n) => {
+                    setSize(n);
+                    setPage(1);
+                  }}
+                />
+              )}
+            </div>
           )}
         </div>
       </ColgateWrapper>
 
-      <DeletePostModal
+      <DeletePostModal<SpacePost>
         post={toDelete}
         onCancel={() => setToDelete(null)}
-        onConfirm={(post) => {
-          list.remove(post);
-          setToDelete(null);
+        onConfirm={async (post) => {
+          if (await list.remove(post)) setToDelete(null);
         }}
       />
     </div>

@@ -1,0 +1,98 @@
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+
+import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
+import store from '@/redux/store';
+import { renderAppAt, SLOW } from '@/test-utils';
+import { CommunityApi } from '@/utils/api/community/community.api';
+import type { User } from '@/utils/api/user/user.type';
+
+vi.setConfig({ testTimeout: 15_000 });
+
+const URL_PATH = '/invitations/CODE-123?community=abidjan-react';
+
+type Call = { method: string; url: URL; body: Record<string, unknown> | null };
+
+/** Public detail of the community + POST invitations/accept/ */
+function stubInvitationApi({ isMember = false, role = 'member' } = {}) {
+  const calls: Call[] = [];
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const request = input as Request;
+    const url = new URL(request.url);
+    const text = request.method === 'GET' ? '' : await request.text();
+    const body = text ? JSON.parse(text) : null;
+    calls.push({ method: request.method, url, body });
+    const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+
+    if (url.pathname.endsWith('/communities/abidjan-react/')) {
+      return json({
+        success: true,
+        data: {
+          id: 'c1',
+          name: 'Abidjan React',
+          slug: 'abidjan-react',
+          tagline: 'Les devs React de Côte d’Ivoire',
+          avatar_url: '',
+          brand_color: '#1D4ED8',
+          members_count: 240,
+          user_membership: { is_member: isMember, role: isMember ? 'member' : null, status: isMember ? 'active' : null },
+        },
+      });
+    }
+    if (url.pathname.endsWith('/invitations/accept/')) {
+      return json({ success: true, data: { id: 'm1', role, status: 'active' } });
+    }
+    if (url.pathname.endsWith('/users/me/')) return json({ success: true, data: { id: 'u1', username: 'awa' } });
+    return json({ success: true, data: [], pagination: { count: 0 }, results: [] });
+  });
+  return calls;
+}
+
+const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+const signIn = () =>
+  act(() => {
+    store.dispatch(onSetUserToken({ user: { id: 'u1', username: 'awa' } as User, token: `${b64({ alg: 'HS256' })}.${b64({ exp: 4102444800 })}.sig`, refresh: 'r' }));
+  });
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  act(() => {
+    store.dispatch(onLogout());
+    store.dispatch(CommunityApi.util.resetApiState());
+  });
+});
+
+describe('Invitation link', () => {
+  it('shows the community and asks a guest to sign in first, coming back here', async () => {
+    stubInvitationApi();
+    renderAppAt(URL_PATH);
+    expect(await screen.findByRole('heading', { name: 'Abidjan React' }, SLOW)).toBeTruthy();
+    expect(screen.getByText('240 membres')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Se connecter pour rejoindre' }).getAttribute('href')).toBe(`/auth/login?next=${encodeURIComponent(URL_PATH)}`);
+  });
+
+  it('joins the community with the code, then opens it', async () => {
+    signIn();
+    const calls = stubInvitationApi();
+    const { where } = renderAppAt(URL_PATH);
+    fireEvent.click(await screen.findByRole('button', { name: 'Rejoindre Abidjan React' }, SLOW));
+    await waitFor(() => expect(where()).toBe('/communities/abidjan-react'), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/invitations/accept/'))?.body).toEqual({ invite_code: 'CODE-123' });
+  });
+
+  it('sends an invited moderator to the community space', async () => {
+    signIn();
+    stubInvitationApi({ role: 'moderator' });
+    const { where } = renderAppAt(URL_PATH);
+    fireEvent.click(await screen.findByRole('button', { name: 'Rejoindre Abidjan React' }, SLOW));
+    await waitFor(() => expect(where()).toMatch(/^\/c\/abidjan-react/), SLOW);
+  });
+
+  it('tells a member they are already in', async () => {
+    signIn();
+    stubInvitationApi({ isMember: true });
+    renderAppAt(URL_PATH);
+    expect(await screen.findByText('Vous faites déjà partie de cette communauté.', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Rejoindre/ })).toBeNull();
+  });
+});
