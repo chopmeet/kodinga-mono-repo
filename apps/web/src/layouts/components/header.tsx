@@ -96,14 +96,12 @@ function Header() {
             />
           ) : (
             <div className="hidden items-center justify-center gap-9 md:flex">
+              <NavLink to={`/`} className={navLinkClassName}>
+                  {t('header.home')}
+                </NavLink>
               <NavLink to="/" end className={navLinkClassName}>
                 {t('header.explore')}
               </NavLink>
-              {user?.username && (
-                <NavLink to={`/profiles/${user.username}`} className={navLinkClassName}>
-                  {t('header.profile')}
-                </NavLink>
-              )}
             </div>
           )}
         </div>

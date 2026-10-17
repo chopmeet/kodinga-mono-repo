@@ -84,23 +84,7 @@ describe('App', () => {
     await waitFor(() => expect(queryByRole('heading', { level: 3, name: 'Python Africa Core' })).toBeNull());
   });
 
-  it('renders a community details page on the About tab by default', () => {
-    const { getByRole, getAllByRole } = renderAt('/communities/nairobi-rustaceans');
-    expect(getByRole('heading', { level: 1, name: 'Nairobi Rustaceans' })).toBeTruthy();
-    expect(getByRole('link', { name: 'À propos', current: 'page' })).toBeTruthy();
-    expect(getAllByRole('link', { name: 'Rejoindre' }).length).toBeGreaterThan(0);
-  });
-
-  it('opens the tab given in the url', () => {
-    const { getByRole } = renderAt('/communities/nairobi-rustaceans?tab=classroom');
-    expect(getByRole('heading', { level: 3, name: 'Fondamentaux Rust' })).toBeTruthy();
-  });
-
-  it('shows a not found message for an unknown community', () => {
-    const { getByRole } = renderAt('/communities/nope');
-    expect(getByRole('heading', { level: 1, name: /communauté introuvable/i })).toBeTruthy();
-  });
-
+  // The community page reads the api: see pages/public/community/community-details.spec.tsx
 
   it('validates the login form before calling the api', async () => {
     const { getByRole, findByText } = renderAt('/auth/login');

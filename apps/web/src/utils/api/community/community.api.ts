@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
 import { ApiBaseUrl } from '@/utils/http';
+import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
 import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
 import type {
@@ -160,6 +161,30 @@ export const CommunityApi = createApi({
         return { data: managed };
       },
       providesTags: ['communities'],
+    }),
+    /**
+     * Joins the community: active at once, or pending when the community approves its members.
+     * A paid community needs an active subscription (the payment makes the member by itself).
+     */
+    joinCommunity: builder.mutation<CommunityMemberItem, string>({
+      query: (slug) => ({ url: `communities/${slug}/join/`, method: 'POST' }),
+      transformResponse: unwrap<CommunityMemberItem>,
+      invalidatesTags: ['communities', 'members'],
+    }),
+    // The owner cannot leave (ownership transfer first)
+    leaveCommunity: builder.mutation<unknown, string>({
+      query: (slug) => ({ url: `communities/${slug}/leave/`, method: 'POST' }),
+      invalidatesTags: ['communities', 'members'],
+    }),
+    // Active plans of a paid community (public)
+    getCommunityPlans: builder.query<CommunityPlan[], string>({
+      query: (community) => ({ url: 'billing/plans/', params: { community } }),
+      transformResponse: unwrap<CommunityPlan[]>,
+    }),
+    // PayDunya session: the browser goes to checkout_url, then comes back to return_url
+    createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string }>({
+      query: (body) => ({ url: 'billing/checkout/', method: 'POST', body }),
+      transformResponse: unwrap<CheckoutSession>,
     }),
     // Signed-in users only; the api makes the creator the owner (active membership)
     createCommunity: builder.mutation<CommunityDetail, CommunityCreateData>({
@@ -594,6 +619,10 @@ export const {
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
   useGetCommunityMemberJoinsQuery,
+  useJoinCommunityMutation,
+  useLeaveCommunityMutation,
+  useGetCommunityPlansQuery,
+  useCreateCheckoutMutation,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
   useGetCommunityInvitationsQuery,

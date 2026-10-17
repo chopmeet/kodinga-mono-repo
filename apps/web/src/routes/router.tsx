@@ -122,7 +122,7 @@ export const AppRoutes: RouteObject[] = [
         element: <Home />,
       },
       {
-        path: 'communities/:id',
+        path: 'communities/:slug',
         element: <CommunityDetails />,
       },
       {
