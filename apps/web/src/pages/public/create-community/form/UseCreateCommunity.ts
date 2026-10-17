@@ -11,12 +11,20 @@ import { suggestUsername } from '@/pages/auth/hooks/UseRegisterForm';
 import { useLoginUserMutation, useRegisterUserMutation } from '@/utils/api/auth/auth.api';
 import { useCreateCommunityMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
+import { useImageUpload } from '@/utils/api/media/useImageUpload';
 import { slugify } from '@/utils/Utils';
+import { type ImageSource, useFilePreview } from '../components/image-field';
 
+
+const optionalImageUrl = z
+  .string()
+  .trim()
+  .max(500, '500 caractères maximum')
+  .refine((v) => !v || /^https:\/\/\S+\.\S+/.test(v), 'Lien invalide : collez une adresse https://…');
 
 const communitySchema = z.object({
   name: z.string().trim().min(3, 'Au moins 3 caractères').max(150, '150 caractères maximum'),
-  /** Empty: the api builds it from the name (and keeps it unique) */
+  /** Empty until the user edits the address: the one built from the name is sent then */
   slug: z
     .string()
     .trim()
@@ -27,6 +35,9 @@ const communitySchema = z.object({
   privacy_type: z.enum(['public', 'private', 'secret']),
   pricing_type: z.enum(['free', 'paid']),
   brand_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide'),
+  /** Url mode of the logo / banner (file mode: the files live in UseCreateCommunity, sent at the end) */
+  avatar_url: optionalImageUrl,
+  banner_url: optionalImageUrl,
 });
 
 export type CommunityValues = z.infer<typeof communitySchema>;
@@ -66,7 +77,7 @@ const STEP_FIELDS: Record<Exclude<StepId, 'account'>, (keyof CommunityValues)[]>
   name: ['name', 'slug'],
   topic: ['tagline', 'category_id'],
   access: ['privacy_type', 'pricing_type'],
-  look: ['brand_color'],
+  look: ['brand_color', 'avatar_url', 'banner_url'],
 };
 
 export const BRAND_COLORS = ['#1D4ED8', '#7C3AED', '#DB2777', '#DC2626', '#EA580C', '#CA8A04', '#16A34A', '#0D9488', '#0F172A'];
@@ -79,6 +90,8 @@ const DEFAULTS: CommunityValues = {
   privacy_type: 'public',
   pricing_type: 'free',
   brand_color: BRAND_COLORS[0],
+  avatar_url: '',
+  banner_url: '',
 };
 
 // The draft survives a reload or a detour (sessionStorage: this tab only, never the password)
@@ -104,6 +117,11 @@ function writeDraft(draft: Draft | null) {
 }
 
 const COMMUNITY_FIELDS = Object.values(STEP_FIELDS).flat();
+
+/** Logo and banner: their form field (url mode) and the upload purpose of the api */
+const IMAGES = { avatar: 'avatar_url', banner: 'banner_url' } as const;
+type ImageKind = keyof typeof IMAGES;
+type ImageState = { source: ImageSource; file: File | null };
 const ACCOUNT_FIELDS = ['first_name', 'last_name', 'email', 'password', 'terms_accepted'] as const;
 
 function UseCreateCommunity() {
@@ -120,6 +138,12 @@ function UseCreateCommunity() {
   const [slugEdited, setSlugEdited] = useState(draft?.slugEdited ?? false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Files are not kept in the draft (sessionStorage): a link from the draft opens in url mode
+  const [images, setImages] = useState<Record<ImageKind, ImageState>>({
+    avatar: { source: draft?.values?.avatar_url ? 'url' : 'file', file: null },
+    banner: { source: draft?.values?.banner_url ? 'url' : 'file', file: null },
+  });
+  const uploadImage = useImageUpload();
 
   // Signed-in visitors skip the account step
   const steps = useMemo(() => (token ? STEPS.filter((s) => s.id !== 'account') : [...STEPS]), [token]);
@@ -138,6 +162,43 @@ function UseCreateCommunity() {
 
   const values = form.watch();
   const slug = slugEdited ? values.slug : slugify(values.name);
+  const avatarFile = useFilePreview(images.avatar.file);
+  const bannerFile = useFilePreview(images.banner.file);
+  /** What the preview shows: the chosen file, or the link */
+  const previews = {
+    avatar: images.avatar.source === 'file' ? avatarFile : values.avatar_url.trim() || null,
+    banner: images.banner.source === 'file' ? bannerFile : values.banner_url.trim() || null,
+  };
+
+  const setImage = (kind: ImageKind, changes: Partial<ImageState>) => {
+    setImages((current) => ({ ...current, [kind]: { ...current[kind], ...changes } }));
+    form.clearErrors(IMAGES[kind]);
+  };
+
+  /** Fields to check on a step: a link is only checked in url mode */
+  const fieldsOf = (id: keyof typeof STEP_FIELDS) =>
+    STEP_FIELDS[id].filter((f) => !(Object.keys(IMAGES) as ImageKind[]).some((k) => IMAGES[k] === f && images[k].source === 'file'));
+
+  /** Url of each image: the link, or the chosen file once sent (null when there is none) */
+  const resolveImages = async (v: CommunityValues): Promise<Record<ImageKind, string | null> | null> => {
+    const result: Record<ImageKind, string | null> = { avatar: null, banner: null };
+    for (const kind of Object.keys(IMAGES) as ImageKind[]) {
+      const { source, file } = images[kind];
+      if (source === 'url') {
+        result[kind] = v[IMAGES[kind]] || null;
+        continue;
+      }
+      if (!file) continue;
+      try {
+        result[kind] = await uploadImage(file, kind);
+      } catch (error) {
+        form.setError(IMAGES[kind], { message: error instanceof Error ? error.message : "L'envoi de l'image a échoué." });
+        goTo('look');
+        return null;
+      }
+    }
+    return result;
+  };
 
   useEffect(() => {
     writeDraft({ values, step: index, slugEdited });
@@ -195,15 +256,21 @@ function UseCreateCommunity() {
 
   const create = async () => {
     const v = form.getValues();
+    // After the account step: the upload api needs a signed-in user
+    const urls = await resolveImages(v);
+    if (!urls) return;
     try {
       const community = await createCommunity({
         name: v.name.trim(),
-        ...(slugEdited && v.slug ? { slug: v.slug } : {}),
+        // Always sent: the api requires it (ModelSerializer on a non-blank SlugField), the preview shows this one
+        slug: (slugEdited && v.slug) || slugify(v.name),
         tagline: v.tagline.trim(),
         category_id: v.category_id || null,
         privacy_type: v.privacy_type,
         pricing_type: v.pricing_type,
         brand_color: v.brand_color,
+        ...(urls.avatar ? { avatar_url: urls.avatar } : {}),
+        ...(urls.banner ? { banner_url: urls.banner } : {}),
         // Private and secret communities review the join requests
         settings: { require_approval_to_join: v.privacy_type !== 'public' },
       }).unwrap();
@@ -231,7 +298,7 @@ function UseCreateCommunity() {
   const next = async () => {
     setFormError(null);
     if (step.id !== 'account') {
-      const ok = await form.trigger(STEP_FIELDS[step.id]);
+      const ok = await form.trigger(fieldsOf(step.id));
       if (!ok) return;
     }
     if (!isLast) {
@@ -252,6 +319,9 @@ function UseCreateCommunity() {
     account,
     values,
     slug,
+    images,
+    setImage,
+    previews,
     slugEdited,
     editSlug: () => {
       form.setValue('slug', slug);

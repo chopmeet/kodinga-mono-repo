@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/to
 
 import { ApiBaseUrl } from '@/utils/http';
 import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
+import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
 import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
 import type {
@@ -185,6 +186,15 @@ export const CommunityApi = createApi({
     createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string }>({
       query: (body) => ({ url: 'billing/checkout/', method: 'POST', body }),
       transformResponse: unwrap<CheckoutSession>,
+    }),
+    // Media upload, step 1 and 3 (step 2 sends the file to upload_url: see utils/api/media/upload.ts)
+    requestUploadUrl: builder.mutation<UploadTarget, UploadUrlRequest>({
+      query: (body) => ({ url: 'media/upload-url/', method: 'POST', body }),
+      transformResponse: unwrap<UploadTarget>,
+    }),
+    confirmUpload: builder.mutation<MediaAsset, { file_key: string; file_url: string; file_size?: number }>({
+      query: (body) => ({ url: 'media/confirm-upload/', method: 'POST', body }),
+      transformResponse: unwrap<MediaAsset>,
     }),
     // Signed-in users only; the api makes the creator the owner (active membership)
     createCommunity: builder.mutation<CommunityDetail, CommunityCreateData>({
@@ -623,6 +633,8 @@ export const {
   useLeaveCommunityMutation,
   useGetCommunityPlansQuery,
   useCreateCheckoutMutation,
+  useRequestUploadUrlMutation,
+  useConfirmUploadMutation,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
   useGetCommunityInvitationsQuery,

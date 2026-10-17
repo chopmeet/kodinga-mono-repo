@@ -130,7 +130,7 @@ function CreateCommunity() {
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-8">
           <p className="text-[15px] font-semibold text-blue-800">Aperçu dans « Toutes les communautés »</p>
-          <CommunityPreview values={flow.values} slug={flow.slug} category={category} />
+          <CommunityPreview values={flow.values} slug={flow.slug} category={category} images={flow.previews} />
 
           <ol className="space-y-1 rounded-xl bg-white p-4 shadow-2xs" aria-label="Étapes">
             {flow.steps.map((s, i) => (

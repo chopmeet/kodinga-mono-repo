@@ -92,6 +92,8 @@ export type CommunityCreateData = {
   privacy_type: CommunityPrivacy;
   pricing_type: CommunityPricing;
   brand_color?: string;
+  avatar_url?: string;
+  banner_url?: string;
   settings?: { require_approval_to_join?: boolean };
 };
 
