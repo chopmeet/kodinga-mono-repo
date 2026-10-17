@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/to
 
 import { ApiBaseUrl } from '@/utils/http';
 import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
+import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
 import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
 import type {
@@ -186,6 +187,15 @@ export const CommunityApi = createApi({
       query: (body) => ({ url: 'billing/checkout/', method: 'POST', body }),
       transformResponse: unwrap<CheckoutSession>,
     }),
+    // Media upload, step 1 and 3 (step 2 sends the file to upload_url: see utils/api/media/upload.ts)
+    requestUploadUrl: builder.mutation<UploadTarget, UploadUrlRequest>({
+      query: (body) => ({ url: 'media/upload-url/', method: 'POST', body }),
+      transformResponse: unwrap<UploadTarget>,
+    }),
+    confirmUpload: builder.mutation<MediaAsset, { file_key: string; file_url: string; file_size?: number }>({
+      query: (body) => ({ url: 'media/confirm-upload/', method: 'POST', body }),
+      transformResponse: unwrap<MediaAsset>,
+    }),
     // Signed-in users only; the api makes the creator the owner (active membership)
     createCommunity: builder.mutation<CommunityDetail, CommunityCreateData>({
       query: (body) => ({ url: 'communities/', method: 'POST', body }),
@@ -263,6 +273,29 @@ export const CommunityApi = createApi({
       query: ({ postId, ...body }) => ({ url: `posts/${postId}/`, method: 'PATCH', body }),
       transformResponse: unwrap<CommunityPostItem>,
       invalidatesTags: ['posts'],
+    }),
+    // Like / unlike (signed-in users): the cached feeds are patched, no new GET
+    togglePostLike: builder.mutation<{ reacted: boolean }, string>({
+      query: (postId) => ({ url: `posts/${postId}/react/`, method: 'POST', body: { reaction_type: 'like' } }),
+      transformResponse: unwrap<{ reacted: boolean }>,
+      async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const post = feed.results.find((p) => p.id === postId);
+                if (!post) return;
+                const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
+                post.user_reactions = data.reacted ? [...others, 'like'] : others;
+                post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
+              }),
+            );
+          }
+        } catch {
+          // the caller shows the error
+        }
+      },
     }),
     togglePostPin: builder.mutation<unknown, string>({
       query: (postId) => ({ url: `posts/${postId}/pin/`, method: 'POST' }),
@@ -623,6 +656,8 @@ export const {
   useLeaveCommunityMutation,
   useGetCommunityPlansQuery,
   useCreateCheckoutMutation,
+  useRequestUploadUrlMutation,
+  useConfirmUploadMutation,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
   useGetCommunityInvitationsQuery,
@@ -633,6 +668,7 @@ export const {
   useTogglePostLockMutation,
   useDeletePostMutation,
   useCreatePostMutation,
+  useTogglePostLikeMutation,
   useUpdatePostMutation,
   useRecommendCommunitiesMutation,
   usePlanCommunityMutation,

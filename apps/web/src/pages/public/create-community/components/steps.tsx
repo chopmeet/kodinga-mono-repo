@@ -4,6 +4,7 @@ import { cn, Input, InputPassword } from '@kodinga-mono-repo/ui';
 import { PasswordCheck } from '@/pages/auth/components/password-check';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
 import { BRAND_COLORS, type CreateCommunityFlow } from '../form/UseCreateCommunity';
+import { ImageField } from './image-field';
 import { OptionCard } from './option-card';
 
 const fieldError = (message?: string) => (message ? <p className="mt-1.5 text-sm text-red-600">{message}</p> : null);
@@ -161,8 +162,35 @@ export function LookStep({ flow }: { flow: CreateCommunityFlow }) {
           Autre
         </label>
       </div>
-      <p className="mt-3 text-sm text-slate-500">Elle colore votre bannière et votre avatar. Vous pourrez ajouter un logo plus tard.</p>
+      <p className="mt-3 text-sm text-slate-500">Elle colore votre bannière et votre avatar tant qu'ils n'ont pas d'image.</p>
       {fieldError(formState.errors.brand_color?.message)}
+
+      <div className="mt-6 grid gap-x-6 border-t border-slate-100 pt-5 sm:grid-cols-[auto_1fr]">
+        <ImageField
+          label="Logo (facultatif)"
+          help="Image carrée, au moins 256 × 256 px (5 Mo max)."
+          purpose="avatar"
+          source={flow.images.avatar.source}
+          onSourceChange={(source) => flow.setImage('avatar', { source })}
+          file={flow.images.avatar.file}
+          onFileChange={(file) => flow.setImage('avatar', { file })}
+          url={flow.values.avatar_url}
+          registration={register('avatar_url')}
+          error={formState.errors.avatar_url?.message}
+        />
+        <ImageField
+          label="Image de bannière (facultatif)"
+          help="Format paysage, idéalement 1600 × 900 px (10 Mo max)."
+          purpose="banner"
+          source={flow.images.banner.source}
+          onSourceChange={(source) => flow.setImage('banner', { source })}
+          file={flow.images.banner.file}
+          onFileChange={(file) => flow.setImage('banner', { file })}
+          url={flow.values.banner_url}
+          registration={register('banner_url')}
+          error={formState.errors.banner_url?.message}
+        />
+      </div>
     </fieldset>
   );
 }

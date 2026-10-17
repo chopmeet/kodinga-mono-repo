@@ -92,6 +92,8 @@ export type CommunityCreateData = {
   privacy_type: CommunityPrivacy;
   pricing_type: CommunityPricing;
   brand_color?: string;
+  avatar_url?: string;
+  banner_url?: string;
   settings?: { require_approval_to_join?: boolean };
 };
 
@@ -147,6 +149,8 @@ export type CommunityPostItem = {
   post_type: PostType;
   code_snippet?: string;
   code_language?: string;
+  /** Reactions of the signed-in user ('like', 'fire'…) */
+  user_reactions?: string[];
   is_pinned: boolean;
   is_locked: boolean;
   is_resolved: boolean;
