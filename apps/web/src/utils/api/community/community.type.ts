@@ -145,6 +145,8 @@ export type CommunityPostItem = {
   title: string;
   content: string;
   post_type: PostType;
+  code_snippet?: string;
+  code_language?: string;
   is_pinned: boolean;
   is_locked: boolean;
   is_resolved: boolean;
@@ -154,10 +156,21 @@ export type CommunityPostItem = {
   created_at: string;
 };
 
+/** PostCreateUpdateSerializer (PATCH takes any subset; the poll is only read on creation) */
+export type PostWriteData = {
+  title: string;
+  content: string;
+  post_type: PostType;
+  code_snippet: string;
+  code_language: string;
+  poll?: { question?: string; options: string[]; is_multiple_choice: boolean; duration_days: number };
+};
+
 export type CommunityFeedQuery = {
   slug: string;
   type?: PostType;
   q?: string;
+  pinned?: boolean;
   page?: number;
   page_size?: number;
 };
@@ -277,3 +290,28 @@ export type CommunityAISettings = {
 };
 
 export type CommunityAISettingsWrite = Omit<CommunityAISettings, 'platform_locked_rules'>;
+
+// Invitations (apps/memberships/serializers/invitation.py)
+
+/** CommunityInvitationSerializer */
+export type CommunityInvitation = {
+  id: string;
+  email: string;
+  invite_code: string;
+  role: CommunityRole;
+  max_uses: number;
+  uses_count: number;
+  expires_at: string | null;
+  is_valid: boolean;
+  is_revoked: boolean;
+  invited_by: User;
+  created_at: string;
+};
+
+/** CreateInvitationRequestSerializer */
+export type InvitationWriteData = {
+  email?: string;
+  role: CommunityRole;
+  max_uses: number;
+  expires_in_days: number;
+};

@@ -15,7 +15,7 @@ import {
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
 import type { AdminMember } from '@/data/admin-community-details.data';
-import type { Sanction } from '../form/UseSpaceMembers';
+import type { Sanction, SanctionType } from '../form/UseSpaceMembers';
 
 const schema = z.object({
   reason: z.string().trim().min(5, 'Indiquez le motif (5 caractères minimum)'),
@@ -33,7 +33,34 @@ type Props<M extends { name: string }> = {
   onConfirm: (member: M, sanction: Sanction) => void | Promise<void>;
 };
 
-/** The api requires a reason for every sanction; a suspension also has a duration */
+const COPY: Record<SanctionType, { title: (name?: string) => string; description: string; submit: string; withDuration: boolean }> = {
+  warning: {
+    title: (name) => `Avertir ${name}`,
+    description: 'Le membre garde ses accès ; l’avertissement reste dans l’historique de modération.',
+    submit: 'Avertir',
+    withDuration: false,
+  },
+  mute: {
+    title: (name) => `Mettre ${name} en sourdine`,
+    description: 'Le membre reste dans la communauté mais ne doit plus publier ni commenter pendant la durée choisie.',
+    submit: 'Mettre en sourdine',
+    withDuration: true,
+  },
+  suspension: {
+    title: (name) => `Suspendre ${name}`,
+    description: 'Le membre ne peut plus publier ni commenter pendant la durée choisie.',
+    submit: 'Suspendre',
+    withDuration: true,
+  },
+  ban: {
+    title: (name) => `Bannir ${name} ?`,
+    description: 'Le membre perd définitivement l’accès à la communauté et ne pourra plus la rejoindre.',
+    submit: 'Bannir',
+    withDuration: false,
+  },
+};
+
+/** The api requires a reason for every sanction; a mute or a suspension also has a duration */
 function SanctionModal<M extends { name: string } = AdminMember>({ target, onCancel, onConfirm }: Props<M>) {
   const {
     register,
@@ -46,6 +73,7 @@ function SanctionModal<M extends { name: string } = AdminMember>({ target, onCan
     if (target) reset({ reason: '', duration_days: '7' });
   }, [target, reset]);
 
+  const copy = COPY[target?.type ?? 'warning'];
   const isBan = target?.type === 'ban';
 
   const onSubmit = async (values: Values) => {
@@ -53,7 +81,7 @@ function SanctionModal<M extends { name: string } = AdminMember>({ target, onCan
     await onConfirm(target.member, {
       type: target.type,
       reason: values.reason,
-      duration_days: isBan ? undefined : Number(values.duration_days),
+      duration_days: copy.withDuration ? Number(values.duration_days) : undefined,
     });
   };
 
@@ -61,15 +89,11 @@ function SanctionModal<M extends { name: string } = AdminMember>({ target, onCan
     <Dialog open={!!target} onOpenChange={(open) => !open && !isSubmitting && onCancel()}>
       <DialogContent position="top">
         <DialogHeader>
-          <DialogTitle>{isBan ? `Bannir ${target?.member.name} ?` : `Suspendre ${target?.member.name}`}</DialogTitle>
-          <DialogDescription>
-            {isBan
-              ? 'Le membre perd définitivement l’accès à la communauté et ne pourra plus la rejoindre.'
-              : 'Le membre ne peut plus publier ni commenter pendant la durée choisie.'}
-          </DialogDescription>
+          <DialogTitle>{copy.title(target?.member.name)}</DialogTitle>
+          <DialogDescription>{copy.description}</DialogDescription>
         </DialogHeader>
         <form id="sanction-form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          {!isBan && (
+          {copy.withDuration && (
             <SelectInput
               label="Durée"
               options={[
@@ -95,7 +119,7 @@ function SanctionModal<M extends { name: string } = AdminMember>({ target, onCan
             Annuler
           </Button>
           <Button type="submit" form="sanction-form" variant={isBan ? 'danger' : 'default'} isLoading={isSubmitting}>
-            {isBan ? 'Bannir' : 'Suspendre'}
+            {copy.submit}
           </Button>
         </DialogFooter>
       </DialogContent>

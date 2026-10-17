@@ -77,7 +77,7 @@ function Home() {
 
       <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-          <div className="flex flex-col gap-6 lg:col-span-8">
+          <div className="flex flex-col gap-6 lg:col-span-9">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-900">
                 <span>Communautés à découvrir</span>
@@ -107,7 +107,7 @@ function Home() {
                 </button>
               </div>
             ) : results.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {results.map((community) => (
                   <CommunityCard key={community.id} community={community} />
                 ))}
@@ -140,7 +140,7 @@ function Home() {
             </p>
           </div>
 
-          <aside id="leaderboard" className="flex flex-col gap-6 lg:col-span-4 lg:sticky lg:top-40">
+          <aside id="leaderboard" className="flex flex-col gap-6 lg:col-span-3 lg:sticky lg:top-40">
             <LeaderboardCard />
             <CreatorCallout />
           </aside>

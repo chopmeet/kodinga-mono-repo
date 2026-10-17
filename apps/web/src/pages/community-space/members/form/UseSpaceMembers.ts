@@ -1,64 +1,99 @@
-import { useMemo, useState } from 'react';
-
 import { customToast } from '@kodinga-mono-repo/ui';
-import { type AdminMember, getCommunityMembers, type MemberRole, type MemberStatus } from '@/data/admin-community-details.data';
-import type { CommunityListItem } from '@/utils/api/community/community.type';
 import { memberRoleLabel } from '@/pages/shared/community-labels';
+import {
+  useChangeMemberRoleMutation,
+  useDecideMemberMutation,
+  useGetCommunityMembersQuery,
+  useSanctionMemberMutation,
+} from '@/utils/api/community/community.api';
+import type { CommunityMemberItem, CommunityRole, MembershipStatus } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
+import { useDebounced } from '@/utils/hooks/useDebounced';
+import { getName } from '@/utils/Utils';
 
-export type MemberStatusFilter = Extract<MemberStatus, 'active' | 'pending' | 'suspended' | 'banned'> | 'all';
-export type MemberRoleFilter = 'all' | 'team' | 'member';
-export type Sanction = { type: 'suspension' | 'ban'; reason: string; duration_days?: number };
+export type MemberStatusFilter = Extract<MembershipStatus, 'active' | 'pending' | 'suspended' | 'banned'> | 'all';
+export type MemberRoleFilter = CommunityRole | 'all';
+export type SanctionType = 'warning' | 'mute' | 'suspension' | 'ban';
+export type Sanction = { type: SanctionType; reason: string; duration_days?: number };
 
-const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+/** An api member with its display name */
+export type SpaceMember = CommunityMemberItem & { name: string };
+
+const days = (n?: number) => `${n} jour${n && n > 1 ? 's' : ''}`;
+
+const sanctionMessage = (name: string, s: Sanction) =>
+  ({
+    warning: `${name} a reçu un avertissement.`,
+    mute: `${name} est en sourdine pour ${days(s.duration_days)}.`,
+    suspension: `${name} est suspendu pour ${days(s.duration_days)}.`,
+    ban: `${name} a été banni.`,
+  })[s.type];
+
+const STATUSES: Exclude<MemberStatusFilter, 'all'>[] = ['active', 'pending', 'suspended', 'banned'];
+
+/** Number of members with a status: page_size=1 is enough, the api gives the total */
+function useStatusCount(slug: string, status?: MembershipStatus) {
+  const { data } = useGetCommunityMembersQuery({ slug, status, page: 1, page_size: 1 });
+  return data?.pagination.count;
+}
 
 /**
- * Mock of the members endpoints of a community. Changes live in local state.
- * With the api: GET communities/<slug>/members/, PATCH .../members/<id>/ (approve, role)
- * and POST .../members/<id>/sanctions/.
+ * Members of the community (GET communities/<slug>/members/, moderators and above): status, role
+ * and search are filtered by the api. Approving / refusing and sanctions are open to moderators,
+ * roles to the owner and admins (PATCH .../members/<id>/). Lifting a sanction has no endpoint yet.
  */
-function UseSpaceMembers(community: CommunityListItem, query: { search: string; status: MemberStatusFilter; role: MemberRoleFilter }) {
-  const [members, setMembers] = useState<AdminMember[]>(() => getCommunityMembers(community));
+function UseSpaceMembers(slug: string, query: { search: string; status: MemberStatusFilter; role: MemberRoleFilter; page: number; size: number }) {
+  const search = useDebounced(query.search.trim(), 300);
+  const { data, isLoading, isFetching, error, refetch } = useGetCommunityMembersQuery({
+    slug,
+    status: query.status === 'all' ? undefined : query.status,
+    role: query.role === 'all' ? undefined : query.role,
+    search: search || undefined,
+    page: query.page,
+    page_size: query.size,
+  });
+  const [decideMember] = useDecideMemberMutation();
+  const [sanctionMember] = useSanctionMemberMutation();
+  const [changeMemberRole] = useChangeMemberRoleMutation();
 
-  const filtered = useMemo(() => {
-    const needle = normalize(query.search.trim());
-    return members.filter(
-      (m) =>
-        (!needle || normalize(`${m.name} ${m.username} ${m.city}`).includes(needle)) &&
-        (query.status === 'all' || m.status === query.status) &&
-        (query.role === 'all' || (query.role === 'team' ? m.role !== 'member' : m.role === 'member'))
-    );
-  }, [members, query.search, query.status, query.role]);
-
-  const patch = (member: AdminMember, changes: Partial<AdminMember>, message: string) => {
-    setMembers((list) => list.map((m) => (m.id === member.id ? { ...m, ...changes } : m)));
-    customToast.success({ message });
+  const counts: Record<MemberStatusFilter, number | undefined> = {
+    all: useStatusCount(slug),
+    active: useStatusCount(slug, STATUSES[0]),
+    pending: useStatusCount(slug, STATUSES[1]),
+    suspended: useStatusCount(slug, STATUSES[2]),
+    banned: useStatusCount(slug, STATUSES[3]),
   };
 
-  const countBy = (status: MemberStatus) => members.filter((m) => m.status === status).length;
+  const run = async (action: Promise<unknown>, message: string) => {
+    try {
+      await action;
+      customToast.success({ message });
+      return true;
+    } catch (err) {
+      customToast.error({ message: parseApiError(err).message });
+      return false;
+    }
+  };
+
+  const members: SpaceMember[] = (data?.results ?? []).map((m) => ({ ...m, name: getName(m.user) || m.user.email }));
 
   return {
     members,
-    filtered,
-    counts: {
-      all: members.length,
-      active: countBy('active'),
-      pending: countBy('pending'),
-      suspended: countBy('suspended'),
-      banned: countBy('banned'),
-    } satisfies Record<MemberStatusFilter, number>,
-    approve: (m: AdminMember) => patch(m, { status: 'active' }, `${m.name} a rejoint la communauté.`),
-    // A refused request leaves the list (the api keeps it as "rejected")
-    reject: (m: AdminMember) => {
-      setMembers((list) => list.filter((x) => x.id !== m.id));
-      customToast.success({ message: `La demande de ${m.name} a été refusée.` });
-    },
-    reactivate: (m: AdminMember) => patch(m, { status: 'active' }, `${m.name} est de nouveau actif.`),
-    sanction: (m: AdminMember, s: Sanction) =>
-      s.type === 'ban'
-        ? patch(m, { status: 'banned' }, `${m.name} a été banni.`)
-        : patch(m, { status: 'suspended' }, `${m.name} est suspendu pour ${s.duration_days} jours.`),
-    changeRole: (m: AdminMember, role: MemberRole) =>
-      patch(m, { role }, `${m.name} est maintenant ${memberRoleLabel[role].toLowerCase()}.`),
+    total: data?.pagination.count ?? 0,
+    counts,
+    isLoading,
+    isFetching,
+    error: data ? undefined : error,
+    refetch,
+    approve: (m: SpaceMember) => run(decideMember({ slug, memberId: m.id, approve: true }).unwrap(), `${m.name} a rejoint la communauté.`),
+    reject: (m: SpaceMember) => run(decideMember({ slug, memberId: m.id, approve: false }).unwrap(), `La demande de ${m.name} a été refusée.`),
+    sanction: (m: SpaceMember, s: Sanction) =>
+      run(
+        sanctionMember({ slug, memberId: m.id, sanction_type: s.type, reason: s.reason, duration_days: s.duration_days ?? null }).unwrap(),
+        sanctionMessage(m.name, s),
+      ),
+    changeRole: (m: SpaceMember, role: CommunityRole) =>
+      run(changeMemberRole({ slug, memberId: m.id, role }).unwrap(), `${m.name} est maintenant ${memberRoleLabel[role].toLowerCase()}.`),
   };
 }
 

@@ -1,0 +1,165 @@
+from django.urls import path
+
+from apps.hackathons.views import (
+    CommunityHackathonDashboardView,
+    CommunityHackathonDetailView,
+    CommunityHackathonLifecycleView,
+    CommunityHackathonListCreateView,
+    CommunityHackathonPublishView,
+    HackathonApplicationListView,
+    HackathonApplicationReviewView,
+    HackathonApplyView,
+    HackathonJudgeListView,
+    HackathonJudgingProjectsView,
+    HackathonLeaderboardView,
+    HackathonMyApplicationView,
+    HackathonMySubmissionView,
+    HackathonPublishResultsView,
+    HackathonSubmissionDetailView,
+    HackathonSubmissionEvaluateView,
+    HackathonSubmissionFileAttachView,
+    HackathonSubmissionFileDeleteView,
+    HackathonSubmissionFinalizeView,
+    HackathonSubmissionListView,
+    HackathonTeamDetailView,
+    HackathonTeamInviteView,
+    HackathonTeamListCreateView,
+    HackathonTeamRespondInviteView,
+    PublicHackathonListView,
+)
+
+app_name = "hackathons"
+
+urlpatterns = [
+    # Global Discovery
+    path(
+        "hackathons/",
+        PublicHackathonListView.as_view(),
+        name="public-hackathons-list",
+    ),
+    # Community Hackathons List & Create
+    path(
+        "communities/<slug:slug>/hackathons/",
+        CommunityHackathonListCreateView.as_view(),
+        name="community-hackathons-list",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/",
+        CommunityHackathonDetailView.as_view(),
+        name="community-hackathon-detail",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/publish/",
+        CommunityHackathonPublishView.as_view(),
+        name="community-hackathon-publish",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/lifecycle/",
+        CommunityHackathonLifecycleView.as_view(),
+        name="community-hackathon-lifecycle",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/dashboard/",
+        CommunityHackathonDashboardView.as_view(),
+        name="community-hackathon-dashboard",
+    ),
+    # Applications
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/apply/",
+        HackathonApplyView.as_view(),
+        name="community-hackathon-apply",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/my-application/",
+        HackathonMyApplicationView.as_view(),
+        name="community-hackathon-my-application",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/applications/",
+        HackathonApplicationListView.as_view(),
+        name="community-hackathon-applications",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/applications/<uuid:app_id>/",
+        HackathonApplicationReviewView.as_view(),
+        name="community-hackathon-application-review",
+    ),
+    # Teams
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/",
+        HackathonTeamListCreateView.as_view(),
+        name="community-hackathon-teams",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/<uuid:team_id>/",
+        HackathonTeamDetailView.as_view(),
+        name="community-hackathon-team-detail",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/<uuid:team_id>/invite/",
+        HackathonTeamInviteView.as_view(),
+        name="community-hackathon-team-invite",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/respond-invite/",
+        HackathonTeamRespondInviteView.as_view(),
+        name="community-hackathon-team-respond-invite",
+    ),
+    # Submissions
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/submissions/",
+        HackathonSubmissionListView.as_view(),
+        name="community-hackathon-submissions",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/submissions/my-project/",
+        HackathonMySubmissionView.as_view(),
+        name="community-hackathon-my-submission",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/submissions/my-project/files/",
+        HackathonSubmissionFileAttachView.as_view(),
+        name="community-hackathon-submission-file-attach",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/submissions/my-project/files/<uuid:file_id>/",
+        HackathonSubmissionFileDeleteView.as_view(),
+        name="community-hackathon-submission-file-delete",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/submissions/my-project/submit/",
+        HackathonSubmissionFinalizeView.as_view(),
+        name="community-hackathon-submission-submit",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/submissions/<slug:submission_slug>/",
+        HackathonSubmissionDetailView.as_view(),
+        name="community-hackathon-submission-detail",
+    ),
+    # Judging & Results
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/judges/",
+        HackathonJudgeListView.as_view(),
+        name="community-hackathon-judges",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/judging/projects/",
+        HackathonJudgingProjectsView.as_view(),
+        name="community-hackathon-judging-projects",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/judging/projects/<uuid:submission_id>/evaluate/",
+        HackathonSubmissionEvaluateView.as_view(),
+        name="community-hackathon-submission-evaluate",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/results/",
+        HackathonLeaderboardView.as_view(),
+        name="community-hackathon-results",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/publish-results/",
+        HackathonPublishResultsView.as_view(),
+        name="community-hackathon-publish-results",
+    ),
+]

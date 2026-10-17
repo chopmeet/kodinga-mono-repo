@@ -383,20 +383,36 @@ class AIAssistantService:
             try:
                 c_filter = Q(id=conversation_id)
                 if user and user.is_authenticated:
-                    c_filter &= Q(user=user)
+                    # Allow user to access their own conversation or adopt an anonymous guest conversation
+                    c_filter &= (Q(user=user) | Q(user__isnull=True))
                 conversation = AssistantConversation.objects.filter(c_filter).first()
+                if conversation and not conversation.user and user and user.is_authenticated:
+                    conversation.user = user
+                    conversation.save(update_fields=["user"])
             except Exception:
                 conversation = None
 
         if not conversation:
-            # Create new conversation
-            title_preview = clean_message[:40] + ("..." if len(clean_message) > 40 else "")
+            # Create new conversation with clean title preview
+            title_preview = clean_message[:50].strip()
+            if len(clean_message) > 50:
+                title_preview += "..."
             conversation = AssistantConversation.objects.create(
                 user=user if user and user.is_authenticated else None,
                 community=community,
-                title=title_preview,
+                title=title_preview or "Nouvelle discussion",
                 context_type="general",
             )
+
+        # Retrieve recent message history (sliding window of latest 10 messages BEFORE this turn)
+        # Ordered chronologically for the LLM
+        recent_messages = list(conversation.messages.order_by("-created_at")[:10])
+        recent_messages.reverse()
+        history = [
+            {"role": m.role, "content": m.content}
+            for m in recent_messages
+            if m.role in ["user", "assistant"]
+        ]
 
         # Store user message
         AssistantMessage.objects.create(
@@ -404,14 +420,6 @@ class AIAssistantService:
             role="user",
             content=clean_message,
         )
-
-        # Retrieve recent message history (last 10 turns)
-        recent_messages = conversation.messages.order_by("created_at")[:10]
-        history = [
-            {"role": m.role, "content": m.content}
-            for m in recent_messages
-            if m.role in ["user", "assistant"]
-        ]
 
         context = {
             "user_authenticated": bool(user and user.is_authenticated),

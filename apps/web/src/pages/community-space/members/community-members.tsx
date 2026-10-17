@@ -1,10 +1,14 @@
+import { RotateCw, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
+import { parseApiError } from '@/utils/api/errors';
 import { useCommunitySpace } from '../community-space-context';
-import UseSpaceMembers, { type MemberRoleFilter, type MemberStatusFilter } from './form/UseSpaceMembers';
+import { canInvite } from './form/member-permissions';
+import UseSpaceMembers, { type MemberRoleFilter, type MemberStatusFilter, type SpaceMember } from './form/UseSpaceMembers';
+import InviteMembersModal from './modals/invite-members-modal';
 import SanctionModal, { type SanctionTarget } from './modals/sanction-modal';
 import MembersTable from './tables/members-table';
 
@@ -18,12 +22,15 @@ const statusFilters: { value: MemberStatusFilter; label: string }[] = [
 
 const roleFilters: { value: MemberRoleFilter; label: string }[] = [
   { value: 'all', label: 'Tous les rôles' },
-  { value: 'team', label: 'Équipe' },
+  { value: 'owner', label: 'Propriétaire' },
+  { value: 'admin', label: 'Administrateurs' },
+  { value: 'moderator', label: 'Modérateurs' },
   { value: 'member', label: 'Membres' },
 ];
 
 const isStatus = (value: string | null): value is MemberStatusFilter => statusFilters.some((f) => f.value === value);
 
+/** /c/:slug/members — members of the community and join requests */
 function CommunityMembers() {
   const { community, role: actor } = useCommunitySpace();
   // ?status=pending: link from the dashboard "À traiter" panel
@@ -34,10 +41,11 @@ function CommunityMembers() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
-  const [sanctionTarget, setSanctionTarget] = useState<SanctionTarget | null>(null);
+  const [sanctionTarget, setSanctionTarget] = useState<SanctionTarget<SpaceMember> | null>(null);
+  const [inviting, setInviting] = useState(false);
 
-  const list = UseSpaceMembers(community, { search, status, role });
-  const visible = list.filtered.slice((page - 1) * size, page * size);
+  const list = UseSpaceMembers(community.slug, { search, status, role, page, size });
+  const pending = list.counts.pending ?? 0;
 
   const setStatus = (value: MemberStatusFilter) => {
     setParams(value === 'all' ? {} : { status: value }, { replace: true });
@@ -46,18 +54,22 @@ function CommunityMembers() {
 
   return (
     <div className="community__members">
-      <TopTitle
-        title="Membres"
-        paragraph={`${community.members_count.toLocaleString('fr-FR')} membres dans ${community.name}`}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <TopTitle
+          title="Membres"
+          paragraph={`${(list.counts.active ?? community.members_count).toLocaleString('fr-FR')} membres actifs dans ${community.name}`}
+        />
+        {canInvite(actor) && (
+          <Button onClick={() => setInviting(true)}>
+            <UserPlus />
+            Inviter des membres
+          </Button>
+        )}
+      </div>
 
-      {list.counts.pending > 0 && status !== 'pending' && (
+      {pending > 0 && status !== 'pending' && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span>
-            {list.counts.pending > 1
-              ? `${list.counts.pending} demandes d'adhésion attendent votre décision.`
-              : "1 demande d'adhésion attend votre décision."}
-          </span>
+          <span>{pending > 1 ? `${pending} demandes d'adhésion attendent votre décision.` : "1 demande d'adhésion attend votre décision."}</span>
           <button type="button" className="font-semibold underline underline-offset-2" onClick={() => setStatus('pending')}>
             Voir les demandes
           </button>
@@ -71,7 +83,7 @@ function CommunityMembers() {
           className="md:max-w-sm"
           label="Rechercher un membre"
           clearLabel="Effacer la recherche"
-          placeholder="Nom, pseudo, ville…"
+          placeholder="Nom, pseudo, titre…"
           value={search}
           onValueChange={(value: string) => {
             setSearch(value);
@@ -83,7 +95,7 @@ function CommunityMembers() {
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par statut">
             {statusFilters.map((f) => (
               <FilterChip key={f.value} active={status === f.value} onClick={() => setStatus(f.value)}>
-                {f.label} <span className="tabular-nums opacity-70">{list.counts[f.value]}</span>
+                {f.label} {list.counts[f.value] !== undefined && <span className="tabular-nums opacity-70">{list.counts[f.value]}</span>}
               </FilterChip>
             ))}
           </div>
@@ -104,44 +116,54 @@ function CommunityMembers() {
           </div>
         </div>
 
-        <div className="mt-5">
-          {list.filtered.length === 0 ? (
+        <div className="mt-5" aria-busy={list.isFetching}>
+          {list.error ? (
+            <div className="flex flex-col items-start gap-3">
+              <EmptyAlert text={parseApiError(list.error).message} />
+              <Button variant="outline" size="sm" onClick={() => list.refetch()}>
+                <RotateCw />
+                Réessayer
+              </Button>
+            </div>
+          ) : !list.isLoading && list.members.length === 0 ? (
             <EmptyAlert text="Aucun membre ne correspond à ces critères." />
           ) : (
-            <>
+            <div className={list.isFetching && !list.isLoading ? 'opacity-60 transition-opacity' : undefined}>
               <MembersTable
-                members={visible}
+                members={list.members}
                 actor={actor}
+                isLoading={list.isLoading}
                 onApprove={list.approve}
                 onReject={list.reject}
-                onReactivate={list.reactivate}
                 onSanction={setSanctionTarget}
                 onChangeRole={list.changeRole}
               />
-              <Pagination
-                totalItems={list.filtered.length}
-                currentPage={page}
-                perPage={size}
-                onPageChange={setPage}
-                onPageSizeChange={(n) => {
-                  setSize(n);
-                  setPage(1);
-                }}
-              />
-            </>
+              {list.total > 0 && (
+                <Pagination
+                  totalItems={list.total}
+                  currentPage={page}
+                  perPage={size}
+                  onPageChange={setPage}
+                  onPageSizeChange={(n) => {
+                    setSize(n);
+                    setPage(1);
+                  }}
+                />
+              )}
+            </div>
           )}
         </div>
-        <p className="mt-2 text-xs text-slate-500">
-          Échantillon de démonstration : {list.members.length} membres sur {community.members_count.toLocaleString('fr-FR')}.
-        </p>
       </ColgateWrapper>
 
-      <SanctionModal
+      {canInvite(actor) && (
+        <InviteMembersModal slug={community.slug} communityName={community.name} actor={actor} open={inviting} onClose={() => setInviting(false)} />
+      )}
+
+      <SanctionModal<SpaceMember>
         target={sanctionTarget}
         onCancel={() => setSanctionTarget(null)}
-        onConfirm={(member, sanction) => {
-          list.sanction(member, sanction);
-          setSanctionTarget(null);
+        onConfirm={async (member, sanction) => {
+          if (await list.sanction(member, sanction)) setSanctionTarget(null);
         }}
       />
     </div>

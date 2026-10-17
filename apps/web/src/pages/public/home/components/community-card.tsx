@@ -1,5 +1,5 @@
 import { ArrowUpRight, BadgeCheck, Lock, Star, Users } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
@@ -78,13 +78,13 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
             <Users className="size-4.5 text-slate-500" />
             {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
           </span>
-          <Link
+          <NavLink
             to={href}
             className="relative z-10 flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-slate-900 transition-colors hover:text-primary"
           >
             {community.is_member ? 'Ouvrir' : 'Découvrir'}
             <ArrowUpRight className="size-4.5" />
-          </Link>
+          </NavLink>
         </div>
       </div>
     </article>

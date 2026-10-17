@@ -1,55 +1,74 @@
-import { useMemo, useState } from 'react';
-
 import { customToast } from '@kodinga-mono-repo/ui';
-import { type AdminPost, getCommunityPosts, type PostType } from '@/data/admin-community-details.data';
-import type { CommunityListItem } from '@/utils/api/community/community.type';
+import {
+  useDeletePostMutation,
+  useGetCommunityFeedQuery,
+  useTogglePostLockMutation,
+  useTogglePostPinMutation,
+} from '@/utils/api/community/community.api';
+import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
+import { useDebounced } from '@/utils/hooks/useDebounced';
+import { getName } from '@/utils/Utils';
 
-export type PostStateFilter = 'all' | 'pinned' | 'locked';
+/** "locked" is not a filter of the api feed yet */
+export type PostStateFilter = 'all' | 'pinned';
 export type PostTypeFilter = PostType | 'all';
 
-const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-
-// Pinned first, then newest (feed order of the api)
-const feedOrder = (a: AdminPost, b: AdminPost) =>
-  Number(b.is_pinned) - Number(a.is_pinned) || b.created_at.localeCompare(a.created_at);
+/** A post of the feed with its author's display name */
+export type SpacePost = Omit<CommunityPostItem, 'author'> & { author: string; author_username: string; author_id: string };
 
 /**
- * Mock of the moderation endpoints of the feed. Changes live in local state.
- * With the api: GET communities/<slug>/feed/, POST posts/<id>/pin/, posts/<id>/lock/, DELETE posts/<id>/.
- * Every action is open to moderators and above (posts/services/post_service.py).
+ * Feed of the community for moderation (GET communities/<slug>/feed/, pinned posts first): type,
+ * search and "pinned" are filtered by the api. Pin, lock and delete are open to moderators and
+ * above (POST posts/<id>/pin/, posts/<id>/lock/, DELETE posts/<id>/).
  */
-function UseSpacePosts(community: CommunityListItem, query: { search: string; state: PostStateFilter; type: PostTypeFilter }) {
-  const [posts, setPosts] = useState<AdminPost[]>(() => getCommunityPosts(community));
+function UseSpacePosts(slug: string, query: { search: string; state: PostStateFilter; type: PostTypeFilter; page: number; size: number }) {
+  const q = useDebounced(query.search.trim(), 300);
+  const { data, isLoading, isFetching, error, refetch } = useGetCommunityFeedQuery({
+    slug,
+    type: query.type === 'all' ? undefined : query.type,
+    q: q || undefined,
+    pinned: query.state === 'pinned' ? true : undefined,
+    page: query.page,
+    page_size: query.size,
+  });
+  // Totals of the chips: page_size=1 is enough, the api gives the count
+  const all = useGetCommunityFeedQuery({ slug, page: 1, page_size: 1 }).data?.pagination.count;
+  const pinned = useGetCommunityFeedQuery({ slug, pinned: true, page: 1, page_size: 1 }).data?.pagination.count;
 
-  const filtered = useMemo(() => {
-    const needle = normalize(query.search.trim());
-    return posts.filter(
-      (p) =>
-        (!needle || normalize(`${p.title} ${p.author}`).includes(needle)) &&
-        (query.state === 'all' || (query.state === 'pinned' ? p.is_pinned : p.is_locked)) &&
-        (query.type === 'all' || p.type === query.type)
-    );
-  }, [posts, query.search, query.state, query.type]);
+  const [togglePin] = useTogglePostPinMutation();
+  const [toggleLock] = useTogglePostLockMutation();
+  const [deletePost] = useDeletePostMutation();
 
-  const patch = (post: AdminPost, changes: Partial<AdminPost>, message: string) => {
-    setPosts((list) => list.map((p) => (p.id === post.id ? { ...p, ...changes } : p)).sort(feedOrder));
-    customToast.success({ message });
+  const run = async (action: Promise<unknown>, message: string) => {
+    try {
+      await action;
+      customToast.success({ message });
+      return true;
+    } catch (err) {
+      customToast.error({ message: parseApiError(err).message });
+      return false;
+    }
   };
+
+  const posts: SpacePost[] = (data?.results ?? []).map(({ author, ...p }) => ({
+    ...p,
+    author: getName(author) || author.username,
+    author_username: author.username,
+    author_id: author.id,
+  }));
 
   return {
     posts,
-    filtered,
-    counts: {
-      all: posts.length,
-      pinned: posts.filter((p) => p.is_pinned).length,
-      locked: posts.filter((p) => p.is_locked).length,
-    } satisfies Record<PostStateFilter, number>,
-    togglePin: (p: AdminPost) => patch(p, { is_pinned: !p.is_pinned }, p.is_pinned ? 'Publication désépinglée.' : 'Publication épinglée en haut du fil.'),
-    toggleLock: (p: AdminPost) => patch(p, { is_locked: !p.is_locked }, p.is_locked ? 'Commentaires rouverts.' : 'Commentaires verrouillés.'),
-    remove: (p: AdminPost) => {
-      setPosts((list) => list.filter((x) => x.id !== p.id));
-      customToast.success({ message: 'Publication supprimée.' });
-    },
+    total: data?.pagination.count ?? 0,
+    counts: { all, pinned } satisfies Record<PostStateFilter, number | undefined>,
+    isLoading,
+    isFetching,
+    error: data ? undefined : error,
+    refetch,
+    togglePin: (p: SpacePost) => run(togglePin(p.id).unwrap(), p.is_pinned ? 'Publication désépinglée.' : 'Publication épinglée en haut du fil.'),
+    toggleLock: (p: SpacePost) => run(toggleLock(p.id).unwrap(), p.is_locked ? 'Commentaires rouverts.' : 'Commentaires verrouillés.'),
+    remove: (p: SpacePost) => run(deletePost(p.id).unwrap(), 'Publication supprimée.'),
   };
 }
 

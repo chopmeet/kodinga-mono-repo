@@ -1,11 +1,49 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.ai.serializers import TranslationRequestSerializer, TranslationResponseSerializer
+from apps.ai.serializers import (
+    LanguageListResponseSerializer,
+    TranslationRequestSerializer,
+    TranslationResponseSerializer,
+)
 from apps.ai.services.translation_service import TranslationService
 from common.utils.responses import error_response, success_response
+
+
+class AILanguageListView(APIView):
+    """
+    Public endpoint listing all supported conversion and translation languages,
+    highlighting African languages and international working languages.
+    """
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=["AI Services"],
+        summary="Lister toutes les langues de conversion (Africaines et Internationales)",
+        description=(
+            "Retourne la liste exhaustive des langues supportées par les modèles IA "
+            "(Google Gemini & OpenAI) pour la traduction, le chat, la détection et la modération, "
+            "avec indication des langues africaines majeures (Wolof, Bambara, Haoussa, Swahili, Yoruba, Lingala, etc.)."
+        ),
+        responses={200: LanguageListResponseSerializer},
+    )
+    def get(self, request):
+        languages = TranslationService.AVAILABLE_LANGUAGES
+        african = [lang for lang in languages if lang.get("category") == "african"]
+        international = [lang for lang in languages if lang.get("category") == "international"]
+
+        return success_response(
+            data={
+                "total": len(languages),
+                "african_languages_count": len(african),
+                "international_languages_count": len(international),
+                "languages": languages,
+            },
+            status_code=status.HTTP_200_OK,
+        )
 
 
 class AITranslateView(APIView):
@@ -53,3 +91,4 @@ class AITranslateView(APIView):
             "is_fallback_original": result.is_fallback_original,
         }
         return success_response(data=response_data, status_code=status.HTTP_200_OK)
+

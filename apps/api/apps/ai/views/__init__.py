@@ -1,6 +1,7 @@
 from apps.ai.views.assistant_views import (
     AIAssistantAnalyzeCommunityView,
     AIAssistantChatView,
+    AIAssistantConversationClearView,
     AIAssistantConversationDetailView,
     AIAssistantConversationListView,
     AIAssistantPlanCommunityView,
@@ -10,9 +11,10 @@ from apps.ai.views.assistant_views import (
 from apps.ai.views.health_views import AIProviderHealthView
 from apps.ai.views.moderation_views import AIModerationAuditListView
 from apps.ai.views.settings_views import CommunityAISettingsView
-from apps.ai.views.translation_views import AITranslateView
+from apps.ai.views.translation_views import AILanguageListView, AITranslateView
 
 __all__ = [
+    "AILanguageListView",
     "AITranslateView",
     "AIProviderHealthView",
     "AIModerationAuditListView",
@@ -24,5 +26,6 @@ __all__ = [
     "AIAssistantChatView",
     "AIAssistantConversationListView",
     "AIAssistantConversationDetailView",
+    "AIAssistantConversationClearView",
 ]
 
