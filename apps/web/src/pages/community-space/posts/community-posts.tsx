@@ -1,4 +1,4 @@
-import { RotateCw } from 'lucide-react';
+import { RotateCw, SquarePen } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -8,9 +8,11 @@ import { FilterChip } from '@/pages/shared/filter-chip';
 import { SoonBadge } from '@/pages/shared/row-actions';
 import type { PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
+import { useUser } from '@/utils/Utils';
 import { useCommunitySpace } from '../community-space-context';
 import UseSpacePosts, { type PostStateFilter, type PostTypeFilter, type SpacePost } from './form/UseSpacePosts';
 import DeletePostModal from './modals/delete-post-modal';
+import PostFormModal from './modals/post-form-modal';
 import PostsTable from './tables/posts-table';
 
 const stateFilters: { value: PostStateFilter; label: string }[] = [
@@ -37,12 +39,20 @@ function CommunityPosts() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [toDelete, setToDelete] = useState<SpacePost | null>(null);
+  const [editing, setEditing] = useState<SpacePost | 'new' | null>(null);
+  const userId = useUser()?.id;
 
   const list = UseSpacePosts(community.slug, { search, state, type, page, size });
 
   return (
     <div className="community__posts">
-      <TopTitle title="Publications" paragraph={`Modération du fil de ${community.name}`} />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <TopTitle title="Publications" paragraph={`Modération du fil de ${community.name}`} />
+        <Button onClick={() => setEditing('new')}>
+          <SquarePen />
+          Nouvelle publication
+        </Button>
+      </div>
 
       <ColgateWrapper className="border border-neutral-200 p-4">
         <div className="flex flex-wrap items-start gap-3">
@@ -107,6 +117,8 @@ function CommunityPosts() {
               <PostsTable
                 posts={list.posts}
                 isLoading={list.isLoading}
+                canEdit={(p) => !!userId && p.author_id === userId}
+                onEdit={setEditing}
                 onTogglePin={list.togglePin}
                 onToggleLock={list.toggleLock}
                 onDelete={setToDelete}
@@ -127,6 +139,8 @@ function CommunityPosts() {
           )}
         </div>
       </ColgateWrapper>
+
+      <PostFormModal slug={community.slug} open={editing !== null} post={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
 
       <DeletePostModal<SpacePost>
         post={toDelete}

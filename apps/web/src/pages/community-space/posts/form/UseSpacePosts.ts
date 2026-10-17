@@ -15,7 +15,7 @@ export type PostStateFilter = 'all' | 'pinned';
 export type PostTypeFilter = PostType | 'all';
 
 /** A post of the feed with its author's display name */
-export type SpacePost = Omit<CommunityPostItem, 'author'> & { author: string; author_username: string };
+export type SpacePost = Omit<CommunityPostItem, 'author'> & { author: string; author_username: string; author_id: string };
 
 /**
  * Feed of the community for moderation (GET communities/<slug>/feed/, pinned posts first): type,
@@ -55,6 +55,7 @@ function UseSpacePosts(slug: string, query: { search: string; state: PostStateFi
     ...p,
     author: getName(author) || author.username,
     author_username: author.username,
+    author_id: author.id,
   }));
 
   return {

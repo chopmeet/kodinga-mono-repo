@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Lock, LockOpen, MessageCircle, Pin, PinOff, ThumbsUp, Trash2 } from 'lucide-react';
+import { Lock, LockOpen, MessageCircle, Pencil, Pin, PinOff, ThumbsUp, Trash2 } from 'lucide-react';
 
 import { Badge, DataTable } from '@kodinga-mono-repo/ui';
 import { postTypeLabel } from '@/pages/shared/community-labels';
@@ -9,13 +9,17 @@ import type { SpacePost } from '../form/UseSpacePosts';
 type Props = {
   posts: SpacePost[];
   isLoading: boolean;
+  /** Only the author edits a post (api) */
+  canEdit: (p: SpacePost) => boolean;
+  onEdit: (p: SpacePost) => void;
   onTogglePin: (p: SpacePost) => void;
   onToggleLock: (p: SpacePost) => void;
   onDelete: (p: SpacePost) => void;
 };
 
-function PostsTable({ posts, isLoading, onTogglePin, onToggleLock, onDelete }: Props) {
+function PostsTable({ posts, isLoading, canEdit, onEdit, onTogglePin, onToggleLock, onDelete }: Props) {
   const actionsFor = (p: SpacePost): RowAction[] => [
+    ...(canEdit(p) ? [{ label: 'Modifier', icon: <Pencil />, onSelect: () => onEdit(p) }] : []),
     p.is_pinned
       ? { label: 'Désépingler', icon: <PinOff />, onSelect: () => onTogglePin(p) }
       : { label: 'Épingler', icon: <Pin />, onSelect: () => onTogglePin(p) },
