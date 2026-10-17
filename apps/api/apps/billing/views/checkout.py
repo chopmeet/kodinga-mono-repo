@@ -18,7 +18,7 @@ class CreateCheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Initialiser une session de paiement sécurisée PayDunya (Sandbox / Live)",
         request=CreateCheckoutRequestSerializer,
         responses={201: CheckoutResponseSerializer}

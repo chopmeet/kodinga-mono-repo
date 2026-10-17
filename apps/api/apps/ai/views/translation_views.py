@@ -21,7 +21,7 @@ class AILanguageListView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="Lister toutes les langues de conversion (Africaines et Internationales)",
         description=(
             "Retourne la liste exhaustive des langues supportées par les modèles IA "
@@ -56,7 +56,7 @@ class AITranslateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="Traduire un texte vers une langue cible (Wolof, Bambara, Français, Anglais)",
         request=TranslationRequestSerializer,
         responses={200: TranslationResponseSerializer},

@@ -31,7 +31,7 @@ class CommunityAISettingsView(APIView):
         return bool(member and member.is_admin)
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="Consulter les paramètres IA de la communauté",
         responses={200: CommunityAISettingsSerializer},
     )
@@ -61,7 +61,7 @@ class CommunityAISettingsView(APIView):
         return success_response(data=serializer.data, status_code=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="Mettre à jour les paramètres IA de la communauté",
         request=CommunityAISettingsSerializer,
         responses={200: CommunityAISettingsSerializer},

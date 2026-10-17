@@ -22,7 +22,7 @@ class OpportunityPosterSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "first_name", "last_name", "avatar_url"]
 
-    def get_avatar_url(self, obj):
+    def get_avatar_url(self, obj) -> str:
         profile = getattr(obj, "profile", None)
         return profile.avatar_url if profile else ""
 
@@ -59,6 +59,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
             "applications_count",
             "expires_at",
             "has_applied",
+            "community_id",
             "poster",
             "technologies",
             "created_at",
@@ -104,38 +105,119 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
 
 class CreateOpportunitySerializer(serializers.Serializer):
-    title = serializers.CharField(max_length=255, required=True)
-    company_name = serializers.CharField(max_length=255, required=True)
-    company_logo_url = serializers.URLField(required=False, allow_blank=True, default="")
-    company_website = serializers.URLField(required=False, allow_blank=True, default="")
+    title = serializers.CharField(
+        max_length=255,
+        required=True,
+        help_text="Intitulé du poste ou de la mission (ex: Lead Backend Engineer, Stage Full-Stack...)",
+    )
+    company_name = serializers.CharField(
+        max_length=255,
+        required=True,
+        help_text="Nom de l'entreprise ou du porteur de projet",
+    )
+    company_logo_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="URL du logo de l'entreprise (uploadé via /api/v1/media/upload/ ou lien externe)",
+    )
+    company_website = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Site web officiel de l'entreprise",
+    )
     opportunity_type = serializers.ChoiceField(
-        choices=OpportunityType.choices, default=OpportunityType.FULL_TIME
+        choices=OpportunityType.choices,
+        default=OpportunityType.FULL_TIME,
+        help_text="Type de contrat : full_time (CDI), part_time (Temps partiel), contract (CDD), freelance (Mission Freelance), internship (Stage), bounty (Bounty)",
     )
     workplace_type = serializers.ChoiceField(
-        choices=WorkplaceType.choices, default=WorkplaceType.REMOTE
+        choices=WorkplaceType.choices,
+        default=WorkplaceType.REMOTE,
+        help_text="Mode d'organisation : remote (100% télétravail), hybrid (hybride), onsite (sur site)",
     )
-    location = serializers.CharField(max_length=255, required=False, default="Remote")
+    location = serializers.CharField(
+        max_length=255,
+        required=False,
+        default="Remote",
+        help_text="Localisation géographique (ex: Dakar, Sénégal / Abidjan / Remote)",
+    )
     salary_min = serializers.DecimalField(
-        max_digits=12, decimal_places=2, required=False, allow_null=True
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+        default=None,
+        help_text="Rémunération minimum (mensuelle pour CDI/stage, TJM ou forfait pour freelance)",
     )
     salary_max = serializers.DecimalField(
-        max_digits=12, decimal_places=2, required=False, allow_null=True
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+        default=None,
+        help_text="Rémunération maximum",
     )
-    currency = serializers.CharField(max_length=10, default="XOF")
+    currency = serializers.CharField(
+        max_length=10,
+        default="XOF",
+        help_text="Devise monétaire (ex: XOF, EUR, USD)",
+    )
     experience_level = serializers.ChoiceField(
-        choices=ExperienceLevel.choices, default=ExperienceLevel.ALL
+        choices=ExperienceLevel.choices,
+        default=ExperienceLevel.ALL,
+        help_text="Niveau d'expérience requis : all (tous niveaux), junior (0-2 ans), mid (2-5 ans), senior (5+ ans), lead (Lead / Architecte)",
     )
-    description = serializers.CharField(required=True)
-    requirements = serializers.CharField(required=False, allow_blank=True, default="")
-    apply_url = serializers.URLField(required=False, allow_blank=True, default="")
-    apply_email = serializers.EmailField(required=False, allow_blank=True, default="")
+    description = serializers.CharField(
+        required=True,
+        help_text="Description détaillée du poste, de la mission freelance ou du stage",
+    )
+    requirements = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Compétences, prérequis et qualifications attendues",
+    )
+    apply_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Lien externe pour postuler (optionnel; si omis, candidature directe sur Kodinga)",
+    )
+    apply_email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Email de contact pour les candidatures (optionnel)",
+    )
     status = serializers.ChoiceField(
-        choices=OpportunityStatus.choices, default=OpportunityStatus.OPEN
+        choices=OpportunityStatus.choices,
+        default=OpportunityStatus.OPEN,
+        help_text="Statut initial de l'offre : open (ouverte), closed (fermée), draft (brouillon)",
     )
-    community_id = serializers.UUIDField(required=False, allow_null=True)
+    community_id = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        default=None,
+        help_text="UUID de la communauté de rattachement (optionnel, l'auteur doit être membre)",
+    )
     technology_ids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, default=list
+        child=serializers.UUIDField(),
+        required=False,
+        default=list,
+        help_text="Liste des UUIDs des technologies associées (disponibles via /api/v1/profiles/technologies/)",
     )
+
+    def validate_community_id(self, value):
+        if not value or str(value).strip().lower() in ("", "null", "none"):
+            return None
+        import uuid
+        try:
+            return uuid.UUID(str(value))
+        except (ValueError, TypeError, AttributeError):
+            raise serializers.ValidationError("community_id doit être un UUID valide.")
 
 
 class OpportunityApplicationSerializer(serializers.ModelSerializer):
@@ -158,10 +240,28 @@ class OpportunityApplicationSerializer(serializers.ModelSerializer):
 
 
 class CreateApplicationSerializer(serializers.Serializer):
-    resume_url = serializers.URLField(required=False, allow_blank=True, default="")
-    cover_letter = serializers.CharField(required=False, allow_blank=True, default="")
-    portfolio_url = serializers.URLField(required=False, allow_blank=True, default="")
+    resume_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="URL du CV du candidat (stocké via /api/v1/media/upload/ sur UploadThing ou URL externe)",
+    )
+    cover_letter = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Lettre de motivation ou message de présentation au recruteur",
+    )
+    portfolio_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Lien vers le portfolio en ligne, profil GitHub, GitLab ou projet de démonstration",
+    )
 
 
 class UpdateApplicationStatusSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=ApplicationStatus.choices)
+    status = serializers.ChoiceField(
+        choices=ApplicationStatus.choices,
+        help_text="Nouveau statut : pending (En attente), reviewing (En cours d'examen), shortlisted (Présélectionné), accepted (Accepté), rejected (Refusé)",
+    )

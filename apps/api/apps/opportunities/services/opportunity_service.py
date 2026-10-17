@@ -3,7 +3,7 @@ from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from common.permissions.base import is_superadmin_user
-
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 from apps.opportunities.models.application import (
@@ -24,6 +24,10 @@ class OpportunityService:
     @classmethod
     @transaction.atomic
     def create_opportunity(cls, poster, validated_data, technology_ids=None):
+        community = validated_data.get("community")
+        if community:
+            check_community_membership(poster, community, "publier une opportunité dans cette communauté")
+
         opportunity = Opportunity.objects.create(poster=poster, **validated_data)
         if technology_ids:
             opportunity.technologies.set(technology_ids)
@@ -34,6 +38,10 @@ class OpportunityService:
     def update_opportunity(cls, opportunity, user, validated_data, technology_ids=None):
         if opportunity.poster_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à modifier cette offre.")
+
+        community = validated_data.get("community")
+        if community:
+            check_community_membership(user, community, "associer cette opportunité à cette communauté")
 
         for key, value in validated_data.items():
             setattr(opportunity, key, value)
@@ -56,8 +64,12 @@ class OpportunityService:
     @classmethod
     @transaction.atomic
     def apply_to_opportunity(cls, opportunity, applicant, data):
+        if opportunity.community:
+            check_community_membership(applicant, opportunity.community, "postuler à cette opportunité")
+
         if opportunity.status != OpportunityStatus.OPEN:
             raise ValidationError("Cette opportunité n'accepte plus de candidatures.")
+
 
         if OpportunityApplication.objects.filter(opportunity=opportunity, applicant=applicant).exists():
             raise ValidationError("Vous avez déjà postulé à cette opportunité.")

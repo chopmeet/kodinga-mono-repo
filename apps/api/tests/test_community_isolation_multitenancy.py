@@ -1,20 +1,33 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community, CommunityPrivacy, CommunityPricing
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
-from apps.opportunities.models.opportunity import Opportunity, OpportunityType, WorkplaceType
-from apps.projects.models.project import Project
-from apps.posts.models.post import Post, PostType
-from apps.posts.models.poll import Poll, PollOption
-from apps.hackathons.models.hackathon import Hackathon, HackathonStatus
 from apps.classroom.models.course import Course, CourseLevel
-from apps.classroom.models.module import CourseModule
 from apps.classroom.models.lesson import Lesson, LessonType
-from django.utils import timezone
-from datetime import timedelta
+from apps.classroom.models.module import CourseModule
+from apps.communities.models.community import (
+    Community,
+    CommunityPricing,
+    CommunityPrivacy,
+)
+from apps.hackathons.models.hackathon import Hackathon, HackathonStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
+from apps.opportunities.models.opportunity import (
+    Opportunity,
+    OpportunityType,
+    WorkplaceType,
+)
+from apps.posts.models.poll import Poll, PollOption
+from apps.posts.models.post import Post, PostType
+from apps.projects.models.project import Project
 
 
 @pytest.fixture

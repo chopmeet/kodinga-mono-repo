@@ -16,7 +16,7 @@ class CommunitySettingsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Consulter les paramètres d'une communauté",
         responses={200: CommunitySettingsSerializer}
     )
@@ -30,7 +30,7 @@ class CommunitySettingsView(APIView):
         return success_response(data=CommunitySettingsSerializer(settings).data if settings else {})
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Mettre à jour les paramètres d'une communauté",
         request=CommunitySettingsSerializer,
         responses={200: CommunitySettingsSerializer}
@@ -58,7 +58,7 @@ class CommunityRulesView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Lister les règles de la communauté",
         responses={200: CommunityRuleSerializer(many=True)}
     )
@@ -71,7 +71,7 @@ class CommunityRulesView(APIView):
         return success_response(data=CommunityRuleSerializer(community.rules.all(), many=True).data)
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Ajouter une règle à la charte",
         request=CommunityRuleSerializer,
         responses={201: CommunityRuleSerializer}
@@ -106,7 +106,7 @@ class CommunityRuleDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Communities'],
+        tags=['Communities & Memberships'],
         summary="Supprimer une règle de la charte",
         responses={200: None}
     )

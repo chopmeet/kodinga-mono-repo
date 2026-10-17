@@ -14,6 +14,7 @@ from apps.hackathons.models.hackathon import Hackathon
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from apps.memberships.permissions import check_community_membership
 from common.permissions.base import is_superadmin_user
 
 
@@ -28,23 +29,10 @@ class HackathonApplicationService:
         if not applicant or not applicant.is_authenticated:
             raise PermissionDenied("Authentification requise pour candidater.")
 
-        if hackathon.is_member_only:
-            from apps.memberships.models.member import CommunityMember, MembershipStatus
-            is_member = (
-                is_superadmin_user(applicant)
-                or hackathon.community.owner_id == applicant.id
-                or CommunityMember.objects.filter(
-                    community=hackathon.community,
-                    user=applicant,
-                    status=MembershipStatus.ACTIVE,
-                ).exists()
-            )
-            if not is_member:
-                raise PermissionDenied(
-                    "Ce hackathon est réservé aux membres actifs de la communauté."
-                )
+        check_community_membership(applicant, hackathon.community, "participer à ce hackathon")
 
         if not hackathon.is_registration_open:
+
             raise ValidationError(
                 {"hackathon": "La période de candidature pour ce hackathon est fermée."}
             )

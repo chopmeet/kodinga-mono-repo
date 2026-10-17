@@ -14,11 +14,11 @@ class ProjectOwnerSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "first_name", "last_name", "avatar_url", "headline"]
 
-    def get_avatar_url(self, obj):
+    def get_avatar_url(self, obj) -> str:
         profile = getattr(obj, "profile", None)
         return profile.avatar_url if profile else ""
 
-    def get_headline(self, obj):
+    def get_headline(self, obj) -> str:
         profile = getattr(obj, "profile", None)
         return profile.headline if profile else ""
 
@@ -113,3 +113,14 @@ class ProjectCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectComment
         fields = ["id", "author", "content", "parent_id", "replies", "created_at"]
+
+
+class CreateProjectCommentSerializer(serializers.Serializer):
+    content = serializers.CharField(required=True, min_length=1, help_text="Contenu du commentaire")
+    parent_id = serializers.UUIDField(required=False, allow_null=True, help_text="ID du commentaire parent en cas de réponse")
+
+
+class ProjectUpvoteResponseSerializer(serializers.Serializer):
+    is_upvoted = serializers.BooleanField()
+    upvotes_count = serializers.IntegerField()
+

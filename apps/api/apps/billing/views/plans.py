@@ -23,7 +23,7 @@ class PlansListView(APIView):
         return [AllowAny()]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Lister les plans d'abonnement disponibles (Global Pro ou Communauté)",
         parameters=[
             OpenApiParameter(
@@ -42,7 +42,7 @@ class PlansListView(APIView):
         return success_response(data=serializer.data)
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Créer une formule d'adhésion payante pour une communauté (Réservé aux créateurs Pro)",
         request=CommunityPlanCreateUpdateSerializer,
         responses={201: PlanSerializer}
@@ -143,7 +143,7 @@ class CommunityPlanDetailView(APIView):
         return plan
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Modifier une formule de paiement de communauté",
         request=CommunityPlanCreateUpdateSerializer,
         responses={200: PlanSerializer}
@@ -162,7 +162,7 @@ class CommunityPlanDetailView(APIView):
         )
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Désactiver une formule de paiement de communauté",
         responses={200: dict}
     )

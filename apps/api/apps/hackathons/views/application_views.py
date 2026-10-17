@@ -1,4 +1,7 @@
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+import csv
+
+from django.http import HttpResponse
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -24,7 +27,7 @@ class HackathonApplyView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Candidatures"],
+        tags=["Hackathons"],
         summary="Candidater à un hackathon",
         request=HackathonApplyRequestSerializer,
         responses={201: HackathonApplicationSerializer},
@@ -63,7 +66,7 @@ class HackathonMyApplicationView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Candidatures"],
+        tags=["Hackathons"],
         summary="Consulter le statut de ma candidature",
         responses={200: HackathonApplicationSerializer},
     )
@@ -83,7 +86,7 @@ class HackathonMyApplicationView(APIView):
         return success_response(data=HackathonApplicationSerializer(application).data)
 
     @extend_schema(
-        tags=["Hackathons - Candidatures"],
+        tags=["Hackathons"],
         summary="Retirer ma candidature",
         responses={200: None},
     )
@@ -107,7 +110,7 @@ class HackathonApplicationListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=["Hackathons - Candidatures"],
+        tags=["Hackathons"],
         summary="Lister toutes les candidatures (Organisateur)",
         parameters=[
             OpenApiParameter(name="status", type=str, required=False, description="Filtrer par statut (pending, accepted, rejected, waitlisted)"),
@@ -156,7 +159,7 @@ class HackathonApplicationReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Candidatures"],
+        tags=["Hackathons"],
         summary="Examiner une candidature (Organisateur)",
         request=ApplicationReviewRequestSerializer,
         responses={200: HackathonApplicationSerializer},
@@ -189,3 +192,79 @@ class HackathonApplicationReviewView(APIView):
             data=HackathonApplicationSerializer(updated).data,
             message="Décision enregistrée avec succès.",
         )
+
+
+class CommunityHackathonApplicationsExportView(APIView):
+    """
+    GET /api/v1/communities/<slug>/hackathons/<hackathon_slug>/applications/export/
+    Exports all hackathon applications to a downloadable CSV file (organizers only).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=["Hackathons"],
+        summary="Exporter les candidatures en CSV (Organisateur)",
+        description="Génère et télécharge un fichier CSV contenant la liste complète des candidatures avec statut et détails.",
+        parameters=[
+            OpenApiParameter(name="status", type=str, required=False, description="Filtrer par statut (pending, accepted, rejected, waitlisted)"),
+        ],
+        responses={
+            (200, "text/csv"): OpenApiResponse(description="Fichier CSV des candidatures"),
+        },
+    )
+    def get(self, request, slug, hackathon_slug):
+        hackathon = HackathonSelector.get_hackathon_by_slug(
+            community_slug=slug,
+            hackathon_slug=hackathon_slug,
+            user=request.user,
+        )
+        if not HackathonSelector.is_community_manager(request.user, hackathon.community):
+            return error_response(
+                "Action réservée aux organisateurs.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        qs = (
+            HackathonApplication.objects.filter(hackathon=hackathon)
+            .select_related("applicant")
+            .order_by("-created_at")
+        )
+
+        status_param = request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(status=status_param)
+
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{hackathon.slug}_applications.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "ID",
+            "Username",
+            "Email",
+            "First Name",
+            "Last Name",
+            "Participation Mode",
+            "Team Name",
+            "Status",
+            "Submitted At",
+            "Reviewed At",
+        ])
+
+        for app in qs:
+            writer.writerow([
+                str(app.id),
+                app.applicant.username,
+                app.applicant.email,
+                app.applicant.first_name,
+                app.applicant.last_name,
+                app.participation_mode,
+                app.team_name or "",
+                app.status,
+                app.created_at.isoformat() if app.created_at else "",
+                app.reviewed_at.isoformat() if app.reviewed_at else "",
+            ])
+
+        return response
+

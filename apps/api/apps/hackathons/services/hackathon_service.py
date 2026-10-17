@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
@@ -339,3 +339,78 @@ class HackathonService:
             "is_submission_open": hackathon.is_submission_open,
             "results_published": hackathon.results_published,
         }
+
+    @classmethod
+    @transaction.atomic
+    def add_criterion(cls, actor: User, hackathon: Hackathon, data: dict[str, Any]) -> HackathonCriterion:
+        cls.require_manager(actor, hackathon.community)
+        display_order = data.get("display_order")
+        if display_order is None:
+            display_order = hackathon.criteria.count()
+        return HackathonCriterion.objects.create(
+            hackathon=hackathon,
+            name=data["name"],
+            description=data.get("description", ""),
+            min_score=data.get("min_score", 0.0),
+            max_score=data.get("max_score", 20.0),
+            weight=data.get("weight", 1.0),
+            display_order=display_order,
+        )
+
+    @classmethod
+    @transaction.atomic
+    def update_criterion(cls, actor: User, hackathon: Hackathon, criterion_id: str, data: dict[str, Any]) -> HackathonCriterion:
+        cls.require_manager(actor, hackathon.community)
+        criterion = HackathonCriterion.objects.filter(id=criterion_id, hackathon=hackathon).first()
+        if not criterion:
+            raise NotFound("Critère d'évaluation introuvable.")
+        for field, value in data.items():
+            setattr(criterion, field, value)
+        criterion.save()
+        return criterion
+
+    @classmethod
+    @transaction.atomic
+    def delete_criterion(cls, actor: User, hackathon: Hackathon, criterion_id: str) -> None:
+        cls.require_manager(actor, hackathon.community)
+        deleted, _ = HackathonCriterion.objects.filter(id=criterion_id, hackathon=hackathon).delete()
+        if not deleted:
+            raise NotFound("Critère d'évaluation introuvable.")
+
+    @classmethod
+    @transaction.atomic
+    def add_prize(cls, actor: User, hackathon: Hackathon, data: dict[str, Any]) -> HackathonPrize:
+        cls.require_manager(actor, hackathon.community)
+        display_order = data.get("display_order")
+        if display_order is None:
+            display_order = hackathon.prizes.count()
+        return HackathonPrize.objects.create(
+            hackathon=hackathon,
+            title=data["title"],
+            description=data.get("description", ""),
+            reward_amount=data.get("reward_amount"),
+            reward_currency=data.get("reward_currency", "XOF"),
+            reward_description=data.get("reward_description", ""),
+            rank=data.get("rank") or 1,
+            display_order=display_order,
+        )
+
+    @classmethod
+    @transaction.atomic
+    def update_prize(cls, actor: User, hackathon: Hackathon, prize_id: str, data: dict[str, Any]) -> HackathonPrize:
+        cls.require_manager(actor, hackathon.community)
+        prize = HackathonPrize.objects.filter(id=prize_id, hackathon=hackathon).first()
+        if not prize:
+            raise NotFound("Prix introuvable.")
+        for field, value in data.items():
+            setattr(prize, field, value)
+        prize.save()
+        return prize
+
+    @classmethod
+    @transaction.atomic
+    def delete_prize(cls, actor: User, hackathon: Hackathon, prize_id: str) -> None:
+        cls.require_manager(actor, hackathon.community)
+        deleted, _ = HackathonPrize.objects.filter(id=prize_id, hackathon=hackathon).delete()
+        if not deleted:
+            raise NotFound("Prix introuvable.")

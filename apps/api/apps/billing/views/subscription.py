@@ -19,7 +19,7 @@ class MySubscriptionsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Mes abonnements actifs et passés",
         responses={200: SubscriptionSerializer(many=True)}
     )
@@ -36,7 +36,7 @@ class MyPaymentsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Historique de mes paiements et factures",
         responses={200: PaymentDetailSerializer(many=True)}
     )
@@ -54,7 +54,7 @@ class PaymentStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Vérifier le statut d'un paiement (pour la page de retour)",
         responses={200: PaymentStatusSerializer}
     )

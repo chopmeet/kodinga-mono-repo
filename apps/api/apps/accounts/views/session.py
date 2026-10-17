@@ -12,7 +12,7 @@ class UserSessionListView(APIView):
     serializer_class = UserSessionSerializer
 
     @extend_schema(
-        tags=['Sessions'],
+        tags=['Authentication & Accounts'],
         summary='List active user sessions',
         description='Returns a list of all active sessions and authorized devices for the current user.',
         responses={
@@ -31,7 +31,7 @@ class UserSessionDetailView(APIView):
     serializer_class = UserSessionSerializer
 
     @extend_schema(
-        tags=['Sessions'],
+        tags=['Authentication & Accounts'],
         summary='Revoke a specific user session',
         description='Explicitly terminates a session by UUID and invalidates its refresh token.',
         responses={

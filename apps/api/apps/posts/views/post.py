@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from common.utils.responses import error_response, success_response
+from apps.memberships.permissions import check_community_read_permission
 from apps.posts.models.post import Post
 from apps.posts.selectors.post_selector import PostSelector
 from apps.posts.serializers.poll import PollSerializer, VotePollRequestSerializer
@@ -33,6 +34,8 @@ class PostDetailView(APIView):
             post = PostSelector.get_post_by_id(post_id, user=request.user)
         except Post.DoesNotExist:
             return error_response("Publication introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        check_community_read_permission(request.user, post.community)
 
         # Increment view counter asynchronously / atomic
         Post.objects.filter(id=post.id).update(views_count=post.views_count + 1)

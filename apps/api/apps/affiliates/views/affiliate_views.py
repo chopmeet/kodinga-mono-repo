@@ -16,7 +16,7 @@ from apps.affiliates.serializers.affiliate_serializers import (
 from apps.affiliates.services.affiliate_service import AffiliateService
 
 
-@extend_schema(tags=["Affiliates"])
+@extend_schema(tags=["Billing & Affiliates"])
 class AffiliateLinkListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -40,7 +40,7 @@ class AffiliateLinkListView(APIView):
         return Response(AffiliateLinkSerializer(link).data, status=status.HTTP_201_CREATED)
 
 
-@extend_schema(tags=["Affiliates"])
+@extend_schema(tags=["Billing & Affiliates"])
 class AffiliateLinkDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -65,7 +65,7 @@ class AffiliateLinkDetailView(APIView):
         return Response(AffiliateLinkSerializer(link).data)
 
 
-@extend_schema(tags=["Affiliates"])
+@extend_schema(tags=["Billing & Affiliates"])
 class AffiliateStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -74,7 +74,7 @@ class AffiliateStatsView(APIView):
         return Response(AffiliateStatsSerializer(stats).data)
 
 
-@extend_schema(tags=["Affiliates"])
+@extend_schema(tags=["Billing & Affiliates"])
 class AffiliateClickTrackView(APIView):
     """
     Public endpoint to record clicks on referral links.
@@ -107,7 +107,7 @@ class AffiliateClickTrackView(APIView):
         })
 
 
-@extend_schema(tags=["Affiliates"])
+@extend_schema(tags=["Billing & Affiliates"])
 class PayoutRequestListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

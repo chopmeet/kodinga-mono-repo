@@ -23,7 +23,7 @@ class CategoryListCreateView(APIView):
         return [AllowAny()]
 
     @extend_schema(
-        tags=["Categories"],
+        tags=["Communities & Memberships"],
         summary="Lister les catégories thématiques",
         parameters=[
             OpenApiParameter(
@@ -48,7 +48,7 @@ class CategoryListCreateView(APIView):
         )
 
     @extend_schema(
-        tags=["Categories"],
+        tags=["Communities & Memberships"],
         summary="Créer une nouvelle catégorie thématique",
         request=CommunityCategoryCreateUpdateSerializer,
         responses={201: CommunityCategorySerializer},
@@ -76,7 +76,7 @@ class CategoryDetailView(APIView):
         return [AllowAny()]
 
     @extend_schema(
-        tags=["Categories"],
+        tags=["Communities & Memberships"],
         summary="Consulter les détails d'une catégorie par son slug",
         responses={200: CommunityCategorySerializer},
     )
@@ -91,7 +91,7 @@ class CategoryDetailView(APIView):
         return success_response(data=CommunityCategorySerializer(category).data)
 
     @extend_schema(
-        tags=["Categories"],
+        tags=["Communities & Memberships"],
         summary="Mettre à jour une catégorie thématique",
         request=CommunityCategoryCreateUpdateSerializer,
         responses={200: CommunityCategorySerializer},
@@ -118,7 +118,7 @@ class CategoryDetailView(APIView):
         )
 
     @extend_schema(
-        tags=["Categories"],
+        tags=["Communities & Memberships"],
         summary="Supprimer / Désactiver une catégorie thématique",
         parameters=[
             OpenApiParameter(
