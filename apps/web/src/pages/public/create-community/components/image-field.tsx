@@ -74,8 +74,8 @@ export function ImageField({ label, help, purpose, source, onSourceChange, file,
         <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
           {(
             [
-              { value: 'file', label: 'Téléverser (UploadThing)', icon: Upload },
-              { value: 'url', label: 'URL directe', icon: Link2 },
+              { value: 'file', label: 'Fichier (UploadThing)', icon: Upload },
+              { value: 'url', label: 'Lien', icon: Link2 },
             ] as const
           ).map(({ value, label: text, icon: Icon }) => (
             <button
@@ -141,7 +141,7 @@ export function ImageField({ label, help, purpose, source, onSourceChange, file,
             className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-600 bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-2xs transition hover:bg-blue-100"
           >
             <Upload className="size-3.5" />
-            {file ? "Changer de fichier" : `Sélectionner un fichier`}
+            {file ? 'Changer de fichier' : 'Sélectionner un fichier'}
           </label>
           <input
             id={`${id}-file-btn`}
@@ -152,7 +152,8 @@ export function ImageField({ label, help, purpose, source, onSourceChange, file,
           />
           {file ? (
             <p className="flex max-w-full items-center gap-2 text-xs font-medium text-emerald-700">
-              <span>✓ {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} Mo)</span>
+              <span className="truncate font-semibold">{file.name}</span>
+              <span className="shrink-0 text-xs text-slate-500">({(file.size / (1024 * 1024)).toFixed(2)} Mo)</span>
               <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600">
                 <Trash2 className="size-3.5" /> Retirer
               </button>

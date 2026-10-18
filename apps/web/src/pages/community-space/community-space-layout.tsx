@@ -28,10 +28,10 @@ function CommunitySpaceLayout() {
   const { slug = '' } = useParams();
   const user = useUser();
   const mock = getMyCommunity(slug);
-  const { data, isLoading } = useGetCommunityQuery(slug, { skip: !!mock || !user || !slug });
+  const { data, isLoading, isFetching } = useGetCommunityQuery(slug, { skip: !!mock || !user || !slug });
   const space = mock ?? spaceFromApi(data);
 
-  if (!mock && isLoading) {
+  if (!mock && (isLoading || (isFetching && !space))) {
     return (
       <div className="flex min-h-svh items-center justify-center gap-3 text-slate-600" role="status">
         <LoaderCircle className="size-5 animate-spin text-brand" />
