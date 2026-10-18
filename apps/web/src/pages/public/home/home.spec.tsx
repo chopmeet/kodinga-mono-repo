@@ -81,4 +81,19 @@ describe('Home directory', () => {
     expect(await screen.findByText('Service indisponible.', {}, SLOW)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Réessayer' })).toBeTruthy();
   });
+
+  it('ranks the communities that gather the most members in "Le pouls des communautés"', async () => {
+    const urls = stubDirectory(adminCommunities, adminCategories);
+    renderAppAt('/');
+    const ranking = await screen.findByRole('list', { name: 'Communautés les plus suivies' }, SLOW);
+    expect(urls.some((u) => u.searchParams.get('page_size') === '30')).toBe(true);
+
+    // Top 5 of the communities read, by members (publications break a tie), each linked to its page
+    const expected = [...adminCommunities.slice(0, 30)]
+      .sort((a, b) => b.members_count - a.members_count || b.posts_count - a.posts_count)
+      .slice(0, 5);
+    const links = within(ranking).getAllByRole('link');
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(expected.map((c) => `/communities/${c.slug}`));
+    expect(within(links[0]).getByText(expected[0].name)).toBeTruthy();
+  });
 });
