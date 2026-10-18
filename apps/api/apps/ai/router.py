@@ -1,10 +1,13 @@
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from django.conf import settings
 
-from apps.ai.providers.circuit_breaker import QuotaCircuitBreaker, gemini_circuit_breaker
+from apps.ai.providers.circuit_breaker import (
+    QuotaCircuitBreaker,
+    gemini_circuit_breaker,
+)
 from apps.ai.providers.exceptions import (
     AllProvidersFailedError,
     ConfigurationError,
@@ -209,7 +212,7 @@ class ProviderRouter:
                     "gemini_error": str(gemini_error),
                     "openai_error": str(openai_err),
                 },
-            )
+            ) from openai_err
 
     # -----------------------------------------------------------------
     # Public Abstracted Operations
@@ -229,14 +232,14 @@ class ProviderRouter:
         return self._execute_with_fallback("analyze_sentiment", "analyze_sentiment", text)
 
     def moderate_content(
-        self, text: str, context: Optional[Dict[str, Any]] = None
+        self, text: str, context: Optional[dict[str, Any]] = None
     ) -> ModerationResult:
         return self._execute_with_fallback(
             "moderate_content", "moderate_content", text, context
         )
 
     def classify_community_policy_violation(
-        self, text: str, community_rules: Optional[Dict[str, Any]] = None
+        self, text: str, community_rules: Optional[dict[str, Any]] = None
     ) -> PolicyViolationResult:
         return self._execute_with_fallback(
             "classify_community_policy_violation",
@@ -263,7 +266,7 @@ class ProviderRouter:
         self,
         idea: str,
         language: str = "fr",
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> CommunityProposalResult:
         return self._execute_with_fallback(
             "plan_community",
@@ -275,7 +278,7 @@ class ProviderRouter:
 
     def suggest_content(
         self,
-        community_info: Dict[str, Any],
+        community_info: dict[str, Any],
         goal: Optional[str] = None,
         language: str = "fr",
     ) -> ContentSuggestionResult:
@@ -289,8 +292,8 @@ class ProviderRouter:
 
     def analyze_community(
         self,
-        community_info: Dict[str, Any],
-        metrics: Dict[str, Any],
+        community_info: dict[str, Any],
+        metrics: dict[str, Any],
         language: str = "fr",
     ) -> CommunityAnalysisResult:
         return self._execute_with_fallback(
@@ -305,7 +308,7 @@ class ProviderRouter:
         self,
         message: str,
         history: list,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         language: str = "fr",
     ) -> AssistantChatResult:
         return self._execute_with_fallback(

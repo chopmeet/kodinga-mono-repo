@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from django.db import models
 
 from apps.communities.models.community import Community

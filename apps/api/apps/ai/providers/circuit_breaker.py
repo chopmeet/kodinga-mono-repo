@@ -1,7 +1,7 @@
 import logging
 import threading
 import time
-from typing import Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class QuotaCircuitBreaker:
             self.consecutive_errors = 0
             self.last_error = ""
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Returns status dictionary for health and observability."""
         with self._lock:
             now = time.time()

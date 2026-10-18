@@ -1,12 +1,13 @@
-from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
-from common.serializers.base import BaseModelSerializer
+from rest_framework import serializers
+
 from apps.accounts.serializers.user import UserSerializer
 from apps.profiles.models.profile import DeveloperProfile
-from apps.profiles.serializers.skill import DeveloperSkillSerializer
-from apps.profiles.serializers.experience import DeveloperExperienceSerializer
 from apps.profiles.serializers.education import DeveloperEducationSerializer
+from apps.profiles.serializers.experience import DeveloperExperienceSerializer
 from apps.profiles.serializers.portfolio import DeveloperPortfolioProjectSerializer
+from apps.profiles.serializers.skill import DeveloperSkillSerializer
+from common.serializers.base import BaseModelSerializer
 
 
 class DeveloperProfileDetailSerializer(BaseModelSerializer):

@@ -1,4 +1,5 @@
 from django.urls import path
+
 from apps.memberships.views.invitation import (
     AcceptInvitationView,
     CommunityInvitationsView,

@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional, Type
-from django.db import models
+from typing import Any, Optional
+
 from rest_framework import status, viewsets
 from rest_framework.response import Response
+
 from common.utils.pagination import StandardResultsSetPagination
 
 
@@ -14,8 +15,8 @@ class BaseCRUDViewSet(viewsets.ModelViewSet):
     - Default standard pagination
     """
     pagination_class = StandardResultsSetPagination
-    write_serializer_class: Optional[Type[Any]] = None
-    permission_classes_by_action: Dict[str, List[Any]] = {}
+    write_serializer_class: Optional[type[Any]] = None
+    permission_classes_by_action: dict[str, list[Any]] = {}
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update'] and self.write_serializer_class is not None:

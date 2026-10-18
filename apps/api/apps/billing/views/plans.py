@@ -1,16 +1,23 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from django.utils.text import slugify
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from common.permissions.base import is_superadmin_user
-from common.utils.responses import success_response, error_response
-from apps.billing.models.plan import Plan, BillingInterval
+
+from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.selectors.billing_selector import BillingSelector
-from apps.billing.serializers.plan import PlanSerializer, CommunityPlanCreateUpdateSerializer
+from apps.billing.serializers.plan import (
+    CommunityPlanCreateUpdateSerializer,
+    PlanSerializer,
+)
 from apps.communities.models.community import Community, CommunityPricing
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
+from common.permissions.base import is_superadmin_user
+from common.utils.responses import success_response
 
 
 class PlansListView(APIView):
@@ -60,8 +67,8 @@ class PlansListView(APIView):
         community_id = serializer.validated_data['community_id']
         try:
             community = Community.objects.get(id=community_id)
-        except Community.DoesNotExist:
-            raise NotFound("Communauté introuvable.")
+        except Community.DoesNotExist as err:
+            raise NotFound("Communauté introuvable.") from err
 
         # Check owner / admin permissions
         if not is_superadmin_user(user) and community.owner_id != user.id:
@@ -119,8 +126,8 @@ class CommunityPlanDetailView(APIView):
     def _get_plan_and_check_permission(self, plan_id, user):
         try:
             plan = Plan.objects.select_related('community').get(id=plan_id)
-        except Plan.DoesNotExist:
-            raise NotFound("Plan introuvable.")
+        except Plan.DoesNotExist as err:
+            raise NotFound("Plan introuvable.") from err
 
         if not plan.community:
             if not is_superadmin_user(user):

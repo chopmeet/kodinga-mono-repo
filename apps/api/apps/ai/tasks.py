@@ -1,4 +1,5 @@
 import logging
+
 from celery import shared_task
 
 from apps.ai.services.sentiment_service import SentimentService

@@ -1,7 +1,12 @@
 from rest_framework.permissions import BasePermission
+
+from apps.communities.models.community import Community
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from common.permissions.base import is_superadmin_user
-from apps.communities.models.community import Community, CommunityPrivacy
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
 
 
 class IsCommunityClassroomManager(BasePermission):
@@ -38,9 +43,4 @@ class IsCommunityClassroomManager(BasePermission):
         ).exists()
 
 
-from apps.memberships.permissions import (
-    IsActiveCommunityMember,
-    check_community_membership,
-    is_active_community_member,
-)
 

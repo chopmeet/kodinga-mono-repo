@@ -1,16 +1,16 @@
+from apps.posts.views.comment import (
+    AcceptAnswerView,
+    CommentDetailView,
+    PostCommentsView,
+    ToggleCommentReactionView,
+)
 from apps.posts.views.feed import CommunityFeedView, CommunityPostCategoriesView
 from apps.posts.views.post import (
     PostDetailView,
-    TogglePostPinView,
     TogglePostLockView,
+    TogglePostPinView,
     TogglePostReactionView,
     VotePollView,
-)
-from apps.posts.views.comment import (
-    PostCommentsView,
-    CommentDetailView,
-    ToggleCommentReactionView,
-    AcceptAnswerView,
 )
 
 __all__ = [

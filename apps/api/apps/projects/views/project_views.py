@@ -65,7 +65,7 @@ class ProjectListView(APIView):
                 ).values_list("project_id", flat=True)
             )
             for p in projects:
-                setattr(p, "is_upvoted", p.id in upvoted_ids)
+                p.is_upvoted = p.id in upvoted_ids
 
         return Response(ProjectSerializer(projects, many=True).data)
 

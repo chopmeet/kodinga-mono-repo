@@ -68,6 +68,8 @@ exclude = [
   ".tox",
   ".venv",
   "dist",
+  "**/migrations/*",
+  "scratch",
 ]
 
 line-length = 88

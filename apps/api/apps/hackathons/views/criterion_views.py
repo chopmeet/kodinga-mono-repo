@@ -3,11 +3,10 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.hackathons.models.criterion import HackathonCriterion
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.hackathons.serializers.criterion import HackathonCriterionSerializer
 from apps.hackathons.services.hackathon_service import HackathonService
-from common.utils.responses import error_response, success_response
+from common.utils.responses import success_response
 
 
 class CommunityHackathonCriteriaView(APIView):

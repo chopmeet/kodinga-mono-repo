@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from apps.ai.router import ai_router
 from apps.ai.schemas import LanguageDetectionResult

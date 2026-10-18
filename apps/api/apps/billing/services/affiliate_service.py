@@ -1,10 +1,16 @@
-from decimal import Decimal
 import logging
+from decimal import Decimal
 from typing import Optional
+
 from django.db import transaction
 from django.db.models import F
+
 from apps.accounts.models.user import User
-from apps.billing.models.affiliate import Affiliate, AffiliateCommission, CommissionStatus
+from apps.billing.models.affiliate import (
+    Affiliate,
+    AffiliateCommission,
+    CommissionStatus,
+)
 from apps.billing.models.payment import Payment, PaymentStatus
 
 logger = logging.getLogger('kodinga.billing.affiliate')

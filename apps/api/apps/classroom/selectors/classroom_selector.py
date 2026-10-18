@@ -1,15 +1,21 @@
 from typing import Optional
+
 from django.db.models import Prefetch, Q, QuerySet
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
-from common.permissions.base import is_superadmin_user
+
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community
 from apps.classroom.models.course import Course
-from apps.classroom.models.module import CourseModule
 from apps.classroom.models.lesson import Lesson
+from apps.classroom.models.module import CourseModule
 from apps.classroom.models.progress import CourseEnrollment, LessonProgress
 from apps.classroom.services.progress_service import ProgressService
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.communities.models.community import Community
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
+from common.permissions.base import is_superadmin_user
 
 
 class ClassroomSelector:
@@ -180,8 +186,8 @@ class ClassroomSelector:
                 module__course__community=community,
                 module__course__slug=course_slug
             )
-        except Lesson.DoesNotExist:
-            raise NotFound("Leçon introuvable.")
+        except Lesson.DoesNotExist as err:
+            raise NotFound("Leçon introuvable.") from err
 
         lesson.is_locked = ProgressService.is_lesson_locked(user, lesson)
         if user and user.is_authenticated:

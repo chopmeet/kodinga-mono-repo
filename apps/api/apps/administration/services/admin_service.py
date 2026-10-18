@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
@@ -26,7 +27,7 @@ class AdministrationService:
         actor: Optional[User] = None,
         target_type: str = '',
         target_id: str = '',
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         user_agent: str = ''
     ) -> PlatformAuditLog:
@@ -44,12 +45,12 @@ class AdministrationService:
         )
 
     @classmethod
-    def check_system_health(cls) -> Dict[str, Any]:
+    def check_system_health(cls) -> dict[str, Any]:
         """
         Verifies availability and latency of PostgreSQL, Redis cache, and storage subsystems.
         """
         now = timezone.now()
-        health_report: Dict[str, Any] = {
+        health_report: dict[str, Any] = {
             'status': 'healthy',
             'components': {},
             'checked_at': now.isoformat()
@@ -175,7 +176,7 @@ class AdministrationService:
         return target_user
 
     @classmethod
-    def get_dashboard_summary(cls) -> Dict[str, Any]:
+    def get_dashboard_summary(cls) -> dict[str, Any]:
         """
         Consolidates top metrics and recent platform audit logs for the superadmin dashboard.
         """

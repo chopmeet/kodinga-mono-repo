@@ -1,9 +1,8 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from common.utils.responses import success_response, error_response
+
 from apps.profiles.selectors.profile_selector import ProfileSelector
 from apps.profiles.serializers.education import DeveloperEducationSerializer
 from apps.profiles.serializers.experience import DeveloperExperienceSerializer
@@ -14,6 +13,7 @@ from apps.profiles.serializers.skill import (
 )
 from apps.profiles.serializers.technology import TechnologySerializer
 from apps.profiles.services.profile_service import ProfileService
+from common.utils.responses import error_response, success_response
 
 
 class TechnologyListView(APIView):

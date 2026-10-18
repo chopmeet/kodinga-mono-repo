@@ -1,5 +1,7 @@
 from django.urls import path
+
 from apps.billing.views import (
+    CommunityPlanDetailView,
     CreateCheckoutView,
     JoinAffiliateView,
     MyAffiliateView,
@@ -8,7 +10,6 @@ from apps.billing.views import (
     PayDunyaIPNView,
     PaymentStatusView,
     PlansListView,
-    CommunityPlanDetailView,
 )
 
 app_name = 'billing'

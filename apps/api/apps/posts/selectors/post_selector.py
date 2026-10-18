@@ -1,14 +1,14 @@
 from typing import Optional
+
 from django.db.models import Prefetch, Q, QuerySet
+
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community, CommunityPrivacy
-from apps.memberships.models.member import CommunityMember, MembershipStatus
+from apps.communities.models.community import Community
 from apps.memberships.permissions import check_community_read_permission
 from apps.posts.models.category import PostCategory
 from apps.posts.models.comment import Comment
-from apps.posts.models.poll import Poll, PollOption
+from apps.posts.models.poll import PollOption
 from apps.posts.models.post import Post
-from apps.posts.models.reaction import PostReaction, CommentReaction
 
 
 class PostSelector:

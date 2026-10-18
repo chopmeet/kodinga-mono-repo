@@ -1,12 +1,17 @@
-from datetime import datetime, timezone as dt_timezone
 import uuid
-from django.conf import settings
+from datetime import datetime
+from datetime import timezone as dt_timezone
+
 from django.utils import timezone
-from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
-from common.exceptions.handler import ResourceNotFoundError
+
 from apps.accounts.models.session import UserSession
 from apps.accounts.services.security import AccountSecurityService
+from common.exceptions.handler import ResourceNotFoundError
 
 
 class SessionService:
@@ -56,8 +61,8 @@ class SessionService:
     def revoke_session(cls, user, session_id: str) -> None:
         try:
             session = UserSession.objects.get(user=user, id=session_id)
-        except UserSession.DoesNotExist:
-            raise ResourceNotFoundError("Session not found.")
+        except UserSession.DoesNotExist as err:
+            raise ResourceNotFoundError("Session not found.") from err
 
         session.revoke()
 

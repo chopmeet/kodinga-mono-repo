@@ -12,10 +12,9 @@ from apps.hackathons.models.application import (
 )
 from apps.hackathons.models.hackathon import Hackathon
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
-from apps.memberships.permissions import check_community_membership
-from common.permissions.base import is_superadmin_user
 
 
 class HackathonApplicationService:

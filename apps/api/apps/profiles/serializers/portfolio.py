@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.profiles.models.portfolio import DeveloperPortfolioProject
 from apps.profiles.serializers.technology import TechnologySerializer
+from common.serializers.base import BaseModelSerializer
 
 
 class DeveloperPortfolioProjectSerializer(BaseModelSerializer):

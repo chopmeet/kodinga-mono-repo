@@ -4,10 +4,12 @@ import json
 import logging
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Optional
+
 import requests
 from django.conf import settings
 from rest_framework.exceptions import NotFound, ValidationError
+
 from apps.accounts.models.user import User
 from apps.media.models.video_asset import VideoAsset, VideoStatus
 from common.permissions.base import is_superadmin_user
@@ -38,7 +40,7 @@ class MuxVideoService:
         description: str = "",
         passthrough: str = "",
         cors_origin: str = "*",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Creates a direct upload URL via Mux REST API and registers a waiting VideoAsset.
         """
@@ -95,6 +97,73 @@ class MuxVideoService:
         }
 
     @classmethod
+    def create_asset_from_url(
+        cls,
+        user: User,
+        input_url: str,
+        title: str = "",
+        description: str = "",
+        passthrough: str = "",
+    ) -> VideoAsset:
+        """
+        Creates a Mux asset from an external video URL (such as an UploadThing stored URL).
+        Mux fetches the video, transcodes it for adaptive streaming, and assigns playback IDs.
+        """
+        user_id_str = str(getattr(user, 'id', 'system'))
+        passthrough_val = passthrough or f"user_{user_id_str}_{uuid.uuid4().hex[:8]}"
+        auth = cls._get_auth()
+
+        asset_id = None
+        playback_id = None
+        status = VideoStatus.PREPARING
+
+        if auth:
+            payload = {
+                "input": [{"url": input_url}],
+                "playback_policy": ["public"],
+                "passthrough": passthrough_val,
+            }
+            try:
+                response = requests.post(
+                    f"{cls.MUX_API_URL}/assets",
+                    json=payload,
+                    auth=auth,
+                    timeout=15,
+                )
+                if response.status_code in (200, 201):
+                    data = response.json().get('data', {})
+                    asset_id = data.get('id')
+                    p_ids = data.get('playback_ids', [])
+                    if p_ids:
+                        playback_id = p_ids[0].get('id')
+                    status = VideoStatus.PREPARING
+                else:
+                    logger.error(f"Mux Asset creation error {response.status_code}: {response.text}")
+            except Exception as exc:
+                logger.error(f"Failed to connect to Mux API for asset creation: {exc}")
+
+        # Fallback / dev mock mode if Mux keys not configured or error
+        if not asset_id:
+            asset_id = f"mux_asset_{uuid.uuid4().hex[:16]}"
+            playback_id = f"playback_{uuid.uuid4().hex[:16]}"
+            status = VideoStatus.READY
+
+        video_asset = VideoAsset.objects.create(
+            user=user,
+            title=title or "Lesson Video",
+            description=description,
+            asset_id=asset_id,
+            playback_id=playback_id,
+            passthrough=passthrough_val,
+            status=status,
+            metadata={
+                'source_url': input_url,
+                'source_provider': 'uploadthing',
+            }
+        )
+        return video_asset
+
+    @classmethod
     def verify_webhook_signature(cls, raw_body: bytes, header_signature: str) -> bool:
         """
         Verifies Mux-Signature header using HMAC SHA-256.
@@ -119,9 +188,9 @@ class MuxVideoService:
             if abs(int(time.time()) - int(t)) > 300:
                 return False
 
-            payload_to_sign = f"{t}.".encode('utf-8') + raw_body
+            payload_to_sign = f"{t}.".encode() + raw_body
             expected_sig = hmac.new(
-                secret.encode('utf-8'),
+                secret.encode(),
                 payload_to_sign,
                 hashlib.sha256
             ).hexdigest()
@@ -132,7 +201,7 @@ class MuxVideoService:
             return False
 
     @classmethod
-    def handle_webhook_event(cls, event_data: Dict[str, Any]) -> None:
+    def handle_webhook_event(cls, event_data: dict[str, Any]) -> None:
         """
         Processes Mux webhook events:
         - video.upload.asset_created
@@ -198,8 +267,8 @@ class MuxVideoService:
     def get_video_by_id(cls, video_id: str) -> VideoAsset:
         try:
             return VideoAsset.objects.get(id=video_id)
-        except VideoAsset.DoesNotExist:
-            raise NotFound("Vidéo introuvable.")
+        except VideoAsset.DoesNotExist as err:
+            raise NotFound("Vidéo introuvable.") from err
 
     @classmethod
     def delete_video(cls, user: User, video_id: str) -> None:

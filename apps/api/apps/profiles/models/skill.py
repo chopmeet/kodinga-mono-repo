@@ -1,8 +1,9 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from common.models.base import BaseModel
+
 from apps.profiles.models.profile import DeveloperProfile
 from apps.profiles.models.technology import Technology
+from common.models.base import BaseModel
 
 
 class SkillLevel(models.TextChoices):

@@ -1,21 +1,21 @@
 import logging
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from django.core.cache import cache
 from django.db.models import Count, Sum
 from django.utils import timezone
 
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community
-from apps.posts.models.post import Post
-from apps.posts.models.comment import Comment
+from apps.analytics.models.metric import MetricType, PlatformMetric
 from apps.billing.models.payment import Payment, PaymentStatus
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
 from apps.classroom.models.course import Course
 from apps.classroom.models.progress import LessonProgress
-from apps.analytics.models.metric import MetricType, PlatformMetric
+from apps.communities.models.community import Community
+from apps.posts.models.comment import Comment
+from apps.posts.models.post import Post
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class AnalyticsService:
     """
 
     @classmethod
-    def get_overview_metrics(cls, force_refresh: bool = False) -> Dict[str, Any]:
+    def get_overview_metrics(cls, force_refresh: bool = False) -> dict[str, Any]:
         """
         Retrieves global platform statistics (users, communities, posts, courses, revenue).
         Cached in Redis with a 5-minute TTL.
@@ -133,7 +133,7 @@ class AnalyticsService:
         return data
 
     @classmethod
-    def get_financial_metrics(cls, force_refresh: bool = False) -> Dict[str, Any]:
+    def get_financial_metrics(cls, force_refresh: bool = False) -> dict[str, Any]:
         """
         Detailed financial metrics: revenue breakdown, transactions, subscriptions.
         """
@@ -200,7 +200,7 @@ class AnalyticsService:
         return data
 
     @classmethod
-    def get_engagement_metrics(cls, force_refresh: bool = False) -> Dict[str, Any]:
+    def get_engagement_metrics(cls, force_refresh: bool = False) -> dict[str, Any]:
         """
         Engagement metrics: DAU, WAU, posts per week, active learners.
         """
@@ -253,7 +253,7 @@ class AnalyticsService:
         metric_name: str,
         value: Decimal | float | int,
         metric_type: str = MetricType.COUNTER,
-        dimensions: Optional[Dict[str, Any]] = None,
+        dimensions: Optional[dict[str, Any]] = None,
         period_start=None,
         period_end=None
     ) -> PlatformMetric:

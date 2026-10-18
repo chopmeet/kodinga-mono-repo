@@ -1,12 +1,14 @@
-from datetime import timedelta
 import secrets
+from datetime import timedelta
 from typing import Optional
+
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community, CommunityPrivacy
+from apps.communities.models.community import Community
 from apps.memberships.models.invitation import CommunityInvitation
 from apps.memberships.models.member import (
     CommunityMember,
@@ -58,8 +60,12 @@ class MembershipService:
 
         # Check paid community restriction: direct free join is blocked (superadmins bypass)
         if community.pricing_type == 'paid' and not invite_code and not is_superadmin_user(user) and user.id != community.owner_id:
-            from apps.billing.models.subscription import Subscription, SubscriptionStatus
             from django.utils import timezone
+
+            from apps.billing.models.subscription import (
+                Subscription,
+                SubscriptionStatus,
+            )
             has_valid_sub = Subscription.objects.filter(
                 user=user,
                 community=community,
@@ -211,9 +217,12 @@ class MembershipService:
         if member.role == CommunityRole.OWNER and not is_superadmin_user(actor_user):
             raise PermissionDenied("Impossible de sanctionner le propriétaire de la communauté.")
 
-        if member.role == CommunityRole.ADMIN and not is_superadmin_user(actor_user):
-            if actor_membership.role != CommunityRole.OWNER:
-                raise PermissionDenied("Seul le propriétaire de la communauté peut sanctionner un administrateur.")
+        if (
+            member.role == CommunityRole.ADMIN
+            and not is_superadmin_user(actor_user)
+            and actor_membership.role != CommunityRole.OWNER
+        ):
+            raise PermissionDenied("Seul le propriétaire de la communauté peut sanctionner un administrateur.")
 
         expires_at = timezone.now() + timedelta(days=duration_days) if duration_days else None
 

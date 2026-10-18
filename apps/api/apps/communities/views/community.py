@@ -1,13 +1,10 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from common.utils.pagination import CommunityGridPagination, StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
+
 from apps.communities.models.community import Community
 from apps.communities.selectors.community_selector import CommunitySelector
-from apps.communities.serializers.category import CommunityCategorySerializer
 from apps.communities.serializers.community import (
     CommunityCreateUpdateSerializer,
     CommunityDetailSerializer,
@@ -15,6 +12,11 @@ from apps.communities.serializers.community import (
 )
 from apps.communities.services.community_service import CommunityService
 from apps.memberships.models.member import CommunityMember, MembershipStatus
+from common.utils.pagination import (
+    CommunityGridPagination,
+    StandardResultsSetPagination,
+)
+from common.utils.responses import error_response, success_response
 
 
 class CommunityListCreateView(APIView):

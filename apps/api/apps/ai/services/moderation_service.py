@@ -1,6 +1,6 @@
 import hashlib
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -98,11 +98,14 @@ class ModerationService:
             settings = community.settings
             non_mandatory_config = getattr(settings, "non_mandatory_moderation", {}) or {}
             for cat in mod_result.categories:
-                if cat in non_mandatory_config and non_mandatory_config.get(cat) is True:
-                    if final_decision == "allow":
-                        final_decision = "review"
-                        mod_result.decision = "review"
-                        mod_result.flagged = True
+                if (
+                    cat in non_mandatory_config
+                    and non_mandatory_config.get(cat) is True
+                    and final_decision == "allow"
+                ):
+                    final_decision = "review"
+                    mod_result.decision = "review"
+                    mod_result.flagged = True
 
         # Record audit log
         cls._log_decision(
@@ -134,13 +137,13 @@ class ModerationService:
         """
         try:
             result = cls.evaluate_content(text, community=community, author=author)
-        except AllProvidersFailedError:
+        except AllProvidersFailedError as err:
             # FAIL CLOSED: Do not publish unmoderated content!
             raise ValidationError(
                 "Le service de modération et sécurité est temporairement indisponible. "
                 "Pour garantir la sécurité de la communauté, votre publication est en pause. "
                 "Veuillez réessayer dans un instant."
-            )
+            ) from err
 
         if result.decision == "reject":
             violation_names = ", ".join(result.categories) if result.categories else "sécurité"
@@ -157,7 +160,7 @@ class ModerationService:
         content_preview: str,
         content_hash: str,
         decision: str,
-        categories: List[str],
+        categories: list[str],
         confidence: float,
         reason: str,
         provider: str,

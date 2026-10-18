@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from django.db.models import Q, QuerySet
 from rest_framework.exceptions import NotFound, PermissionDenied

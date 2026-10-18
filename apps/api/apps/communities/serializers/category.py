@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.communities.models.category import CommunityCategory
+from common.serializers.base import BaseModelSerializer
 
 
 class CommunityCategorySerializer(BaseModelSerializer):

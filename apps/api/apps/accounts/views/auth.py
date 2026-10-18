@@ -3,8 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from common.serializers.base import EmptySerializer
-from common.utils.responses import success_response
+
 from apps.accounts.serializers.auth import (
     ChangePasswordSerializer,
     EmailVerificationSerializer,
@@ -20,6 +19,8 @@ from apps.accounts.services.password import PasswordChangeService, PasswordReset
 from apps.accounts.services.registration import RegistrationService
 from apps.accounts.services.session import SessionService
 from apps.accounts.services.verification import EmailVerificationService
+from common.serializers.base import EmptySerializer
+from common.utils.responses import success_response
 
 
 class RegisterView(APIView):
