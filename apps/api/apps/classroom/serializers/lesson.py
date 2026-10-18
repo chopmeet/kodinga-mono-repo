@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.classroom.models.lesson import ContentFormat, Lesson, LessonType
 from apps.media.serializers.video import VideoAssetSerializer
+from common.serializers.base import BaseModelSerializer
 
 
 class LessonSerializer(BaseModelSerializer):
@@ -9,6 +10,7 @@ class LessonSerializer(BaseModelSerializer):
     video_thumbnail_url = serializers.CharField(read_only=True)
     video_playback_id = serializers.CharField(read_only=True)
     video_status = serializers.CharField(read_only=True)
+    video_source_url = serializers.CharField(read_only=True)
     reading_time_minutes = serializers.IntegerField(read_only=True)
     estimated_duration_display = serializers.CharField(read_only=True)
     has_video = serializers.BooleanField(read_only=True)
@@ -37,6 +39,7 @@ class LessonSerializer(BaseModelSerializer):
             'video_thumbnail_url',
             'video_playback_id',
             'video_status',
+            'video_source_url',
             'is_completed',
             'is_locked',
             'created_at',
@@ -104,5 +107,5 @@ class LessonCreateUpdateSerializer(serializers.Serializer):
         import uuid
         try:
             return uuid.UUID(str(value).strip())
-        except (ValueError, AttributeError):
-            raise serializers.ValidationError("Doit être un UUID valide ou laissé vide/null pour du texte pur.")
+        except (ValueError, AttributeError) as err:
+            raise serializers.ValidationError("Doit être un UUID valide ou laissé vide/null pour du texte pur.") from err

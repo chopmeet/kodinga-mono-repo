@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.db import models
-from common.models.base import BaseModel
+
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
+from common.models.base import BaseModel
 
 
 class PaymentStatus(models.TextChoices):

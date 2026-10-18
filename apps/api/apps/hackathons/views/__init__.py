@@ -1,8 +1,13 @@
 from apps.hackathons.views.application_views import (
+    CommunityHackathonApplicationsExportView,
     HackathonApplicationListView,
     HackathonApplicationReviewView,
     HackathonApplyView,
     HackathonMyApplicationView,
+)
+from apps.hackathons.views.criterion_views import (
+    CommunityHackathonCriteriaView,
+    CommunityHackathonCriterionDetailView,
 )
 from apps.hackathons.views.hackathon_views import (
     CommunityHackathonDashboardView,
@@ -10,6 +15,7 @@ from apps.hackathons.views.hackathon_views import (
     CommunityHackathonLifecycleView,
     CommunityHackathonListCreateView,
     CommunityHackathonPublishView,
+    MyHackathonListView,
     PublicHackathonListView,
 )
 from apps.hackathons.views.judging_views import (
@@ -18,6 +24,10 @@ from apps.hackathons.views.judging_views import (
     HackathonLeaderboardView,
     HackathonPublishResultsView,
     HackathonSubmissionEvaluateView,
+)
+from apps.hackathons.views.prize_views import (
+    CommunityHackathonPrizeDetailView,
+    CommunityHackathonPrizesView,
 )
 from apps.hackathons.views.submission_views import (
     HackathonMySubmissionView,
@@ -36,6 +46,7 @@ from apps.hackathons.views.team_views import (
 
 __all__ = [
     "PublicHackathonListView",
+    "MyHackathonListView",
     "CommunityHackathonListCreateView",
     "CommunityHackathonDetailView",
     "CommunityHackathonPublishView",
@@ -45,6 +56,11 @@ __all__ = [
     "HackathonMyApplicationView",
     "HackathonApplicationListView",
     "HackathonApplicationReviewView",
+    "CommunityHackathonApplicationsExportView",
+    "CommunityHackathonCriteriaView",
+    "CommunityHackathonCriterionDetailView",
+    "CommunityHackathonPrizesView",
+    "CommunityHackathonPrizeDetailView",
     "HackathonTeamListCreateView",
     "HackathonTeamDetailView",
     "HackathonTeamInviteView",

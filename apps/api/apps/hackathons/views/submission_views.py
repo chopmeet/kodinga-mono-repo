@@ -31,7 +31,7 @@ class HackathonMySubmissionView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Consulter mon projet (Brouillon ou Final)",
         responses={200: HackathonSubmissionDetailSerializer},
     )
@@ -51,7 +51,7 @@ class HackathonMySubmissionView(APIView):
         return success_response(data=HackathonSubmissionDetailSerializer(submission).data)
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Mettre à jour mon projet de hackathon",
         request=HackathonSubmissionUpdateSerializer,
         responses={200: HackathonSubmissionDetailSerializer},
@@ -88,7 +88,7 @@ class HackathonSubmissionFileAttachView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Uploader ou joindre un fichier au projet",
         request=AttachFileRequestSerializer,
         responses={201: HackathonSubmissionFileSerializer},
@@ -174,7 +174,7 @@ class HackathonSubmissionFileDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Supprimer une pièce jointe",
         responses={200: None},
     )
@@ -195,10 +195,12 @@ class HackathonSubmissionFinalizeView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = HackathonSubmissionDetailSerializer
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Finaliser la soumission du projet",
+        request=None,
         responses={200: HackathonSubmissionDetailSerializer},
     )
     def post(self, request, slug, hackathon_slug):
@@ -231,7 +233,7 @@ class HackathonSubmissionListView(APIView):
         return [IsAuthenticated()]
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Lister les projets soumis au hackathon",
         parameters=[
             OpenApiParameter(name="final_only", type=bool, required=False, description="Uniquement projets finalisés (défaut: true)"),
@@ -288,7 +290,7 @@ class HackathonSubmissionDetailView(APIView):
         return [IsAuthenticated()]
 
     @extend_schema(
-        tags=["Hackathons - Projets & Soumissions"],
+        tags=["Hackathons"],
         summary="Détail d'un projet soumis",
         responses={200: HackathonSubmissionDetailSerializer},
     )

@@ -15,6 +15,8 @@ type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 /** Public detail of the community + POST invitations/accept/ */
 function stubInvitationApi({ isMember = false, role = 'member' } = {}) {
   const calls: Call[] = [];
+  let currentIsMember = isMember;
+  let currentRole = isMember ? 'member' : null;
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
     const url = new URL(request.url);
@@ -42,11 +44,17 @@ function stubInvitationApi({ isMember = false, role = 'member' } = {}) {
           banner_url: '',
           category: null,
           owner: { id: 'u-owner', username: 'yao', first_name: 'Yao', last_name: 'Kouassi' },
-          user_membership: { is_member: isMember, role: isMember ? 'member' : null, status: isMember ? 'active' : null },
+          user_membership: {
+            is_member: currentIsMember,
+            role: currentIsMember ? currentRole : null,
+            status: currentIsMember ? 'active' : null,
+          },
         },
       });
     }
     if (url.pathname.endsWith('/invitations/accept/')) {
+      currentIsMember = true;
+      currentRole = role;
       return json({ success: true, data: { id: 'm1', role, status: 'active' } });
     }
     if (url.pathname.endsWith('/users/me/')) return json({ success: true, data: { id: 'u1', username: 'awa' } });

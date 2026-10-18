@@ -564,3 +564,152 @@ class TestHackathonJudgingAndResults:
         assert len(leader_res.data["data"]) == 1
         assert leader_res.data["data"][0]["title"] == "PayDunya QR Agent"
         assert len(leader_res.data["data"][0]["won_prizes"]) == 1
+
+
+class TestHackathonCriteria:
+    def test_criteria_crud_lifecycle(self, api_client, owner, stranger, community, open_hackathon):
+        # 1. Anonymous can list criteria
+        api_client.logout()
+        res = api_client.get(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/"
+        )
+        assert res.status_code == status.HTTP_200_OK
+        assert isinstance(res.data["data"], list)
+
+        # 2. Stranger cannot add criterion
+        api_client.force_authenticate(user=stranger)
+        denied_res = api_client.post(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/",
+            {"name": "Security", "min_score": "0.0", "max_score": "20.0", "weight": "1.5"},
+            format="json",
+        )
+        assert denied_res.status_code == status.HTTP_403_FORBIDDEN
+
+        # 3. Owner can add criterion
+        api_client.force_authenticate(user=owner)
+        create_res = api_client.post(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/",
+            {"name": "Security & Privacy", "description": "Sécurité des données", "min_score": "0.0", "max_score": "20.0", "weight": "2.0"},
+            format="json",
+        )
+        assert create_res.status_code == status.HTTP_201_CREATED
+        criterion_id = create_res.data["data"]["id"]
+
+        # 4. Owner can update criterion
+        patch_res = api_client.patch(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/{criterion_id}/",
+            {"name": "Security & Compliance", "weight": "2.5"},
+            format="json",
+        )
+        assert patch_res.status_code == status.HTTP_200_OK
+        assert patch_res.data["data"]["name"] == "Security & Compliance"
+
+        # 5. Owner can delete criterion
+        del_res = api_client.delete(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/{criterion_id}/"
+        )
+        assert del_res.status_code == status.HTTP_200_OK
+        assert not HackathonCriterion.objects.filter(id=criterion_id).exists()
+
+
+class TestHackathonPrizes:
+    def test_prizes_crud_lifecycle(self, api_client, owner, stranger, community, open_hackathon):
+        # 1. Anonymous can list prizes
+        api_client.logout()
+        res = api_client.get(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/prizes/"
+        )
+        assert res.status_code == status.HTTP_200_OK
+
+        # 2. Stranger cannot add prize
+        api_client.force_authenticate(user=stranger)
+        denied = api_client.post(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/prizes/",
+            {"title": "Special AI Prize", "reward_amount": "500000.00", "rank": 4},
+            format="json",
+        )
+        assert denied.status_code == status.HTTP_403_FORBIDDEN
+
+        # 3. Owner can add prize
+        api_client.force_authenticate(user=owner)
+        create_res = api_client.post(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/prizes/",
+            {
+                "title": "Prix Coup de Cœur",
+                "reward_amount": "750000.00",
+                "reward_currency": "XOF",
+                "reward_description": "Mentorat accéléré",
+                "rank": 4,
+            },
+            format="json",
+        )
+        assert create_res.status_code == status.HTTP_201_CREATED
+        prize_id = create_res.data["data"]["id"]
+
+        # 4. Owner can update prize
+        patch_res = api_client.patch(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/prizes/{prize_id}/",
+            {"reward_amount": "800000.00", "title": "Prix Coup de Cœur du Public"},
+            format="json",
+        )
+        assert patch_res.status_code == status.HTTP_200_OK
+        assert patch_res.data["data"]["title"] == "Prix Coup de Cœur du Public"
+
+        # 5. Owner can delete prize
+        del_res = api_client.delete(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/prizes/{prize_id}/"
+        )
+        assert del_res.status_code == status.HTTP_200_OK
+        assert not HackathonPrize.objects.filter(id=prize_id).exists()
+
+
+class TestMyHackathonsAndApplicationsExport:
+    def test_my_hackathons_endpoint(self, api_client, member, active_membership, community, open_hackathon):
+        # Member applies
+        api_client.force_authenticate(user=member)
+        app_res = api_client.post(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/apply/",
+            {"participation_mode": "individual", "accept_terms": True},
+            format="json",
+        )
+        assert app_res.status_code == status.HTTP_201_CREATED
+
+        # GET /api/v1/hackathons/my/
+        my_res = api_client.get("/api/v1/hackathons/my/")
+        assert my_res.status_code == status.HTTP_200_OK
+        assert len(my_res.data["data"]) >= 1
+        found = any(
+            item["hackathon"]["slug"] == open_hackathon.slug
+            for item in my_res.data["data"]
+        )
+        assert found is True
+
+    def test_applications_export_csv(self, api_client, owner, member, active_membership, stranger, community, open_hackathon):
+        # Member applies
+        api_client.force_authenticate(user=member)
+        app_res = api_client.post(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/apply/",
+            {"participation_mode": "individual", "accept_terms": True},
+            format="json",
+        )
+        assert app_res.status_code == status.HTTP_201_CREATED
+
+        # Stranger cannot export CSV
+        api_client.force_authenticate(user=stranger)
+        denied = api_client.get(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/applications/export/"
+        )
+        assert denied.status_code == status.HTTP_403_FORBIDDEN
+
+        # Owner can export CSV
+        api_client.force_authenticate(user=owner)
+        res = api_client.get(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/applications/export/"
+        )
+        assert res.status_code == status.HTTP_200_OK
+        assert res["Content-Type"].startswith("text/csv")
+        content = res.content.decode("utf-8")
+        assert "Username" in content
+        assert member.username in content
+
+

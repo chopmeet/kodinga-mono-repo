@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment
 from apps.billing.models.plan import Plan

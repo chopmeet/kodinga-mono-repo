@@ -9,7 +9,7 @@ from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.models.member import CommunityMember, MembershipStatus
 from common.permissions.base import is_superadmin_user
 from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
+from common.utils.responses import error_response
 
 
 class AIModerationAuditListView(APIView):
@@ -21,7 +21,7 @@ class AIModerationAuditListView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="Journaux d'audit de modération IA",
         parameters=[
             OpenApiParameter(name="community", type=str, description="Slug de la communauté", required=False),

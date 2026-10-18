@@ -12,6 +12,7 @@ from apps.hackathons.models.team import (
     TeamMemberRole,
 )
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 
@@ -49,6 +50,7 @@ class HackathonTeamService:
                 {"hackathon": "Ce hackathon ne permet que les participations individuelles."}
             )
 
+        check_community_membership(leader, hackathon.community, "créer une équipe pour ce hackathon")
         cls.check_participant_accepted(leader, hackathon)
 
         # Check leader isn't already part of an active team in this hackathon
@@ -110,6 +112,7 @@ class HackathonTeamService:
         if invitee.id == leader.id:
             raise ValidationError({"invitee": "Vous ne pouvez pas vous inviter vous-même."})
 
+        check_community_membership(invitee, team.hackathon.community, "rejoindre une équipe pour ce hackathon")
         cls.check_participant_accepted(invitee, team.hackathon)
 
         # Check if already in another team

@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from django.db.models import Sum
 
 from apps.affiliates.models.link import AffiliateLink

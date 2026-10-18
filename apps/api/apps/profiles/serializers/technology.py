@@ -1,6 +1,5 @@
-from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
 from apps.profiles.models.technology import Technology
+from common.serializers.base import BaseModelSerializer
 
 
 class TechnologySerializer(BaseModelSerializer):

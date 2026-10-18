@@ -1,7 +1,6 @@
-import json
 from django.conf import settings
 from django.core.management.base import BaseCommand
-import resend
+
 from common.services.email_service import EmailService, get_formatted_sender
 
 
@@ -51,9 +50,9 @@ class Command(BaseCommand):
                 fail_silently=False,
             )
             if sent:
-                self.stdout.write(self.style.SUCCESS(f"\n🎉 Succès : L'email a bien été pris en charge par Resend !"))
+                self.stdout.write(self.style.SUCCESS("\n🎉 Succès : L'email a bien été pris en charge par Resend !"))
             else:
-                self.stdout.write(self.style.WARNING(f"\n⚠️ L'envoi a renvoyé False sans lever d'erreur explicite."))
+                self.stdout.write(self.style.WARNING("\n⚠️ L'envoi a renvoyé False sans lever d'erreur explicite."))
         except Exception as exc:
             self.stdout.write(self.style.ERROR(f"\n❌ Échec lors de l'envoi : {exc}"))
             raise

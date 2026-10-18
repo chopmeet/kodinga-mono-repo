@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,7 +18,7 @@ from apps.messaging.serializers.messaging_serializers import (
 from apps.messaging.services.messaging_service import MessagingService
 
 
-@extend_schema(tags=["Messaging"])
+@extend_schema(tags=["Messaging & Notifications"])
 class ConversationListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -77,7 +77,7 @@ class ConversationListView(APIView):
             )
 
 
-@extend_schema(tags=["Messaging"])
+@extend_schema(tags=["Messaging & Notifications"])
 class ConversationDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -88,7 +88,7 @@ class ConversationDetailView(APIView):
         return Response(ConversationListSerializer(conversation, context={"request": request}).data)
 
 
-@extend_schema(tags=["Messaging"])
+@extend_schema(tags=["Messaging & Notifications"])
 class ConversationMessagesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -119,7 +119,7 @@ class ConversationMessagesView(APIView):
         return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
 
 
-@extend_schema(tags=["Messaging"])
+@extend_schema(tags=["Messaging & Notifications"])
 class ConversationMarkReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -132,7 +132,7 @@ class ConversationMarkReadView(APIView):
         return Response({"status": "read"})
 
 
-@extend_schema(tags=["Messaging"])
+@extend_schema(tags=["Messaging & Notifications"])
 class MessageDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -154,7 +154,7 @@ class MessageDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(tags=["Messaging"])
+@extend_schema(tags=["Messaging & Notifications"])
 class ToggleMessagePinView(APIView):
     """
     Pin or unpin a message within a conversation (Owner or Moderator only).

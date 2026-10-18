@@ -33,7 +33,7 @@ class HackathonJudgeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Jury"],
+        tags=["Hackathons"],
         summary="Lister les membres du jury",
         responses={200: HackathonJudgeSerializer(many=True)},
     )
@@ -47,7 +47,7 @@ class HackathonJudgeListView(APIView):
         return success_response(data=HackathonJudgeSerializer(judges, many=True).data)
 
     @extend_schema(
-        tags=["Hackathons - Jury"],
+        tags=["Hackathons"],
         summary="Désigner des jurés (Organisateur)",
         request=AssignJudgesRequestSerializer,
         responses={201: HackathonJudgeSerializer(many=True)},
@@ -72,7 +72,7 @@ class HackathonJudgeListView(APIView):
         )
 
     @extend_schema(
-        tags=["Hackathons - Jury"],
+        tags=["Hackathons"],
         summary="Retirer un juré (Organisateur)",
         responses={200: None},
     )
@@ -100,7 +100,7 @@ class HackathonJudgingProjectsView(APIView):
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=["Hackathons - Jury"],
+        tags=["Hackathons"],
         summary="Projets à évaluer (Jury)",
         responses={200: HackathonSubmissionListSerializer(many=True)},
     )
@@ -139,7 +139,7 @@ class HackathonSubmissionEvaluateView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Jury"],
+        tags=["Hackathons"],
         summary="Consulter mon évaluation d'un projet",
         responses={200: HackathonEvaluationSerializer},
     )
@@ -167,7 +167,7 @@ class HackathonSubmissionEvaluateView(APIView):
         return success_response(data=HackathonEvaluationSerializer(evaluation).data)
 
     @extend_schema(
-        tags=["Hackathons - Jury"],
+        tags=["Hackathons"],
         summary="Soumettre ou sauvegarder une évaluation (Jury)",
         request=SubmitEvaluationRequestSerializer,
         responses={200: HackathonEvaluationSerializer},
@@ -216,7 +216,7 @@ class HackathonLeaderboardView(APIView):
         return [IsAuthenticated()]
 
     @extend_schema(
-        tags=["Hackathons - Résultats"],
+        tags=["Hackathons"],
         summary="Consulter le classement et les résultats",
         responses={200: LeaderboardItemSerializer(many=True)},
     )
@@ -241,7 +241,7 @@ class HackathonPublishResultsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Résultats"],
+        tags=["Hackathons"],
         summary="Publier officiellement les résultats et attribuer les prix (Organisateur)",
         request=PublishResultsRequestSerializer,
         responses={200: HackathonDetailSerializer},

@@ -8,6 +8,8 @@ export const en: Translations = {
     profile: 'Profile',
     signup: 'Sign up',
     mySpace: 'My space',
+    messages: 'Messages',
+    unreadMessages: '{{count}} unread',
     language: 'Change language',
     search: 'Search communities…',
     clearSearch: 'Clear search',

@@ -1,13 +1,17 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.accounts.serializers.user import UserSerializer
-from apps.communities.models.community import Community, CommunityPrivacy, CommunityPricing
+from apps.communities.models.community import (
+    Community,
+    CommunityPricing,
+)
 from apps.communities.models.rule import CommunityRule
 from apps.communities.models.settings import CommunitySettings
 from apps.communities.serializers.category import CommunityCategorySerializer
 from apps.communities.serializers.rule import CommunityRuleSerializer
 from apps.communities.serializers.settings import CommunitySettingsSerializer
 from apps.memberships.models.member import CommunityMember, MembershipStatus
+from common.serializers.base import BaseModelSerializer
 
 
 class CommunityListSerializer(BaseModelSerializer):

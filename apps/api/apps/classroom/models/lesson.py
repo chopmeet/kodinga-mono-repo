@@ -1,7 +1,8 @@
 from django.db import models
-from common.models.base import BaseModel
+
 from apps.classroom.models.module import CourseModule
 from apps.media.models.video_asset import VideoAsset
+from common.models.base import BaseModel
 
 
 class LessonType(models.TextChoices):
@@ -106,6 +107,15 @@ class Lesson(BaseModel):
     @property
     def video_status(self) -> str:
         return self.video_asset.status if self.video_asset else ""
+
+    @property
+    def video_source_url(self) -> str:
+        """
+        Original raw video file URL hosted on UploadThing CDN.
+        """
+        if self.video_asset and isinstance(self.video_asset.metadata, dict):
+            return self.video_asset.metadata.get('source_url', '')
+        return ""
 
     @property
     def reading_time_minutes(self) -> int:

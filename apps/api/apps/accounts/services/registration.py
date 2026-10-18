@@ -1,16 +1,17 @@
-from datetime import timedelta
 import logging
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from common.services.email_service import EmailService
-from common.utils.tokens import generate_secure_token, hash_token
+
 from apps.accounts.models.consent import UserConsent
 from apps.accounts.models.token import AuthToken
 from apps.accounts.models.user import User
 from apps.accounts.services.consent import ConsentService
 from apps.accounts.services.security import AccountSecurityService
-from apps.accounts.tasks import send_email_async_task
+from common.services.email_service import EmailService
+from common.utils.tokens import generate_secure_token, hash_token
 
 logger = logging.getLogger('kodinga.accounts')
 

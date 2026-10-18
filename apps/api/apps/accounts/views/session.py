@@ -2,9 +2,10 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from common.utils.responses import success_response
+
 from apps.accounts.serializers.session import UserSessionSerializer
 from apps.accounts.services.session import SessionService
+from common.utils.responses import success_response
 
 
 class UserSessionListView(APIView):
@@ -12,7 +13,7 @@ class UserSessionListView(APIView):
     serializer_class = UserSessionSerializer
 
     @extend_schema(
-        tags=['Sessions'],
+        tags=['Authentication & Accounts'],
         summary='List active user sessions',
         description='Returns a list of all active sessions and authorized devices for the current user.',
         responses={
@@ -31,7 +32,7 @@ class UserSessionDetailView(APIView):
     serializer_class = UserSessionSerializer
 
     @extend_schema(
-        tags=['Sessions'],
+        tags=['Authentication & Accounts'],
         summary='Revoke a specific user session',
         description='Explicitly terminates a session by UUID and invalidates its refresh token.',
         responses={

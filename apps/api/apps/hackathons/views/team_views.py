@@ -31,7 +31,7 @@ class HackathonTeamListCreateView(APIView):
         return [IsAuthenticated()]
 
     @extend_schema(
-        tags=["Hackathons - Équipes"],
+        tags=["Hackathons"],
         summary="Lister les équipes du hackathon",
         responses={200: HackathonTeamSerializer(many=True)},
     )
@@ -53,7 +53,7 @@ class HackathonTeamListCreateView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
-        tags=["Hackathons - Équipes"],
+        tags=["Hackathons"],
         summary="Créer une nouvelle équipe",
         request=CreateTeamRequestSerializer,
         responses={201: HackathonTeamSerializer},
@@ -95,7 +95,7 @@ class HackathonTeamDetailView(APIView):
         return [IsAuthenticated()]
 
     @extend_schema(
-        tags=["Hackathons - Équipes"],
+        tags=["Hackathons"],
         summary="Détails d'une équipe",
         responses={200: HackathonTeamSerializer},
     )
@@ -117,7 +117,7 @@ class HackathonTeamDetailView(APIView):
         return success_response(data=HackathonTeamSerializer(team).data)
 
     @extend_schema(
-        tags=["Hackathons - Équipes"],
+        tags=["Hackathons"],
         summary="Quitter ou dissoudre l'équipe",
         responses={200: None},
     )
@@ -144,7 +144,7 @@ class HackathonTeamInviteView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Équipes"],
+        tags=["Hackathons"],
         summary="Inviter un membre dans l'équipe",
         request=InviteMemberRequestSerializer,
         responses={201: HackathonTeamMemberSerializer},
@@ -184,7 +184,7 @@ class HackathonTeamRespondInviteView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["Hackathons - Équipes"],
+        tags=["Hackathons"],
         summary="Répondre à une invitation d'équipe",
         request=RespondInvitationRequestSerializer,
         responses={200: HackathonTeamMemberSerializer},

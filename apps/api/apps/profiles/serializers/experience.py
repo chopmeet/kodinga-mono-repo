@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.profiles.models.experience import DeveloperExperience
 from apps.profiles.serializers.technology import TechnologySerializer
+from common.serializers.base import BaseModelSerializer
 
 
 class DeveloperExperienceSerializer(BaseModelSerializer):

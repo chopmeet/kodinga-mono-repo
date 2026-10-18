@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from apps.media.models.media_asset import MediaAsset
 from apps.media.models.video_asset import VideoAsset
 

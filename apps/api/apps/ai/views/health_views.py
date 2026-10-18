@@ -17,7 +17,7 @@ class AIProviderHealthView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["AI Services"],
+        tags=["AI & Assistant"],
         summary="État de santé des fournisseurs IA (Gemini & OpenAI)",
         responses={200: None},
     )

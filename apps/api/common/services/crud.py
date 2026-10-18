@@ -1,5 +1,7 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Generic, Optional, TypeVar
+
 from django.db import models, transaction
+
 from common.exceptions.handler import ResourceNotFoundError
 
 ModelType = TypeVar("ModelType", bound=models.Model)
@@ -9,17 +11,17 @@ class BaseCRUDService(Generic[ModelType]):
     """
     Generic base service for unified CRUD operations with atomic transactions and validation hooks.
     """
-    model: Type[ModelType]
+    model: type[ModelType]
 
-    def __init__(self, model: Optional[Type[ModelType]] = None):
+    def __init__(self, model: Optional[type[ModelType]] = None):
         if model:
             self.model = model
 
     def get_by_id(self, pk: Any) -> ModelType:
         try:
             return self.model.objects.get(pk=pk)
-        except self.model.DoesNotExist:
-            raise ResourceNotFoundError(f"{self.model.__name__} with ID {pk} does not exist.")
+        except self.model.DoesNotExist as err:
+            raise ResourceNotFoundError(f"{self.model.__name__} with ID {pk} does not exist.") from err
 
     def list(self, **filters) -> models.QuerySet:
         return self.model.objects.filter(**filters)

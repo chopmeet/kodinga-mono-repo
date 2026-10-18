@@ -1,8 +1,7 @@
 import json
 import logging
 import re
-import time
-from typing import Optional, Dict, Any
+from typing import Any, Optional
 
 from django.conf import settings
 
@@ -67,7 +66,7 @@ class GeminiAdapter(BaseAIProvider):
                 raise ConfigurationError(
                     f"Gemini client initialization failed: {e}",
                     provider=self.provider_name,
-                )
+                ) from e
         return self._client
 
     def _clean_json_response(self, text: str) -> dict:
@@ -89,12 +88,12 @@ class GeminiAdapter(BaseAIProvider):
             logger.warning(f"[Gemini] Failed to parse JSON response: {text[:200]}...")
             raise RecoverableProviderError(
                 f"Invalid JSON returned by Gemini: {e}", provider=self.provider_name
-            )
+            ) from e
 
     def _handle_gemini_error(self, e: Exception) -> None:
         """Categorize Gemini API exceptions into domain-specific error types."""
         err_msg = str(e).lower()
-        err_class = e.__class__.__name__.lower()
+        e.__class__.__name__.lower()
 
         # Check for Quota exhaustion
         if (
@@ -269,7 +268,7 @@ class GeminiAdapter(BaseAIProvider):
         )
 
     def moderate_content(
-        self, text: str, context: Optional[Dict[str, Any]] = None
+        self, text: str, context: Optional[dict[str, Any]] = None
     ) -> ModerationResult:
         try:
             system = (
@@ -323,7 +322,7 @@ class GeminiAdapter(BaseAIProvider):
             )
 
     def classify_community_policy_violation(
-        self, text: str, community_rules: Optional[Dict[str, Any]] = None
+        self, text: str, community_rules: Optional[dict[str, Any]] = None
     ) -> PolicyViolationResult:
         mod_result = self.moderate_content(text)
         mandatory_categories = [
@@ -350,13 +349,12 @@ class GeminiAdapter(BaseAIProvider):
 
     def _get_lang_prompt(self, language: str) -> str:
         lang = (language or "fr").lower()
-        if lang == "wo":
-            return "Wolof language (Senegal/Gambia). Use natural, welcoming Wolof phrasing."
-        elif lang == "bm":
-            return "Bambara language (Mali). Use natural, welcoming Bambara phrasing."
-        elif lang == "en":
-            return "English language."
-        return "French language."
+        mapping = {
+            "wo": "Wolof language (Senegal/Gambia). Use natural, welcoming Wolof phrasing.",
+            "bm": "Bambara language (Mali). Use natural, welcoming Bambara phrasing.",
+            "en": "English language.",
+        }
+        return mapping.get(lang, "French language.")
 
     def recommend_communities(
         self,
@@ -416,13 +414,13 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name)
+            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
 
     def plan_community(
         self,
         idea: str,
         language: str = "fr",
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> CommunityProposalResult:
         lang_instruction = self._get_lang_prompt(language)
         prompt = (
@@ -484,11 +482,11 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name)
+            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
 
     def suggest_content(
         self,
-        community_info: Dict[str, Any],
+        community_info: dict[str, Any],
         goal: Optional[str] = None,
         language: str = "fr",
     ) -> ContentSuggestionResult:
@@ -528,12 +526,12 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name)
+            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
 
     def analyze_community(
         self,
-        community_info: Dict[str, Any],
-        metrics: Dict[str, Any],
+        community_info: dict[str, Any],
+        metrics: dict[str, Any],
         language: str = "fr",
     ) -> CommunityAnalysisResult:
         lang_instruction = self._get_lang_prompt(language)
@@ -584,13 +582,13 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name)
+            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
 
     def assistant_chat(
         self,
         message: str,
         history: list,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         language: str = "fr",
     ) -> AssistantChatResult:
         lang_instruction = self._get_lang_prompt(language)
@@ -627,5 +625,5 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name)
+            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
 

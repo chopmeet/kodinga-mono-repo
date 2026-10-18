@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.db import models
-from common.models.base import BaseModel
+
 from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson
+from common.models.base import BaseModel
 
 
 class LessonProgress(BaseModel):

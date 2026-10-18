@@ -1,7 +1,9 @@
 from decimal import Decimal
+
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
 from common.models.base import BaseModel
 
 
@@ -109,12 +111,20 @@ class DeveloperProfile(BaseModel):
         """
         score = 0
         total = 8
-        if self.headline: score += 1
-        if self.bio: score += 1
-        if self.avatar_url: score += 1
-        if self.location: score += 1
-        if self.github_username or self.gitlab_username: score += 1
-        if self.skills.exists(): score += 1
-        if self.experiences.exists(): score += 1
-        if self.portfolio_projects.exists(): score += 1
+        if self.headline:
+            score += 1
+        if self.bio:
+            score += 1
+        if self.avatar_url:
+            score += 1
+        if self.location:
+            score += 1
+        if self.github_username or self.gitlab_username:
+            score += 1
+        if self.skills.exists():
+            score += 1
+        if self.experiences.exists():
+            score += 1
+        if self.portfolio_projects.exists():
+            score += 1
         return int((score / total) * 100)

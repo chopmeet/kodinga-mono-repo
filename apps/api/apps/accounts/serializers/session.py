@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.accounts.models.session import UserSession
+from common.serializers.base import BaseModelSerializer
 
 
 class UserSessionSerializer(BaseModelSerializer):

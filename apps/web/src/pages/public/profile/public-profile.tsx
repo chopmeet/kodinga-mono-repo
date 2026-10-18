@@ -7,6 +7,7 @@ import { cn, customToast } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
 import { nameInitials } from '@/utils/Utils';
+import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
 
 const joinedFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -126,6 +127,7 @@ function PublicProfile() {
           </dl>
 
           <div className="mt-8 flex flex-col gap-3">
+            <MessageButton userId={profile.user.id} size="lg" className="h-13 w-full text-base" />
             <button
               type="button"
               onClick={share}

@@ -11,7 +11,7 @@ DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 norecursedirs = [".venv", "venv", "dist", "scratch", ".git"]
-addopts = "-v --reuse-db"
+addopts = "-v --reuse-db --nomigrations"
 
 [project]
 name = "api"
@@ -68,6 +68,8 @@ exclude = [
   ".tox",
   ".venv",
   "dist",
+  "**/migrations/*",
+  "scratch",
 ]
 
 line-length = 88

@@ -1,8 +1,10 @@
 from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
-from common.models.base import BaseModel
+
 from apps.billing.models.payment import Payment
+from common.models.base import BaseModel
 
 
 class Affiliate(BaseModel):

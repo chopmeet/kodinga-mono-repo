@@ -3,9 +3,10 @@ Django settings for Kodinga Backend API.
 Centralized production-ready configuration using django-environ.
 """
 
+import sys
 from datetime import timedelta
 from pathlib import Path
-import sys
+
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -120,6 +121,12 @@ if DATABASE_URL_VAL:
     DATABASES = {
         'default': env.db_url_config(DATABASE_URL_VAL)
     }
+    # Neon and other PostgreSQL transaction poolers (e.g. PgBouncer in transaction mode)
+    # do not support server-side cursors across transactions.
+    if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+        DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = env.bool(
+            'DISABLE_SERVER_SIDE_CURSORS', default=True
+        )
 else:
     DATABASES = {
         'default': {
@@ -241,23 +248,21 @@ SPECTACULAR_SETTINGS = {
         'defaultModelExpandDepth': 3,
     },
     'TAGS': [
-        {'name': 'Authentication', 'description': 'User registration, login, JWT refresh, logout, password recovery.'},
-        {'name': 'Sessions', 'description': 'Active devices, session audit, and token revocations.'},
-        {'name': 'OAuth', 'description': 'Third-party single sign-on (Google, GitHub).'},
-        {'name': 'Users', 'description': 'Authenticated user profiles and legal consents.'},
-        {'name': 'Profiles', 'description': 'Developer profiles, skills, work history, educations, and portfolio showcases.'},
-        {'name': 'Media', 'description': 'File uploads (UploadThing) and Video on Demand streaming (Mux HLS).'},
-        {'name': 'Communities', 'description': 'Tech communities, spaces, discovery, settings, and charter rules.'},
-        {'name': 'Memberships', 'description': 'Community RBAC memberships, invitations, and moderation sanctions.'},
-        {'name': 'Feed & Posts', 'description': 'Community posts, code snippets, rich media, interactive polls, threaded comments, and emoji reactions.'},
-        {'name': 'AI Assistant', 'description': 'Community planning wizard, smart recommendations, content ideas, analytics, and interactive chat.'},
-        {'name': 'AI Services', 'description': 'Multilingual translation (Wolof, Bambara, French, English), content moderation audit, and provider health.'},
-        {'name': 'Hackathons - Découverte', 'description': 'Exploration et découverte publique des hackathons.'},
-        {'name': 'Hackathons - Organisation', 'description': 'Création, configuration, dashboard et cycle de vie par les organisateurs de communauté.'},
-        {'name': 'Hackathons - Candidatures', 'description': 'Gestion des candidatures et sélection des participants.'},
-        {'name': 'Hackathons - Équipes', 'description': 'Formation d\'équipes, invitations et gestion des membres.'},
-        {'name': 'Hackathons - Projets & Soumissions', 'description': 'Dépôt des projets, gestion des pièces jointes et soumission finale.'},
-        {'name': 'Hackathons - Jury & Évaluation', 'description': 'Notation multicritère, délibération du jury et proclamation des résultats.'},
+        {'name': 'Authentication & Accounts', 'description': 'Inscription, connexion, sessions actives, tokens JWT, OAuth (Google/GitHub) et gestion de compte.'},
+        {'name': 'Profiles', 'description': 'Profils développeurs, compétences, expériences professionnelles, formations et portfolio.'},
+        {'name': 'Communities & Memberships', 'description': 'Communautés tech, catégories, espaces thématiques, paramètres, membres, rôles RBAC et invitations.'},
+        {'name': 'Feed & Posts', 'description': 'Fil d\'actualité, publications, extraits de code, sondages, commentaires arborescents et réactions emoji.'},
+        {'name': 'Hackathons', 'description': 'Hackathons, candidatures, équipes, projets & soumissions, délibération du jury multicritère et classements.'},
+        {'name': 'Classroom', 'description': 'Formations, cours en ligne, modules, leçons vidéo et suivi de progression pédagogique.'},
+        {'name': 'Events', 'description': 'Événements communautaires, webinaires, billetterie, gestion des participants et diffusions en direct.'},
+        {'name': 'Opportunities', 'description': 'Offres d\'emploi tech, stages, missions freelance et candidatures de développeurs.'},
+        {'name': 'AI & Assistant', 'description': 'Assistant IA génératif, génération de contenu, modération automatique, traduction multilingue et santé des modèles.'},
+        {'name': 'Billing & Affiliates', 'description': 'Plans d\'abonnement, passerelle PayDunya, facturation récurrente, webhooks IPN et programme d\'affiliation.'},
+        {'name': 'Messaging & Notifications', 'description': 'Messagerie instantanée directe, conversations privées et centre de notifications en temps réel.'},
+        {'name': 'Gamification', 'description': 'Badges honorifiques, points d\'expérience (XP), système de réputation et classements.'},
+        {'name': 'Media', 'description': 'Téléversement de fichiers (UploadThing), streaming vidéo VOD (Mux HLS) et webhooks de transcodage.'},
+        {'name': 'Administration & Analytics', 'description': 'Console d\'administration globale de la plateforme, métriques macroscopiques, engagement et indicateurs financiers.'},
+        {'name': 'Discovery', 'description': 'Moteur de découverte globale, recherche transversale, tendances et recommandations.'},
     ],
 }
 
@@ -278,7 +283,6 @@ MAIL_FROM = env('MAIL_FROM', default=env('DEFAULT_FROM_EMAIL', default='Kodinga 
 DEFAULT_FROM_EMAIL = MAIL_FROM
 
 # Testing overrides (fast hashers, locmem email backend)
-import sys
 IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in arg for arg in sys.argv)
 if IS_TESTING:
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'

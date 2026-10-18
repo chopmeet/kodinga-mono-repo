@@ -1,4 +1,5 @@
 from django.urls import path
+
 from apps.profiles.views.profile import (
     MeProfileView,
     PublicProfileDetailView,

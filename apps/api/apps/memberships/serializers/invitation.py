@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.accounts.serializers.user import UserSerializer
 from apps.memberships.models.invitation import CommunityInvitation
 from apps.memberships.models.member import CommunityRole
+from common.serializers.base import BaseModelSerializer
 
 
 class CommunityInvitationSerializer(BaseModelSerializer):

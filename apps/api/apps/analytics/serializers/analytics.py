@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.analytics.models.metric import PlatformMetric
+from common.serializers.base import BaseModelSerializer
 
 
 class PlatformMetricSerializer(BaseModelSerializer):

@@ -1,4 +1,5 @@
 import logging
+
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -35,7 +36,7 @@ class AIAssistantRecommendCommunitiesView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Recommander des communautés existantes selon les centres d'intérêt",
         description="Recherche dans la base de données réelle et filtre selon les règles de confidentialité.",
         request=RecommendCommunitiesRequestSerializer,
@@ -84,7 +85,7 @@ class AIAssistantPlanCommunityView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Planificateur / Wizard de création de communauté",
         description="Génère une proposition structurée complète (noms, description, slogan, règles, premier plan de lancement sur 7 jours) à partir d'une idée en langage naturel.",
         request=PlanCommunityRequestSerializer,
@@ -135,7 +136,7 @@ class AIAssistantSuggestContentView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Suggérer des idées de contenu et d'engagement pour une communauté",
         description="Génère un modèle de premier post, des sujets brise-glace et un calendrier d'animation.",
         request=SuggestContentRequestSerializer,
@@ -186,7 +187,7 @@ class AIAssistantAnalyzeCommunityView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Diagnostiquer les métriques d'une communauté et proposer des actions d'amélioration",
         description="Analyse le taux d'engagement, l'activité des membres et formule des recommandations concrètes (Réservé aux propriétaires et modérateurs).",
         request=AnalyzeCommunityRequestSerializer,
@@ -234,7 +235,7 @@ class AIAssistantChatView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Discuter avec l'Assistant Communautaire Kodinga",
         description="Chat IA interactif avec suggestions de questions suivantes et mémorisation de session.",
         request=AssistantChatRequestSerializer,
@@ -287,7 +288,7 @@ class AIAssistantConversationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Lister les conversations de l'utilisateur",
         description="Retourne les sessions de discussion de l'utilisateur, avec historique des messages et tri chronologique.",
         parameters=[
@@ -318,7 +319,7 @@ class AIAssistantConversationListView(APIView):
         )
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Créer une nouvelle session de discussion",
         description="Initialise une nouvelle conversation avec un ID unique pour stocker l'historique d'échange.",
         request=CreateConversationRequestSerializer,
@@ -357,7 +358,7 @@ class AIAssistantConversationDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Détails complets et historique d'une conversation",
         description="Retourne la conversation et tous ses messages ordonnés chronologiquement.",
         responses={200: AssistantConversationSerializer},
@@ -383,7 +384,7 @@ class AIAssistantConversationDetailView(APIView):
         )
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Renommer ou modifier une session de discussion",
         request=UpdateConversationRequestSerializer,
         responses={200: AssistantConversationSerializer},
@@ -417,7 +418,7 @@ class AIAssistantConversationDetailView(APIView):
         )
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Supprimer une conversation avec l'assistant",
         responses={200: None},
     )
@@ -447,7 +448,7 @@ class AIAssistantConversationClearView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["AI Assistant"],
+        tags=["AI & Assistant"],
         summary="Vider l'historique des messages d'une session",
         description="Efface tous les messages de la conversation tout en conservant son ID pour recommencer à zéro.",
         responses={200: None},

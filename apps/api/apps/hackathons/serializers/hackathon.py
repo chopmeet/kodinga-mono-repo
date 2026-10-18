@@ -261,3 +261,20 @@ class DashboardMetricsSerializer(serializers.Serializer):
     is_registration_open = serializers.BooleanField()
     is_submission_open = serializers.BooleanField()
     results_published = serializers.BooleanField()
+
+
+class UserHackathonParticipationSerializer(serializers.Serializer):
+    hackathon = HackathonListSerializer(read_only=True)
+    application_status = serializers.CharField(read_only=True, allow_null=True)
+    has_submitted_project = serializers.BooleanField(read_only=True)
+    is_team_leader = serializers.BooleanField(read_only=True)
+    team_name = serializers.SerializerMethodField()
+    team_id = serializers.SerializerMethodField()
+
+    def get_team_name(self, obj) -> str | None:
+        team = obj.get("team")
+        return team.name if team else None
+
+    def get_team_id(self, obj) -> str | None:
+        team = obj.get("team")
+        return str(team.id) if team else None

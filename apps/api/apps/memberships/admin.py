@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from apps.memberships.models.invitation import CommunityInvitation
 from apps.memberships.models.member import CommunityMember
 from apps.memberships.models.sanction import MemberSanction

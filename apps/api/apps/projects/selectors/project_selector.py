@@ -66,7 +66,7 @@ class ProjectSelector:
         if viewer and viewer.is_authenticated:
             is_upvoted = ProjectUpvote.objects.filter(project=project, user=viewer).exists()
 
-        setattr(project, "is_upvoted", is_upvoted)
+        project.is_upvoted = is_upvoted
         return project
 
     @classmethod

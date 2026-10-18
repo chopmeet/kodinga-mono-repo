@@ -1,4 +1,5 @@
 from typing import Optional
+
 from apps.accounts.models.user import User
 
 

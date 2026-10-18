@@ -5,6 +5,8 @@ import DashboardLayout from '@/layouts/dashboard-layout';
 
 import Home from '@/pages/public/home/home';
 import CommunityDetails from '@/pages/public/community/community-details';
+import PostDetails from '@/pages/public/community/post/post-details';
+import Messages from '@/pages/public/messages/messages';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import Login from '@/pages/auth/login';
 import ResetPassword from '@/pages/auth/reset-password';
@@ -124,6 +126,18 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:slug',
         element: <CommunityDetails />,
+      },
+      {
+        path: 'communities/:slug/posts/:postId',
+        element: <PostDetails />,
+      },
+      {
+        path: 'messages',
+        element: <Messages />,
+      },
+      {
+        path: 'messages/:conversationId',
+        element: <Messages />,
       },
       {
         path: 'invitations/:code',

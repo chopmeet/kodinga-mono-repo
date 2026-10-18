@@ -1,10 +1,8 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
+
 from apps.profiles.selectors.profile_selector import ProfileSelector
 from apps.profiles.serializers.profile import (
     DeveloperProfileDetailSerializer,
@@ -12,6 +10,8 @@ from apps.profiles.serializers.profile import (
     PublicProfileSummarySerializer,
 )
 from apps.profiles.services.profile_service import ProfileService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class MeProfileView(APIView):

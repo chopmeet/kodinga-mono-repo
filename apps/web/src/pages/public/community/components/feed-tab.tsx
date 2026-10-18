@@ -1,5 +1,6 @@
-import { Bookmark, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal, ThumbsUp } from 'lucide-react';
+import { Bookmark, CircleCheck, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
@@ -12,6 +13,8 @@ import { getName, nameInitials, useUser } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';
+import { PollCard } from './poll-card';
+import { ago, plain, postHref } from './post-format';
 import { Pill } from './section-header';
 
 const PAGE_SIZE = 10;
@@ -24,25 +27,7 @@ const FILTERS: { id: PostType | 'all'; label: string }[] = [
   { id: 'poll', label: 'Sondages' },
 ];
 
-const relative = new Intl.RelativeTimeFormat('fr-FR', { numeric: 'auto' });
-const fullDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-
-/** "Il y a 2 h", "Hier", then the date */
-function ago(iso: string) {
-  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return 'À l’instant';
-  if (minutes < 60) return `Il y a ${minutes} min`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `Il y a ${hours} h`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return relative.format(-days, 'day').replace(/^./, (c) => c.toUpperCase());
-  return fullDate.format(new Date(iso));
-}
-
-/** Plain text of a Markdown post */
-const plain = (content: string) => content.replace(/[#*_`>[\]]/g, '').replace(/[ \t]+/g, ' ').trim();
-
-function PostCard({ post, canReact }: { post: CommunityPostItem; canReact: boolean }) {
+function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact: boolean; href: string }) {
   const [toggleLike, { isLoading }] = useTogglePostLikeMutation();
   const [expanded, setExpanded] = useState(false);
   const author = getName(post.author) || post.author.username;
@@ -81,7 +66,13 @@ function PostCard({ post, canReact }: { post: CommunityPostItem; canReact: boole
         </button>
       </header>
 
-      {post.title && <h3 className="mt-6 text-xl font-medium text-slate-900">{post.title}</h3>}
+      {post.title && (
+        <h3 className="mt-6 text-xl font-medium text-slate-900">
+          <Link to={href} className="hover:text-blue-900">
+            {post.title}
+          </Link>
+        </h3>
+      )}
       <p className={cn('leading-relaxed whitespace-pre-line text-slate-700', post.title ? 'mt-3' : 'mt-5')}>
         {expanded || !long ? text : `${text.slice(0, 420)}…`}
       </p>
@@ -90,6 +81,7 @@ function PostCard({ post, canReact }: { post: CommunityPostItem; canReact: boole
           {expanded ? 'Réduire' : 'Lire la suite'}
         </button>
       )}
+      {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={canReact} />}
       {post.code_snippet && (
         <pre className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
           <code>{post.code_snippet}</code>
@@ -108,9 +100,17 @@ function PostCard({ post, canReact }: { post: CommunityPostItem; canReact: boole
         >
           <ThumbsUp className={cn('size-5', liked && 'fill-blue-900/15')} /> {post.reactions_count}
         </button>
-        <span className="flex items-center gap-2">
-          <MessageCircle className="size-5" /> {post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}
-        </span>
+        <Link to={href} className="flex items-center gap-2 hover:text-slate-900">
+          <MessageCircle className="size-5" />
+          {post.post_type === 'question'
+            ? `${post.comments_count} réponse${post.comments_count > 1 ? 's' : ''}`
+            : `${post.comments_count} commentaire${post.comments_count > 1 ? 's' : ''}`}
+        </Link>
+        {post.post_type === 'question' && post.is_resolved && (
+          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            <CircleCheck className="size-3.5" /> Résolue
+          </span>
+        )}
         {post.is_locked && <span className="ml-auto text-xs text-slate-500">Commentaires fermés</span>}
       </footer>
     </article>
@@ -215,7 +215,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label="Publications">
           {posts.map((post) => (
             <li key={post.id}>
-              <PostCard post={post} canReact={isMember} />
+              <PostCard post={post} canReact={isMember} href={postHref(page.slug, post.id)} />
             </li>
           ))}
         </ul>

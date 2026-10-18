@@ -1,5 +1,8 @@
 from apps.ai.providers.base import BaseAIProvider
-from apps.ai.providers.circuit_breaker import QuotaCircuitBreaker, gemini_circuit_breaker
+from apps.ai.providers.circuit_breaker import (
+    QuotaCircuitBreaker,
+    gemini_circuit_breaker,
+)
 from apps.ai.providers.exceptions import (
     AIProviderError,
     AllProvidersFailedError,

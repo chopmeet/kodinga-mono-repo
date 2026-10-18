@@ -1,13 +1,12 @@
 from django.db.models import F, Q
 from rest_framework.exceptions import PermissionDenied
 
-from common.permissions.base import is_superadmin_user
-
 from apps.opportunities.models.application import OpportunityApplication
 from apps.opportunities.models.opportunity import (
     Opportunity,
     OpportunityStatus,
 )
+from common.permissions.base import is_superadmin_user
 
 
 class OpportunitySelector:
@@ -78,7 +77,7 @@ class OpportunitySelector:
                 opportunity=opportunity, applicant=viewer
             ).exists()
 
-        setattr(opportunity, "has_applied", has_applied)
+        opportunity.has_applied = has_applied
         return opportunity
 
     @classmethod

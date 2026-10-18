@@ -1,10 +1,12 @@
 import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from common.utils.responses import error_response, success_response
+
 from apps.billing.services.billing_service import BillingService
+from common.utils.responses import error_response, success_response
 
 logger = logging.getLogger('kodinga.billing.ipn')
 
@@ -17,7 +19,7 @@ class PayDunyaIPNView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=['Billing & PayDunya'],
+        tags=['Billing & Affiliates'],
         summary="Webhook / IPN Callback PayDunya (Server-to-Server)",
         request=dict,
         responses={200: dict}

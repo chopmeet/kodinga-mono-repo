@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.administration.models.audit import PlatformAuditLog
 from apps.administration.models.setting import SystemSetting
+from common.serializers.base import BaseModelSerializer
 
 
 class PlatformAuditLogSerializer(BaseModelSerializer):

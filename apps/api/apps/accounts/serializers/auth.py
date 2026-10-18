@@ -1,7 +1,6 @@
 from django.contrib.auth import password_validation
-from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
+
 from apps.accounts.models.user import User
 
 

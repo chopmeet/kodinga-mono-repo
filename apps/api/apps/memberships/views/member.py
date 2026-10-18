@@ -1,11 +1,15 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
+
+from apps.communities.models.community import CommunityPricing, CommunityPrivacy
 from apps.communities.selectors.community_selector import CommunitySelector
-from apps.memberships.models.member import CommunityMember
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.memberships.selectors.membership_selector import MembershipSelector
 from apps.memberships.serializers.member import (
     CommunityMemberRoleUpdateSerializer,
@@ -17,6 +21,8 @@ from apps.memberships.serializers.sanction import (
     MemberSanctionSerializer,
 )
 from apps.memberships.services.membership_service import MembershipService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class JoinCommunityView(APIView):
@@ -26,7 +32,7 @@ class JoinCommunityView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Rejoindre un espace communautaire",
         request=None,
         parameters=[
@@ -58,7 +64,7 @@ class LeaveCommunityView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Quitter un espace communautaire",
         request=None,
         responses={200: None}
@@ -80,7 +86,7 @@ class MyMembershipView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Consulter son statut d'adhésion dans la communauté",
         responses={200: CommunityMemberSerializer}
     )
@@ -100,18 +106,20 @@ class MyMembershipView(APIView):
 class CommunityMemberListView(APIView):
     """
     List members of a community with filters and search.
-    Requires authentication and owner/admin/moderator rights on the community.
+    - Community managers (owner, admin, moderator, platform admin) can view all members and filter by any status (active, pending, banned, etc.).
+    - Community members (or public visitors for public communities) can view the active members directory.
     """
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Lister les membres d'une communauté",
+        description="Renvoie la liste des membres d'une communauté avec leurs rôles (owner, admin, moderator, member) et statuts (active, pending, banned...). Réservé aux gestionnaires de la communauté (owner, admin, modérateur) et administrateurs de la plateforme.",
         parameters=[
             OpenApiParameter(name='role', description="Filtrer par rôle (owner, admin, moderator, member)", required=False, type=str),
-            OpenApiParameter(name='status', description="Statut (active, pending, banned...)", required=False, type=str),
-            OpenApiParameter(name='search', description="Recherche par pseudo ou nom", required=False, type=str),
+            OpenApiParameter(name='status', description="Statut (active, pending, banned, all...)", required=False, type=str),
+            OpenApiParameter(name='search', description="Recherche par pseudo, nom ou email", required=False, type=str),
         ],
         responses={200: CommunityMemberSerializer(many=True)}
     )
@@ -128,13 +136,14 @@ class CommunityMemberListView(APIView):
         )
         is_owner = (community.owner_id == request.user.id)
         current_membership = MembershipSelector.get_member(community, request.user)
-        has_community_permission = (
-            current_membership is not None and
-            current_membership.status == 'active' and
-            current_membership.role in ['owner', 'admin', 'moderator']
+        is_active_member = bool(current_membership and current_membership.status == MembershipStatus.ACTIVE)
+        has_community_permission = bool(
+            is_active_member and
+            current_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
         )
+        is_manager = is_platform_admin or is_owner or has_community_permission
 
-        if not (is_platform_admin or is_owner or has_community_permission):
+        if not is_manager:
             return error_response(
                 "Vous devez être propriétaire, administrateur ou modérateur de la communauté pour consulter la liste des membres.",
                 status_code=status.HTTP_403_FORBIDDEN
@@ -144,11 +153,16 @@ class CommunityMemberListView(APIView):
         status_filter = request.query_params.get('status')
         search = request.query_params.get('search')
 
+        # Non-managers can only see active members
+        if not is_manager:
+            status_filter = MembershipStatus.ACTIVE
+
         queryset = MembershipSelector.list_community_members(
             community=community,
             role=role,
             status=status_filter,
-            search=search
+            search=search,
+            is_manager=is_manager,
         )
 
         paginator = self.pagination_class()
@@ -159,12 +173,50 @@ class CommunityMemberListView(APIView):
 
 class CommunityMemberDetailView(APIView):
     """
-    Update member role, custom title, or approve/reject pending member.
+    Retrieve, update member role, custom title, or approve/reject pending member.
     """
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
+        summary="Consulter les détails d'un membre",
+        description="Récupère les informations détaillées, le rôle et le statut d'adhésion d'un membre spécifique.",
+        parameters=[
+            OpenApiParameter(name='member_id', description="UUID du membre", required=True, type=str, location=OpenApiParameter.PATH),
+        ],
+        responses={200: CommunityMemberSerializer}
+    )
+    def get(self, request, slug, member_id):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+            member = CommunityMember.objects.select_related('user', 'user__profile').get(id=member_id, community=community)
+        except Exception:
+            return error_response("Membre introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        is_platform_admin = bool(
+            getattr(request.user, 'is_superadmin', False) or
+            getattr(request.user, 'is_superuser', False) or
+            getattr(request.user, 'is_staff', False)
+        )
+        is_owner = (community.owner_id == request.user.id)
+        current_membership = MembershipSelector.get_member(community, request.user)
+        is_active_member = bool(current_membership and current_membership.status == MembershipStatus.ACTIVE)
+        is_manager = is_platform_admin or is_owner or (is_active_member and current_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR])
+
+        is_private_or_paid = (
+            community.privacy_type in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET]
+            or community.pricing_type == CommunityPricing.PAID
+        )
+        if is_private_or_paid and not (is_manager or is_active_member):
+            return error_response(
+                "Cette communauté est privée. Vous devez être membre pour consulter ce profil.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
+        return success_response(data=CommunityMemberSerializer(member).data)
+
+    @extend_schema(
+        tags=['Communities & Memberships'],
         summary="Modifier le rôle ou le titre d'un membre",
         request=CommunityMemberRoleUpdateSerializer,
         responses={200: CommunityMemberSerializer}
@@ -194,7 +246,7 @@ class CommunityMemberDetailView(APIView):
         )
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Valider ou refuser une demande d'adhésion",
         request=MemberModerationDecisionSerializer,
         responses={200: CommunityMemberSerializer}
@@ -227,7 +279,7 @@ class MemberSanctionsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Memberships'],
+        tags=['Communities & Memberships'],
         summary="Appliquer une sanction de modération à un membre",
         request=CreateSanctionRequestSerializer,
         responses={201: MemberSanctionSerializer}

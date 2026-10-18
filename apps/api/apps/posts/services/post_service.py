@@ -1,16 +1,20 @@
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.communities.models.settings import PostPermissionType
 from apps.memberships.models.member import (
     CommunityMember,
-    CommunityRole,
     MembershipStatus,
+)
+from apps.memberships.permissions import (
+    check_community_membership,
 )
 from apps.posts.models.category import PostCategory
 from apps.posts.models.comment import Comment
@@ -30,18 +34,17 @@ class PostService:
     """
 
     @classmethod
-    def _verify_post_permission(cls, user: User, community: Community, category: Optional[PostCategory] = None) -> CommunityMember:
+    def _verify_post_permission(cls, user: User, community: Community, category: Optional[PostCategory] = None) -> Optional[CommunityMember]:
         if is_superadmin_user(user):
             return None
+
+        check_community_membership(user, community, "publier dans cette communauté")
 
         membership = CommunityMember.objects.filter(
             community=community,
             user=user,
             status=MembershipStatus.ACTIVE
         ).first()
-
-        if not membership:
-            raise PermissionDenied("Vous devez être membre actif de la communauté pour publier.")
 
         # Check read-only mode: only owner and moderators/admins can post
         settings = getattr(community, 'settings', None)
@@ -69,9 +72,9 @@ class PostService:
         cls,
         author: User,
         community: Community,
-        data: Dict[str, Any],
-        poll_data: Optional[Dict[str, Any]] = None,
-        media_ids: Optional[List[str]] = None,
+        data: dict[str, Any],
+        poll_data: Optional[dict[str, Any]] = None,
+        media_ids: Optional[list[str]] = None,
     ) -> Post:
         category = None
         category_id = data.pop('category_id', None)
@@ -79,8 +82,8 @@ class PostService:
             try:
                 category = PostCategory.objects.get(id=category_id, community=community)
                 data['category'] = category
-            except PostCategory.DoesNotExist:
-                raise ValidationError({'category_id': "Catégorie / Canal introuvable."})
+            except PostCategory.DoesNotExist as err:
+                raise ValidationError({'category_id': "Catégorie / Canal introuvable."}) from err
 
         cls._verify_post_permission(author, community, category)
 
@@ -133,8 +136,8 @@ class PostService:
         cls,
         user: User,
         post: Post,
-        data: Dict[str, Any],
-        media_ids: Optional[List[str]] = None
+        data: dict[str, Any],
+        media_ids: Optional[list[str]] = None
     ) -> Post:
         if not is_superadmin_user(user) and post.author_id != user.id:
             raise PermissionDenied("Vous n'êtes pas l'auteur de cette publication.")
@@ -144,8 +147,8 @@ class PostService:
             if category_id:
                 try:
                     data['category'] = PostCategory.objects.get(id=category_id, community=post.community)
-                except PostCategory.DoesNotExist:
-                    raise ValidationError({'category_id': "Catégorie introuvable."})
+                except PostCategory.DoesNotExist as err:
+                    raise ValidationError({'category_id': "Catégorie introuvable."}) from err
             else:
                 data['category'] = None
 
@@ -214,24 +217,24 @@ class PostService:
         post: Post,
         content: str,
         parent_id: Optional[str] = None,
-        media_ids: Optional[List[str]] = None,
+        media_ids: Optional[list[str]] = None,
     ) -> Comment:
         if post.is_locked and not is_superadmin_user(author):
             raise ValidationError("Les commentaires sont verrouillés sur cette publication.")
 
         if not is_superadmin_user(author):
+            check_community_membership(author, post.community, "commenter cette publication")
+
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=author,
                 status=MembershipStatus.ACTIVE
             ).first()
-            if not membership:
-                raise PermissionDenied("Vous devez être membre actif pour commenter.")
 
             settings = getattr(post.community, 'settings', None)
             if settings and settings.is_read_only:
                 is_owner = (post.community.owner_id == author.id)
-                is_moderator = membership.is_moderator
+                is_moderator = membership.is_moderator if membership else False
                 if not (is_owner or is_moderator):
                     raise PermissionDenied("Cette communauté est en mode lecture seule. Seul le propriétaire ou un modérateur peut commenter.")
 
@@ -239,8 +242,8 @@ class PostService:
         if parent_id:
             try:
                 parent = Comment.objects.get(id=parent_id, post=post)
-            except Comment.DoesNotExist:
-                raise ValidationError({'parent_id': "Commentaire parent introuvable."})
+            except Comment.DoesNotExist as err:
+                raise ValidationError({'parent_id': "Commentaire parent introuvable."}) from err
 
         # Mandatory pre-publication content moderation
         from apps.ai.services.moderation_service import ModerationService
@@ -302,6 +305,8 @@ class PostService:
 
     @classmethod
     def toggle_post_reaction(cls, user: User, post: Post, reaction_type: str) -> bool:
+        check_community_membership(user, post.community, "réagir à cette publication")
+
         if reaction_type not in dict(ReactionType.choices):
             raise ValidationError("Type de réaction invalide.")
 
@@ -318,6 +323,8 @@ class PostService:
 
     @classmethod
     def toggle_comment_reaction(cls, user: User, comment: Comment, reaction_type: str) -> bool:
+        check_community_membership(user, comment.post.community, "réagir à ce commentaire")
+
         if reaction_type not in dict(ReactionType.choices):
             raise ValidationError("Type de réaction invalide.")
 
@@ -335,7 +342,9 @@ class PostService:
     # --- Polls ---
 
     @classmethod
-    def vote_poll(cls, user: User, poll: Poll, option_ids: List[str]) -> Poll:
+    def vote_poll(cls, user: User, poll: Poll, option_ids: list[str]) -> Poll:
+        check_community_membership(user, poll.post.community, "voter dans ce sondage")
+
         if poll.is_expired:
             raise ValidationError("Ce sondage est clôturé.")
 
@@ -357,8 +366,8 @@ class PostService:
                     PollVote.objects.create(option=option, user=user)
                     PollOption.objects.filter(id=option.id).update(votes_count=F('votes_count') + 1)
                     Poll.objects.filter(id=poll.id).update(total_votes=F('total_votes') + 1)
-                except PollOption.DoesNotExist:
-                    raise NotFound("Option de sondage introuvable.")
+                except PollOption.DoesNotExist as err:
+                    raise NotFound("Option de sondage introuvable.") from err
 
             poll.refresh_from_db()
             return poll

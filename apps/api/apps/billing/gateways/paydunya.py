@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
+
 import requests
 from django.conf import settings
 from rest_framework.exceptions import APIException
@@ -34,7 +35,7 @@ class PayDunyaGateway:
         return cls.SANDBOX_BASE_URL if cls.is_sandbox() else cls.LIVE_BASE_URL
 
     @classmethod
-    def get_headers(cls) -> Dict[str, str]:
+    def get_headers(cls) -> dict[str, str]:
         master_key = getattr(settings, 'PAYDUNYA_MASTER_KEY', '')
         private_key = getattr(settings, 'PAYDUNYA_PRIVATE_KEY', '')
         token = getattr(settings, 'PAYDUNYA_TOKEN', '')
@@ -60,7 +61,7 @@ class PayDunyaGateway:
         return_url: Optional[str] = None,
         cancel_url: Optional[str] = None,
         callback_url: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Initializes a PayDunya checkout invoice session.
         Returns {'token': '...', 'checkout_url': '...'}
@@ -113,7 +114,7 @@ class PayDunyaGateway:
             response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=20)
         except requests.RequestException as e:
             logger.error(f"[PayDunya] Network error during checkout creation: {e}")
-            raise PayDunyaAPIException("Impossible de joindre les serveurs PayDunya.")
+            raise PayDunyaAPIException("Impossible de joindre les serveurs PayDunya.") from e
 
         if response.status_code not in [200, 201]:
             logger.error(f"[PayDunya] Creation failed ({response.status_code}): {response.text}")
@@ -140,7 +141,7 @@ class PayDunyaGateway:
         }
 
     @classmethod
-    def confirm_invoice(cls, token: str) -> Dict[str, Any]:
+    def confirm_invoice(cls, token: str) -> dict[str, Any]:
         """
         Direct server-to-server transaction verification from PayDunya official API.
         Acts as the single source of truth for IPN callbacks.
@@ -155,7 +156,7 @@ class PayDunyaGateway:
             response = requests.get(url, headers=cls.get_headers(), timeout=20)
         except requests.RequestException as e:
             logger.error(f"[PayDunya] Network error during transaction confirmation: {e}")
-            raise PayDunyaAPIException("Impossible de vérifier la transaction auprès de PayDunya.")
+            raise PayDunyaAPIException("Impossible de vérifier la transaction auprès de PayDunya.") from e
 
         if response.status_code != 200:
             logger.error(f"[PayDunya] Confirmation failed ({response.status_code}): {response.text}")

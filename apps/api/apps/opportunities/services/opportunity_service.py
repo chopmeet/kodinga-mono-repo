@@ -1,9 +1,10 @@
+import contextlib
+
 from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from common.permissions.base import is_superadmin_user
-
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 from apps.opportunities.models.application import (
@@ -14,6 +15,7 @@ from apps.opportunities.models.opportunity import (
     Opportunity,
     OpportunityStatus,
 )
+from common.permissions.base import is_superadmin_user
 
 
 class OpportunityService:
@@ -24,6 +26,10 @@ class OpportunityService:
     @classmethod
     @transaction.atomic
     def create_opportunity(cls, poster, validated_data, technology_ids=None):
+        community = validated_data.get("community")
+        if community:
+            check_community_membership(poster, community, "publier une opportunité dans cette communauté")
+
         opportunity = Opportunity.objects.create(poster=poster, **validated_data)
         if technology_ids:
             opportunity.technologies.set(technology_ids)
@@ -34,6 +40,10 @@ class OpportunityService:
     def update_opportunity(cls, opportunity, user, validated_data, technology_ids=None):
         if opportunity.poster_id != user.id and not (user.is_staff or is_superadmin_user(user)):
             raise PermissionDenied("Vous n'êtes pas autorisé à modifier cette offre.")
+
+        community = validated_data.get("community")
+        if community:
+            check_community_membership(user, community, "associer cette opportunité à cette communauté")
 
         for key, value in validated_data.items():
             setattr(opportunity, key, value)
@@ -56,8 +66,12 @@ class OpportunityService:
     @classmethod
     @transaction.atomic
     def apply_to_opportunity(cls, opportunity, applicant, data):
+        if opportunity.community:
+            check_community_membership(applicant, opportunity.community, "postuler à cette opportunité")
+
         if opportunity.status != OpportunityStatus.OPEN:
             raise ValidationError("Cette opportunité n'accepte plus de candidatures.")
+
 
         if OpportunityApplication.objects.filter(opportunity=opportunity, applicant=applicant).exists():
             raise ValidationError("Vous avez déjà postulé à cette opportunité.")
@@ -76,7 +90,7 @@ class OpportunityService:
         )
         opportunity.refresh_from_db(fields=["applications_count"])
 
-        try:
+        with contextlib.suppress(Exception):
             NotificationService.create_notification(
                 recipient=opportunity.poster,
                 title="Nouvelle candidature reçue",
@@ -86,8 +100,6 @@ class OpportunityService:
                 action_url=f"/opportunities/{opportunity.slug}/applications",
                 metadata={"opportunity_id": str(opportunity.id), "application_id": str(application.id)},
             )
-        except Exception:
-            pass
 
         return application
 
@@ -100,7 +112,7 @@ class OpportunityService:
         application.status = new_status
         application.save(update_fields=["status", "updated_at"])
 
-        try:
+        with contextlib.suppress(Exception):
             NotificationService.create_notification(
                 recipient=application.applicant,
                 title="Mise à jour de votre candidature",
@@ -110,7 +122,5 @@ class OpportunityService:
                 action_url=f"/opportunities/{application.opportunity.slug}",
                 metadata={"opportunity_id": str(application.opportunity.id), "status": new_status},
             )
-        except Exception:
-            pass
 
         return application

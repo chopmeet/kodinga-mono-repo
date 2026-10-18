@@ -1,9 +1,8 @@
-import uuid
 from django.conf import settings
 from django.db import models
 
-from common.models.base import BaseModel
 from apps.communities.models.community import Community
+from common.models.base import BaseModel
 
 
 class AssistantConversation(BaseModel):
