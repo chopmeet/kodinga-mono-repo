@@ -1,12 +1,15 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
-from apps.communities.models.community import CommunityPrivacy, CommunityPricing
+
+from apps.communities.models.community import CommunityPricing, CommunityPrivacy
 from apps.communities.selectors.community_selector import CommunitySelector
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.memberships.selectors.membership_selector import MembershipSelector
 from apps.memberships.serializers.member import (
     CommunityMemberRoleUpdateSerializer,
@@ -18,6 +21,8 @@ from apps.memberships.serializers.sanction import (
     MemberSanctionSerializer,
 )
 from apps.memberships.services.membership_service import MembershipService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class JoinCommunityView(APIView):

@@ -1,4 +1,5 @@
-from typing import List, Optional
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -31,7 +32,7 @@ class SentimentResult(BaseModel):
 class ModerationResult(BaseModel):
     decision: str = Field(..., description="allow, reject, review")
     flagged: bool = False
-    categories: List[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
     confidence: float = 1.0
     reason: str = ""
     provider: str = ""
@@ -41,7 +42,7 @@ class ModerationResult(BaseModel):
 class PolicyViolationResult(BaseModel):
     violates_mandatory_rules: bool = False
     violates_community_rules: bool = False
-    violations: List[str] = Field(default_factory=list)
+    violations: list[str] = Field(default_factory=list)
     decision: str = "allow"
     reason: str = ""
 
@@ -78,42 +79,42 @@ class CommunityRecommendationCard(BaseModel):
 
 
 class CommunityRecommendationResult(BaseModel):
-    recommendations: List[CommunityRecommendationCard] = Field(default_factory=list)
+    recommendations: list[CommunityRecommendationCard] = Field(default_factory=list)
     reasoning: str = ""
-    suggested_alternatives: List[str] = Field(default_factory=list)
+    suggested_alternatives: list[str] = Field(default_factory=list)
     provider: str = ""
 
 
 class FirstWeekPlanItem(BaseModel):
     day: str
     focus: str
-    action_items: List[str] = Field(default_factory=list)
+    action_items: list[str] = Field(default_factory=list)
 
 
 class CommunityProposalResult(BaseModel):
-    name_suggestions: List[str] = Field(default_factory=list)
+    name_suggestions: list[str] = Field(default_factory=list)
     description: str = ""
     purpose: str = ""
     target_audience: str = ""
-    suggested_categories: List[str] = Field(default_factory=list)
-    suggested_rules: List[str] = Field(default_factory=list)
+    suggested_categories: list[str] = Field(default_factory=list)
+    suggested_rules: list[str] = Field(default_factory=list)
     recommended_language: str = "fr"
     recommended_visibility: str = "public"
     welcome_message: str = ""
-    first_discussion_prompts: List[str] = Field(default_factory=list)
-    initial_event_ideas: List[str] = Field(default_factory=list)
-    first_week_launch_plan: List[FirstWeekPlanItem] = Field(default_factory=list)
-    follow_up_questions: List[str] = Field(default_factory=list)
+    first_discussion_prompts: list[str] = Field(default_factory=list)
+    initial_event_ideas: list[str] = Field(default_factory=list)
+    first_week_launch_plan: list[FirstWeekPlanItem] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
     provider: str = ""
 
 
 class ContentSuggestionResult(BaseModel):
-    discussion_categories: List[str] = Field(default_factory=list)
+    discussion_categories: list[str] = Field(default_factory=list)
     first_post: dict = Field(default_factory=dict)
-    weekly_activities: List[dict] = Field(default_factory=list)
-    monthly_events: List[dict] = Field(default_factory=list)
+    weekly_activities: list[dict] = Field(default_factory=list)
+    monthly_events: list[dict] = Field(default_factory=list)
     onboarding_prompt: str = ""
-    weekly_content_calendar: List[dict] = Field(default_factory=list)
+    weekly_content_calendar: list[dict] = Field(default_factory=list)
     provider: str = ""
 
 
@@ -127,18 +128,18 @@ class ImprovementRecommendation(BaseModel):
 class CommunityAnalysisResult(BaseModel):
     community_name: str = ""
     overview_assessment: str = ""
-    strengths: List[str] = Field(default_factory=list)
-    improvement_areas: List[str] = Field(default_factory=list)
-    actionable_recommendations: List[ImprovementRecommendation] = Field(default_factory=list)
-    event_suggestions: List[str] = Field(default_factory=list)
-    engagement_tactics: List[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    improvement_areas: list[str] = Field(default_factory=list)
+    actionable_recommendations: list[ImprovementRecommendation] = Field(default_factory=list)
+    event_suggestions: list[str] = Field(default_factory=list)
+    engagement_tactics: list[str] = Field(default_factory=list)
     metrics_summary: dict = Field(default_factory=dict)
     provider: str = ""
 
 
 class AssistantChatResult(BaseModel):
     reply: str
-    suggested_follow_ups: List[str] = Field(default_factory=list)
+    suggested_follow_ups: list[str] = Field(default_factory=list)
     suggested_action: Optional[str] = None
     data: Optional[dict] = None
     provider: str = ""

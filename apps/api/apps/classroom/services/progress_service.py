@@ -1,12 +1,18 @@
 from typing import Optional
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
+
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson
 from apps.classroom.models.progress import CourseEnrollment, LessonProgress
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.memberships.permissions import check_community_membership
 
 
@@ -53,10 +59,10 @@ class ProgressService:
         ).select_related('module').order_by('module__order', 'module__created_at', 'order', 'created_at')
 
         preceding_lesson_ids = []
-        for l in all_course_lessons:
-            if l.id == lesson.id:
+        for les in all_course_lessons:
+            if les.id == lesson.id:
                 break
-            preceding_lesson_ids.append(l.id)
+            preceding_lesson_ids.append(les.id)
 
         if not preceding_lesson_ids:
             return False  # First lesson is always unlocked

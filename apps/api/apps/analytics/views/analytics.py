@@ -1,10 +1,8 @@
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from common.permissions import IsPlatformAdmin
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
+
 from apps.analytics.models.metric import PlatformMetric
 from apps.analytics.serializers.analytics import (
     AnalyticsOverviewSerializer,
@@ -13,6 +11,9 @@ from apps.analytics.serializers.analytics import (
     PlatformMetricSerializer,
 )
 from apps.analytics.services.analytics_service import AnalyticsService
+from common.permissions import IsPlatformAdmin
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import success_response
 
 
 class AnalyticsOverviewView(APIView):

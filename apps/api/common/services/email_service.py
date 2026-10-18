@@ -1,11 +1,11 @@
 import logging
+
+import resend
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.core.mail.backends.base import BaseEmailBackend
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-
-import resend
 from resend.exceptions import (
     InvalidApiKeyError,
     RateLimitError,
@@ -99,12 +99,12 @@ class ResendEmailBackend(BaseEmailBackend):
             params["bcc"] = list(message.bcc)
 
         try:
-            print(f"\n==================================================")
+            print("\n==================================================")
             print(f"[RESEND BACKEND] Sending to: {recipients} | Subject: '{message.subject}' | From: '{from_email}'")
             resp = resend.Emails.send(params)
             email_id = resp.get("id") if isinstance(resp, dict) else getattr(resp, "id", None)
             print(f"[RESEND BACKEND SUCCESS] Response: {resp}")
-            print(f"==================================================\n")
+            print("==================================================\n")
             logger.info(f"Email '{message.subject}' dispatched via Resend to {recipients} (id: {email_id})")
             return True
         except RateLimitError as exc:
@@ -224,12 +224,12 @@ class EmailService:
                 params["reply_to"] = [reply_to] if isinstance(reply_to, str) else list(reply_to)
 
             try:
-                print(f"\n==================================================", flush=True)
+                print("\n==================================================", flush=True)
                 print(f"[RESEND SENDING] To: {recipients} | Subject: '{subject}' | From: '{sender}'", flush=True)
                 response = resend.Emails.send(params)
                 email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
                 print(f"[RESEND SUCCESS] API Response: {response}", flush=True)
-                print(f"==================================================\n", flush=True)
+                print("==================================================\n", flush=True)
                 logger.info(f"Email '{subject}' successfully dispatched via Resend to {recipients} (id: {email_id})")
                 return True
             except RateLimitError as exc:

@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.db import models
-from common.models.base import BaseModel
+
 from apps.communities.models.community import Community
 from apps.media.models.media_asset import MediaAsset
 from apps.posts.models.category import PostCategory
+from common.models.base import BaseModel
 
 
 class PostType(models.TextChoices):

@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Optional, Dict, Any
+from typing import Any, Optional
 
 from django.conf import settings
 
@@ -11,7 +11,6 @@ from apps.ai.providers.exceptions import (
     QuotaExhaustedError,
     RateLimitError,
     RecoverableProviderError,
-    SafetyRejectionError,
 )
 from apps.ai.schemas import (
     AssistantChatResult,
@@ -72,7 +71,7 @@ class OpenAIAdapter(BaseAIProvider):
                 raise ConfigurationError(
                     f"OpenAI client initialization failed: {e}",
                     provider=self.provider_name,
-                )
+                ) from e
         return self._client
 
     def _clean_json_response(self, text: str) -> dict:
@@ -92,7 +91,7 @@ class OpenAIAdapter(BaseAIProvider):
             logger.warning(f"[OpenAI] Failed to parse JSON response: {text[:200]}...")
             raise RecoverableProviderError(
                 f"Invalid JSON returned by OpenAI: {e}", provider=self.provider_name
-            )
+            ) from e
 
     def _handle_openai_error(self, e: Exception) -> None:
         err_msg = str(e).lower()
@@ -284,7 +283,7 @@ class OpenAIAdapter(BaseAIProvider):
             return None
 
     def moderate_content(
-        self, text: str, context: Optional[Dict[str, Any]] = None
+        self, text: str, context: Optional[dict[str, Any]] = None
     ) -> ModerationResult:
         # Check dedicated OpenAI Moderation API endpoint first
         api_mod = self.check_moderation_api(text)
@@ -331,7 +330,7 @@ class OpenAIAdapter(BaseAIProvider):
         )
 
     def classify_community_policy_violation(
-        self, text: str, community_rules: Optional[Dict[str, Any]] = None
+        self, text: str, community_rules: Optional[dict[str, Any]] = None
     ) -> PolicyViolationResult:
         mod_result = self.moderate_content(text)
         mandatory_categories = [
@@ -358,13 +357,12 @@ class OpenAIAdapter(BaseAIProvider):
 
     def _get_lang_prompt(self, language: str) -> str:
         lang = (language or "fr").lower()
-        if lang == "wo":
-            return "Wolof language (Senegal/Gambia). Use natural, welcoming Wolof phrasing."
-        elif lang == "bm":
-            return "Bambara language (Mali). Use natural, welcoming Bambara phrasing."
-        elif lang == "en":
-            return "English language."
-        return "French language."
+        mapping = {
+            "wo": "Wolof language (Senegal/Gambia). Use natural, welcoming Wolof phrasing.",
+            "bm": "Bambara language (Mali). Use natural, welcoming Bambara phrasing.",
+            "en": "English language.",
+        }
+        return mapping.get(lang, "French language.")
 
     def recommend_communities(
         self,
@@ -412,7 +410,7 @@ class OpenAIAdapter(BaseAIProvider):
         self,
         idea: str,
         language: str = "fr",
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> CommunityProposalResult:
         lang_instruction = self._get_lang_prompt(language)
         system = (
@@ -467,7 +465,7 @@ class OpenAIAdapter(BaseAIProvider):
 
     def suggest_content(
         self,
-        community_info: Dict[str, Any],
+        community_info: dict[str, Any],
         goal: Optional[str] = None,
         language: str = "fr",
     ) -> ContentSuggestionResult:
@@ -504,8 +502,8 @@ class OpenAIAdapter(BaseAIProvider):
 
     def analyze_community(
         self,
-        community_info: Dict[str, Any],
-        metrics: Dict[str, Any],
+        community_info: dict[str, Any],
+        metrics: dict[str, Any],
         language: str = "fr",
     ) -> CommunityAnalysisResult:
         lang_instruction = self._get_lang_prompt(language)
@@ -554,7 +552,7 @@ class OpenAIAdapter(BaseAIProvider):
         self,
         message: str,
         history: list,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         language: str = "fr",
     ) -> AssistantChatResult:
         lang_instruction = self._get_lang_prompt(language)

@@ -1,6 +1,8 @@
 from decimal import Decimal
+
 from django.core.management.base import BaseCommand
-from apps.billing.models.plan import Plan, BillingInterval
+
+from apps.billing.models.plan import BillingInterval, Plan
 
 PLANS_DATA = [
     {

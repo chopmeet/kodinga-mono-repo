@@ -1,17 +1,23 @@
+import logging
 from datetime import timedelta
 from decimal import Decimal
-import logging
-from typing import Optional, Tuple
+from typing import Optional
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
+
 from apps.accounts.models.user import User
 from apps.billing.gateways.paydunya import PayDunyaGateway
 from apps.billing.models.payment import Payment, PaymentStatus
 from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
 from apps.billing.services.affiliate_service import AffiliateService
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 
 logger = logging.getLogger('kodinga.billing')
 
@@ -41,15 +47,15 @@ class BillingService:
         return_url: Optional[str] = None,
         cancel_url: Optional[str] = None,
         callback_url: Optional[str] = None,
-    ) -> Tuple[Payment, str]:
+    ) -> tuple[Payment, str]:
         """
         Creates a local pending Payment with server-verified plan pricing,
         initializes the PayDunya checkout invoice session, and returns (payment, checkout_url).
         """
         try:
             plan = Plan.objects.get(id=plan_id, is_active=True)
-        except Plan.DoesNotExist:
-            raise NotFound("Plan de souscription introuvable ou inactif.")
+        except Plan.DoesNotExist as err:
+            raise NotFound("Plan de souscription introuvable ou inactif.") from err
 
         if plan.price <= Decimal("0.00"):
             raise ValidationError("Ce forfait est gratuit et ne nécessite aucun paiement.")

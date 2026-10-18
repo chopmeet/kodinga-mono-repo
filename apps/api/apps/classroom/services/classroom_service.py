@@ -1,15 +1,25 @@
-from typing import Any, Dict, Optional
+import uuid
+from typing import Any
+
 from django.db import models, transaction
 from django.db.models import F
+from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community
 from apps.classroom.models.course import Course
+from apps.classroom.models.lesson import Lesson, LessonType
 from apps.classroom.models.module import CourseModule
-from apps.classroom.models.lesson import Lesson
+from apps.communities.models.community import Community
 from apps.media.models.video_asset import VideoAsset
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.media.services.mux_service import MuxVideoService
+from apps.media.services.uploadthing_service import UploadThingService
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 
 
 class ClassroomService:
@@ -39,7 +49,7 @@ class ClassroomService:
     # ---------------- Course Operations ----------------
 
     @classmethod
-    def create_course(cls, actor_user: User, community: Community, data: Dict[str, Any]) -> Course:
+    def create_course(cls, actor_user: User, community: Community, data: dict[str, Any]) -> Course:
         cls.check_manager_permission(actor_user, community)
 
         title = data.get('title', '').strip()
@@ -66,7 +76,7 @@ class ClassroomService:
             return course
 
     @classmethod
-    def update_course(cls, actor_user: User, course: Course, data: Dict[str, Any]) -> Course:
+    def update_course(cls, actor_user: User, course: Course, data: dict[str, Any]) -> Course:
         cls.check_manager_permission(actor_user, course.community)
 
         fields = ['updated_at']
@@ -109,7 +119,7 @@ class ClassroomService:
     # ---------------- Module Operations ----------------
 
     @classmethod
-    def create_module(cls, actor_user: User, course: Course, data: Dict[str, Any]) -> CourseModule:
+    def create_module(cls, actor_user: User, course: Course, data: dict[str, Any]) -> CourseModule:
         cls.check_manager_permission(actor_user, course.community)
 
         with transaction.atomic():
@@ -123,7 +133,7 @@ class ClassroomService:
             return module
 
     @classmethod
-    def update_module(cls, actor_user: User, module: CourseModule, data: Dict[str, Any]) -> CourseModule:
+    def update_module(cls, actor_user: User, module: CourseModule, data: dict[str, Any]) -> CourseModule:
         cls.check_manager_permission(actor_user, module.course.community)
 
         fields = ['updated_at']
@@ -168,7 +178,7 @@ class ClassroomService:
     # ---------------- Lesson Operations ----------------
 
     @classmethod
-    def create_lesson(cls, actor_user: User, module: CourseModule, data: Dict[str, Any]) -> Lesson:
+    def create_lesson(cls, actor_user: User, module: CourseModule, data: dict[str, Any]) -> Lesson:
         cls.check_manager_permission(actor_user, module.course.community)
 
         title = data.get('title', '').strip()
@@ -184,8 +194,8 @@ class ClassroomService:
         if video_asset_id:
             try:
                 video_asset = VideoAsset.objects.get(id=video_asset_id)
-            except VideoAsset.DoesNotExist:
-                raise NotFound("La vidéo spécifiée est introuvable.")
+            except VideoAsset.DoesNotExist as err:
+                raise NotFound("La vidéo spécifiée est introuvable.") from err
 
         duration = data.get('duration_seconds', 0)
         content = data.get('content', '')
@@ -221,7 +231,7 @@ class ClassroomService:
             return lesson
 
     @classmethod
-    def update_lesson(cls, actor_user: User, lesson: Lesson, data: Dict[str, Any]) -> Lesson:
+    def update_lesson(cls, actor_user: User, lesson: Lesson, data: dict[str, Any]) -> Lesson:
         cls.check_manager_permission(actor_user, lesson.module.course.community)
 
         fields = ['updated_at']
@@ -254,8 +264,8 @@ class ClassroomService:
             if vid_id:
                 try:
                     lesson.video_asset = VideoAsset.objects.get(id=vid_id)
-                except VideoAsset.DoesNotExist:
-                    raise NotFound("Vidéo introuvable.")
+                except VideoAsset.DoesNotExist as err:
+                    raise NotFound("Vidéo introuvable.") from err
             else:
                 lesson.video_asset = None
             fields.append('video_asset')
@@ -309,3 +319,100 @@ class ClassroomService:
                     default=0
                 )
             )
+
+    @classmethod
+    def attach_video_to_lesson(
+        cls,
+        actor_user: User,
+        lesson: Lesson,
+        video_file=None,
+        video_url: str = "",
+    ) -> Lesson:
+        """
+        Uploads video to UploadThing (if file provided) and ingests into Mux for HLS streaming.
+        Stores the Mux VideoAsset and sets lesson_type to VIDEO.
+        """
+        cls.check_manager_permission(actor_user, lesson.module.course.community)
+
+        target_url = video_url.strip() if video_url else ""
+        if video_file:
+            res_ut = UploadThingService.upload_file_direct(
+                user=actor_user,
+                file_name=getattr(video_file, 'name', 'lesson_video.mp4'),
+                file_bytes=video_file.read() if hasattr(video_file, 'read') else video_file,
+                mime_type=getattr(video_file, 'content_type', 'video/mp4') or 'video/mp4',
+                purpose='general',
+            )
+            target_url = res_ut['file_url']
+
+        if not target_url:
+            raise ValidationError("Veuillez fournir un fichier vidéo ou une URL vidéo.")
+
+        # Ingest into Mux
+        video_asset = MuxVideoService.create_asset_from_url(
+            user=actor_user,
+            input_url=target_url,
+            title=f"{lesson.title} (Vidéo)",
+            description=f"Cours : {lesson.module.course.title} | Leçon : {lesson.title}",
+        )
+
+        lesson.video_asset = video_asset
+        lesson.lesson_type = LessonType.VIDEO
+        lesson.save(update_fields=['video_asset', 'lesson_type', 'updated_at'])
+        return lesson
+
+    @classmethod
+    def add_attachment_to_lesson(
+        cls,
+        actor_user: User,
+        lesson: Lesson,
+        attachment_file,
+    ) -> dict[str, Any]:
+        """
+        Uploads a downloadable document / attachment to UploadThing and records it in lesson.attachments.
+        """
+        cls.check_manager_permission(actor_user, lesson.module.course.community)
+
+        res_ut = UploadThingService.upload_file_direct(
+            user=actor_user,
+            file_name=getattr(attachment_file, 'name', 'attachment'),
+            file_bytes=attachment_file.read() if hasattr(attachment_file, 'read') else attachment_file,
+            mime_type=getattr(attachment_file, 'content_type', 'application/octet-stream') or 'application/octet-stream',
+            purpose='lesson_attachment',
+        )
+
+        item = {
+            'id': str(uuid.uuid4()),
+            'name': getattr(attachment_file, 'name', 'attachment'),
+            'url': res_ut['file_url'],
+            'size': res_ut.get('file_size') or getattr(attachment_file, 'size', 0),
+            'mime_type': getattr(attachment_file, 'content_type', 'application/octet-stream') or 'application/octet-stream',
+            'uploaded_at': timezone.now().isoformat(),
+        }
+
+        current = list(lesson.attachments or [])
+        current.append(item)
+        lesson.attachments = current
+        lesson.save(update_fields=['attachments', 'updated_at'])
+        return item
+
+    @classmethod
+    def remove_attachment_from_lesson(
+        cls,
+        actor_user: User,
+        lesson: Lesson,
+        attachment_id_or_url: str,
+    ) -> Lesson:
+        """
+        Removes an attachment from lesson.attachments matching the given ID or URL.
+        """
+        cls.check_manager_permission(actor_user, lesson.module.course.community)
+
+        current = list(lesson.attachments or [])
+        filtered = [
+            att for att in current
+            if att.get('id') != attachment_id_or_url and att.get('url') != attachment_id_or_url
+        ]
+        lesson.attachments = filtered
+        lesson.save(update_fields=['attachments', 'updated_at'])
+        return lesson

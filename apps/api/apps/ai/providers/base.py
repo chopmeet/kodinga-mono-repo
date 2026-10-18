@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
+from typing import Any, Optional
+
 from apps.ai.schemas import (
     LanguageDetectionResult,
-    TranslationResult,
-    SentimentResult,
     ModerationResult,
     PolicyViolationResult,
+    SentimentResult,
+    TranslationResult,
 )
 
 
@@ -48,7 +49,7 @@ class BaseAIProvider(ABC):
 
     @abstractmethod
     def moderate_content(
-        self, text: str, context: Optional[Dict[str, Any]] = None
+        self, text: str, context: Optional[dict[str, Any]] = None
     ) -> ModerationResult:
         """
         Evaluates content against platform-wide mandatory safety rules
@@ -58,7 +59,7 @@ class BaseAIProvider(ABC):
 
     @abstractmethod
     def classify_community_policy_violation(
-        self, text: str, community_rules: Optional[Dict[str, Any]] = None
+        self, text: str, community_rules: Optional[dict[str, Any]] = None
     ) -> PolicyViolationResult:
         """
         Evaluates content against custom community-specific rules
@@ -84,7 +85,7 @@ class BaseAIProvider(ABC):
         self,
         idea: str,
         language: str = "fr",
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ):
         """
         Transforms a user's natural language community idea into a structured proposal.
@@ -94,7 +95,7 @@ class BaseAIProvider(ABC):
     @abstractmethod
     def suggest_content(
         self,
-        community_info: Dict[str, Any],
+        community_info: dict[str, Any],
         goal: Optional[str] = None,
         language: str = "fr",
     ):
@@ -107,8 +108,8 @@ class BaseAIProvider(ABC):
     @abstractmethod
     def analyze_community(
         self,
-        community_info: Dict[str, Any],
-        metrics: Dict[str, Any],
+        community_info: dict[str, Any],
+        metrics: dict[str, Any],
         language: str = "fr",
     ):
         """
@@ -121,7 +122,7 @@ class BaseAIProvider(ABC):
         self,
         message: str,
         history: list,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         language: str = "fr",
     ):
         """

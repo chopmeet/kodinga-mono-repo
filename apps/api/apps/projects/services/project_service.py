@@ -1,16 +1,18 @@
+import contextlib
+
 from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from common.permissions.base import is_superadmin_user
-from apps.memberships.permissions import check_community_membership
 from apps.gamification.models.reputation import ReputationAction
 from apps.gamification.services.gamification_service import GamificationService
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 from apps.projects.models.comment import ProjectComment
 from apps.projects.models.project import Project
 from apps.projects.models.upvote import ProjectUpvote
+from common.permissions.base import is_superadmin_user
 
 
 class ProjectService:
@@ -30,15 +32,13 @@ class ProjectService:
             project.technologies.set(technology_ids)
 
         # Gamification reward: publishing a showcase project
-        try:
+        with contextlib.suppress(Exception):
             GamificationService.award_points(
                 user=owner,
                 action=ReputationAction.POST_CREATED,
                 points=25,
                 description=f"Publication du projet vitrine: {project.title}",
             )
-        except Exception:
-            pass
 
         return project
 
@@ -128,7 +128,7 @@ class ProjectService:
         )
 
         if project.owner_id != author.id:
-            try:
+            with contextlib.suppress(Exception):
                 NotificationService.create_notification(
                     recipient=project.owner,
                     title=f"Commentaire de {author.username}",
@@ -138,8 +138,6 @@ class ProjectService:
                     action_url=f"/projects/{project.slug}",
                     metadata={"project_id": str(project.id), "comment_id": str(comment.id)},
                 )
-            except Exception:
-                pass
 
         return comment
 

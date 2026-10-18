@@ -1,5 +1,5 @@
-from common.serializers.base import BaseModelSerializer
 from apps.communities.models.rule import CommunityRule
+from common.serializers.base import BaseModelSerializer
 
 
 class CommunityRuleSerializer(BaseModelSerializer):

@@ -12,9 +12,9 @@ from apps.hackathons.models.team import (
     TeamMemberRole,
 )
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
-from apps.memberships.permissions import check_community_membership
 
 
 class HackathonTeamService:

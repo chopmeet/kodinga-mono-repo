@@ -1,5 +1,5 @@
-from typing import Optional
 import uuid
+from typing import Optional
 
 from django.db.models import Q, QuerySet
 from django.utils import timezone

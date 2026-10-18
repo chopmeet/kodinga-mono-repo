@@ -216,8 +216,8 @@ class CreateOpportunitySerializer(serializers.Serializer):
         import uuid
         try:
             return uuid.UUID(str(value))
-        except (ValueError, TypeError, AttributeError):
-            raise serializers.ValidationError("community_id doit être un UUID valide.")
+        except (ValueError, TypeError, AttributeError) as err:
+            raise serializers.ValidationError("community_id doit être un UUID valide.") from err
 
 
 class OpportunityApplicationSerializer(serializers.ModelSerializer):

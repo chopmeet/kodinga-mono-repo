@@ -10,13 +10,11 @@ from rest_framework.views import APIView
 
 from apps.communities.models.community import Community
 from apps.opportunities.models.application import (
-    ApplicationStatus,
     OpportunityApplication,
 )
 from apps.opportunities.models.opportunity import (
     ExperienceLevel,
     Opportunity,
-    OpportunityStatus,
     OpportunityType,
     WorkplaceType,
 )
@@ -123,7 +121,7 @@ class OpportunityListView(APIView):
                 ).values_list("opportunity_id", flat=True)
             )
             for o in opportunities:
-                setattr(o, "has_applied", o.id in applied_ids)
+                o.has_applied = o.id in applied_ids
 
         return Response(OpportunitySerializer(opportunities, many=True).data)
 

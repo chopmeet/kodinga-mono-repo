@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 from django.db import transaction
 from django.utils.text import slugify
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import Community
@@ -23,9 +25,9 @@ class CommunityService:
     def create_community(
         cls,
         owner: User,
-        data: Dict[str, Any],
-        rules_data: Optional[List[Dict[str, Any]]] = None,
-        settings_data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any],
+        rules_data: Optional[list[dict[str, Any]]] = None,
+        settings_data: Optional[dict[str, Any]] = None,
     ) -> Community:
         # 1. Check platform setting: is community creation open to Hobby or restricted to Pro only?
         from apps.administration.services.admin_service import AdministrationService
@@ -64,8 +66,8 @@ class CommunityService:
         if category_id:
             try:
                 data['category'] = CommunityCategory.objects.get(id=category_id)
-            except CommunityCategory.DoesNotExist:
-                raise ValidationError({'category_id': "Catégorie introuvable."})
+            except CommunityCategory.DoesNotExist as err:
+                raise ValidationError({'category_id': "Catégorie introuvable."}) from err
 
         with transaction.atomic():
             community = Community.objects.create(
@@ -102,7 +104,7 @@ class CommunityService:
 
             # If paid community and initial plan price provided, create membership Plan
             if community.pricing_type == 'paid' and membership_price:
-                from apps.billing.models.plan import Plan, BillingInterval
+                from apps.billing.models.plan import BillingInterval, Plan
                 interval_choice = (
                     BillingInterval.ONE_TIME if membership_interval == 'one_time'
                     else (BillingInterval.YEAR if membership_interval == 'year' else BillingInterval.MONTH)
@@ -127,7 +129,7 @@ class CommunityService:
         cls,
         community: Community,
         user: User,
-        data: Dict[str, Any]
+        data: dict[str, Any]
     ) -> Community:
         # Check permissions: owner, admin, or superadmin
         from common.permissions.base import is_superadmin_user
@@ -154,15 +156,18 @@ class CommunityService:
             if category_id:
                 try:
                     data['category'] = CommunityCategory.objects.get(id=category_id)
-                except CommunityCategory.DoesNotExist:
-                    raise ValidationError({'category_id': "Catégorie introuvable."})
+                except CommunityCategory.DoesNotExist as err:
+                    raise ValidationError({'category_id': "Catégorie introuvable."}) from err
             else:
                 data['category'] = None
 
         new_slug = data.get('slug')
-        if new_slug and new_slug != community.slug:
-            if Community.objects.filter(slug=new_slug).exclude(id=community.id).exists():
-                raise ValidationError({'slug': "Ce slug est déjà utilisé par une autre communauté."})
+        if (
+            new_slug
+            and new_slug != community.slug
+            and Community.objects.filter(slug=new_slug).exclude(id=community.id).exists()
+        ):
+            raise ValidationError({'slug': "Ce slug est déjà utilisé par une autre communauté."})
 
         with transaction.atomic():
             for key, value in data.items():
@@ -170,7 +175,7 @@ class CommunityService:
             community.save()
 
             if community.pricing_type == 'paid' and membership_price:
-                from apps.billing.models.plan import Plan, BillingInterval
+                from apps.billing.models.plan import BillingInterval, Plan
                 interval_choice = (
                     BillingInterval.ONE_TIME if membership_interval == 'one_time'
                     else (BillingInterval.YEAR if membership_interval == 'year' else BillingInterval.MONTH)
@@ -207,7 +212,7 @@ class CommunityService:
         cls,
         community: Community,
         user: User,
-        data: Dict[str, Any]
+        data: dict[str, Any]
     ) -> CommunitySettings:
         from common.permissions.base import is_superadmin_user
         if not is_superadmin_user(user) and community.owner_id != user.id:
@@ -269,5 +274,5 @@ class CommunityService:
         try:
             rule = CommunityRule.objects.get(id=rule_id, community=community)
             rule.delete()
-        except CommunityRule.DoesNotExist:
-            raise NotFound("Règle introuvable.")
+        except CommunityRule.DoesNotExist as err:
+            raise NotFound("Règle introuvable.") from err

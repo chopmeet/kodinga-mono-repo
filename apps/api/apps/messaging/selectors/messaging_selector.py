@@ -1,9 +1,7 @@
-from django.db.models import Count, Q
 from rest_framework.exceptions import PermissionDenied
 
 from apps.messaging.models.conversation import Conversation
 from apps.messaging.models.message import Message
-from apps.messaging.models.participant import ConversationParticipant
 
 
 class MessagingSelector:

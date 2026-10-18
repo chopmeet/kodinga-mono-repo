@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from apps.profiles.models.education import DeveloperEducation
 from apps.profiles.models.experience import DeveloperExperience
 from apps.profiles.models.portfolio import DeveloperPortfolioProject

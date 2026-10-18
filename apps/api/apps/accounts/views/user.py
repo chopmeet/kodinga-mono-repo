@@ -1,12 +1,17 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+
+from apps.accounts.models.user import User
+from apps.accounts.serializers.user import (
+    ConsentSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
+from apps.accounts.services.consent import ConsentService
 from common.permissions import IsPlatformAdmin
 from common.utils.responses import error_response, success_response
-from apps.accounts.models.user import User
-from apps.accounts.serializers.user import ConsentSerializer, UserSerializer, UserUpdateSerializer
-from apps.accounts.services.consent import ConsentService
 
 
 class UserProfileMeView(APIView):
@@ -123,8 +128,9 @@ class UserListView(APIView):
         }
     )
     def get(self, request):
-        from common.utils.pagination import StandardResultsSetPagination
         from django.db.models import Q
+
+        from common.utils.pagination import StandardResultsSetPagination
 
         queryset = User.objects.all().order_by('-date_joined')
         

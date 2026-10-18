@@ -1,10 +1,8 @@
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from common.permissions import IsPlatformAdmin
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
+
 from apps.accounts.models.user import User
 from apps.accounts.serializers.user import UserSerializer
 from apps.administration.models.audit import PlatformAuditLog
@@ -18,6 +16,9 @@ from apps.administration.serializers.audit import (
     UserToggleStatusSerializer,
 )
 from apps.administration.services.admin_service import AdministrationService
+from common.permissions import IsPlatformAdmin
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class AdminDashboardView(APIView):

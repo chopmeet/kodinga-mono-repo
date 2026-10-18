@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
 from common.models.base import BaseModel
 
 
@@ -64,7 +65,7 @@ class UserSession(BaseModel):
 
     @property
     def is_active(self) -> bool:
-        return self.revoked_at is None and self.expires_at > timezone.now()
+        return self.revoked_at is None and bool(self.expires_at and self.expires_at > timezone.now())
 
     def revoke(self):
         if not self.revoked_at:

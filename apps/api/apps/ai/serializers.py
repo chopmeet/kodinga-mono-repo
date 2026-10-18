@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.ai.models.audit import ModerationAuditLog
-from apps.communities.models.settings import CommunitySettings
 
 
 class TranslationRequestSerializer(serializers.Serializer):

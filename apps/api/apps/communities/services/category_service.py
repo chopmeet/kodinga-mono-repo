@@ -1,6 +1,8 @@
 import logging
+
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
+
 from apps.communities.models.category import CommunityCategory
 
 logger = logging.getLogger(__name__)

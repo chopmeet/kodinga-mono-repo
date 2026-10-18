@@ -1,6 +1,8 @@
 from django.contrib import admin, messages
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+
 from apps.accounts.models.consent import UserConsent
 from apps.accounts.models.oauth import OAuthIdentity
 from apps.accounts.models.security import SecurityEvent
@@ -21,9 +23,11 @@ class UserSessionInline(admin.TabularInline):
     show_change_link = True
 
     def is_active_badge(self, obj):
+        if not obj or not obj.id:
+            return mark_safe('<span style="color: gray;">-</span>')
         if obj.is_active:
-            return format_html('<span style="color: green; font-weight: bold;">● Active</span>')
-        return format_html('<span style="color: red; font-weight: bold;">○ Revoked / Expired</span>')
+            return mark_safe('<span style="color: green; font-weight: bold;">● Active</span>')
+        return mark_safe('<span style="color: red; font-weight: bold;">○ Revoked / Expired</span>')
     is_active_badge.short_description = "Status"
 
 
@@ -36,9 +40,11 @@ class AuthTokenInline(admin.TabularInline):
     show_change_link = True
 
     def is_valid_badge(self, obj):
+        if not obj or not obj.id:
+            return mark_safe('<span style="color: gray;">-</span>')
         if obj.is_valid:
-            return format_html('<span style="color: green; font-weight: bold;">✓ Valid</span>')
-        return format_html('<span style="color: gray;">✕ Consumed/Expired</span>')
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Valid</span>')
+        return mark_safe('<span style="color: gray;">✕ Consumed/Expired</span>')
     is_valid_badge.short_description = "Validity"
 
 
@@ -77,12 +83,15 @@ class UserAdmin(admin.ModelAdmin):
         'is_active_badge',
         'email_verified_badge',
         'is_staff',
+        'is_superuser',
+        'is_superadmin',
         'date_joined',
     ]
     list_filter = [
         'is_active',
         'is_staff',
         'is_superuser',
+        'is_superadmin',
         'preferred_language',
         'timezone',
         'date_joined',
@@ -90,6 +99,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ['username', 'email', 'first_name', 'last_name']
     ordering = ['-date_joined']
     readonly_fields = ['id', 'date_joined', 'last_login', 'created_at', 'updated_at']
+    filter_horizontal = ('groups', 'user_permissions')
     inlines = [UserSessionInline, AuthTokenInline, OAuthIdentityInline, UserConsentInline, SecurityEventInline]
 
     fieldsets = (
@@ -100,7 +110,7 @@ class UserAdmin(admin.ModelAdmin):
             'fields': ('first_name', 'last_name', 'preferred_language', 'timezone')
         }),
         ('Status & Verification', {
-            'fields': ('is_active', 'email_verified_at', 'is_staff', 'is_superuser')
+            'fields': ('is_active', 'email_verified_at', 'is_staff', 'is_superuser', 'is_superadmin')
         }),
         ('Permissions & Groups', {
             'classes': ('collapse',),
@@ -117,6 +127,8 @@ class UserAdmin(admin.ModelAdmin):
         'mark_email_unverified_action',
         'activate_users_action',
         'deactivate_users_action',
+        'promote_to_superadmin_action',
+        'demote_from_superadmin_action',
         'force_revoke_all_sessions_action',
         'send_password_reset_email_action',
         'send_verification_email_action',
@@ -124,14 +136,14 @@ class UserAdmin(admin.ModelAdmin):
 
     def is_active_badge(self, obj):
         if obj.is_active:
-            return format_html('<span style="color: green; font-weight: 600;">✓ Active</span>')
-        return format_html('<span style="color: red; font-weight: 600;">✕ Inactive</span>')
+            return mark_safe('<span style="color: green; font-weight: 600;">✓ Active</span>')
+        return mark_safe('<span style="color: red; font-weight: 600;">✕ Inactive</span>')
     is_active_badge.short_description = "Account Active"
 
     def email_verified_badge(self, obj):
         if obj.is_email_verified:
-            return format_html('<span style="color: green; font-weight: 600;">✓ Verified</span>')
-        return format_html('<span style="color: orange; font-weight: 600;">○ Unverified</span>')
+            return mark_safe('<span style="color: green; font-weight: 600;">✓ Verified</span>')
+        return mark_safe('<span style="color: orange; font-weight: 600;">○ Unverified</span>')
     email_verified_badge.short_description = "Email Status"
 
     @admin.action(description="Mark selected users as email verified")
@@ -158,6 +170,16 @@ class UserAdmin(admin.ModelAdmin):
             SessionService.revoke_all_sessions(user)
             count += 1
         self.message_user(request, f"{count} account(s) deactivated and all active sessions revoked.", messages.SUCCESS)
+
+    @admin.action(description="Promote selected users to platform superadmin")
+    def promote_to_superadmin_action(self, request, queryset):
+        updated = queryset.update(is_superadmin=True)
+        self.message_user(request, f"{updated} user(s) promoted to platform superadmin.", messages.SUCCESS)
+
+    @admin.action(description="Demote selected users from platform superadmin")
+    def demote_from_superadmin_action(self, request, queryset):
+        updated = queryset.update(is_superadmin=False)
+        self.message_user(request, f"{updated} user(s) demoted from platform superadmin.", messages.WARNING)
 
     @admin.action(description="Force revoke all active sessions for selected users")
     def force_revoke_all_sessions_action(self, request, queryset):
@@ -195,8 +217,8 @@ class UserSessionAdmin(admin.ModelAdmin):
 
     def status_badge(self, obj):
         if obj.is_active:
-            return format_html('<span style="color: green; font-weight: bold;">● Active</span>')
-        return format_html('<span style="color: red; font-weight: bold;">○ Revoked / Expired</span>')
+            return mark_safe('<span style="color: green; font-weight: bold;">● Active</span>')
+        return mark_safe('<span style="color: red; font-weight: bold;">○ Revoked / Expired</span>')
     status_badge.short_description = "Status"
 
     @admin.action(description="Revoke selected sessions")
@@ -224,8 +246,8 @@ class AuthTokenAdmin(admin.ModelAdmin):
 
     def validity_badge(self, obj):
         if obj.is_valid:
-            return format_html('<span style="color: green; font-weight: bold;">✓ Valid</span>')
-        return format_html('<span style="color: gray;">✕ Inactive</span>')
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Valid</span>')
+        return mark_safe('<span style="color: gray;">✕ Inactive</span>')
     validity_badge.short_description = "Status"
 
     @admin.action(description="Mark selected tokens as consumed")
@@ -261,8 +283,8 @@ class UserConsentAdmin(admin.ModelAdmin):
 
     def granted_badge(self, obj):
         if obj.granted:
-            return format_html('<span style="color: green; font-weight: bold;">✓ Granted</span>')
-        return format_html('<span style="color: red; font-weight: bold;">✕ Revoked</span>')
+            return mark_safe('<span style="color: green; font-weight: bold;">✓ Granted</span>')
+        return mark_safe('<span style="color: red; font-weight: bold;">✕ Revoked</span>')
     granted_badge.short_description = "Consent Status"
 
 

@@ -3,9 +3,10 @@ Django settings for Kodinga Backend API.
 Centralized production-ready configuration using django-environ.
 """
 
+import sys
 from datetime import timedelta
 from pathlib import Path
-import sys
+
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -120,6 +121,12 @@ if DATABASE_URL_VAL:
     DATABASES = {
         'default': env.db_url_config(DATABASE_URL_VAL)
     }
+    # Neon and other PostgreSQL transaction poolers (e.g. PgBouncer in transaction mode)
+    # do not support server-side cursors across transactions.
+    if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+        DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = env.bool(
+            'DISABLE_SERVER_SIDE_CURSORS', default=True
+        )
 else:
     DATABASES = {
         'default': {
@@ -276,7 +283,6 @@ MAIL_FROM = env('MAIL_FROM', default=env('DEFAULT_FROM_EMAIL', default='Kodinga 
 DEFAULT_FROM_EMAIL = MAIL_FROM
 
 # Testing overrides (fast hashers, locmem email backend)
-import sys
 IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in arg for arg in sys.argv)
 if IS_TESTING:
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'

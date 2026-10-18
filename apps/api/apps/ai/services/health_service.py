@@ -1,13 +1,12 @@
-from datetime import timedelta
 import logging
-from typing import Any, Dict
+from datetime import timedelta
+from typing import Any
 
-from django.db.models import Avg, Count
+from django.db.models import Avg
 from django.utils import timezone
 
 from apps.ai.models.provider_metric import ProviderMetric
 from apps.ai.providers.circuit_breaker import gemini_circuit_breaker
-from apps.ai.schemas import ProviderHealthStatus
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ class ProviderHealthService:
     """
 
     @classmethod
-    def get_health_status(cls) -> Dict[str, Any]:
+    def get_health_status(cls) -> dict[str, Any]:
         cb_status = gemini_circuit_breaker.get_status()
         now = timezone.now()
         since_24h = now - timedelta(hours=24)

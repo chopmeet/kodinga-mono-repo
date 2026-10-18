@@ -1,9 +1,8 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
+
 from apps.media.models.video_asset import VideoAsset
 from apps.media.serializers.video import (
     MuxUploadRequestSerializer,
@@ -11,6 +10,8 @@ from apps.media.serializers.video import (
     VideoAssetSerializer,
 )
 from apps.media.services.mux_service import MuxVideoService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class MuxDirectUploadView(APIView):

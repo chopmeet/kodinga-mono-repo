@@ -1,12 +1,14 @@
 from typing import Optional
+
 from django.db.models import QuerySet
-from rest_framework.exceptions import PermissionDenied, NotFound
-from common.permissions.base import is_superadmin_user
+from rest_framework.exceptions import NotFound, PermissionDenied
+
 from apps.accounts.models.user import User
 from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
+from common.permissions.base import is_superadmin_user
 
 
 class BillingSelector:
@@ -36,8 +38,8 @@ class BillingSelector:
     def get_payment_for_user(cls, payment_id: str, user: User) -> Payment:
         try:
             payment = Payment.objects.select_related('plan', 'subscription').get(id=payment_id)
-        except Payment.DoesNotExist:
-            raise NotFound("Paiement introuvable.")
+        except Payment.DoesNotExist as err:
+            raise NotFound("Paiement introuvable.") from err
 
         if not is_superadmin_user(user) and payment.user_id != user.id:
             raise PermissionDenied("Vous n'avez pas l'autorisation d'accéder à ce paiement.")

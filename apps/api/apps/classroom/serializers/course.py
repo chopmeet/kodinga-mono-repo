@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.classroom.models.course import Course, CourseLevel
 from apps.classroom.models.module import CourseModule
 from apps.classroom.serializers.lesson import LessonSerializer
+from common.serializers.base import BaseModelSerializer
 
 
 class CourseModuleNestedSerializer(BaseModelSerializer):

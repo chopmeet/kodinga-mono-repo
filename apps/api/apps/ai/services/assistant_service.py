@@ -1,9 +1,7 @@
-import json
 import logging
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -12,7 +10,6 @@ from apps.accounts.models.user import User
 from apps.ai.models.assistant import AssistantConversation, AssistantMessage
 from apps.ai.router import ai_router
 from apps.ai.schemas import (
-    AssistantChatResult,
     CommunityAnalysisResult,
     CommunityProposalResult,
     CommunityRecommendationCard,
@@ -22,7 +19,11 @@ from apps.ai.schemas import (
 from apps.ai.services.moderation_service import ModerationService
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.event import Event
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.posts.models.post import Post, PostType
 from common.permissions.base import is_superadmin_user
 
@@ -204,7 +205,7 @@ class AIAssistantService:
         idea: str,
         user: Optional[User] = None,
         language: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> CommunityProposalResult:
         """
         Transforms a user's natural language concept into an actionable, editable community proposal.
@@ -361,7 +362,7 @@ class AIAssistantService:
         conversation_id: Optional[str] = None,
         community_identifier: Optional[str] = None,
         language: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Conversational assistant endpoint handling multi-turn dialog, intent detection,
         context retention, and action suggestions.

@@ -1,8 +1,9 @@
+import contextlib
+
 from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from common.permissions.base import is_superadmin_user
 from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
@@ -14,6 +15,7 @@ from apps.opportunities.models.opportunity import (
     Opportunity,
     OpportunityStatus,
 )
+from common.permissions.base import is_superadmin_user
 
 
 class OpportunityService:
@@ -88,7 +90,7 @@ class OpportunityService:
         )
         opportunity.refresh_from_db(fields=["applications_count"])
 
-        try:
+        with contextlib.suppress(Exception):
             NotificationService.create_notification(
                 recipient=opportunity.poster,
                 title="Nouvelle candidature reçue",
@@ -98,8 +100,6 @@ class OpportunityService:
                 action_url=f"/opportunities/{opportunity.slug}/applications",
                 metadata={"opportunity_id": str(opportunity.id), "application_id": str(application.id)},
             )
-        except Exception:
-            pass
 
         return application
 
@@ -112,7 +112,7 @@ class OpportunityService:
         application.status = new_status
         application.save(update_fields=["status", "updated_at"])
 
-        try:
+        with contextlib.suppress(Exception):
             NotificationService.create_notification(
                 recipient=application.applicant,
                 title="Mise à jour de votre candidature",
@@ -122,7 +122,5 @@ class OpportunityService:
                 action_url=f"/opportunities/{application.opportunity.slug}",
                 metadata={"opportunity_id": str(application.opportunity.id), "status": new_status},
             )
-        except Exception:
-            pass
 
         return application

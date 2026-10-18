@@ -1,5 +1,7 @@
 import logging
+
 from celery import shared_task
+
 from common.services.email_service import EmailService
 
 logger = logging.getLogger('kodinga.tasks')
@@ -19,4 +21,4 @@ def send_email_async_task(self, to_email: str, subject: str, template_name: str,
         )
     except Exception as exc:
         logger.error(f"Failed sending email '{subject}' to {to_email}: {exc}. Retrying...")
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc

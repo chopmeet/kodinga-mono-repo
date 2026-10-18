@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from common.models.base import BaseModel
+
 from apps.communities.models.community import Community
 from apps.memberships.models.member import CommunityRole
+from common.models.base import BaseModel
 
 
 class CommunityInvitation(BaseModel):
@@ -60,6 +61,4 @@ class CommunityInvitation(BaseModel):
             return False
         if self.expires_at and timezone.now() > self.expires_at:
             return False
-        if self.max_uses and self.uses_count >= self.max_uses:
-            return False
-        return True
+        return not (self.max_uses and self.uses_count >= self.max_uses)

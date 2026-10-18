@@ -1,10 +1,8 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import success_response, error_response
-from apps.communities.selectors.community_selector import CommunitySelector
+
 from apps.classroom.selectors.classroom_selector import ClassroomSelector
 from apps.classroom.serializers.course import (
     CourseCreateUpdateSerializer,
@@ -14,6 +12,9 @@ from apps.classroom.serializers.course import (
 from apps.classroom.serializers.progress import CourseEnrollmentSerializer
 from apps.classroom.services.classroom_service import ClassroomService
 from apps.classroom.services.progress_service import ProgressService
+from apps.communities.selectors.community_selector import CommunitySelector
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class CommunityCourseListView(APIView):

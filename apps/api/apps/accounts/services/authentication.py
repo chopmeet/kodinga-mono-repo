@@ -1,11 +1,12 @@
-from typing import Any, Dict
-from django.contrib.auth import authenticate
+from typing import Any
+
 from django.contrib.auth.models import update_last_login
 from rest_framework_simplejwt.tokens import RefreshToken
-from common.exceptions.handler import ApplicationError
+
 from apps.accounts.models.user import User
 from apps.accounts.services.security import AccountSecurityService
 from apps.accounts.services.session import SessionService
+from common.exceptions.handler import ApplicationError
 
 
 class AuthenticationService:
@@ -21,7 +22,7 @@ class AuthenticationService:
         password: str,
         request=None,
         device_name: str = ""
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         identifier = email.strip()
         user = (
             User.objects.filter(email__iexact=identifier).first()

@@ -1,6 +1,8 @@
 import uuid
 from typing import Optional
+
 from django.db.models import Prefetch, Q, QuerySet
+
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import Community, CommunityPrivacy
@@ -47,11 +49,14 @@ class CommunitySelector:
             if not user or not user.is_authenticated:
                 raise Community.DoesNotExist("Communauté introuvable.")
             from common.permissions.base import is_superadmin_user
-            if not is_superadmin_user(user) and community.owner_id != user.id:
-                if not CommunityMember.objects.filter(
+            if (
+                not is_superadmin_user(user)
+                and community.owner_id != user.id
+                and not CommunityMember.objects.filter(
                     community=community, user=user, status=MembershipStatus.ACTIVE
-                ).exists():
-                    raise Community.DoesNotExist("Communauté introuvable.")
+                ).exists()
+            ):
+                raise Community.DoesNotExist("Communauté introuvable.")
 
         return community
 

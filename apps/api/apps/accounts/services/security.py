@@ -1,5 +1,5 @@
-from typing import Any, Dict, Optional
-from django.conf import settings
+from typing import Any, Optional
+
 from apps.accounts.models.security import SecurityEvent
 
 
@@ -25,7 +25,7 @@ class AccountSecurityService:
         event_type: str,
         user=None,
         request=None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[dict[str, Any]] = None
     ) -> SecurityEvent:
         ip = cls.get_client_ip(request)
         ua = cls.get_client_user_agent(request)

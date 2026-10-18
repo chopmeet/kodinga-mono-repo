@@ -9,7 +9,7 @@ from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.models.member import CommunityMember, MembershipStatus
 from common.permissions.base import is_superadmin_user
 from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
+from common.utils.responses import error_response
 
 
 class AIModerationAuditListView(APIView):

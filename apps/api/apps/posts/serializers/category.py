@@ -1,5 +1,5 @@
-from common.serializers.base import BaseModelSerializer
 from apps.posts.models.category import PostCategory
+from common.serializers.base import BaseModelSerializer
 
 
 class PostCategorySerializer(BaseModelSerializer):

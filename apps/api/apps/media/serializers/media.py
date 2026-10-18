@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from common.serializers.base import BaseModelSerializer
+
 from apps.media.models.media_asset import MediaAsset, MediaPurpose
+from common.serializers.base import BaseModelSerializer
 
 
 class MediaAssetSerializer(BaseModelSerializer):

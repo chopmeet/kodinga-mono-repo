@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
 from common.models.base import BaseModel
 
 
@@ -57,7 +58,7 @@ class AuthToken(BaseModel):
 
     @property
     def is_valid(self) -> bool:
-        return self.consumed_at is None and self.expires_at > timezone.now()
+        return self.consumed_at is None and bool(self.expires_at and self.expires_at > timezone.now())
 
     def consume(self):
         self.consumed_at = timezone.now()

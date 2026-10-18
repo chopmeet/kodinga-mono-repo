@@ -1,17 +1,19 @@
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any
 from urllib.parse import urlencode
+
+import requests
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-import requests
 from rest_framework_simplejwt.tokens import RefreshToken
-from common.exceptions.handler import ApplicationError
-from common.utils.tokens import generate_secure_token
+
 from apps.accounts.models.oauth import OAuthIdentity
 from apps.accounts.models.user import User
 from apps.accounts.services.security import AccountSecurityService
 from apps.accounts.services.session import SessionService
+from common.exceptions.handler import ApplicationError
+from common.utils.tokens import generate_secure_token
 
 logger = logging.getLogger('kodinga.oauth')
 
@@ -31,7 +33,7 @@ class OAuthService:
     GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 
     @classmethod
-    def get_authorization_url(cls, provider: str, redirect_uri: str = None) -> Dict[str, str]:
+    def get_authorization_url(cls, provider: str, redirect_uri: str = None) -> dict[str, str]:
         state = generate_secure_token(16)
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
 
@@ -65,7 +67,7 @@ class OAuthService:
         raise ApplicationError(message="Unsupported OAuth provider.", code="invalid_provider")
 
     @classmethod
-    def exchange_google_code(cls, code: str, redirect_uri: str = None) -> Dict[str, Any]:
+    def exchange_google_code(cls, code: str, redirect_uri: str = None) -> dict[str, Any]:
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
         cb_url = redirect_uri or f"{frontend_url}/auth/callback/google"
         client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
@@ -113,7 +115,7 @@ class OAuthService:
         }
 
     @classmethod
-    def exchange_github_code(cls, code: str, redirect_uri: str = None) -> Dict[str, Any]:
+    def exchange_github_code(cls, code: str, redirect_uri: str = None) -> dict[str, Any]:
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
         cb_url = redirect_uri or f"{frontend_url}/auth/callback/github"
         client_id = getattr(settings, 'GITHUB_CLIENT_ID', '')
@@ -186,7 +188,7 @@ class OAuthService:
         code: str,
         redirect_uri: str = None,
         request=None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if provider == OAuthIdentity.PROVIDER_GOOGLE:
             profile = cls.exchange_google_code(code, redirect_uri)
         elif provider == OAuthIdentity.PROVIDER_GITHUB:

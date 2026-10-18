@@ -15,9 +15,9 @@ from apps.hackathons.models.submission import (
     SubmissionStatus,
 )
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
+from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
-from apps.memberships.permissions import check_community_membership
 
 DEFAULT_ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "zip", "mp4", "webm", "gif"}
 DANGEROUS_EXTENSIONS = {"exe", "bat", "cmd", "sh", "php", "py", "js", "html", "htm", "vbs", "ps1"}
