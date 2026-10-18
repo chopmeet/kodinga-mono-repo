@@ -151,6 +151,7 @@ export type CommunityPostItem = {
   code_language?: string;
   /** Reactions of the signed-in user ('like', 'fire'…) */
   user_reactions?: string[];
+  poll?: PostPoll | null;
   is_pinned: boolean;
   is_locked: boolean;
   is_resolved: boolean;
@@ -158,6 +159,34 @@ export type CommunityPostItem = {
   reactions_count: number;
   comments_count: number;
   created_at: string;
+};
+
+/** PollSerializer (embedded in a post of type poll) */
+export type PostPoll = {
+  id: string;
+  question: string;
+  is_multiple_choice: boolean;
+  expires_at: string | null;
+  total_votes: number;
+  is_expired: boolean;
+  user_has_voted: boolean;
+  user_voted_option_ids: string[];
+  options: { id: string; text: string; votes_count: number; percentage: number; order: number }[];
+};
+
+/** CommentSerializer: top-level comments carry their replies (one level) */
+export type PostComment = {
+  id: string;
+  post_id: string;
+  parent_id: string | null;
+  author: User;
+  content: string;
+  is_accepted_answer: boolean;
+  reactions_count: number;
+  user_reactions: string[];
+  replies: PostComment[];
+  created_at: string;
+  updated_at: string;
 };
 
 /** PostCreateUpdateSerializer (PATCH takes any subset; the poll is only read on creation) */

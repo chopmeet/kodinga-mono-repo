@@ -48,4 +48,11 @@ describe('Kodinga assistant placement', () => {
     expect(await screen.findByRole('heading', { name: 'Tableau de bord' }, SLOW)).toBeTruthy();
     expect(screen.queryByText('Assistant Kodinga')).toBeNull();
   });
+
+  it('hides it on the messages (it would cover the send button)', async () => {
+    signIn();
+    renderAppAt('/messages');
+    expect(await screen.findByRole('heading', { name: 'Messages' }, SLOW)).toBeTruthy();
+    expect(screen.queryByText('Assistant Kodinga')).toBeNull();
+  });
 });

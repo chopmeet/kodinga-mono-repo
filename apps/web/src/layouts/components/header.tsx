@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, ChevronDown, Globe, Plus, UserRound } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronDown, Globe, MessageCircle, Plus, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import {
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { languages } from '@/utils/i18n';
+import { useUnreadMessages } from '@/pages/public/messages/form/UseMessages';
 import { isAdmin, scrollToResults } from '@/utils/Utils';
 
 function LanguageSwitcher() {
@@ -55,6 +56,28 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       <span className={cn('hidden text-2xl font-bold tracking-tight text-slate-900 sm:inline', compact && 'md:hidden lg:inline')}>
         kodinga<span className="text-primary">.</span>
       </span>
+    </NavLink>
+  );
+}
+
+/** Private messages, with the number of unread ones */
+function MessagesLink() {
+  const { t } = useTranslation();
+  const unread = useUnreadMessages();
+  const label = unread > 0 ? `${t('header.messages')} (${t('header.unreadMessages', { count: unread })})` : t('header.messages');
+  return (
+    <NavLink
+      to="/messages"
+      aria-label={label}
+      title={label}
+      className="relative flex size-10 items-center justify-center rounded-lg text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
+    >
+      <MessageCircle className="size-5" />
+      {unread > 0 && (
+        <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-900 px-1 text-[10px] font-semibold text-white" aria-hidden>
+          {unread > 9 ? '9+' : unread}
+        </span>
+      )}
     </NavLink>
   );
 }
@@ -108,6 +131,7 @@ function Header() {
 
         <div className="flex items-center gap-0.5 justify-self-end sm:gap-4">
           <LanguageSwitcher />
+          {token && <MessagesLink />}
           {token ? (
             <NavLink
               to={isAdmin(user) ? '/admin/dashboard' : '/c'}

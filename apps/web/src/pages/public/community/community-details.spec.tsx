@@ -199,7 +199,10 @@ describe('Public community page', () => {
 
     // "Membres" tab: cards of the contributors, with their public profile
     renderAppAt('/communities/abidjan-react?tab=members');
-    const members = await screen.findByRole('list', { name: 'Membres' }, SLOW);
+    // Visitor: the contributors, said as such (the api keeps the full list for the team)
+    expect(await screen.findByRole('heading', { name: 'Membres actifs' }, SLOW)).toBeTruthy();
+    expect(await screen.findByText((_, el) => el?.tagName === 'P' && !!el.textContent?.includes('1 membre actif sur 240 au total'), {}, SLOW)).toBeTruthy();
+    const members = await screen.findByRole('list', { name: 'Membres actifs' }, SLOW);
     expect(within(members).getByRole('link', { name: /Voir le profil/ }).getAttribute('href')).toBe('/profiles/awa');
     cleanup();
 

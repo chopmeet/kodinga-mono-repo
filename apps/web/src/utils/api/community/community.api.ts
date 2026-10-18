@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/to
 import { ApiBaseUrl } from '@/utils/http';
 import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
+import type { ChatMessage, Conversation } from '../messaging/messaging.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
 import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
 import type {
@@ -51,6 +52,8 @@ import type {
   InvitationWriteData,
   CommunityMembersQuery,
   CommunityPostItem,
+  PostComment,
+  PostPoll,
   PostWriteData,
   CommunityProposalResult,
   CommunityRecommendationResult,
@@ -81,6 +84,8 @@ export const CommunityApi = createApi({
     'leaderboard',
     'projects',
     'invitations',
+    'conversations',
+    'messages',
   ],
   baseQuery: fetchBaseQuery({ 
     baseUrl: ApiBaseUrl, 
@@ -196,6 +201,44 @@ export const CommunityApi = createApi({
       query: (body) => ({ url: 'media/confirm-upload/', method: 'POST', body }),
       transformResponse: unwrap<MediaAsset>,
     }),
+    // Messaging: raw responses (no envelope), participants only. No realtime: the pages poll
+    getConversations: builder.query<Conversation[], void>({
+      query: () => 'conversations/',
+      // A list today; tolerate a paginated answer ({ results }) so the header badge never breaks
+      transformResponse: (response: unknown) =>
+        Array.isArray(response) ? (response as Conversation[]) : ((response as { results?: Conversation[] } | null)?.results ?? []),
+      providesTags: ['conversations'],
+    }),
+    getConversation: builder.query<Conversation, string>({
+      query: (conversationId) => `conversations/${conversationId}/`,
+      providesTags: (_result, _error, id) => [{ type: 'conversations', id }],
+    }),
+    // Opens the direct conversation with a user (the existing one when there is one)
+    startConversation: builder.mutation<Conversation, string>({
+      query: (recipient_id) => ({ url: 'conversations/', method: 'POST', body: { conversation_type: 'direct', recipient_id } }),
+      invalidatesTags: ['conversations'],
+    }),
+    getMessages: builder.query<ChatMessage[], string>({
+      query: (conversationId) => `conversations/${conversationId}/messages/`,
+      providesTags: (_result, _error, id) => [{ type: 'messages', id }],
+    }),
+    sendMessage: builder.mutation<ChatMessage, { conversationId: string; content: string }>({
+      query: ({ conversationId, content }) => ({ url: `conversations/${conversationId}/messages/`, method: 'POST', body: { content } }),
+      invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'messages', id: conversationId }, 'conversations'],
+    }),
+    markConversationRead: builder.mutation<unknown, string>({
+      query: (conversationId) => ({ url: `conversations/${conversationId}/read/`, method: 'POST' }),
+      invalidatesTags: ['conversations'],
+    }),
+    // Own messages only
+    editMessage: builder.mutation<ChatMessage, { conversationId: string; messageId: string; content: string }>({
+      query: ({ messageId, content }) => ({ url: `messages/${messageId}/`, method: 'PATCH', body: { content } }),
+      invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'messages', id: conversationId }, 'conversations'],
+    }),
+    deleteMessage: builder.mutation<unknown, { conversationId: string; messageId: string }>({
+      query: ({ messageId }) => ({ url: `messages/${messageId}/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'messages', id: conversationId }, 'conversations'],
+    }),
     // Signed-in users only; the api makes the creator the owner (active membership)
     createCommunity: builder.mutation<CommunityDetail, CommunityCreateData>({
       query: (body) => ({ url: 'communities/', method: 'POST', body }),
@@ -281,6 +324,13 @@ export const CommunityApi = createApi({
       async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+              const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
+              post.user_reactions = data.reacted ? [...others, 'like'] : others;
+              post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
+            }),
+          );
           for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
             dispatch(
               CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
@@ -296,6 +346,60 @@ export const CommunityApi = createApi({
           // the caller shows the error
         }
       },
+    }),
+    // Members; a new vote replaces the previous one. The answered poll patches the cached post and feeds
+    votePoll: builder.mutation<PostPoll, { postId: string; option_ids: string[] }>({
+      query: ({ postId, option_ids }) => ({ url: `posts/${postId}/vote/`, method: 'POST', body: { option_ids } }),
+      transformResponse: unwrap<PostPoll>,
+      async onQueryStarted({ postId }, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data: poll } = await queryFulfilled;
+          dispatch(CommunityApi.util.updateQueryData('getPost', postId, (post) => void (post.poll = poll)));
+          for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const post = feed.results.find((p) => p.id === postId);
+                if (post) post.poll = poll;
+              }),
+            );
+          }
+        } catch {
+          // the caller shows the error
+        }
+      },
+    }),
+    // One post (counts a view), with its comments: accepted answer first (GET posts/<id>/comments/)
+    getPost: builder.query<CommunityPostItem, string>({
+      query: (postId) => `posts/${postId}/`,
+      transformResponse: unwrap<CommunityPostItem>,
+      providesTags: (_result, _error, postId) => [{ type: 'posts', id: postId }],
+    }),
+    getPostComments: builder.query<PostComment[], string>({
+      query: (postId) => `posts/${postId}/comments/`,
+      transformResponse: unwrap<PostComment[]>,
+      providesTags: (_result, _error, postId) => [{ type: 'posts', id: `${postId}-comments` }],
+    }),
+    // Active members; closed when the post is locked. parent_id answers a comment (one level)
+    addPostComment: builder.mutation<PostComment, { postId: string; content: string; parent_id?: string }>({
+      query: ({ postId, ...body }) => ({ url: `posts/${postId}/comments/`, method: 'POST', body }),
+      transformResponse: unwrap<PostComment>,
+      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }, { type: 'posts', id: postId }, 'posts'],
+    }),
+    // The author, or the moderators of the community
+    deletePostComment: builder.mutation<unknown, { postId: string; commentId: string }>({
+      query: ({ commentId }) => ({ url: `comments/${commentId}/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }, { type: 'posts', id: postId }, 'posts'],
+    }),
+    toggleCommentLike: builder.mutation<{ reacted: boolean }, { postId: string; commentId: string }>({
+      query: ({ commentId }) => ({ url: `comments/${commentId}/react/`, method: 'POST', body: { reaction_type: 'like' } }),
+      transformResponse: unwrap<{ reacted: boolean }>,
+      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }],
+    }),
+    // Only the author of the post: replaces a previous accepted answer, the post becomes resolved
+    acceptAnswer: builder.mutation<PostComment, { postId: string; commentId: string }>({
+      query: ({ commentId }) => ({ url: `comments/${commentId}/accept/`, method: 'POST' }),
+      transformResponse: unwrap<PostComment>,
+      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }, { type: 'posts', id: postId }, 'posts'],
     }),
     togglePostPin: builder.mutation<unknown, string>({
       query: (postId) => ({ url: `posts/${postId}/pin/`, method: 'POST' }),
@@ -658,6 +762,14 @@ export const {
   useCreateCheckoutMutation,
   useRequestUploadUrlMutation,
   useConfirmUploadMutation,
+  useGetConversationsQuery,
+  useGetConversationQuery,
+  useStartConversationMutation,
+  useGetMessagesQuery,
+  useSendMessageMutation,
+  useMarkConversationReadMutation,
+  useEditMessageMutation,
+  useDeleteMessageMutation,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
   useGetCommunityInvitationsQuery,
@@ -669,6 +781,13 @@ export const {
   useDeletePostMutation,
   useCreatePostMutation,
   useTogglePostLikeMutation,
+  useGetPostQuery,
+  useGetPostCommentsQuery,
+  useAddPostCommentMutation,
+  useDeletePostCommentMutation,
+  useToggleCommentLikeMutation,
+  useAcceptAnswerMutation,
+  useVotePollMutation,
   useUpdatePostMutation,
   useRecommendCommunitiesMutation,
   usePlanCommunityMutation,

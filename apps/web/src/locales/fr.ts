@@ -6,6 +6,8 @@ export const fr = {
     profile: 'Le profil',
     signup: "S'inscrire",
     mySpace: 'Mon espace',
+    messages: 'Messages',
+    unreadMessages: '{{count}} non lus',
     language: 'Changer de langue',
     search: 'Rechercher une communauté…',
     clearSearch: 'Effacer la recherche',
