@@ -177,7 +177,8 @@ export function FeedTab({ page }: { page: CommunityPage }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="relative min-w-0 flex-1">
+        {/* Phones: the search takes the whole row, the sort goes under it */}
+        <label className="relative min-w-0 flex-1 basis-full sm:basis-0">
           <span className="sr-only">Rechercher une discussion</span>
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
           <input

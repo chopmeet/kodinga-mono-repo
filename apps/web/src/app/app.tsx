@@ -43,8 +43,9 @@ function ExpiredSession() {
 }
 
 export function App() {
-  const token = useAppSelector((s) => s.user.token);
-  const expired = !!token && isTokenExpired(token);
+  const { token, refresh } = useAppSelector((s) => s.user);
+  // An expired access token is renewed by authBaseQuery: the session only ends without a valid refresh token
+  const expired = !!token && isTokenExpired(token) && (!refresh || isTokenExpired(refresh));
   const routes = useRoutes(AppRoutes);
 
   return (

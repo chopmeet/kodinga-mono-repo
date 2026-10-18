@@ -9,7 +9,7 @@ import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { formatCompact } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
-import { LeaveDialog } from './community-sidebar';
+import { LeaveDialog, MembershipActions } from './community-sidebar';
 
 /** "Accès gratuit", "Sur demande", "Payante": the badge next to the name */
 export function accessBadge(community: CommunityDetail) {
@@ -127,10 +127,22 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
             ) : (
               community.tagline && <p className="mt-3 text-slate-600">{community.tagline}</p>
             )}
+            {!isMember && (
+              <div className="mt-5 lg:hidden">
+                {community.pricing_type === 'paid' ? (
+                  <a href="#formules" className="inline-flex h-11 items-center gap-2 rounded-lg bg-blue-900 px-5 text-sm font-semibold text-white">
+                    Voir les formules
+                  </a>
+                ) : (
+                  <MembershipActions page={page} className="w-full sm:w-auto" />
+                )}
+              </div>
+            )}
           </div>
 
           {isMember ? (
-            <div className="flex items-center gap-3">
+            // Phones: on their own row under the name (the name column keeps its width)
+            <div className="flex w-full items-center gap-3 sm:w-auto">
               {/* Notifications of the community: not in the api yet */}
               <button
                 type="button"

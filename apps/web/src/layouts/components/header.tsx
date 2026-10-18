@@ -119,9 +119,6 @@ function Header() {
             />
           ) : (
             <div className="hidden items-center justify-center gap-6 md:flex lg:gap-9">
-              <NavLink to={`/`} className={navLinkClassName}>
-                  {t('header.home')}
-                </NavLink>
               <NavLink to="/" end className={navLinkClassName}>
                 {t('header.explore')}
               </NavLink>

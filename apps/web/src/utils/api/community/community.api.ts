@@ -1,6 +1,5 @@
-import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
+import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
-import { ApiBaseUrl } from '@/utils/http';
 import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
@@ -32,7 +31,6 @@ import type {
   Technology,
 } from '../opportunity/opportunity.type';
 import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
-import { prepareHeaders } from '../user/user.api';
 import type {
   AdminCategoryItem,
   AssistantChatResult,
@@ -62,6 +60,7 @@ import type {
   ManagedRole,
   SanctionData,
 } from './community.type';
+import { authBaseQuery } from '../authBaseQuery';
 
 const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
 
@@ -87,10 +86,7 @@ export const CommunityApi = createApi({
     'conversations',
     'messages',
   ],
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: ApiBaseUrl, 
-    prepareHeaders 
-  }),
+  baseQuery: authBaseQuery,
   endpoints: (builder) => ({
     getCommunities: builder.query<ApiPaginated<CommunityListItem>, CommunityListQuery>({
       query: (query) => ({ url: 'communities/', params: cleanParams(query) }),

@@ -35,7 +35,7 @@ function Plans({ page }: { page: CommunityPage }) {
   if (plans.length === 0) return <p className="text-center text-sm text-slate-500">Les formules d'adhésion ne sont pas encore ouvertes.</p>;
 
   return (
-    <ul className="space-y-3" aria-label="Formules d'adhésion">
+    <ul id="formules" className="scroll-mt-40 space-y-3" aria-label="Formules d'adhésion">
       {plans.map((plan) => (
         <li key={plan.id} className="rounded-xl border border-slate-200 p-4">
           <div className="flex items-baseline justify-between gap-2">
@@ -230,7 +230,7 @@ function MemberSidebar({ page }: { page: CommunityPage }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
-        <div className="relative h-44" style={community.banner_url ? undefined : { backgroundColor: community.brand_color || '#1D4ED8' }}>
+        <div className="relative hidden h-44 lg:block" style={community.banner_url ? undefined : { backgroundColor: community.brand_color || '#1D4ED8' }}>
           {community.banner_url ? <img src={community.banner_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
         <div className="p-6">
@@ -285,7 +285,7 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
-        <div className="relative h-44" style={community.banner_url ? undefined : { backgroundColor: community.brand_color || '#1D4ED8' }}>
+        <div className="relative hidden h-44 lg:block" style={community.banner_url ? undefined : { backgroundColor: community.brand_color || '#1D4ED8' }}>
           {community.banner_url ? <img src={community.banner_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
         <div className="p-6">
