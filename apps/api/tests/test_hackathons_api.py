@@ -198,8 +198,18 @@ class TestHackathonCreationAndLifecycle:
                 }
             ],
             "criteria": [
-                {"name": "Impact", "min_score": "0.0", "max_score": "20.0", "weight": "1.0"},
-                {"name": "Faisabilité", "min_score": "0.0", "max_score": "20.0", "weight": "2.0"},
+                {
+                    "name": "Impact",
+                    "min_score": "0.0",
+                    "max_score": "20.0",
+                    "weight": "1.0",
+                },
+                {
+                    "name": "Faisabilité",
+                    "min_score": "0.0",
+                    "max_score": "20.0",
+                    "weight": "2.0",
+                },
             ],
         }
 
@@ -243,7 +253,9 @@ class TestHackathonCreationAndLifecycle:
             "title": "Invalid Dates Hack",
             "description": "Desc",
             "registration_start": (now + timedelta(days=10)).isoformat(),
-            "registration_end": (now + timedelta(days=2)).isoformat(),  # End before start
+            "registration_end": (
+                now + timedelta(days=2)
+            ).isoformat(),  # End before start
             "start_time": (now + timedelta(days=3)).isoformat(),
             "submission_deadline": (now + timedelta(days=4)).isoformat(),
             "judging_end": (now + timedelta(days=5)).isoformat(),
@@ -278,7 +290,10 @@ class TestHackathonCreationAndLifecycle:
         )
         assert res_pub.status_code == status.HTTP_200_OK
         hack.refresh_from_db()
-        assert hack.status in [HackathonStatus.PUBLISHED, HackathonStatus.REGISTRATION_OPEN]
+        assert hack.status in [
+            HackathonStatus.PUBLISHED,
+            HackathonStatus.REGISTRATION_OPEN,
+        ]
 
         # 2. Lifecycle transition to IN_PROGRESS
         res_trans = api_client.post(
@@ -300,7 +315,9 @@ class TestHackathonCreationAndLifecycle:
 
 @pytest.mark.django_db
 class TestHackathonApplications:
-    def test_member_can_apply_successfully(self, api_client, community, member, active_membership, open_hackathon):
+    def test_member_can_apply_successfully(
+        self, api_client, community, member, active_membership, open_hackathon
+    ):
         api_client.force_authenticate(user=member)
 
         payload = {
@@ -325,7 +342,9 @@ class TestHackathonApplications:
         assert my_res.status_code == status.HTTP_200_OK
         assert my_res.data["data"]["team_name"] == "Cyber Wolof"
 
-    def test_duplicate_application_fails(self, api_client, community, member, active_membership, open_hackathon):
+    def test_duplicate_application_fails(
+        self, api_client, community, member, active_membership, open_hackathon
+    ):
         api_client.force_authenticate(user=member)
         HackathonApplication.objects.create(
             hackathon=open_hackathon,
@@ -340,7 +359,9 @@ class TestHackathonApplications:
         )
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_member_only_restriction(self, api_client, community, stranger, open_hackathon):
+    def test_member_only_restriction(
+        self, api_client, community, stranger, open_hackathon
+    ):
         open_hackathon.is_member_only = True
         open_hackathon.save()
 
@@ -367,10 +388,14 @@ class TestHackathonTeams:
     ):
         # Both member and teammate have accepted applications
         HackathonApplication.objects.create(
-            hackathon=open_hackathon, applicant=member, status=ApplicationStatus.ACCEPTED
+            hackathon=open_hackathon,
+            applicant=member,
+            status=ApplicationStatus.ACCEPTED,
         )
         HackathonApplication.objects.create(
-            hackathon=open_hackathon, applicant=teammate, status=ApplicationStatus.ACCEPTED
+            hackathon=open_hackathon,
+            applicant=teammate,
+            status=ApplicationStatus.ACCEPTED,
         )
 
         # 1. Leader creates team
@@ -413,7 +438,9 @@ class TestHackathonSubmissions:
         self, api_client, community, member, active_membership, open_hackathon
     ):
         HackathonApplication.objects.create(
-            hackathon=open_hackathon, applicant=member, status=ApplicationStatus.ACCEPTED
+            hackathon=open_hackathon,
+            applicant=member,
+            status=ApplicationStatus.ACCEPTED,
         )
 
         api_client.force_authenticate(user=member)
@@ -480,11 +507,20 @@ class TestHackathonSubmissions:
 @pytest.mark.django_db
 class TestHackathonJudgingAndResults:
     def test_judging_workflow_and_results_publication(
-        self, api_client, community, owner, member, active_membership, judge_user, open_hackathon
+        self,
+        api_client,
+        community,
+        owner,
+        member,
+        active_membership,
+        judge_user,
+        open_hackathon,
     ):
         # Setup submitted project
         HackathonApplication.objects.create(
-            hackathon=open_hackathon, applicant=member, status=ApplicationStatus.ACCEPTED
+            hackathon=open_hackathon,
+            applicant=member,
+            status=ApplicationStatus.ACCEPTED,
         )
         sub = HackathonSubmission.objects.create(
             hackathon=open_hackathon,
@@ -519,8 +555,16 @@ class TestHackathonJudgingAndResults:
         # score 1: 18.0 * 2 = 36.0, score 2: 16.0 * 3 = 48.0 -> weighted avg = 84 / 5 = 16.80
         eval_payload = {
             "scores": [
-                {"criterion_id": str(criteria[0].id), "score": "18.0", "comment": "Très innovant"},
-                {"criterion_id": str(criteria[1].id), "score": "16.0", "comment": "Code propre"},
+                {
+                    "criterion_id": str(criteria[0].id),
+                    "score": "18.0",
+                    "comment": "Très innovant",
+                },
+                {
+                    "criterion_id": str(criteria[1].id),
+                    "score": "16.0",
+                    "comment": "Code propre",
+                },
             ],
             "general_feedback": "Excellente démonstration avec une architecture prometteuse.",
             "private_notes": "Candidat solide pour le podium.",
@@ -545,11 +589,7 @@ class TestHackathonJudgingAndResults:
         prize = open_hackathon.prizes.first()
         pub_res = api_client.post(
             f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/publish-results/",
-            {
-                "winners": [
-                    {"prize_id": str(prize.id), "submission_id": str(sub.id)}
-                ]
-            },
+            {"winners": [{"prize_id": str(prize.id), "submission_id": str(sub.id)}]},
             format="json",
         )
         assert pub_res.status_code == status.HTTP_200_OK
@@ -567,7 +607,9 @@ class TestHackathonJudgingAndResults:
 
 
 class TestHackathonCriteria:
-    def test_criteria_crud_lifecycle(self, api_client, owner, stranger, community, open_hackathon):
+    def test_criteria_crud_lifecycle(
+        self, api_client, owner, stranger, community, open_hackathon
+    ):
         # 1. Anonymous can list criteria
         api_client.logout()
         res = api_client.get(
@@ -580,7 +622,12 @@ class TestHackathonCriteria:
         api_client.force_authenticate(user=stranger)
         denied_res = api_client.post(
             f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/",
-            {"name": "Security", "min_score": "0.0", "max_score": "20.0", "weight": "1.5"},
+            {
+                "name": "Security",
+                "min_score": "0.0",
+                "max_score": "20.0",
+                "weight": "1.5",
+            },
             format="json",
         )
         assert denied_res.status_code == status.HTTP_403_FORBIDDEN
@@ -589,7 +636,13 @@ class TestHackathonCriteria:
         api_client.force_authenticate(user=owner)
         create_res = api_client.post(
             f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/criteria/",
-            {"name": "Security & Privacy", "description": "Sécurité des données", "min_score": "0.0", "max_score": "20.0", "weight": "2.0"},
+            {
+                "name": "Security & Privacy",
+                "description": "Sécurité des données",
+                "min_score": "0.0",
+                "max_score": "20.0",
+                "weight": "2.0",
+            },
             format="json",
         )
         assert create_res.status_code == status.HTTP_201_CREATED
@@ -613,7 +666,9 @@ class TestHackathonCriteria:
 
 
 class TestHackathonPrizes:
-    def test_prizes_crud_lifecycle(self, api_client, owner, stranger, community, open_hackathon):
+    def test_prizes_crud_lifecycle(
+        self, api_client, owner, stranger, community, open_hackathon
+    ):
         # 1. Anonymous can list prizes
         api_client.logout()
         res = api_client.get(
@@ -664,7 +719,9 @@ class TestHackathonPrizes:
 
 
 class TestMyHackathonsAndApplicationsExport:
-    def test_my_hackathons_endpoint(self, api_client, member, active_membership, community, open_hackathon):
+    def test_my_hackathons_endpoint(
+        self, api_client, member, active_membership, community, open_hackathon
+    ):
         # Member applies
         api_client.force_authenticate(user=member)
         app_res = api_client.post(
@@ -684,7 +741,16 @@ class TestMyHackathonsAndApplicationsExport:
         )
         assert found is True
 
-    def test_applications_export_csv(self, api_client, owner, member, active_membership, stranger, community, open_hackathon):
+    def test_applications_export_csv(
+        self,
+        api_client,
+        owner,
+        member,
+        active_membership,
+        stranger,
+        community,
+        open_hackathon,
+    ):
         # Member applies
         api_client.force_authenticate(user=member)
         app_res = api_client.post(
@@ -711,5 +777,3 @@ class TestMyHackathonsAndApplicationsExport:
         content = res.content.decode("utf-8")
         assert "Username" in content
         assert member.username in content
-
-

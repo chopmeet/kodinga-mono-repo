@@ -100,7 +100,9 @@ def community_b(db, owner_user, user_b):
 
 @pytest.mark.django_db
 class TestCommunityIsolationOpportunities:
-    def test_cannot_post_opportunity_in_foreign_community(self, api_client, user_a, community_a, community_b):
+    def test_cannot_post_opportunity_in_foreign_community(
+        self, api_client, user_a, community_a, community_b
+    ):
         api_client.force_authenticate(user=user_a)
 
         # Attempt to publish into Community B (where user_a is NOT a member)
@@ -122,7 +124,9 @@ class TestCommunityIsolationOpportunities:
         assert res_ok.status_code == status.HTTP_201_CREATED
         assert res_ok.data["title"] == "Senior Python Engineer"
 
-    def test_cannot_apply_to_foreign_community_opportunity(self, api_client, user_a, owner_user, community_b):
+    def test_cannot_apply_to_foreign_community_opportunity(
+        self, api_client, user_a, owner_user, community_b
+    ):
         # Opportunity created in Community B by owner
         opp = Opportunity.objects.create(
             poster=owner_user,
@@ -139,7 +143,10 @@ class TestCommunityIsolationOpportunities:
         api_client.force_authenticate(user=user_a)
         res = api_client.post(
             f"/api/v1/opportunities/{opp.slug}/apply/",
-            {"resume_url": "https://example.com/cv.pdf", "cover_letter": "I want to apply"},
+            {
+                "resume_url": "https://example.com/cv.pdf",
+                "cover_letter": "I want to apply",
+            },
             format="json",
         )
         assert res.status_code == status.HTTP_403_FORBIDDEN
@@ -148,7 +155,9 @@ class TestCommunityIsolationOpportunities:
 
 @pytest.mark.django_db
 class TestCommunityIsolationProjects:
-    def test_cannot_post_project_in_foreign_community(self, api_client, user_a, community_a, community_b):
+    def test_cannot_post_project_in_foreign_community(
+        self, api_client, user_a, community_a, community_b
+    ):
         api_client.force_authenticate(user=user_a)
 
         # Attempt to publish showcase into Community B
@@ -167,7 +176,9 @@ class TestCommunityIsolationProjects:
         assert res_ok.status_code == status.HTTP_201_CREATED
         assert res_ok.data["title"] == "AI Assistant SaaS"
 
-    def test_cannot_interact_with_foreign_community_project(self, api_client, user_a, owner_user, community_b):
+    def test_cannot_interact_with_foreign_community_project(
+        self, api_client, user_a, owner_user, community_b
+    ):
         proj = Project.objects.create(
             owner=owner_user,
             community=community_b,
@@ -193,7 +204,9 @@ class TestCommunityIsolationProjects:
 
 @pytest.mark.django_db
 class TestCommunityIsolationFeedAndPosts:
-    def test_cannot_post_in_foreign_community_feed(self, api_client, user_a, community_b):
+    def test_cannot_post_in_foreign_community_feed(
+        self, api_client, user_a, community_b
+    ):
         api_client.force_authenticate(user=user_a)
         res = api_client.post(
             f"/api/v1/communities/{community_b.slug}/feed/",
@@ -202,7 +215,9 @@ class TestCommunityIsolationFeedAndPosts:
         )
         assert res.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_cannot_react_or_vote_in_foreign_community_post(self, api_client, user_a, owner_user, community_b):
+    def test_cannot_react_or_vote_in_foreign_community_post(
+        self, api_client, user_a, owner_user, community_b
+    ):
         post = Post.objects.create(
             author=owner_user,
             community=community_b,
@@ -246,7 +261,9 @@ class TestCommunityIsolationFeedAndPosts:
 
 @pytest.mark.django_db
 class TestCommunityIsolationHackathons:
-    def test_cannot_apply_to_foreign_community_hackathon(self, api_client, user_a, owner_user, community_b):
+    def test_cannot_apply_to_foreign_community_hackathon(
+        self, api_client, user_a, owner_user, community_b
+    ):
         now = timezone.now()
         hackathon = Hackathon.objects.create(
             community=community_b,
@@ -275,7 +292,9 @@ class TestCommunityIsolationHackathons:
 
 @pytest.mark.django_db
 class TestCommunityIsolationClassroom:
-    def test_cannot_enroll_or_progress_in_foreign_classroom(self, api_client, user_a, owner_user, community_b):
+    def test_cannot_enroll_or_progress_in_foreign_classroom(
+        self, api_client, user_a, owner_user, community_b
+    ):
         course = Course.objects.create(
             community=community_b,
             author=owner_user,
@@ -298,9 +317,10 @@ class TestCommunityIsolationClassroom:
         api_client.force_authenticate(user=user_a)
 
         # Attempt to enroll
-        res_enroll = api_client.post(f"/api/v1/communities/{community_b.slug}/courses/{course.slug}/enroll/")
+        res_enroll = api_client.post(
+            f"/api/v1/communities/{community_b.slug}/courses/{course.slug}/enroll/"
+        )
         assert res_enroll.status_code == status.HTTP_403_FORBIDDEN
-
 
         # Attempt to record progress
         res_progress = api_client.post(
@@ -360,41 +380,57 @@ def public_free_community(db, owner_user):
 
 @pytest.mark.django_db
 class TestCommunityFeedReadProtection:
-    def test_anonymous_cannot_read_private_community_feed(self, api_client, private_community):
+    def test_anonymous_cannot_read_private_community_feed(
+        self, api_client, private_community
+    ):
         res = api_client.get(f"/api/v1/communities/{private_community.slug}/feed/")
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_non_member_cannot_read_private_community_feed(self, api_client, user_b, private_community):
+    def test_non_member_cannot_read_private_community_feed(
+        self, api_client, user_b, private_community
+    ):
         api_client.force_authenticate(user=user_b)
         res = api_client.get(f"/api/v1/communities/{private_community.slug}/feed/")
         assert res.status_code == status.HTTP_403_FORBIDDEN
         assert "membre actif ou abonné" in str(res.data)
 
-    def test_member_can_read_private_community_feed(self, api_client, user_a, private_community):
+    def test_member_can_read_private_community_feed(
+        self, api_client, user_a, private_community
+    ):
         api_client.force_authenticate(user=user_a)
         res = api_client.get(f"/api/v1/communities/{private_community.slug}/feed/")
         assert res.status_code == status.HTTP_200_OK
 
-    def test_anonymous_cannot_read_paid_community_feed(self, api_client, paid_community):
+    def test_anonymous_cannot_read_paid_community_feed(
+        self, api_client, paid_community
+    ):
         res = api_client.get(f"/api/v1/communities/{paid_community.slug}/feed/")
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_non_member_cannot_read_paid_community_feed(self, api_client, user_b, paid_community):
+    def test_non_member_cannot_read_paid_community_feed(
+        self, api_client, user_b, paid_community
+    ):
         api_client.force_authenticate(user=user_b)
         res = api_client.get(f"/api/v1/communities/{paid_community.slug}/feed/")
         assert res.status_code == status.HTTP_403_FORBIDDEN
         assert "membre actif ou abonné" in str(res.data)
 
-    def test_member_can_read_paid_community_feed(self, api_client, user_a, paid_community):
+    def test_member_can_read_paid_community_feed(
+        self, api_client, user_a, paid_community
+    ):
         api_client.force_authenticate(user=user_a)
         res = api_client.get(f"/api/v1/communities/{paid_community.slug}/feed/")
         assert res.status_code == status.HTTP_200_OK
 
-    def test_anonymous_can_read_public_free_community_feed(self, api_client, public_free_community):
+    def test_anonymous_can_read_public_free_community_feed(
+        self, api_client, public_free_community
+    ):
         res = api_client.get(f"/api/v1/communities/{public_free_community.slug}/feed/")
         assert res.status_code == status.HTTP_200_OK
 
-    def test_cannot_read_post_or_comments_in_private_community(self, api_client, user_a, user_b, owner_user, private_community):
+    def test_cannot_read_post_or_comments_in_private_community(
+        self, api_client, user_a, user_b, owner_user, private_community
+    ):
         post = Post.objects.create(
             community=private_community,
             author=owner_user,
@@ -426,17 +462,25 @@ class TestCommunityFeedReadProtection:
         res_member_comments = api_client.get(f"/api/v1/posts/{post.id}/comments/")
         assert res_member_comments.status_code == status.HTTP_200_OK
 
-    def test_cannot_read_categories_in_private_community(self, api_client, user_a, user_b, private_community):
+    def test_cannot_read_categories_in_private_community(
+        self, api_client, user_a, user_b, private_community
+    ):
         # Anonymous cannot list categories
-        res_anon = api_client.get(f"/api/v1/communities/{private_community.slug}/categories/")
+        res_anon = api_client.get(
+            f"/api/v1/communities/{private_community.slug}/categories/"
+        )
         assert res_anon.status_code == status.HTTP_401_UNAUTHORIZED
 
         # Non-member cannot list categories
         api_client.force_authenticate(user=user_b)
-        res_non_member = api_client.get(f"/api/v1/communities/{private_community.slug}/categories/")
+        res_non_member = api_client.get(
+            f"/api/v1/communities/{private_community.slug}/categories/"
+        )
         assert res_non_member.status_code == status.HTTP_403_FORBIDDEN
 
         # Member can list categories
         api_client.force_authenticate(user=user_a)
-        res_member = api_client.get(f"/api/v1/communities/{private_community.slug}/categories/")
+        res_member = api_client.get(
+            f"/api/v1/communities/{private_community.slug}/categories/"
+        )
         assert res_member.status_code == status.HTTP_200_OK

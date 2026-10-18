@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib import admin, messages
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.communities.models.category import CommunityCategory
@@ -7,6 +9,18 @@ from apps.communities.models.community import Community
 from apps.communities.models.rule import CommunityRule
 from apps.communities.models.settings import CommunitySettings
 from apps.media.services.uploadthing_service import UploadThingService
+from apps.memberships.models.member import CommunityMember
+
+
+class CommunityMemberInline(admin.TabularInline):
+    model = CommunityMember
+    extra = 0
+    fields = ['user', 'role', 'status', 'custom_title', 'reputation_score', 'joined_at']
+    readonly_fields = ['joined_at']
+    autocomplete_fields = ['user']
+    show_change_link = True
+    verbose_name = "Membre"
+    verbose_name_plural = "Membres de cet espace"
 
 
 class CommunityRuleInline(admin.TabularInline):
@@ -47,7 +61,7 @@ class CommunityAdmin(admin.ModelAdmin):
         'category',
         'privacy_type',
         'pricing_type',
-        'members_count',
+        'members_count_link',
         'is_verified',
         'is_featured',
         'is_active',
@@ -57,7 +71,17 @@ class CommunityAdmin(admin.ModelAdmin):
     search_fields = ['name', 'slug', 'tagline', 'owner__username', 'owner__email']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['avatar_preview', 'banner_preview', 'created_at', 'updated_at']
-    inlines = [CommunitySettingsInline, CommunityRuleInline]
+    inlines = [CommunitySettingsInline, CommunityRuleInline, CommunityMemberInline]
+
+    @admin.display(description="Membres", ordering="members_count")
+    def members_count_link(self, obj):
+        url = reverse('admin:memberships_communitymember_changelist') + f'?community__id__exact={obj.id}'
+        return format_html(
+            '<a href="{}" style="font-weight: 600; color: #2563eb; text-decoration: none;" title="Voir et filtrer les membres de cet espace">'
+            '👥 {} membre(s)'
+            '</a>',
+            url, obj.members_count
+        )
 
     fieldsets = (
         ('Informations Générales', {

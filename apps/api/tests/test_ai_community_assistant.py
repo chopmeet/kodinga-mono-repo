@@ -606,8 +606,14 @@ class TestAIAssistantConversationSessionManagement:
             conversation = AssistantConversation.objects.get(id=conv_id)
             assert conversation.user == stranger
             assert conversation.messages.count() == 2
-            assert conversation.messages.filter(role="user").first().content == "Bonjour assistant"
-            assert conversation.messages.filter(role="assistant").first().content == "Bonjour ! Comment puis-je vous aider ?"
+            assert (
+                conversation.messages.filter(role="user").first().content
+                == "Bonjour assistant"
+            )
+            assert (
+                conversation.messages.filter(role="assistant").first().content
+                == "Bonjour ! Comment puis-je vous aider ?"
+            )
 
             # Turn 2: Providing conversation_id -> Resumes existing session
             mock_chat.return_value = AssistantChatResult(
@@ -650,8 +656,12 @@ class TestAIAssistantConversationSessionManagement:
 
         # Add dummy messages
         conv = AssistantConversation.objects.get(id=conv_id)
-        AssistantMessage.objects.create(conversation=conv, role="user", content="Comment scaler ?")
-        AssistantMessage.objects.create(conversation=conv, role="assistant", content="Utilisez un load balancer.")
+        AssistantMessage.objects.create(
+            conversation=conv, role="user", content="Comment scaler ?"
+        )
+        AssistantMessage.objects.create(
+            conversation=conv, role="assistant", content="Utilisez un load balancer."
+        )
 
         # 2. List sessions via GET /api/v1/ai-assistant/conversations/
         list_res = api_client.get("/api/v1/ai-assistant/conversations/")
@@ -674,7 +684,9 @@ class TestAIAssistantConversationSessionManagement:
         assert patch_res.data["data"]["title"] == "Architecture Haute Disponibilité"
 
         # 5. Clear messages via POST /api/v1/ai-assistant/conversations/<id>/clear/
-        clear_res = api_client.post(f"/api/v1/ai-assistant/conversations/{conv_id}/clear/")
+        clear_res = api_client.post(
+            f"/api/v1/ai-assistant/conversations/{conv_id}/clear/"
+        )
         assert clear_res.status_code == status.HTTP_200_OK
         assert conv.messages.count() == 0
 
@@ -682,4 +694,3 @@ class TestAIAssistantConversationSessionManagement:
         delete_res = api_client.delete(f"/api/v1/ai-assistant/conversations/{conv_id}/")
         assert delete_res.status_code == status.HTTP_200_OK
         assert not AssistantConversation.objects.filter(id=conv_id).exists()
-
