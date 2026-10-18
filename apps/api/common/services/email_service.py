@@ -13,7 +13,7 @@ from resend.exceptions import (
     ValidationError,
 )
 
-logger = logging.getLogger('kodinga.email')
+logger = logging.getLogger("kodinga.email")
 
 
 def get_formatted_sender(raw_sender: str = None) -> str:
@@ -22,12 +22,12 @@ def get_formatted_sender(raw_sender: str = None) -> str:
     """
     sender = (
         raw_sender
-        or getattr(settings, 'MAIL_FROM', None)
-        or getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@resend.dev')
+        or getattr(settings, "MAIL_FROM", None)
+        or getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@resend.dev")
     )
-    app_name = getattr(settings, 'APP_NAME', 'Kodinga')
+    app_name = getattr(settings, "APP_NAME", "Kodinga")
 
-    if sender and '<' not in sender and '@' in sender:
+    if sender and "<" not in sender and "@" in sender:
         return f"{app_name} <{sender}>"
     return sender
 
@@ -41,13 +41,13 @@ class ResendEmailBackend(BaseEmailBackend):
     def __init__(self, fail_silently: bool = False, api_key: str = None, **kwargs):
         super().__init__(**kwargs)
         self.fail_silently = fail_silently
-        self.api_key = api_key or getattr(settings, 'RESEND_API_KEY', '')
+        self.api_key = api_key or getattr(settings, "RESEND_API_KEY", "")
 
     def send_messages(self, email_messages):
         if not email_messages:
             return 0
 
-        api_key = self.api_key or getattr(settings, 'RESEND_API_KEY', '')
+        api_key = self.api_key or getattr(settings, "RESEND_API_KEY", "")
         if not api_key:
             if not self.fail_silently:
                 raise ValueError("RESEND_API_KEY is not configured in settings.")
@@ -74,13 +74,13 @@ class ResendEmailBackend(BaseEmailBackend):
         text_content = message.body or ""
         html_content = None
 
-        if hasattr(message, 'alternatives'):
+        if hasattr(message, "alternatives"):
             for content, mimetype in message.alternatives:
-                if mimetype == 'text/html':
+                if mimetype == "text/html":
                     html_content = content
                     break
 
-        if not html_content and getattr(message, 'content_subtype', None) == 'html':
+        if not html_content and getattr(message, "content_subtype", None) == "html":
             html_content = message.body
 
         params: dict = {
@@ -91,49 +91,73 @@ class ResendEmailBackend(BaseEmailBackend):
             "text": text_content,
         }
 
-        if hasattr(message, 'reply_to') and message.reply_to:
+        if hasattr(message, "reply_to") and message.reply_to:
             params["reply_to"] = list(message.reply_to)
-        if hasattr(message, 'cc') and message.cc:
+        if hasattr(message, "cc") and message.cc:
             params["cc"] = list(message.cc)
-        if hasattr(message, 'bcc') and message.bcc:
+        if hasattr(message, "bcc") and message.bcc:
             params["bcc"] = list(message.bcc)
 
         try:
             print("\n==================================================")
-            print(f"[RESEND BACKEND] Sending to: {recipients} | Subject: '{message.subject}' | From: '{from_email}'")
+            print(
+                f"[RESEND BACKEND] Sending to: {recipients} | Subject: '{message.subject}' | From: '{from_email}'"
+            )
             resp = resend.Emails.send(params)
-            email_id = resp.get("id") if isinstance(resp, dict) else getattr(resp, "id", None)
+            email_id = (
+                resp.get("id") if isinstance(resp, dict) else getattr(resp, "id", None)
+            )
             print(f"[RESEND BACKEND SUCCESS] Response: {resp}")
             print("==================================================\n")
-            logger.info(f"Email '{message.subject}' dispatched via Resend to {recipients} (id: {email_id})")
+            logger.info(
+                f"Email '{message.subject}' dispatched via Resend to {recipients} (id: {email_id})"
+            )
             return True
         except RateLimitError as exc:
-            print(f"[RESEND RATE LIMIT ERROR]: {exc}\n==================================================\n")
-            logger.error(f"Resend rate limit exceeded for '{message.subject}' to {recipients}: {exc}")
+            print(
+                f"[RESEND RATE LIMIT ERROR]: {exc}\n==================================================\n"
+            )
+            logger.error(
+                f"Resend rate limit exceeded for '{message.subject}' to {recipients}: {exc}"
+            )
             if not self.fail_silently:
                 raise
             return False
         except InvalidApiKeyError as exc:
-            print(f"[RESEND INVALID API KEY ERROR]: {exc}\n==================================================\n")
+            print(
+                f"[RESEND INVALID API KEY ERROR]: {exc}\n==================================================\n"
+            )
             logger.error(f"Invalid Resend API key for '{message.subject}': {exc}")
             if not self.fail_silently:
                 raise
             return False
         except ValidationError as exc:
-            print(f"[RESEND VALIDATION ERROR]: {exc}\n==================================================\n")
-            logger.error(f"Resend validation error for '{message.subject}' to {recipients}: {exc}")
+            print(
+                f"[RESEND VALIDATION ERROR]: {exc}\n==================================================\n"
+            )
+            logger.error(
+                f"Resend validation error for '{message.subject}' to {recipients}: {exc}"
+            )
             if not self.fail_silently:
                 raise
             return False
         except ResendError as exc:
-            print(f"[RESEND API ERROR]: {exc}\n==================================================\n")
-            logger.error(f"Resend error sending '{message.subject}' to {recipients}: {exc}")
+            print(
+                f"[RESEND API ERROR]: {exc}\n==================================================\n"
+            )
+            logger.error(
+                f"Resend error sending '{message.subject}' to {recipients}: {exc}"
+            )
             if not self.fail_silently:
                 raise
             return False
         except Exception as exc:
-            print(f"[RESEND UNEXPECTED ERROR]: {exc}\n==================================================\n")
-            logger.error(f"Unexpected error dispatching '{message.subject}' via Resend to {recipients}: {exc}")
+            print(
+                f"[RESEND UNEXPECTED ERROR]: {exc}\n==================================================\n"
+            )
+            logger.error(
+                f"Unexpected error dispatching '{message.subject}' via Resend to {recipients}: {exc}"
+            )
             if not self.fail_silently:
                 raise
             return False
@@ -161,12 +185,12 @@ class EmailService:
         (or test locmem backend if under pytest/testing).
         """
         sender = get_formatted_sender(from_email)
-        app_name = getattr(settings, 'APP_NAME', 'Kodinga')
+        app_name = getattr(settings, "APP_NAME", "Kodinga")
 
         base_context = {
-            'app_name': app_name,
-            'frontend_url': getattr(settings, 'FRONTEND_URL', 'http://localhost:3000'),
-            'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@kodinga.com'),
+            "app_name": app_name,
+            "frontend_url": getattr(settings, "FRONTEND_URL", "http://localhost:3000"),
+            "support_email": getattr(settings, "SUPPORT_EMAIL", "support@kodinga.com"),
         }
         full_context = {**base_context, **context}
 
@@ -187,7 +211,7 @@ class EmailService:
         recipients = [to_email] if isinstance(to_email, str) else list(to_email)
 
         # 1. In automated testing environments, route through Django outbox for assertions
-        if getattr(settings, 'IS_TESTING', False) or "locmem" in getattr(settings, 'EMAIL_BACKEND', ''):
+        if getattr(settings, "IS_TESTING", False):
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
@@ -196,20 +220,26 @@ class EmailService:
             )
             msg.attach_alternative(html_content, "text/html")
             if reply_to:
-                msg.reply_to = [reply_to] if isinstance(reply_to, str) else list(reply_to)
+                msg.reply_to = (
+                    [reply_to] if isinstance(reply_to, str) else list(reply_to)
+                )
 
             try:
                 msg.send(fail_silently=fail_silently)
-                logger.info(f"Test Email '{subject}' saved to test outbox for {recipients}")
+                logger.info(
+                    f"Test Email '{subject}' saved to test outbox for {recipients}"
+                )
                 return True
             except Exception as exc:
-                logger.error(f"Error dispatching test email '{subject}' to {recipients}: {exc}")
+                logger.error(
+                    f"Error dispatching test email '{subject}' to {recipients}: {exc}"
+                )
                 if not fail_silently:
                     raise
                 return False
 
         # 2. Production / Dev dispatch via official Resend Python SDK
-        resend_api_key = getattr(settings, 'RESEND_API_KEY', '')
+        resend_api_key = getattr(settings, "RESEND_API_KEY", "")
         if resend_api_key:
             resend.api_key = resend_api_key
 
@@ -221,44 +251,75 @@ class EmailService:
                 "text": text_content,
             }
             if reply_to:
-                params["reply_to"] = [reply_to] if isinstance(reply_to, str) else list(reply_to)
+                params["reply_to"] = (
+                    [reply_to] if isinstance(reply_to, str) else list(reply_to)
+                )
 
             try:
-                print("\n==================================================", flush=True)
-                print(f"[RESEND SENDING] To: {recipients} | Subject: '{subject}' | From: '{sender}'", flush=True)
+                print(
+                    "\n==================================================", flush=True
+                )
+                print(
+                    f"[RESEND SENDING] To: {recipients} | Subject: '{subject}' | From: '{sender}'",
+                    flush=True,
+                )
                 response = resend.Emails.send(params)
-                email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
+                email_id = (
+                    response.get("id")
+                    if isinstance(response, dict)
+                    else getattr(response, "id", None)
+                )
                 print(f"[RESEND SUCCESS] API Response: {response}", flush=True)
-                print("==================================================\n", flush=True)
-                logger.info(f"Email '{subject}' successfully dispatched via Resend to {recipients} (id: {email_id})")
+                print(
+                    "==================================================\n", flush=True
+                )
+                logger.info(
+                    f"Email '{subject}' successfully dispatched via Resend to {recipients} (id: {email_id})"
+                )
                 return True
             except RateLimitError as exc:
-                print(f"[RESEND RATE LIMIT ERROR]: {exc}\n==================================================\n")
-                logger.error(f"Resend rate limit exceeded for '{subject}' to {recipients}: {exc}")
+                print(
+                    f"[RESEND RATE LIMIT ERROR]: {exc}\n==================================================\n"
+                )
+                logger.error(
+                    f"Resend rate limit exceeded for '{subject}' to {recipients}: {exc}"
+                )
                 if not fail_silently:
                     raise
                 return False
             except InvalidApiKeyError as exc:
-                print(f"[RESEND INVALID API KEY ERROR]: {exc}\n==================================================\n")
+                print(
+                    f"[RESEND INVALID API KEY ERROR]: {exc}\n==================================================\n"
+                )
                 logger.error(f"Invalid Resend API Key for '{subject}': {exc}")
                 if not fail_silently:
                     raise
                 return False
             except ValidationError as exc:
-                print(f"[RESEND VALIDATION ERROR]: {exc}\n==================================================\n")
-                logger.error(f"Resend validation error for '{subject}' to {recipients}: {exc}")
+                print(
+                    f"[RESEND VALIDATION ERROR]: {exc}\n==================================================\n"
+                )
+                logger.error(
+                    f"Resend validation error for '{subject}' to {recipients}: {exc}"
+                )
                 if not fail_silently:
                     raise
                 return False
             except ResendError as exc:
-                print(f"[RESEND API ERROR]: {exc}\n==================================================\n")
+                print(
+                    f"[RESEND API ERROR]: {exc}\n==================================================\n"
+                )
                 logger.error(f"Resend API error for '{subject}' to {recipients}: {exc}")
                 if not fail_silently:
                     raise
                 return False
             except Exception as exc:
-                print(f"[RESEND UNEXPECTED ERROR]: {exc}\n==================================================\n")
-                logger.error(f"Unexpected error dispatching email via Resend to {recipients}: {exc}")
+                print(
+                    f"[RESEND UNEXPECTED ERROR]: {exc}\n==================================================\n"
+                )
+                logger.error(
+                    f"Unexpected error dispatching email via Resend to {recipients}: {exc}"
+                )
                 if not fail_silently:
                     raise
                 return False
