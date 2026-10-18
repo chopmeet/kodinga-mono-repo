@@ -199,7 +199,7 @@ export const Input = forwardRef<
               onWheel={(event) => event.currentTarget.blur()}
             />
           </div>
-          {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
           {<FormError error={error} />}
         </div>
       </>
@@ -400,7 +400,7 @@ export const InputQuill = forwardRef<
           ref={ref}
           {...rest}
         ></ReactQuill>
-        {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
         {<FormError error={error} />}
       </div>
     </>
@@ -461,7 +461,7 @@ export const InputPassword = forwardRef<
               )}
             </span>
           </div>
-          {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
           {<FormError error={error} />}
         </div>
       </>
@@ -516,7 +516,7 @@ export const SelectInput = forwardRef<
               ))}
             </select>
           </div>
-          {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
           {<FormError error={error} />}
         </div>
       </>
@@ -582,7 +582,7 @@ export const InputPhone = forwardRef<
             {...rest}
           />
           <span ref={ref}></span>
-          {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
           {<FormError error={error} />}
         </div>
       </>
@@ -639,7 +639,7 @@ export const TextareaInput = forwardRef<
               placeholder={placeholder}
             ></textarea>
           </div>
-          {!!fieldHelp && <p className="my-1 text-neutral-400">{fieldHelp}</p>}
+          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
           {<FormError error={error} />}
         </div>
       </>
