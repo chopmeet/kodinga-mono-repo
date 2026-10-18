@@ -1,14 +1,25 @@
+from django.db import models, transaction
+from django.db.models import F
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.communities.models.community import CommunityPricing, CommunityPrivacy
+from apps.administration.models.audit import PlatformAuditLog
+from apps.communities.models.community import (
+    Community,
+    CommunityPricing,
+    CommunityPrivacy,
+)
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.models.member import (
     CommunityMember,
     CommunityRole,
     MembershipStatus,
+)
+from apps.memberships.permissions import (
+    check_last_admin_protection,
+    is_superadmin_user,
 )
 from apps.memberships.selectors.membership_selector import MembershipSelector
 from apps.memberships.serializers.member import (
@@ -20,6 +31,7 @@ from apps.memberships.serializers.sanction import (
     CreateSanctionRequestSerializer,
     MemberSanctionSerializer,
 )
+from apps.memberships.services.invitation_service import ROLE_MAPPING
 from apps.memberships.services.membership_service import MembershipService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
@@ -307,3 +319,151 @@ class MemberSanctionsView(APIView):
             message=f"Sanction '{sanction.sanction_type}' appliquée.",
             status_code=status.HTTP_201_CREATED
         )
+
+
+class WorkspaceMembersListView(CommunityMemberListView):
+    """
+    List members of a workspace. Supports lookup by workspace UUID or slug.
+    """
+    @extend_schema(
+        tags=['Communities & Workspaces', 'Workspaces & Members'],
+        summary="Lister les membres d'un espace",
+        description="Renvoie la liste paginée des membres d'un espace avec leurs rôles et statuts.",
+        parameters=[
+            OpenApiParameter(name='role', description="Filtrer par rôle", required=False, type=str),
+            OpenApiParameter(name='search', description="Recherche par pseudo, nom ou email", required=False, type=str),
+        ],
+        responses={200: CommunityMemberSerializer(many=True)}
+    )
+    def get(self, request, workspace_id):
+        return super().get(request, slug=workspace_id)
+
+
+class WorkspaceMemberDetailView(APIView):
+    """
+    Manage an individual workspace collaborator:
+    - PATCH: Update member role (Admin only, with last admin protection).
+    - DELETE: Remove a member (Admin) or leave the workspace (Self-service, with last admin protection).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _resolve_context(self, request, workspace_id, user_id):
+        try:
+            workspace = CommunitySelector.get_community_by_slug(workspace_id, user=request.user)
+        except Exception:
+            return None, None
+
+        # Resolve member by user UUID or membership UUID
+        member = CommunityMember.objects.select_related('user', 'user__profile').filter(
+            community=workspace
+        ).filter(
+            models.Q(user_id=user_id) | models.Q(id=user_id)
+        ).first()
+
+        return workspace, member
+
+    @extend_schema(
+        tags=['Communities & Workspaces', 'Workspaces & Members'],
+        summary="Modifier le rôle d'un membre (Admin)",
+        description="Change le rôle d'un collaborateur dans l'espace. Empêche la rétrogradation du dernier administrateur.",
+        request=CommunityMemberRoleUpdateSerializer,
+        responses={200: CommunityMemberSerializer}
+    )
+    def patch(self, request, workspace_id, user_id):
+        workspace, member = self._resolve_context(request, workspace_id, user_id)
+        if not workspace:
+            return error_response("Espace introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+        if not member:
+            return error_response("Membre introuvable dans cet espace.", status_code=status.HTTP_404_NOT_FOUND)
+
+        serializer = CommunityMemberRoleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_role = serializer.validated_data['role'].lower()
+        if target_role in ROLE_MAPPING:
+            target_role = ROLE_MAPPING[target_role]
+
+        # Check last admin protection if demoting
+        if member.role in [CommunityRole.OWNER, CommunityRole.ADMIN] and target_role not in [CommunityRole.OWNER, CommunityRole.ADMIN]:
+            check_last_admin_protection(workspace, member.user_id)
+
+        updated = MembershipService.change_member_role(
+            actor_user=request.user,
+            member=member,
+            new_role=target_role
+        )
+        if 'custom_title' in serializer.validated_data:
+            updated.custom_title = serializer.validated_data['custom_title']
+            updated.save(update_fields=['custom_title', 'updated_at'])
+
+        PlatformAuditLog.objects.create(
+            actor=request.user,
+            action='workspace.member_role_changed',
+            target_type='community_member',
+            target_id=str(updated.id),
+            details={
+                'workspace_id': str(workspace.id),
+                'target_user_id': str(member.user_id),
+                'new_role': target_role,
+            },
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+        )
+
+        return success_response(
+            data=CommunityMemberSerializer(updated).data,
+            message="Rôle du membre mis à jour avec succès."
+        )
+
+    @extend_schema(
+        tags=['Communities & Workspaces', 'Workspaces & Members'],
+        summary="Retirer un membre ou quitter l'espace",
+        description="Permet à un administrateur d'exclure un collaborateur ou à un utilisateur de quitter l'espace lui-même. Empêche le départ ou le retrait du dernier administrateur.",
+        request=None,
+        responses={200: None}
+    )
+    def delete(self, request, workspace_id, user_id):
+        workspace, member = self._resolve_context(request, workspace_id, user_id)
+        if not workspace:
+            return error_response("Espace introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+        if not member:
+            return error_response("Membre introuvable dans cet espace.", status_code=status.HTTP_404_NOT_FOUND)
+
+        is_self = (request.user.id == member.user_id)
+        actor_membership = MembershipSelector.get_member(workspace, request.user)
+        is_admin_actor = is_superadmin_user(request.user) or (actor_membership and actor_membership.is_admin)
+
+        if not is_self and not is_admin_actor:
+            return error_response("Droits administrateur requis pour retirer un collaborateur.", status_code=status.HTTP_403_FORBIDDEN)
+
+        # Cannot remove or leave if last admin
+        check_last_admin_protection(workspace, member.user_id)
+
+        # Owner cannot leave without transferring ownership
+        if member.role == CommunityRole.OWNER:
+            return error_response("Le propriétaire ne peut pas quitter l'espace sans transférer la propriété au préalable.", status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        with transaction.atomic():
+            member.status = MembershipStatus.LEFT
+            member.save(update_fields=['status', 'updated_at'])
+            Community.objects.filter(id=workspace.id, members_count__gt=0).update(
+                members_count=F('members_count') - 1
+            )
+
+            PlatformAuditLog.objects.create(
+                actor=request.user,
+                action='workspace.member_removed' if not is_self else 'workspace.member_left',
+                target_type='community_member',
+                target_id=str(member.id),
+                details={
+                    'workspace_id': str(workspace.id),
+                    'target_user_id': str(member.user_id),
+                    'is_self_departure': is_self,
+                },
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+            )
+
+        msg = "Vous avez quitté l'espace avec succès." if is_self else "Le collaborateur a été retiré de l'espace."
+        return success_response(message=msg)
+

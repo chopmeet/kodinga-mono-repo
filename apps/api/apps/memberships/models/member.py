@@ -62,8 +62,8 @@ class CommunityMember(BaseModel):
 
     class Meta:
         db_table = 'memberships_community_members'
-        verbose_name = 'Community Member'
-        verbose_name_plural = 'Community Members'
+        verbose_name = 'Membre de communauté'
+        verbose_name_plural = 'Membres de communautés'
         unique_together = ('community', 'user')
         ordering = ['-joined_at']
 

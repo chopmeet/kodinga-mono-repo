@@ -2,21 +2,28 @@ import secrets
 from datetime import timedelta
 from typing import Optional
 
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
-from apps.memberships.models.invitation import CommunityInvitation
+from apps.memberships.models.invitation import (
+    CommunityInvitation,
+    InvitationStatus,
+)
 from apps.memberships.models.member import (
     CommunityMember,
     CommunityRole,
     MembershipStatus,
 )
 from apps.memberships.models.sanction import MemberSanction, SanctionType
-from common.permissions.base import is_superadmin_user
+from apps.memberships.permissions import (
+    check_last_admin_protection,
+    is_superadmin_user,
+)
+from common.utils.tokens import hash_token
 
 
 class MembershipService:
@@ -50,18 +57,23 @@ class MembershipService:
         # Validate invitation if provided
         invitation = None
         if invite_code:
+            code_hash = hash_token(invite_code)
             invitation = CommunityInvitation.objects.filter(
-                invite_code=invite_code,
                 community=community
+            ).filter(
+                models.Q(token_hash=code_hash) | models.Q(invite_code=invite_code)
             ).first()
             if not invitation or not invitation.is_valid:
                 raise ValidationError("Ce lien d'invitation est invalide ou a expiré.")
+
+            # Email match verification
+            if invitation.email and user.email.strip().lower() != invitation.email.strip().lower():
+                raise PermissionDenied("Cette invitation a été envoyée à une autre adresse email.")
+
             initial_role = invitation.role
 
         # Check paid community restriction: direct free join is blocked (superadmins bypass)
         if community.pricing_type == 'paid' and not invite_code and not is_superadmin_user(user) and user.id != community.owner_id:
-            from django.utils import timezone
-
             from apps.billing.models.subscription import (
                 Subscription,
                 SubscriptionStatus,
@@ -97,7 +109,9 @@ class MembershipService:
 
             if invitation:
                 CommunityInvitation.objects.filter(id=invitation.id).update(
-                    uses_count=F('uses_count') + 1
+                    uses_count=F('uses_count') + 1,
+                    status=InvitationStatus.ACCEPTED,
+                    accepted_at=timezone.now()
                 )
 
             if initial_status == MembershipStatus.ACTIVE:
@@ -115,6 +129,9 @@ class MembershipService:
 
         if member.role == CommunityRole.OWNER:
             raise ValidationError("Le propriétaire ne peut pas quitter sa communauté sans transférer la propriété.")
+
+        # Last admin protection
+        check_last_admin_protection(community, user.id)
 
         with transaction.atomic():
             member.status = MembershipStatus.LEFT
@@ -149,6 +166,10 @@ class MembershipService:
 
             if new_role == CommunityRole.OWNER and actor_membership.role != CommunityRole.OWNER:
                 raise PermissionDenied("Seul le propriétaire actuel peut transférer la propriété.")
+
+        # Check last admin protection if demoting from admin/owner to non-admin
+        if member.role in [CommunityRole.OWNER, CommunityRole.ADMIN] and new_role not in [CommunityRole.OWNER, CommunityRole.ADMIN]:
+            check_last_admin_protection(member.community, member.user_id)
 
         with transaction.atomic():
             if new_role == CommunityRole.OWNER:
@@ -271,14 +292,18 @@ class MembershipService:
                 raise PermissionDenied("Les invitations par les membres sont désactivées.")
 
         invite_code = secrets.token_urlsafe(24)
+        token_hash = hash_token(invite_code)
         expires_at = timezone.now() + timedelta(days=expires_in_days)
 
         return CommunityInvitation.objects.create(
             community=community,
             invited_by=actor_user,
-            email=email,
+            email=email.strip().lower() if email else '',
             invite_code=invite_code,
+            token_hash=token_hash,
             role=role,
+            status=InvitationStatus.PENDING,
             max_uses=max_uses,
             expires_at=expires_at
         )
+

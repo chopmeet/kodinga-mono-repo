@@ -187,7 +187,7 @@ class EmailService:
         recipients = [to_email] if isinstance(to_email, str) else list(to_email)
 
         # 1. In automated testing environments, route through Django outbox for assertions
-        if getattr(settings, 'IS_TESTING', False):
+        if getattr(settings, 'IS_TESTING', False) or "locmem" in getattr(settings, 'EMAIL_BACKEND', ''):
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,

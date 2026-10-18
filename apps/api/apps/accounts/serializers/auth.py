@@ -13,6 +13,9 @@ class RegisterSerializer(serializers.Serializer):
     preferred_language = serializers.CharField(max_length=10, required=False, default="fr")
     timezone = serializers.CharField(max_length=50, required=False, default="UTC")
     terms_accepted = serializers.BooleanField(required=False, default=True)
+    redirect_url = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+    invitation_token = serializers.CharField(max_length=128, required=False, allow_blank=True, default="")
+
 
     def validate_email(self, value):
         normalized = value.strip().lower()
