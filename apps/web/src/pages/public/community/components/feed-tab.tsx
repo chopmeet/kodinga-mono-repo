@@ -9,12 +9,11 @@ import { useGetCommunityFeedQuery, useTogglePostLikeMutation } from '@/utils/api
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
-import { getName, nameInitials, useUser } from '@/utils/Utils';
+import { ago, getName, nameInitials, plain, postHref, useUser } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';
 import { PollCard } from './poll-card';
-import { ago, plain, postHref } from './post-format';
 import { Pill } from './section-header';
 
 const PAGE_SIZE = 10;

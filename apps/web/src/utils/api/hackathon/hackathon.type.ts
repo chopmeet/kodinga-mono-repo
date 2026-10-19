@@ -86,7 +86,55 @@ export type Hackathon = HackathonListItem & {
   prizes: HackathonPrize[];
   criteria: HackathonCriterion[];
   judges: HackathonJudge[];
+  custom_registration_questions?: HackathonQuestion[];
+  custom_submission_questions?: HackathonQuestion[];
+  allowed_file_types?: string[];
+  max_file_size_mb?: number;
+  max_files_count?: number;
+  /** Signed-in user (null for a visitor) */
+  user_status?: HackathonUserStatus | null;
 };
+
+/** A question of the organizers (free-form JSON on the api: the usual keys are read) */
+export type HackathonQuestion = { id?: string; key?: string; label?: string; question?: string; required?: boolean; type?: string };
+
+/** HackathonDetailSerializer.get_user_status */
+export type HackathonUserStatus = {
+  has_applied: boolean;
+  application_status: ApplicationStatus | null;
+  team_id: string | null;
+  team_name: string | null;
+  has_submission: boolean;
+  submission_id: string | null;
+  submission_is_final: boolean;
+  is_judge: boolean;
+  is_manager: boolean;
+};
+
+/** POST apply/ */
+export type HackathonApplyData = {
+  participation_mode: ParticipationMode;
+  team_name?: string;
+  answers?: Record<string, string>;
+  accept_terms: boolean;
+};
+
+/** PATCH submissions/my-project/ (HackathonSubmissionUpdateSerializer) */
+export type HackathonSubmissionWriteData = Partial<{
+  title: string;
+  tagline: string;
+  description: string;
+  problem_statement: string;
+  solution_statement: string;
+  target_audience: string;
+  demo_url: string;
+  video_url: string;
+  repository_url: string;
+  gitlab_url: string;
+  custom_answers: Record<string, string>;
+}>;
+
+export type SubmissionFileType = 'presentation_pdf' | 'screenshot' | 'technical_doc' | 'archive' | 'other';
 
 /** HackathonCreateUpdateSerializer (prizes and criteria replace the existing ones) */
 export type HackathonWriteData = {
@@ -162,7 +210,7 @@ export type HackathonTeam = {
   slug: string;
   tagline: string;
   leader: HackathonPerson;
-  members: { id: string; user: HackathonPerson; role: string; status: string }[];
+  members: { id: string; user: HackathonPerson; role: 'leader' | 'member'; status: 'invited' | 'accepted' | 'declined' | 'left' }[];
   active_members_count: number;
   created_at: string;
 };
@@ -188,7 +236,11 @@ export type HackathonSubmission = {
   rank: number | null;
   files_count: number;
   description?: string;
-  files?: { id: string; file_name: string; file_url: string; file_size: number }[];
+  problem_statement?: string;
+  solution_statement?: string;
+  target_audience?: string;
+  custom_answers?: Record<string, string>;
+  files?: { id: string; file_name: string; file_url: string; file_size: number; file_type?: SubmissionFileType }[];
 };
 
 /** HackathonEvaluationSerializer (GET / POST judging/projects/<id>/evaluate/) */

@@ -3,8 +3,7 @@ import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn } from '@kodinga-mono-repo/ui';
 import type { PostComment } from '@/utils/api/community/community.type';
-import { getName, nameInitials } from '@/utils/Utils';
-import { ago, plain } from '../components/post-format';
+import { ago, getName, nameInitials, plain } from '@/utils/Utils';
 import type { PostDetailsPage } from '../form/UsePostDetails';
 import { CommentForm } from './comment-form';
 

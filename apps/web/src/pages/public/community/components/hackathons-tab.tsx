@@ -1,5 +1,6 @@
 import { Hourglass, Laptop, MapPin, Trophy, Users } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetCommunityHackathonsQuery } from '@/utils/api/community/community.api';
@@ -81,7 +82,11 @@ export function HackathonsTab({ slug }: { slug: string }) {
                       {h.format === 'online' ? <Laptop className="size-3.5" /> : <MapPin className="size-3.5" />}
                       {formatLabel[h.format]}
                     </p>
-                    <h3 className="mt-1 text-xl text-slate-900">{h.title}</h3>
+                    <h3 className="mt-1 text-xl text-slate-900">
+                      <Link to={`/communities/${slug}/hackathons/${h.slug}`} className="hover:text-blue-900 hover:underline">
+                        {h.title}
+                      </Link>
+                    </h3>
                     {h.tagline && <p className="mt-1 text-slate-600">{h.tagline}</p>}
                     <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
                       <span className="flex items-center gap-1.5">
@@ -96,11 +101,16 @@ export function HackathonsTab({ slug }: { slug: string }) {
                         </span>
                       )}
                     </p>
-                    {left && (
-                      <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-900">
-                        <Hourglass className="size-3.5" /> {left}
-                      </span>
-                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      {left && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-900">
+                          <Hourglass className="size-3.5" /> {left}
+                        </span>
+                      )}
+                      <Link to={`/communities/${slug}/hackathons/${h.slug}`} className="text-sm font-semibold text-blue-900 hover:underline">
+                        {h.is_registration_open ? 'Voir et candidater' : 'Voir le hackathon'} →
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </li>

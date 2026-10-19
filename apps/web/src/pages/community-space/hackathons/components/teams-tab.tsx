@@ -6,7 +6,7 @@ import { useGetHackathonTeamsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import { personName } from '@/pages/shared/person';
 
-const memberStatus: Record<string, string> = { active: 'Membre', pending: 'Invité', invited: 'Invité', declined: 'A refusé' };
+const memberStatus: Record<string, string> = { accepted: 'Membre', invited: 'Invité', declined: 'A refusé', left: 'A quitté' };
 
 /** Teams of a hackathon (formed by the participants themselves) */
 export function TeamsTab({ slug, hackathonSlug }: { slug: string; hackathonSlug: string }) {
@@ -42,7 +42,7 @@ export function TeamsTab({ slug, hackathonSlug }: { slug: string; hackathonSlug:
                     {m.user.id === team.leader.id && <Crown className="size-3.5 text-amber-500" aria-label="Chef d'équipe" />}
                     {personName(m.user)}
                   </span>
-                  {m.status !== 'active' && (
+                  {m.status !== 'accepted' && (
                     <Badge variant="outline" className="text-slate-500">
                       {memberStatus[m.status] ?? m.status}
                     </Badge>
