@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetUser } from '@/redux/slice/User.slice';
 import { AppRoutes } from '@/routes/router';
 import { useMeAccountQuery } from '@/utils/api/user/user.api';
+import { useRealtimeSync } from '@/utils/realtime/use-realtime';
 import { isTokenExpired } from '@/utils/secure';
 
 function ScrollToTop() {
@@ -43,6 +44,7 @@ function ExpiredSession() {
 }
 
 export function App() {
+  useRealtimeSync();
   const token = useAppSelector((s) => s.user.token);
   const expired = !!token && isTokenExpired(token);
   const routes = useRoutes(AppRoutes);

@@ -16,9 +16,14 @@ import type { ChatUser, Conversation } from '@/utils/api/messaging/messaging.typ
 import { useAppSelector } from '@/redux/hook';
 import { useUser } from '@/utils/Utils';
 
-/** No realtime in the api: the open conversation refreshes often, the list less */
-export const MESSAGES_POLLING = 5_000;
-export const CONVERSATIONS_POLLING = 20_000;
+import {
+  useRealtime,
+  useRealtimeConversation,
+} from '@/utils/realtime/use-realtime';
+
+/** Fallback polling if WebSocket is temporarily disconnected */
+export const MESSAGES_POLLING = 15_000;
+export const CONVERSATIONS_POLLING = 30_000;
 
 export const fullName = (u: Pick<ChatUser, 'first_name' | 'last_name' | 'username'>) => [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username;
 
@@ -37,7 +42,11 @@ export function conversationName(conversation: Conversation, meId: string | unde
 /** Total of the unread messages (badge of the header) */
 export function useUnreadMessages() {
   const signedIn = !!useAppSelector((s) => s.user.token);
-  const { data = [] } = useGetConversationsQuery(undefined, { skip: !signedIn, pollingInterval: CONVERSATIONS_POLLING });
+  const { connected } = useRealtime();
+  const { data = [] } = useGetConversationsQuery(undefined, {
+    skip: !signedIn,
+    pollingInterval: connected ? 0 : CONVERSATIONS_POLLING,
+  });
   return data.reduce((n, c) => n + c.unread_count, 0);
 }
 
@@ -59,12 +68,21 @@ export function useStartConversation() {
 /**
  * /messages and /messages/:conversationId — the conversations of the signed-in user
  * (GET conversations/) and the open one (GET .../messages/, marked read when new messages arrive).
+ * Real-time updates via WebSockets with fallback polling if disconnected.
  */
 function UseMessages() {
   const { conversationId = '' } = useParams();
   const me = useUser();
-  const conversations = useGetConversationsQuery(undefined, { pollingInterval: CONVERSATIONS_POLLING });
-  const messages = useGetMessagesQuery(conversationId, { skip: !conversationId, pollingInterval: MESSAGES_POLLING });
+  const { connected } = useRealtime();
+  const { typingUsers, sendTyping } = useRealtimeConversation(conversationId);
+
+  const conversations = useGetConversationsQuery(undefined, {
+    pollingInterval: connected ? 0 : CONVERSATIONS_POLLING,
+  });
+  const messages = useGetMessagesQuery(conversationId, {
+    skip: !conversationId,
+    pollingInterval: connected ? 0 : MESSAGES_POLLING,
+  });
   const [send, { isLoading: isSending }] = useSendMessageMutation();
   const [edit] = useEditMessageMutation();
   const [remove] = useDeleteMessageMutation();
@@ -100,6 +118,9 @@ function UseMessages() {
     /** Unknown id, or a conversation the user is not part of */
     notFound: !!conversationId && conversations.isSuccess && !current,
     isSending,
+    isRealtimeConnected: connected,
+    typingUsers,
+    sendTyping,
     send: (content: string) => run(send({ conversationId, content }).unwrap()),
     edit: (messageId: string, content: string) => run(edit({ conversationId, messageId, content }).unwrap()),
     remove: (messageId: string) => run(remove({ conversationId, messageId }).unwrap()),
