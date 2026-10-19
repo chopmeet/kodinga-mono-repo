@@ -84,3 +84,6 @@ export type EventAttendee = {
   checked_in_at: string | null;
   created_at: string;
 };
+
+/** POST communities/<slug>/events/<id>/join-live/ (LiveKitTokenResponseSerializer) */
+export type LiveJoin = { room_name: string; token: string; server_url: string; is_host: boolean };

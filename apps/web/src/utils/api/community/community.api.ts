@@ -5,7 +5,7 @@ import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
 import type { AppNotification } from '../notification/notification.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
-import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, RsvpStatus } from '../event/event.type';
+import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, LiveJoin, RsvpStatus } from '../event/event.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -488,6 +488,11 @@ export const CommunityApi = createApi({
     rsvpEvent: builder.mutation<unknown, { slug: string; eventId: string; status: RsvpStatus }>({
       query: ({ slug, eventId, status }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'POST', body: { status } }),
       invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // Token of the LiveKit room of a "livekit" event (it also checks the attendee in); the host publishes
+    joinLiveEvent: builder.mutation<LiveJoin, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/join-live/`, method: 'POST' }),
+      transformResponse: unwrap<LiveJoin>,
     }),
     cancelEventRsvp: builder.mutation<unknown, { slug: string; eventId: string }>({
       query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'DELETE' }),
@@ -1029,6 +1034,7 @@ export const {
   useGetEventAttendeesQuery,
   useRsvpEventMutation,
   useCancelEventRsvpMutation,
+  useJoinLiveEventMutation,
   useGetNotificationsQuery,
   useGetUnreadNotificationsCountQuery,
   useMarkNotificationReadMutation,
