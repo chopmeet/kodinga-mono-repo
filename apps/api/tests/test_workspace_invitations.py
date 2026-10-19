@@ -268,6 +268,29 @@ class TestWorkspaceInvitations:
         )
         assert res_replay.status_code == status.HTTP_409_CONFLICT
 
+    def test_legacy_accept_invitation_with_email_success(
+        self, api_client, workspace, workspace_admin, invited_user
+    ):
+        # Create invitation for invited_user.email
+        api_client.force_authenticate(user=workspace_admin)
+        res_create = api_client.post(
+            f"/api/v1/workspaces/{workspace.slug}/invitations/",
+            {"email": invited_user.email, "role": "viewer"},
+            format="json",
+        )
+        raw_token = res_create.json()["data"]["raw_token"]
+
+        # Invited user accepts via legacy /api/v1/invitations/accept/
+        api_client.force_authenticate(user=invited_user)
+        res_accept = api_client.post(
+            "/api/v1/invitations/accept/",
+            {"invite_code": raw_token},
+            format="json",
+        )
+        assert res_accept.status_code == status.HTTP_200_OK
+        assert res_accept.json()["data"]["role"] == CommunityRole.MEMBER
+        assert res_accept.json()["data"]["status"] == MembershipStatus.ACTIVE
+
     def test_accept_invitation_wrong_email_forbidden(
         self, api_client, workspace, workspace_admin, stranger_user
     ):
