@@ -1,15 +1,14 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
 
-import { ApiBaseUrl } from '@/utils/http';
 import { unwrap } from '../api.type';
-import { prepareHeaders } from '../user/user.api';
 import type { SystemSetting, SystemSettingWrite } from './admin.type';
+import { authBaseQuery } from '../authBaseQuery';
 
 /** Platform administration (super-admins only, IsPlatformAdmin) */
 export const AdminApi = createApi({
   reducerPath: 'adminApi',
   tagTypes: ['settings'],
-  baseQuery: fetchBaseQuery({ baseUrl: ApiBaseUrl, prepareHeaders }),
+  baseQuery: authBaseQuery,
   endpoints: (builder) => ({
     getSystemSettings: builder.query<SystemSetting[], void>({
       query: () => 'admin/settings/',

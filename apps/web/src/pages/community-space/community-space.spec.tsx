@@ -51,7 +51,8 @@ describe('My communities /c', () => {
     ]);
     renderAppAt('/c');
     await screen.findByText('Propriétaire', {}, SLOW);
-    const list = screen.getByRole('list');
+    // The page list, not the ones of the footer
+    const list = within(screen.getByRole('main')).getByRole('list');
     expect(within(list).getAllByRole('link')).toHaveLength(2);
     expect(within(list).getByText('Propriétaire')).toBeTruthy();
     expect(within(list).getByText('Modérateur')).toBeTruthy();

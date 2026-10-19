@@ -70,8 +70,8 @@ const team = {
   tagline: 'Des robots pour les champs',
   leader: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye', email: 'awa@example.com' },
   members: [
-    { id: 'tm1', user: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye', email: 'awa@example.com' }, role: 'leader', status: 'active' },
-    { id: 'tm2', user: { id: 'u3', username: 'kofi', first_name: 'Kofi', last_name: 'Mensah', email: 'kofi@example.com' }, role: 'member', status: 'pending' },
+    { id: 'tm1', user: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye', email: 'awa@example.com' }, role: 'leader', status: 'accepted' },
+    { id: 'tm2', user: { id: 'u3', username: 'kofi', first_name: 'Kofi', last_name: 'Mensah', email: 'kofi@example.com' }, role: 'member', status: 'invited' },
   ],
   active_members_count: 1,
   created_at: at(-1),

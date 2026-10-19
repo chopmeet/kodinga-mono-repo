@@ -41,13 +41,13 @@ export function LeaderboardTab({ slug }: { slug: string }) {
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="flex justify-between border-b border-slate-200 bg-blue-50/70 px-6 py-4 text-[11px] font-medium tracking-wide text-slate-600 uppercase">
+          <div className="flex justify-between border-b border-slate-200 bg-blue-50/70 px-4 py-4 sm:px-6 text-[11px] font-medium tracking-wide text-slate-600 uppercase">
             <span>Rang · Membre</span>
             <span>Points</span>
           </div>
           <ol aria-label="Classement" className="divide-y divide-slate-100">
             {data.map((e) => (
-              <li key={e.user.id} className={cn('flex items-center gap-4 px-6 py-5', e.user.id === userId && 'bg-blue-50/50')}>
+              <li key={e.user.id} className={cn('flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5', e.user.id === userId && 'bg-blue-50/50')}>
                 <span
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
@@ -56,7 +56,7 @@ export function LeaderboardTab({ slug }: { slug: string }) {
                 >
                   {e.rank === 1 ? <Trophy className="size-3.5" aria-label="1er" /> : e.rank}
                 </span>
-                <Avatar className="size-12">
+                <Avatar className="size-10 sm:size-12">
                   {e.user.avatar_url && <AvatarImage src={e.user.avatar_url} alt="" />}
                   <AvatarFallback className="bg-blue-50 font-semibold text-blue-900">{nameInitials(e.user.name || e.user.username)}</AvatarFallback>
                 </Avatar>
@@ -69,9 +69,9 @@ export function LeaderboardTab({ slug }: { slug: string }) {
                     Niveau {e.level} · {e.rank_title}
                   </p>
                 </div>
-                <span className="flex items-center gap-2 text-lg font-semibold text-blue-900 tabular-nums">
+                <span className="flex shrink-0 items-center gap-2 font-semibold text-blue-900 tabular-nums sm:text-lg">
                   {pointsFormat.format(e.points)} pts
-                  <TrendingUp className="size-4" aria-hidden />
+                  <TrendingUp className="hidden size-4 sm:block" aria-hidden />
                 </span>
               </li>
             ))}

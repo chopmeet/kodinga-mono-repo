@@ -27,6 +27,12 @@ export const UserSlice = createSlice({
       state.refresh = action.payload.refresh ?? null;
       AppStorage.setItem('user', state);
     },
+    /** After a refresh: new access token, and the new refresh token (rotated by the api) */
+    onRefreshTokens: (state, action: PayloadAction<{ token: string; refresh?: string | null }>) => {
+      state.token = action.payload.token;
+      if (action.payload.refresh) state.refresh = action.payload.refresh;
+      AppStorage.setItem('user', state);
+    },
     onLogout: (state) => {
       state.user = null;
       state.token = null;
@@ -36,7 +42,7 @@ export const UserSlice = createSlice({
   },
 });
 
-export const { onSetUser, onSetToken, onSetUserToken, onLogout } =
+export const { onSetUser, onSetToken, onSetUserToken, onRefreshTokens, onLogout } =
   UserSlice.actions;
 
 export default UserSlice.reducer;

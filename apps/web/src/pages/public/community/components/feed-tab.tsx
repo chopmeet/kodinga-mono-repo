@@ -9,12 +9,11 @@ import { useGetCommunityFeedQuery, useTogglePostLikeMutation } from '@/utils/api
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
-import { getName, nameInitials, useUser } from '@/utils/Utils';
+import { ago, getName, nameInitials, plain, postHref, useUser } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';
 import { PollCard } from './poll-card';
-import { ago, plain, postHref } from './post-format';
 import { Pill } from './section-header';
 
 const PAGE_SIZE = 10;
@@ -177,7 +176,8 @@ export function FeedTab({ page }: { page: CommunityPage }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="relative min-w-0 flex-1">
+        {/* Phones: the search takes the whole row, the sort goes under it */}
+        <label className="relative min-w-0 flex-1 basis-full sm:basis-0">
           <span className="sr-only">Rechercher une discussion</span>
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
           <input

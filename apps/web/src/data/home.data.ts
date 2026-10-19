@@ -234,14 +234,6 @@ export const communities: Community[] = [
   },
 ];
 
-export const leaderboard = [
-  { rank: 1, name: 'Lagos AI & Data', xp: '+128k XP', bounties: 42, growth: '+24%' },
-  { rank: 2, name: 'Python Africa Core', xp: '+96k XP', bounties: 38, growth: '+18%' },
-  { rank: 3, name: 'Dakar DevOps Sovereign', xp: '+74k XP', bounties: 29, growth: '+12%' },
-  { rank: 4, name: 'Nairobi Rustaceans', xp: '58k XP' },
-  { rank: 5, name: 'Frontend Francophone', xp: '47k XP' },
-];
-
 export const creatorSteps = [
   {
     title: 'Créez votre guilde en 1 clic',

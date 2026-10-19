@@ -6,6 +6,8 @@ import DashboardLayout from '@/layouts/dashboard-layout';
 import Home from '@/pages/public/home/home';
 import CommunityDetails from '@/pages/public/community/community-details';
 import PostDetails from '@/pages/public/community/post/post-details';
+import CoursePlayerPage from '@/pages/public/community/course/course-player';
+import HackathonPageView from '@/pages/public/community/hackathon/hackathon-page';
 import Messages from '@/pages/public/messages/messages';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import Login from '@/pages/auth/login';
@@ -126,6 +128,14 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:slug',
         element: <CommunityDetails />,
+      },
+      {
+        path: 'communities/:slug/courses/:courseSlug',
+        element: <CoursePlayerPage />,
+      },
+      {
+        path: 'communities/:slug/hackathons/:hackathonSlug',
+        element: <HackathonPageView />,
       },
       {
         path: 'communities/:slug/posts/:postId',

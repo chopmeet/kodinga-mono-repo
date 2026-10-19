@@ -51,7 +51,9 @@ function stubCoursesApi() {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
     const url = new URL(request.url);
-    const text = request.method === 'GET' ? '' : await request.text();
+    // A multipart body holding a File never resolves in jsdom: the tests spy FormData instead
+    const multipart = request.headers.get('Content-Type')?.startsWith('multipart/form-data');
+    const text = request.method === 'GET' || multipart ? '' : await request.text();
     const body = text ? JSON.parse(text) : null;
     calls.push({ method: request.method, url, body });
     const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -64,6 +66,7 @@ function stubCoursesApi() {
       const found = courses.filter((c) => published === null || String(c.is_published) === published);
       return json({ success: true, pagination: { count: found.length }, results: found });
     }
+    if (path.endsWith('/video/')) return json({ success: true, data: { ...lesson('new', 'Vidéo', 2), lesson_type: 'video', has_video: true } });
     if (path.endsWith('/modules/') || path.endsWith('/lessons/')) return json({ success: true, data: { id: 'new', ...body, lessons: [] } }, 201);
     if (request.method === 'PATCH') return json({ success: true, data: { id: 'x', ...body } });
     if (courseSlug && request.method === 'GET') return json({ success: true, data: courses.find((c) => c.slug === courseSlug) ?? course(courseSlug, 'Docker', false, false) });
@@ -124,6 +127,51 @@ describe('Community space: courses', () => {
       duration_seconds: 900,
       order: 2,
     });
+  });
+
+  it('adds a video lesson from a link, then sends its video', async () => {
+    const calls = stubCoursesApi();
+    const append = vi.spyOn(FormData.prototype, 'append');
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click((await screen.findAllByRole('button', { name: /Ajouter une leçon/ }, SLOW))[0]);
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Titre'), { target: { value: 'Démo kubectl' } });
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'video' } });
+
+    // A video lesson needs its video
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
+    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toMatch(/Ajoutez la vidéo/);
+
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Lien/ }));
+    const link = within(dialog).getByLabelText('Lien de la vidéo');
+    fireEvent.change(link, { target: { value: 'https://youtu.be/abc' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
+    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toMatch(/YouTube/);
+    expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/lessons/'))).toBe(false);
+
+    fireEvent.change(link, { target: { value: 'https://cdn.example.com/demo.mp4' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/lessons/new/video/'))).toBe(true), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))?.body).toMatchObject({ title: 'Démo kubectl', lesson_type: 'video' });
+    expect(append).toHaveBeenCalledWith('video_url', 'https://cdn.example.com/demo.mp4');
+  });
+
+  it('sends the chosen video file of a lesson', async () => {
+    const calls = stubCoursesApi();
+    const append = vi.spyOn(FormData.prototype, 'append');
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click((await screen.findAllByRole('button', { name: /Ajouter une leçon/ }, SLOW))[0]);
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Titre'), { target: { value: 'Démo kubectl' } });
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'video' } });
+    const input = within(dialog).getByLabelText('Fichier vidéo');
+    fireEvent.change(input, { target: { files: [new File(['%PDF'], 'notes.pdf', { type: 'application/pdf' })] } });
+    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toMatch(/Format non pris en charge/);
+    fireEvent.change(input, { target: { files: [new File(['video'], 'demo.mp4', { type: 'video/mp4' })] } });
+    expect(within(dialog).getByText('demo.mp4')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/lessons/new/video/'))).toBe(true), SLOW);
+    expect(append).toHaveBeenCalledWith('video', expect.objectContaining({ name: 'demo.mp4' }));
   });
 
   it('reorders two lessons', async () => {

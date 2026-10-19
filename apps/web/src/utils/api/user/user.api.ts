@@ -1,29 +1,14 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
 
-import { ApiBaseUrl } from '@/utils/http';
-import { AppStorage } from '@/utils/storage';
 import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
+import { authBaseQuery } from '../authBaseQuery';
 import type { PublicProfile } from '../profile/profile.type';
-import type { AuthState, User, UserFormData, UsersQuery } from './user.type';
-
-// Shared by every *Api: attaches the JWT stored by User.slice
-export const prepareHeaders = (
-  headers: Headers,
-  { getState }: { getState: () => unknown }
-) => {
-  const token =
-    (getState() as { user: AuthState }).user.token ??
-    AppStorage.getItem<AuthState>('user')?.token;
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-  return headers;
-};
+import type { User, UserFormData, UsersQuery } from './user.type';
 
 export const UserApi = createApi({
   reducerPath: 'userApi',
   tagTypes: ['user', 'users', 'profile'],
-  baseQuery: fetchBaseQuery({ baseUrl: ApiBaseUrl, prepareHeaders }),
+  baseQuery: authBaseQuery,
   endpoints: (builder) => ({
     meAccount: builder.query<User, void>({
       query: () => 'users/me/',

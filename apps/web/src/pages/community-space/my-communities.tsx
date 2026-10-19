@@ -105,6 +105,8 @@ function MyCommunities() {
           ))}
         </ul>
       )}
+
+      <div className="py-10" />
     </section>
   );
 }

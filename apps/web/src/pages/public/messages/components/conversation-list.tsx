@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga-mono-repo/ui';
-import { nameInitials } from '@/utils/Utils';
-import { ago } from '@/pages/public/community/components/post-format';
+import { ago, nameInitials } from '@/utils/Utils';
 import { conversationName, otherPerson, type MessagesPage } from '../form/UseMessages';
 
 const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
