@@ -122,7 +122,8 @@ class TestCommunityIsolationOpportunities:
         payload["community_id"] = str(community_a.id)
         res_ok = api_client.post("/api/v1/opportunities/", payload, format="json")
         assert res_ok.status_code == status.HTTP_201_CREATED
-        assert res_ok.data["title"] == "Senior Python Engineer"
+        assert res_ok.data["success"] is True
+        assert res_ok.data["data"]["title"] == "Senior Python Engineer"
 
     def test_cannot_apply_to_foreign_community_opportunity(
         self, api_client, user_a, owner_user, community_b
@@ -152,6 +153,57 @@ class TestCommunityIsolationOpportunities:
         assert res.status_code == status.HTTP_403_FORBIDDEN
         assert "membre actif de cette communauté" in str(res.data)
 
+    def test_cannot_read_opportunities_in_private_community(
+        self, api_client, user_a, user_b, owner_user, private_community
+    ):
+        opp = Opportunity.objects.create(
+            poster=owner_user,
+            community=private_community,
+            title="Confidential CTO Search",
+            slug="confidential-cto-search",
+            opportunity_type=OpportunityType.FULL_TIME,
+            workplace_type=WorkplaceType.REMOTE,
+            company_name="Private Stealth Corp",
+            description="Leading stealth venture.",
+        )
+
+        # 1. Anonymous cannot list via community slug
+        res_anon_list = api_client.get(f"/api/v1/opportunities/?community={private_community.slug}")
+        assert res_anon_list.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # 2. Anonymous cannot get opportunity detail
+        res_anon_detail = api_client.get(f"/api/v1/opportunities/{opp.slug}/")
+        assert res_anon_detail.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # 3. Anonymous does NOT see private opportunity in global feed
+        res_anon_feed = api_client.get("/api/v1/opportunities/")
+        assert res_anon_feed.status_code == status.HTTP_200_OK
+        assert not any(o["slug"] == opp.slug for o in res_anon_feed.data["data"])
+
+        # 4. Non-member (user_b) cannot list via community slug
+        api_client.force_authenticate(user=user_b)
+        res_non_member_list = api_client.get(f"/api/v1/opportunities/?community={private_community.slug}")
+        assert res_non_member_list.status_code == status.HTTP_403_FORBIDDEN
+
+        # 5. Non-member cannot get opportunity detail
+        res_non_member_detail = api_client.get(f"/api/v1/opportunities/{opp.slug}/")
+        assert res_non_member_detail.status_code == status.HTTP_403_FORBIDDEN
+
+        # 6. Non-member does NOT see private opportunity in global feed
+        res_non_member_feed = api_client.get("/api/v1/opportunities/")
+        assert res_non_member_feed.status_code == status.HTTP_200_OK
+        assert not any(o["slug"] == opp.slug for o in res_non_member_feed.data["data"])
+
+        # 7. Active member (user_a) CAN read list and detail
+        api_client.force_authenticate(user=user_a)
+        res_member_list = api_client.get(f"/api/v1/opportunities/?community={private_community.slug}")
+        assert res_member_list.status_code == status.HTTP_200_OK
+        assert any(o["slug"] == opp.slug for o in res_member_list.data["data"])
+
+        res_member_detail = api_client.get(f"/api/v1/opportunities/{opp.slug}/")
+        assert res_member_detail.status_code == status.HTTP_200_OK
+        assert res_member_detail.data["data"]["title"] == "Confidential CTO Search"
+
 
 @pytest.mark.django_db
 class TestCommunityIsolationProjects:
@@ -174,7 +226,8 @@ class TestCommunityIsolationProjects:
         payload["community_id"] = str(community_a.id)
         res_ok = api_client.post("/api/v1/projects/", payload, format="json")
         assert res_ok.status_code == status.HTTP_201_CREATED
-        assert res_ok.data["title"] == "AI Assistant SaaS"
+        assert res_ok.data["success"] is True
+        assert res_ok.data["data"]["title"] == "AI Assistant SaaS"
 
     def test_cannot_interact_with_foreign_community_project(
         self, api_client, user_a, owner_user, community_b
@@ -200,6 +253,58 @@ class TestCommunityIsolationProjects:
             format="json",
         )
         assert res_comment.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_cannot_read_projects_in_private_community(
+        self, api_client, user_a, user_b, owner_user, private_community
+    ):
+        proj = Project.objects.create(
+            owner=owner_user,
+            community=private_community,
+            title="Secret Fintech Tool",
+            slug="secret-fintech-tool",
+            description="High frequency trading engine.",
+        )
+
+        # 1. Anonymous cannot list via community slug
+        res_anon_list = api_client.get(f"/api/v1/projects/?community={private_community.slug}")
+        assert res_anon_list.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # 2. Anonymous cannot get project detail
+        res_anon_detail = api_client.get(f"/api/v1/projects/{proj.slug}/")
+        assert res_anon_detail.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # 3. Anonymous cannot get project comments
+        res_anon_comments = api_client.get(f"/api/v1/projects/{proj.slug}/comments/")
+        assert res_anon_comments.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # 4. Anonymous does NOT see private project in global feed
+        res_anon_feed = api_client.get("/api/v1/projects/")
+        assert res_anon_feed.status_code == status.HTTP_200_OK
+        assert not any(p["slug"] == proj.slug for p in res_anon_feed.data["data"])
+
+        # 5. Non-member (user_b) cannot list via community slug
+        api_client.force_authenticate(user=user_b)
+        res_non_member_list = api_client.get(f"/api/v1/projects/?community={private_community.slug}")
+        assert res_non_member_list.status_code == status.HTTP_403_FORBIDDEN
+
+        # 6. Non-member cannot get project detail
+        res_non_member_detail = api_client.get(f"/api/v1/projects/{proj.slug}/")
+        assert res_non_member_detail.status_code == status.HTTP_403_FORBIDDEN
+
+        # 7. Non-member does NOT see private project in global feed
+        res_non_member_feed = api_client.get("/api/v1/projects/")
+        assert res_non_member_feed.status_code == status.HTTP_200_OK
+        assert not any(p["slug"] == proj.slug for p in res_non_member_feed.data["data"])
+
+        # 8. Active member (user_a) CAN read list and detail
+        api_client.force_authenticate(user=user_a)
+        res_member_list = api_client.get(f"/api/v1/projects/?community={private_community.slug}")
+        assert res_member_list.status_code == status.HTTP_200_OK
+        assert any(p["slug"] == proj.slug for p in res_member_list.data["data"])
+
+        res_member_detail = api_client.get(f"/api/v1/projects/{proj.slug}/")
+        assert res_member_detail.status_code == status.HTTP_200_OK
+        assert res_member_detail.data["data"]["title"] == "Secret Fintech Tool"
 
 
 @pytest.mark.django_db

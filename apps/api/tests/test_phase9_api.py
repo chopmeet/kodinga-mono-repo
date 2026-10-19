@@ -299,8 +299,9 @@ def test_projects_showcase_and_upvotes(
         format="json",
     )
     assert create_proj_resp.status_code == status.HTTP_201_CREATED
-    proj_slug = create_proj_resp.data["slug"]
-    assert create_proj_resp.data["title"] == "Kodinga LMS Platform"
+    assert create_proj_resp.data["success"] is True
+    proj_slug = create_proj_resp.data["data"]["slug"]
+    assert create_proj_resp.data["data"]["title"] == "Kodinga LMS Platform"
 
     # Verify Gamification points awarded to Alice
     reputation = UserReputation.objects.filter(user=user_alice).first()
@@ -310,14 +311,16 @@ def test_projects_showcase_and_upvotes(
     api_client.logout()
     list_resp = api_client.get(f"/api/v1/projects/?tech={tech_django.slug}")
     assert list_resp.status_code == status.HTTP_200_OK
-    assert len(list_resp.data) >= 1
+    assert list_resp.data["success"] is True
+    assert len(list_resp.data["data"]) >= 1
 
     # 3. Bob upvotes Alice's project
     api_client.force_authenticate(user=user_bob)
     upvote_resp = api_client.post(f"/api/v1/projects/{proj_slug}/upvote/")
     assert upvote_resp.status_code == status.HTTP_200_OK
-    assert upvote_resp.data["is_upvoted"] is True
-    assert upvote_resp.data["upvotes_count"] == 1
+    assert upvote_resp.data["success"] is True
+    assert upvote_resp.data["data"]["is_upvoted"] is True
+    assert upvote_resp.data["data"]["upvotes_count"] == 1
 
     # Verify notification dispatched to Alice
     assert Notification.objects.filter(recipient=user_alice, actor=user_bob).exists()
@@ -329,7 +332,8 @@ def test_projects_showcase_and_upvotes(
         format="json",
     )
     assert comment_resp.status_code == status.HTTP_201_CREATED
-    assert comment_resp.data["content"] == "Super projet, félicitations pour la démo !"
+    assert comment_resp.data["success"] is True
+    assert comment_resp.data["data"]["content"] == "Super projet, félicitations pour la démo !"
 
     # 5. Alice can update her project
     api_client.force_authenticate(user=user_alice)
@@ -339,7 +343,8 @@ def test_projects_showcase_and_upvotes(
         format="json",
     )
     assert patch_resp.status_code == status.HTTP_200_OK
-    assert patch_resp.data["tagline"] == "Updated tagline for Kodinga LMS"
+    assert patch_resp.data["success"] is True
+    assert patch_resp.data["data"]["tagline"] == "Updated tagline for Kodinga LMS"
 
 
 # ==============================================================================
@@ -374,13 +379,15 @@ def test_opportunities_jobboard_and_applications(
         format="json",
     )
     assert create_opp_resp.status_code == status.HTTP_201_CREATED
-    opp_slug = create_opp_resp.data["slug"]
+    assert create_opp_resp.data["success"] is True
+    opp_slug = create_opp_resp.data["data"]["slug"]
 
     # Explore opportunities with workplace filter
     api_client.logout()
     list_resp = api_client.get("/api/v1/opportunities/?workplace=remote")
     assert list_resp.status_code == status.HTTP_200_OK
-    assert len(list_resp.data) >= 1
+    assert list_resp.data["success"] is True
+    assert len(list_resp.data["data"]) >= 1
 
     # Bob joins the community and applies to the opportunity
     CommunityMember.objects.create(
@@ -400,8 +407,9 @@ def test_opportunities_jobboard_and_applications(
         format="json",
     )
     assert apply_resp.status_code == status.HTTP_201_CREATED
-    application_id = apply_resp.data["id"]
-    assert apply_resp.data["status"] == ApplicationStatus.PENDING
+    assert apply_resp.data["success"] is True
+    application_id = apply_resp.data["data"]["id"]
+    assert apply_resp.data["data"]["status"] == ApplicationStatus.PENDING
 
     # Applying again should be rejected with 400
     dup_apply = api_client.post(
@@ -418,7 +426,8 @@ def test_opportunities_jobboard_and_applications(
     api_client.force_authenticate(user=user_alice)
     apps_list = api_client.get(f"/api/v1/opportunities/{opp_slug}/applications/")
     assert apps_list.status_code == status.HTTP_200_OK
-    assert len(apps_list.data) == 1
+    assert apps_list.data["success"] is True
+    assert len(apps_list.data["data"]) == 1
 
     status_update_resp = api_client.patch(
         f"/api/v1/opportunities/applications/{application_id}/status/",
@@ -426,7 +435,8 @@ def test_opportunities_jobboard_and_applications(
         format="json",
     )
     assert status_update_resp.status_code == status.HTTP_200_OK
-    assert status_update_resp.data["status"] == ApplicationStatus.SHORTLISTED
+    assert status_update_resp.data["success"] is True
+    assert status_update_resp.data["data"]["status"] == ApplicationStatus.SHORTLISTED
 
     # Check status update notification sent to Bob
     assert Notification.objects.filter(recipient=user_bob, actor=user_alice).exists()

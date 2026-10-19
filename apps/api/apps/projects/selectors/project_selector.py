@@ -1,8 +1,11 @@
 from django.db.models import F, Q
 
+from apps.communities.models.community import CommunityPricing, CommunityPrivacy
+from apps.memberships.models.member import MembershipStatus
 from apps.projects.models.comment import ProjectComment
 from apps.projects.models.project import Project, ProjectStatus
 from apps.projects.models.upvote import ProjectUpvote
+from common.permissions.base import is_superadmin_user
 
 
 class ProjectSelector:
@@ -18,6 +21,7 @@ class ProjectSelector:
         community_slug=None,
         order_by="upvotes",
         status=ProjectStatus.PUBLISHED,
+        viewer=None,
     ):
         qs = (
             Project.objects.filter(status=status)
@@ -37,6 +41,32 @@ class ProjectSelector:
 
         if community_slug:
             qs = qs.filter(community__slug=community_slug)
+        else:
+            # Privacy isolation for public feed:
+            # Exclude projects belonging to private, secret, or paid communities
+            # unless the viewer has permission (owner, active member, or superadmin).
+            if viewer and viewer.is_authenticated:
+                if not (viewer.is_staff or is_superadmin_user(viewer)):
+                    qs = qs.filter(
+                        Q(community__isnull=True)
+                        | Q(
+                            community__privacy_type=CommunityPrivacy.PUBLIC,
+                            community__pricing_type=CommunityPricing.FREE,
+                        )
+                        | Q(
+                            community__memberships__user=viewer,
+                            community__memberships__status=MembershipStatus.ACTIVE,
+                        )
+                        | Q(community__owner=viewer)
+                    )
+            else:
+                qs = qs.filter(
+                    Q(community__isnull=True)
+                    | Q(
+                        community__privacy_type=CommunityPrivacy.PUBLIC,
+                        community__pricing_type=CommunityPricing.FREE,
+                    )
+                )
 
         if order_by == "recent":
             qs = qs.order_by("-created_at")
