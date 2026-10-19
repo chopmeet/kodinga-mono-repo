@@ -1,7 +1,7 @@
-import { CircleCheck, CircleX, LoaderCircle } from 'lucide-react';
+import { CircleCheck, CircleX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga-mono-repo/ui';
 import { parseApiError } from '@/utils/api/errors';
 import { AboutTab } from './components/about-tab';
 import { ClassroomTab } from './components/classroom-tab';
@@ -43,10 +43,7 @@ function CommunityDetails() {
 
   if (isLoading) {
     return (
-      <p className="flex items-center justify-center gap-2 py-24 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" />
-        Chargement de la communauté…
-      </p>
+      <Loader inline className="py-24" message="Chargement de la communauté…" />
     );
   }
 

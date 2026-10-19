@@ -1,12 +1,12 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { ArrowLeft, CalendarDays, Copy, MapPin, MessageCircle, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Copy, MapPin, MessageCircle, Pencil, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { cn, customToast } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
-import { nameInitials } from '@/utils/Utils';
+import { nameInitials, useUser } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
 
@@ -34,6 +34,7 @@ function Banner({ imageUrl }: { imageUrl?: string }) {
 function PublicProfile() {
   const { username = '' } = useParams();
   const { data: profile, isLoading, error } = useGetPublicProfileQuery(username, { skip: !username });
+  const me = useUser();
   const [tab, setTab] = useState<'communities' | 'contributions'>('communities');
   const year = new Date().getFullYear();
 
@@ -128,6 +129,13 @@ function PublicProfile() {
 
           <div className="mt-8 flex flex-col gap-3">
             <MessageButton userId={profile.user.id} size="lg" className="h-13 w-full text-base" />
+            {me?.id === profile.user.id && (
+              <Button asChild size="lg" className="h-13 w-full text-base">
+                <Link to="/account/profile">
+                  <Pencil /> Modifier mon profil
+                </Link>
+              </Button>
+            )}
             <button
               type="button"
               onClick={share}

@@ -1,15 +1,76 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-import { getCommunityMembers } from '@/data/admin-community-details.data';
 import { getMyCommunity } from '@/data/community-space.data';
 import store from '@/redux/store';
-import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
-import { must, renderAppAt, SLOW, stubApi } from '@/test-utils';
+import { onLogout } from '@/redux/slice/User.slice';
+import { must, renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
-import type { User } from '@/utils/api/user/user.type';
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
+
+type Call = { method: string; url: URL; body: Record<string, unknown> | null };
+
+/** The api of lagos-ai-data: detail (with settings and rules), PATCH, settings, rules, members */
+function stubSettingsApi() {
+  const { community } = must(getMyCommunity('lagos-ai-data'));
+  const calls: Call[] = [];
+  let detail = {
+    ...community,
+    description: 'La data à Lagos.',
+    github_url: 'https://github.com/lagos-ai',
+    website_url: '',
+    discord_url: '',
+    twitter_url: '',
+    settings: { allow_member_invites: true, require_approval_to_join: false, welcome_message: '', default_post_permission: 'all_members', is_read_only: false },
+    rules: [
+      { id: 'r1', title: 'Bienveillance', description: '', order: 0 },
+      { id: 'r2', title: 'Pas de spam', description: '', order: 1 },
+    ],
+  };
+  let ruleId = 2;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const request = input as Request;
+    const url = new URL(request.url);
+    const text = request.method === 'GET' ? '' : await request.text();
+    const body = text ? JSON.parse(text) : null;
+    calls.push({ method: request.method, url, body });
+    const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+    const path = url.pathname;
+    const base = '/communities/lagos-ai-data/';
+    if (path.endsWith(base)) {
+      if (request.method === 'PATCH') detail = { ...detail, ...body };
+      if (request.method === 'DELETE') return json({ success: true, data: null });
+      return json({ success: true, data: detail });
+    }
+    if (path.endsWith(`${base}settings/`)) {
+      detail = { ...detail, settings: { ...detail.settings, ...body } };
+      return json({ success: true, data: detail.settings });
+    }
+    if (path.endsWith(`${base}rules/`)) {
+      const rule = { id: `r${++ruleId}`, title: body?.title, description: body?.description ?? '', order: body?.order ?? 0 };
+      detail = { ...detail, rules: [...detail.rules, rule] };
+      return json({ success: true, data: rule }, 201);
+    }
+    const removed = path.match(/rules\/([^/]+)\/$/)?.[1];
+    if (removed) {
+      detail = { ...detail, rules: detail.rules.filter((r) => r.id !== removed) };
+      return json({ success: true, data: null });
+    }
+    if (path.endsWith(`${base}members/`)) {
+      return json({
+        success: true,
+        pagination: { count: 1 },
+        results: [{ id: 'm-admin', user: { id: 'u7', username: 'chidi', first_name: 'Chidi', last_name: 'Okafor' }, role: 'admin', status: 'active', custom_title: '', joined_at: '2026-01-01', reputation_score: 0, created_at: '2026-01-01' }],
+      });
+    }
+    if (path.endsWith('/members/m-admin/')) return json({ success: true, data: { id: 'm-admin', role: 'owner' } });
+    if (path.endsWith('/communities/categories/')) return json({ success: true, data: [{ id: 'cat-ai', name: 'IA & Data', slug: 'ia-data', is_active: true }] });
+    if (path.endsWith('/communities/my/')) return json({ success: true, pagination: { count: 0 }, results: [] });
+    return json({ success: true, data: [], pagination: { count: 0 }, results: [] });
+  });
+  return { calls };
+}
 
 afterEach(() => {
   cleanup();
@@ -33,49 +94,68 @@ describe('Community space: settings', () => {
     await waitFor(() => expect(where()).toBe('/c/frontend-francophone/dashboard'));
   });
 
-  it('checks the links, then saves the community profile', async () => {
+  it('loads the community profile, checks the links, then saves it', async () => {
+    const api = stubSettingsApi();
     renderAppAt('/c/lagos-ai-data/settings/general');
-    const save = await screen.findByRole('button', { name: 'Enregistrer' }, SLOW);
-    expect((save as HTMLButtonElement).disabled).toBe(true);
+    const name = await screen.findByLabelText(/^Nom/, {}, SLOW);
+    expect((name as HTMLInputElement).value).toBe('Lagos AI & Data Engineers');
+    expect((screen.getByLabelText('GitHub') as HTMLInputElement).value).toBe('https://github.com/lagos-ai');
+    const save = screen.getByRole('button', { name: 'Enregistrer' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText('Discord'), { target: { value: 'discord' } });
     fireEvent.click(save);
     expect(await screen.findByText('Lien invalide (https://…)', {}, SLOW)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Discord'), { target: { value: 'https://discord.gg/lagos-ai' } });
+    fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'cat-ai' } });
     fireEvent.click(save);
     expect(await screen.findByText('Informations de la communauté enregistrées.', {}, SLOW)).toBeTruthy();
+    expect(api.calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/communities/lagos-ai-data/'))?.body).toMatchObject({
+      name: 'Lagos AI & Data Engineers',
+      discord_url: 'https://discord.gg/lagos-ai',
+      category_id: 'cat-ai',
+    });
   });
 
-  it('saves the join rules', async () => {
+  it('saves the privacy on the community and the join rules in its settings', async () => {
+    const api = stubSettingsApi();
     renderAppAt('/c/lagos-ai-data/settings/access');
     const approval = await screen.findByRole('checkbox', { name: "Valider les demandes d'adhésion" }, SLOW);
+    expect((approval as HTMLInputElement).checked).toBe(false);
     fireEvent.click(approval);
+    fireEvent.change(screen.getByLabelText('Visibilité'), { target: { value: 'private' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     expect(await screen.findByText('Règles d’accès enregistrées.', {}, SLOW)).toBeTruthy();
+    expect(api.calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/communities/lagos-ai-data/'))?.body).toEqual({ privacy_type: 'private' });
+    expect(api.calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/settings/'))?.body).toMatchObject({ require_approval_to_join: true, default_post_permission: 'all_members' });
   });
 
-  it('adds, reorders and deletes rules', async () => {
+  it('adds, edits and deletes rules', async () => {
+    const api = stubSettingsApi();
     renderAppAt('/c/lagos-ai-data/settings/rules');
-    fireEvent.click(await screen.findByRole('button', { name: 'Ajouter une règle' }, SLOW));
-    const dialog = await screen.findByRole('dialog', {}, SLOW);
-    fireEvent.change(within(dialog).getByLabelText(/^Règle/), { target: { value: 'Pas de spam' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter' }));
-    await screen.findByText('Pas de spam', {}, SLOW);
-
     const titles = () => within(screen.getByRole('list', { name: 'Règles de la communauté' })).getAllByRole('listitem').map((li) => li.querySelector('p')?.textContent);
-    expect(titles().at(-1)).toBe('Pas de spam');
-    fireEvent.click(screen.getByRole('button', { name: 'Monter « Pas de spam »' }));
-    expect(titles().at(-2)).toBe('Pas de spam');
+    await waitFor(() => expect(titles()).toEqual(['Bienveillance', 'Pas de spam']), SLOW);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter une règle' }));
+    let dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/^Règle/), { target: { value: 'Citez vos sources' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(titles()).toEqual(['Bienveillance', 'Pas de spam', 'Citez vos sources']), SLOW);
+    expect(api.calls.find((c) => c.method === 'POST')?.body).toEqual({ title: 'Citez vos sources', description: '', order: 2 });
+
+    // No update on the api: replaced at the same place
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier « Bienveillance »' }));
+    dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/^Règle/), { target: { value: 'Bienveillance avant tout' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(titles()).toEqual(['Bienveillance avant tout', 'Pas de spam', 'Citez vos sources']), SLOW);
+
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer « Pas de spam »' }));
-    expect(titles()).not.toContain('Pas de spam');
+    await waitFor(() => expect(titles()).toEqual(['Bienveillance avant tout', 'Citez vos sources']), SLOW);
   });
 
   it('deletes the community only once its name is typed (owner)', async () => {
     const { community } = must(getMyCommunity('lagos-ai-data'));
-    // Back on /c (signed-in page): the user has no other community left
-    act(() => {
-      store.dispatch(onSetUserToken({ user: { id: 'u1' } as User, token: 'access', refresh: 'refresh' }));
-    });
-    stubApi({ 'communities/my/': { body: { success: true, pagination: { count: 0 }, results: [] } } });
+    const api = stubSettingsApi();
     const { where } = renderAppAt('/c/lagos-ai-data/settings/danger');
     fireEvent.click(await screen.findByRole('button', { name: 'Supprimer' }, SLOW));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
@@ -85,19 +165,21 @@ describe('Community space: settings', () => {
     expect(confirm.disabled).toBe(false);
     fireEvent.click(confirm);
     await waitFor(() => expect(where()).toBe('/c'), SLOW);
+    expect(api.calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/communities/lagos-ai-data/'))).toBe(true);
   });
 
   it('transfers the ownership to an administrator only', async () => {
     const { community } = must(getMyCommunity('lagos-ai-data'));
-    const admins = getCommunityMembers(community).filter((m) => m.role === 'admin' && m.status === 'active');
+    const api = stubSettingsApi();
     renderAppAt('/c/lagos-ai-data/settings/danger');
     const select = await screen.findByLabelText('Nouveau propriétaire', {}, SLOW);
-    expect(within(select).getAllByRole('option')).toHaveLength(admins.length + 1);
-    fireEvent.change(select, { target: { value: admins[0].id } });
+    await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(2), SLOW);
+    fireEvent.change(select, { target: { value: 'm-admin' } });
     fireEvent.click(screen.getByRole('button', { name: 'Transférer' }));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     fireEvent.change(within(dialog).getByLabelText(/pour confirmer/), { target: { value: community.name } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Transférer la propriété' }));
-    expect(await screen.findByText(`${admins[0].name} est maintenant propriétaire. Vous restez administrateur.`, {}, SLOW)).toBeTruthy();
+    expect(await screen.findByText('Chidi Okafor est maintenant propriétaire. Vous restez administrateur.', {}, SLOW)).toBeTruthy();
+    expect(api.calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/members/m-admin/'))?.body).toEqual({ role: 'owner' });
   });
 });

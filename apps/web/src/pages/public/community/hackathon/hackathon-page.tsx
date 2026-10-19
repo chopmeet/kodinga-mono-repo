@@ -1,7 +1,7 @@
-import { ArrowLeft, CalendarDays, Laptop, LoaderCircle, MapPin, Trophy, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Laptop, MapPin, Trophy, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn } from '@kodinga-mono-repo/ui';
+import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
 import { formatDay, hackathonFormatLabel, hackathonStatusStyle } from '@/pages/community-space/hackathons/hackathon-labels';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import OverviewTab from './components/overview-tab';
@@ -20,9 +20,7 @@ function HackathonPageView() {
 
   if (page.isLoading) {
     return (
-      <p className="flex items-center justify-center gap-2 py-24 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" /> Chargement du hackathon…
-      </p>
+      <Loader inline className="py-24" message="Chargement du hackathon…" />
     );
   }
   if (!h) {

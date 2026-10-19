@@ -1,7 +1,7 @@
 import { CircleCheck, FileText, LoaderCircle, Paperclip, Send, Trash2, Upload } from 'lucide-react';
 import { type ChangeEvent, useState } from 'react';
 
-import { Button, Input, TextareaInput } from '@kodinga-mono-repo/ui';
+import { Button, Input, Loader, TextareaInput } from '@kodinga-mono-repo/ui';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import type { Hackathon, SubmissionFileType } from '@/utils/api/hackathon/hackathon.type';
 import UseHackathonProject, { type HackathonProject } from '../form/UseHackathonProject';
@@ -115,9 +115,7 @@ function ProjectPanel({ slug, hackathonSlug, hackathon, inTeam }: { slug: string
       </div>
 
       {project.isLoading ? (
-        <p className="flex items-center gap-2 py-8 text-slate-500" role="status">
-          <LoaderCircle className="size-5 animate-spin" /> Chargement du projet…
-        </p>
+        <Loader inline size="sm" className="py-8" message="Chargement du projet…" />
       ) : project.loadError ? (
         <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">{project.loadError}</p>
       ) : (

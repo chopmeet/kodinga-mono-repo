@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, BookOpen, Check, CircleCheck, Clock, Download, LoaderCircle, Lock, PartyPopper, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn } from '@kodinga-mono-repo/ui';
+import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
 import { courseLevelLabel, formatDuration, lessonTypeLabel } from '@/pages/community-space/courses/course-labels';
 import { htmlToText, Markdown } from '@/pages/shared/markdown';
 import type { CourseLesson } from '@/utils/api/course/course.type';
@@ -106,9 +106,7 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   }
   if (player.isLessonLoading || !lesson) {
     return (
-      <p className="flex items-center justify-center gap-2 py-24 text-slate-500" role="status">
-        <LoaderCircle className="size-5 animate-spin" /> Chargement de la leçon…
-      </p>
+      <Loader inline size="sm" className="py-24" message="Chargement de la leçon…" />
     );
   }
 
@@ -219,9 +217,7 @@ function CoursePlayerPage() {
 
   if (player.isLoading) {
     return (
-      <p className="flex items-center justify-center gap-2 py-24 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" /> Chargement de la formation…
-      </p>
+      <Loader inline className="py-24" message="Chargement de la formation…" />
     );
   }
   if (player.membership !== 'member') {

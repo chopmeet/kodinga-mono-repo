@@ -442,7 +442,7 @@ export const InputPassword = forwardRef<
           )}
           <div className="input-group custom-input-group relative mb-1">
             <input
-              className={`w-full block px-4 pl-9! py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 ${icon ? 'pl-9!' : ''} py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
               name={name}
               id={id}
               ref={ref}

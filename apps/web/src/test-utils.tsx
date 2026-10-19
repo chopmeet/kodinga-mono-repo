@@ -4,6 +4,8 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { vi } from 'vitest';
 
 import { Toaster } from '@kodinga-mono-repo/ui';
+import { getMyCommunity } from '@/data/community-space.data';
+import { onSetUserToken } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
 import { AppRoutes } from '@/routes/router';
 import type { CommunityCategory, CommunityListItem } from '@/utils/api/community/community.type';
@@ -11,8 +13,44 @@ import type { User } from '@/utils/api/user/user.type';
 
 export const SLOW = { timeout: 3000 };
 
+const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+/** A signed-in user for the tests (access token valid until 2100) */
+export const TEST_TOKEN = `${b64({ alg: 'HS256' })}.${b64({ exp: 4102444800 })}.sig`;
+
+type FixtureFetch = typeof fetch & { inner?: typeof fetch };
+
+/**
+ * /c/<slug> of a fixture community (data/community-space.data.ts): the space reads the role of the
+ * user in GET communities/<slug>/ (user_membership). Signs a user in if none is, and answers that
+ * detail on top of the fetch stub of the test (every other request goes to it).
+ */
+function openSpaceFixture(path: string) {
+  const space = getMyCommunity(path.match(/^\/c\/([^/?#]+)/)?.[1]);
+  if (!space) return;
+  if (!store.getState().user.token) {
+    store.dispatch(onSetUserToken({ user: { id: 'me', username: 'kodinga-test', first_name: 'Awa', last_name: 'Diop' } as User, token: TEST_TOKEN, refresh: 'r' }));
+  }
+  const inner = globalThis.fetch;
+  const fixture: FixtureFetch = async (input, init) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    if (request.method === 'GET' && new URL(request.url).pathname.endsWith(`/communities/${space.community.slug}/`)) {
+      const membership = { is_member: true, role: space.role, status: 'active' };
+      // The detail of the test (settings, rules…) when it gives one, with the role of the fixture
+      // (only from a stub: never the network)
+      const own = vi.isMockFunction(inner) ? await inner(request.clone()).catch(() => null) : null;
+      const body = own?.ok ? await own.json().catch(() => null) : null;
+      const detail = body?.data?.slug === space.community.slug ? { user_membership: membership, ...body.data } : { ...space.community, user_membership: membership };
+      return new Response(JSON.stringify({ success: true, data: detail }), { headers: { 'Content-Type': 'application/json' } });
+    }
+    return inner(input, init);
+  };
+  fixture.inner = inner;
+  globalThis.fetch = fixture;
+}
+
 /** The app route tree at the given url (with the toaster of app.tsx); `where()` reads the current url */
 export function renderAppAt(path: string) {
+  openSpaceFixture(path);
   const router = createMemoryRouter(AppRoutes, { initialEntries: [path] });
   const view = render(
     <Provider store={store}>

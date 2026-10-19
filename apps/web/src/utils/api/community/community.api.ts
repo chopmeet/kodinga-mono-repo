@@ -45,6 +45,9 @@ import type {
   CommunityCategory,
   CommunityCreateData,
   CommunityDetail,
+  CommunityRuleItem,
+  CommunitySettings,
+  CommunityUpdateData,
   CommunityFeedQuery,
   CommunityListItem,
   CommunityListQuery,
@@ -848,6 +851,32 @@ export const CommunityApi = createApi({
       query: (search) => ({ url: 'profiles/technologies/', params: search ? { search } : undefined }),
       transformResponse: (response: ApiSuccess<Technology[]>) => unwrap(response),
     }),
+    // Active categories (directory, settings of a community)
+    getCategories: builder.query<AdminCategoryItem[], void>({
+      query: () => 'communities/categories/',
+      transformResponse: unwrap<AdminCategoryItem[]>,
+      providesTags: ['categories'],
+    }),
+    // Settings of a community (owner and admins): profile, access, charter
+    updateCommunity: builder.mutation<CommunityDetail, { slug: string } & CommunityUpdateData>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityDetail>,
+      invalidatesTags: (_result, _error, { slug }) => ['communities', { type: 'communities', id: slug }],
+    }),
+    updateCommunitySettings: builder.mutation<CommunitySettings, { slug: string } & Partial<CommunitySettings>>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/settings/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunitySettings>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
+    addCommunityRule: builder.mutation<CommunityRuleItem, { slug: string; title: string; description: string; order: number }>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/rules/`, method: 'POST', body }),
+      transformResponse: unwrap<CommunityRuleItem>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
+    deleteCommunityRule: builder.mutation<unknown, { slug: string; ruleId: string }>({
+      query: ({ slug, ruleId }) => ({ url: `communities/${slug}/rules/${ruleId}/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
     // The api archives (is_active = false): owner or superuser only
     archiveCommunity: builder.mutation<ApiSuccess<undefined>, string>({
       query: (slug) => ({ url: `communities/${slug}/`, method: 'DELETE' }),
@@ -894,6 +923,11 @@ export const {
   useGetMyManagedCommunitiesQuery,
   useCreateCommunityMutation,
   useArchiveCommunityMutation,
+  useGetCategoriesQuery,
+  useUpdateCommunityMutation,
+  useUpdateCommunitySettingsMutation,
+  useAddCommunityRuleMutation,
+  useDeleteCommunityRuleMutation,
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
   useGetCommunityMemberJoinsQuery,

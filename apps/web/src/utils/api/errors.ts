@@ -24,6 +24,10 @@ const fieldMessages: Record<string, string> = {
   'This password is too common.': 'Ce mot de passe est trop courant.',
   'This password is entirely numeric.': 'Le mot de passe ne peut pas contenir uniquement des chiffres.',
   'Enter a valid email address.': 'Adresse email invalide.',
+  'Current password is incorrect.': 'Le mot de passe actuel est incorrect.',
+  'Passwords do not match.': 'Les deux mots de passe ne correspondent pas.',
+  'New password cannot be the same as current password.': 'Choisissez un mot de passe différent de l’actuel.',
+  'This password is too short. It must contain at least 8 characters.': 'Le mot de passe doit contenir au moins 8 caractères.',
 };
 
 const toFrench = (message: string) =>
