@@ -14,6 +14,8 @@ services:
     depends_on:
       api:
         condition: service_started
+      asgi:
+        condition: service_started
 
   api:
     build:
@@ -25,9 +27,48 @@ services:
       ALLOWED_HOSTS: localhost,127.0.0.1
       CSRF_TRUSTED_ORIGINS: http://localhost
       DATABASE_URL: postgres://${POSTGRES_USER:-kodinga}:${POSTGRES_PASSWORD:-kodinga}@kodingadb:5432/${POSTGRES_DB:-kodinga}
+      REDIS_CHANNEL_URL: redis://redis:6379/2
+      REDIS_CACHE_URL: redis://redis:6379/1
     depends_on:
       kodingadb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  asgi:
+    build:
+      context: apps/api
+    command: ['daphne', '-b', '0.0.0.0', '-p', '8001', 'config.asgi:application']
+    env_file: apps/api/.env
+    environment:
+      DEBUG: 'False'
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      CSRF_TRUSTED_ORIGINS: http://localhost
+      DATABASE_URL: postgres://${POSTGRES_USER:-kodinga}:${POSTGRES_PASSWORD:-kodinga}@kodingadb:5432/${POSTGRES_DB:-kodinga}
+      REDIS_CHANNEL_URL: redis://redis:6379/2
+      REDIS_CACHE_URL: redis://redis:6379/1
+      MIGRATE_ON_BOOT: 'false'
+    ports:
+      - '127.0.0.1:8001:8001'
+    depends_on:
+      kodingadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   kodingadb:
     image: postgres:17-alpine
@@ -48,3 +89,4 @@ services:
 
 volumes:
   pgdata:
+  redis_data:

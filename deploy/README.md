@@ -51,6 +51,7 @@ server {
     server_name api.kodinga.fassane.dev;
     client_max_body_size 20m;
 
+    # REST API (Gunicorn)
     location / {
         proxy_pass http://127.0.0.1:8092;
         proxy_http_version 1.1;
@@ -58,6 +59,20 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Realtime WebSockets (Daphne ASGI)
+    location /ws/ {
+        proxy_pass http://127.0.0.1:8094;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
     }
 }
 ```
@@ -84,6 +99,7 @@ Chaque domaine doit aussi avoir son enregistrement DNS (A) vers l'IP du VPS.
 | variable | `DEPLOY_PATH` | `/opt/kodinga/recette` |
 | variable | `WEB_PORT` | `8082` (recette), `8081` (production) |
 | variable | `API_PORT` | `8092` (recette), `8091` (production) |
+| variable | `ASGI_PORT` | `8094` (recette), `8093` (production) |
 
 Variables du dépôt (Settings → Secrets and variables → Actions → Variables) :
 `RECETTE_SITE_URL` (`https://kodinga.fassane.dev`), `RECETTE_API_URL` (`https://api.kodinga.fassane.dev`),
