@@ -3,8 +3,9 @@ import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/reac
 import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
+import type { AppNotification } from '../notification/notification.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
-import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
+import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, RsvpStatus } from '../event/event.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -88,6 +89,7 @@ export const CommunityApi = createApi({
     'invitations',
     'conversations',
     'messages',
+    'notifications',
   ],
   baseQuery: authBaseQuery,
   endpoints: (builder) => ({
@@ -445,6 +447,37 @@ export const CommunityApi = createApi({
     getEventAttendees: builder.query<ApiPaginated<EventAttendee>, { slug: string; eventId: string; page?: number; page_size?: number }>({
       query: ({ slug, eventId, ...params }) => ({ url: `communities/${slug}/events/${eventId}/attendees/`, params: cleanParams(params) }),
       providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
+    }),
+    // A member (or anyone, for a public event) registers: attending or maybe; DELETE cancels
+    rsvpEvent: builder.mutation<unknown, { slug: string; eventId: string; status: RsvpStatus }>({
+      query: ({ slug, eventId, status }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'POST', body: { status } }),
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    cancelEventRsvp: builder.mutation<unknown, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // In-app notifications of the signed-in user (no realtime: the header polls the unread count)
+    getNotifications: builder.query<ApiPaginated<AppNotification>, { page?: number; page_size?: number; unread?: boolean }>({
+      query: (params) => ({ url: 'notifications/', params: cleanParams(params) }),
+      providesTags: ['notifications'],
+    }),
+    getUnreadNotificationsCount: builder.query<number, void>({
+      query: () => 'notifications/unread-count/',
+      transformResponse: (response: ApiSuccess<{ unread_count: number }>) => unwrap(response).unread_count,
+      providesTags: ['notifications'],
+    }),
+    markNotificationRead: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `notifications/${id}/read/`, method: 'POST' }),
+      invalidatesTags: ['notifications'],
+    }),
+    markAllNotificationsRead: builder.mutation<unknown, void>({
+      query: () => ({ url: 'notifications/read-all/', method: 'POST' }),
+      invalidatesTags: ['notifications'],
+    }),
+    deleteNotification: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `notifications/${id}/`, method: 'DELETE' }),
+      invalidatesTags: ['notifications'],
     }),
     // Hackathons of a community (apps/hackathons): owner and admins manage them
     getCommunityHackathons: builder.query<ApiPaginated<HackathonListItem>, { slug: string; status?: HackathonStatus; page?: number; page_size?: number }>({
@@ -911,6 +944,13 @@ export const {
   useDeleteEventMutation,
   useUpdateEventStatusMutation,
   useGetEventAttendeesQuery,
+  useRsvpEventMutation,
+  useCancelEventRsvpMutation,
+  useGetNotificationsQuery,
+  useGetUnreadNotificationsCountQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  useDeleteNotificationMutation,
   useGetCommunityHackathonsQuery,
   useGetHackathonQuery,
   useCreateHackathonMutation,

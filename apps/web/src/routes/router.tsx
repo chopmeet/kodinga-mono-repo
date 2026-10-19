@@ -9,6 +9,7 @@ import PostDetails from '@/pages/public/community/post/post-details';
 import CoursePlayerPage from '@/pages/public/community/course/course-player';
 import HackathonPageView from '@/pages/public/community/hackathon/hackathon-page';
 import Messages from '@/pages/public/messages/messages';
+import Notifications from '@/pages/public/notifications/notifications';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import Login from '@/pages/auth/login';
 import ResetPassword from '@/pages/auth/reset-password';
@@ -140,6 +141,10 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:slug/posts/:postId',
         element: <PostDetails />,
+      },
+      {
+        path: 'notifications',
+        element: <Notifications />,
       },
       {
         path: 'messages',

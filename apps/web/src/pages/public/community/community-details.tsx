@@ -79,7 +79,7 @@ function CommunityDetails() {
           {activeTab === 'feed' && <FeedTab page={page} />}
           {activeTab === 'classroom' && <ClassroomTab page={page} />}
           {activeTab === 'members' && <MembersTab community={community} isTeam={page.isTeam} />}
-          {activeTab === 'events' && <EventsTab slug={community.slug} />}
+          {activeTab === 'events' && <EventsTab page={page} />}
           {activeTab === 'hackathons' && <HackathonsTab slug={community.slug} />}
           {activeTab === 'leaderboard' && <LeaderboardTab slug={community.slug} />}
         </div>
