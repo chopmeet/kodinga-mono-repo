@@ -1,0 +1,35 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Vous avez été invité(e) à rejoindre un espace ! 🎉</h2>
+
+<p>Bonjour,</p>
+
+<p>
+    <strong>{{ inviter_name }}</strong> vous invite à rejoindre l'espace collaboratif <strong>{{ workspace_name }}</strong> sur <strong>{{ app_name }}</strong> avec le rôle <strong>{{ role_display }}</strong>.
+</p>
+
+<p>
+    En rejoignant cet espace, vous pourrez collaborer avec l'équipe, participer aux projets et échanger avec les membres de la communauté.
+</p>
+
+<div class="btn-wrapper">
+    <a href="{{ invite_url }}" class="btn-primary" id="btn-accept-invite">
+        Accepter l'invitation
+    </a>
+</div>
+
+<div class="callout-box">
+    <p style="margin: 0 0 8px 0; color: #475569; font-weight: 600;">
+        ⏱️ Cette invitation sécurisée est valable jusqu'au <strong>{{ expires_at_formatted }}</strong> ({{ expires_in_days|default:7 }} jours).
+    </p>
+    <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b;">
+        Si le bouton ci-dessus ne fonctionne pas, copiez et collez l'URL suivante dans votre navigateur :
+    </p>
+    <div class="link-text">{{ invite_url }}</div>
+</div>
+
+<p style="margin-top: 24px; font-size: 13px; color: #64748b;">
+    Si vous ne connaissez pas l'expéditeur ou ne souhaitez pas rejoindre cet espace, vous pouvez ignorer cet e-mail.
+</p>
+{% endblock %}

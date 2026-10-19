@@ -115,9 +115,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
+# Testing check
+IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in arg for arg in sys.argv)
+
 # Database configuration (Neon PostgreSQL or local SQLite fallback)
 DATABASE_URL_VAL = env.str('DATABASE_URL', default='').strip()
-if DATABASE_URL_VAL:
+if DATABASE_URL_VAL and not IS_TESTING:
     DATABASES = {
         'default': env.db_url_config(DATABASE_URL_VAL)
     }
@@ -131,7 +134,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': ':memory:' if IS_TESTING else BASE_DIR / 'db.sqlite3',
         }
     }
 
@@ -313,8 +316,17 @@ EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
 EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=20)
 
 # Celery & Redis Configuration
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+if DEBUG or IS_TESTING:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='memory://')
+    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default=None)
+else:
+    CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_TASK_ALWAYS_EAGER', default=False)
+    CELERY_TASK_EAGER_PROPAGATES = False
+    CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

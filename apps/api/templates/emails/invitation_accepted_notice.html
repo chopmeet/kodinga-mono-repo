@@ -1,0 +1,25 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Nouvelle acceptation d'invitation ! 🤝</h2>
+
+<p>Bonjour <strong>{{ admin_name }}</strong>,</p>
+
+<p>
+    L'invitation que vous avez envoyée pour rejoindre l'espace <strong>{{ workspace_name }}</strong> a été acceptée par <strong>{{ member_name }}</strong> ({{ member_email }}).
+</p>
+
+<p>
+    Ce collaborateur a rejoint votre espace avec le rôle <strong>{{ role_display }}</strong> et peut désormais participer activement.
+</p>
+
+<div class="btn-wrapper">
+    <a href="{{ workspace_members_url }}" class="btn-primary" id="btn-view-members">
+        Consulter les membres de l'espace
+    </a>
+</div>
+
+<p style="margin-top: 24px; font-size: 13px; color: #64748b;">
+    Vous recevez cette notification automatique car vous êtes administrateur de cet espace.
+</p>
+{% endblock %}

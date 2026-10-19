@@ -1,0 +1,14 @@
+Invitation à rejoindre {{ workspace_name }} sur {{ app_name }}
+
+Bonjour,
+
+{{ inviter_name }} vous invite à rejoindre l'espace collaboratif {{ workspace_name }} sur {{ app_name }} avec le rôle {{ role_display }}.
+
+Pour accepter cette invitation et rejoindre l'espace, cliquez sur le lien ci-dessous ou copiez-le dans votre navigateur :
+{{ invite_url }}
+
+Cette invitation est valable jusqu'au {{ expires_at_formatted }} ({{ expires_in_days|default:7 }} jours).
+
+Si vous ne souhaitez pas rejoindre cet espace, ignorez simplement cet e-mail.
+
+L'équipe {{ app_name }}

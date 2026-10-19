@@ -1,0 +1,12 @@
+Invitation acceptée pour {{ workspace_name }} - {{ app_name }}
+
+Bonjour {{ admin_name }},
+
+L'invitation que vous avez envoyée pour rejoindre l'espace {{ workspace_name }} a été acceptée par {{ member_name }} ({{ member_email }}).
+
+Ce collaborateur a rejoint votre espace avec le rôle {{ role_display }}.
+
+Pour voir la liste des membres :
+{{ workspace_members_url }}
+
+L'équipe {{ app_name }}

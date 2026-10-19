@@ -219,3 +219,25 @@ class IsActiveCommunityMember(BasePermission):
 
         return is_active_community_member(request.user, community)
 
+
+IsWorkspaceAdmin = IsCommunityAdmin
+
+
+def check_last_admin_protection(community: Community, target_user_id) -> None:
+    """
+    Prevents downgrading or removing the sole remaining active administrator/owner of a workspace.
+    """
+    from common.exceptions.handler import BusinessLogicError
+
+    active_admins = CommunityMember.objects.filter(
+        community=community,
+        status=MembershipStatus.ACTIVE,
+        role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
+    )
+    if active_admins.count() <= 1 and active_admins.filter(user_id=target_user_id).exists():
+        raise BusinessLogicError(
+            message="Le dernier administrateur d'un espace ne peut pas être rétrogradé ni retiré.",
+            code="last_admin_protection"
+        )
+
+

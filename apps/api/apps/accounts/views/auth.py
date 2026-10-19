@@ -52,11 +52,20 @@ class RegisterView(APIView):
             request=request
         )
         user_data = UserSerializer(user).data
+        redirect_url = serializer.validated_data.get('redirect_url', '').strip()
+        invitation_token = serializer.validated_data.get('invitation_token', '').strip()
+        if invitation_token and not redirect_url:
+            redirect_url = f"/invite/{invitation_token}"
+
+        if redirect_url:
+            user_data['redirect_url'] = redirect_url
+
         return success_response(
             data=user_data,
             message="Account successfully created. A verification email has been sent.",
             status_code=status.HTTP_201_CREATED
         )
+
 
 
 class LoginView(APIView):

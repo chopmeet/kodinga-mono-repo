@@ -61,7 +61,12 @@ class MembershipSelector:
 
     @classmethod
     def get_invitation_by_code(cls, invite_code: str) -> Optional[CommunityInvitation]:
+        from apps.memberships.models.invitation import InvitationStatus
+        from common.utils.tokens import hash_token
+        token_hash = hash_token(invite_code.strip())
         return CommunityInvitation.objects.filter(
-            invite_code=invite_code,
-            is_revoked=False
+            status=InvitationStatus.PENDING
+        ).filter(
+            Q(token_hash=token_hash) | Q(invite_code=invite_code)
         ).select_related('community', 'invited_by').first()
+

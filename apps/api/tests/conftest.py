@@ -8,9 +8,16 @@ def configure_test_settings(settings):
     """
     Override settings during test execution to prevent external network calls.
     """
+    from config.celery import app as celery_app
+
+    settings.IS_TESTING = True
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
+    celery_app.conf.update(
+        task_always_eager=True,
+        task_eager_propagates=True,
+    )
     settings.PASSWORD_HASHERS = [
         "django.contrib.auth.hashers.MD5PasswordHasher",
     ]
