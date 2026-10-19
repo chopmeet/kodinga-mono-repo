@@ -1,6 +1,6 @@
 // Labels shared by the admin community details and the community space (/c/:slug)
-import type { MemberRole, MemberStatus, PaymentStatus, PostType } from '@/data/admin-community-details.data';
-import type { BillingInterval, SubscriptionStatus } from '@/data/community-billing.data';
+import type { MemberRole, MemberStatus, PostType } from '@/data/admin-community-details.data';
+import type { BillingInterval, PaymentStatus, SubscriptionStatus } from '@/utils/api/billing/billing.type';
 
 export const memberRoleLabel: Record<MemberRole, string> = {
   owner: 'Propriétaire',

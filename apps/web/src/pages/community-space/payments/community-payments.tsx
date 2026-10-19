@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 
+import { TrendingUp } from 'lucide-react';
+
 import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga-mono-repo/ui';
-import { getBillingSummary } from '@/data/community-billing.data';
 import { useCommunitySpace } from '../community-space-context';
 import BillingOverview from './components/billing-overview';
-import RevenueChart from './components/revenue-chart';
+import SoonPanel from './components/soon-panel';
 import UseSpaceBilling from './form/UseSpaceBilling';
 
 const tabs: Tab[] = [
@@ -30,19 +31,20 @@ function Panel({ title, description, children }: { title: string; description?: 
 function CommunityPayments() {
   const { community } = useCommunitySpace();
   const billing = UseSpaceBilling(community);
-  const summary = getBillingSummary(community);
 
   return (
     <div className="community__payments">
       <TopTitle title="Abonnements & paiements" paragraph={`Formules, abonnés et encaissements de ${community.name}`} />
 
       <section aria-label="Indicateurs de facturation" className="mb-6">
-        <BillingOverview summary={summary} />
+        <BillingOverview plans={billing.plans} />
       </section>
 
       <div className="mb-6">
-        <Panel title="Encaissements" description="Montant brut payé par les membres, par mois (12 derniers mois)">
-          <RevenueChart data={summary.monthlyRevenue} />
+        <Panel title="Encaissements" description="Montant payé par les membres, par mois">
+          <SoonPanel icon={<TrendingUp className="size-6" />} title="Courbe des encaissements">
+            Vos revenus mois par mois, brut et net de la commission Kodinga, s’afficheront ici.
+          </SoonPanel>
         </Panel>
       </div>
 
@@ -50,7 +52,6 @@ function CommunityPayments() {
       <ColgateWrapper className="mt-4 border border-neutral-200 p-4">
         <Outlet context={billing} />
       </ColgateWrapper>
-      <p className="mt-2 text-xs text-slate-500">Données de démonstration, sur un échantillon des membres.</p>
     </div>
   );
 }

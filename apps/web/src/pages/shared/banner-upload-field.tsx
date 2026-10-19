@@ -2,7 +2,7 @@ import { CheckCircle2, ImageOff, ImagePlus, Link2, LoaderCircle, Trash2, Upload 
 import { type ChangeEvent, useId, useState } from 'react';
 
 import { cn, customToast, Input } from '@kodinga-mono-repo/ui';
-import { checkImage, useImageUpload } from '@/utils/api/media/useImageUpload';
+import { checkImage, useImageUpload } from '@/utils/Utils';
 
 type Props = {
   id?: string;

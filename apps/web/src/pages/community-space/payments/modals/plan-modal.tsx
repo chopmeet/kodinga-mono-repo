@@ -15,9 +15,9 @@ import {
   SelectInput,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
-import { MIN_PRICE, type SpacePlan } from '@/data/community-billing.data';
 import { intervalLabel, xof } from '@/pages/shared/community-labels';
-import type { PlanInput } from '../form/UseSpaceBilling';
+import type { CommunityPlan } from '@/utils/api/billing/billing.type';
+import { MIN_PRICE, type PlanInput } from '../form/UseSpaceBilling';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Donnez un nom à la formule'),
@@ -34,15 +34,16 @@ type Values = z.input<typeof schema>;
 
 type Props = {
   open: boolean;
-  plan: SpacePlan | null;
+  plan: CommunityPlan | null;
   existingNames: string[];
   onOpenChange: (open: boolean) => void;
-  onSave: (input: PlanInput, editing: SpacePlan | null) => void;
+  /** true once the api accepted it: the dialog closes */
+  onSave: (input: PlanInput, editing: CommunityPlan | null) => Promise<boolean>;
 };
 
-const toValues = (plan: SpacePlan | null): Values => ({
+const toValues = (plan: CommunityPlan | null): Values => ({
   name: plan?.name ?? '',
-  price: plan?.price ?? MIN_PRICE,
+  price: plan ? Number(plan.price) : 5000,
   billing_interval: plan?.billing_interval ?? 'month',
   description: plan?.description ?? '',
   features: plan?.features.join('\n') ?? '',
@@ -68,8 +69,7 @@ function PlanModal({ open, plan, existingNames, onOpenChange, onSave }: Props) {
       setError('name', { message: 'Une formule porte déjà ce nom.' });
       return;
     }
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    onSave(
+    const saved = await onSave(
       {
         name,
         price: values.price,
@@ -79,7 +79,7 @@ function PlanModal({ open, plan, existingNames, onOpenChange, onSave }: Props) {
       },
       plan
     );
-    onOpenChange(false);
+    if (saved) onOpenChange(false);
   };
 
   return (
@@ -88,8 +88,8 @@ function PlanModal({ open, plan, existingNames, onOpenChange, onSave }: Props) {
         <DialogHeader>
           <DialogTitle>{plan ? `Modifier « ${plan.name} »` : 'Nouvelle formule'}</DialogTitle>
           <DialogDescription>
-            {plan && plan.subscribers_count > 0
-              ? `Un changement de prix s'applique au prochain renouvellement de ses ${plan.subscribers_count} abonnés.`
+            {plan
+              ? 'Un changement de prix s’applique aux prochains paiements, pas aux abonnements en cours.'
               : 'Les membres choisissent leur formule au moment de rejoindre la communauté.'}
           </DialogDescription>
         </DialogHeader>

@@ -8,8 +8,8 @@ import type { ImageSource } from '@/pages/public/create-community/components/ima
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetUser } from '@/redux/slice/User.slice';
 import { parseApiError } from '@/utils/api/errors';
-import { useImageUpload } from '@/utils/api/media/useImageUpload';
-import type { AvailabilityStatus, MyProfile } from '@/utils/api/profile/profile.type';
+import { useImageUpload } from '@/utils/Utils';
+import type { MyProfile } from '@/utils/api/profile/profile.type';
 import { useGetMyProfileQuery, useUpdateMeMutation, useUpdateMyProfileMutation } from '@/utils/api/user/user.api';
 
 const optionalUrl = z.string().trim().refine((v) => !v || /^https?:\/\/\S+\.\S+/.test(v), 'Lien invalide (https://…)');
@@ -45,13 +45,6 @@ const profileSchema = z.object({
 export type ProfileValues = z.infer<typeof profileSchema>;
 type ImageKind = 'avatar' | 'banner';
 type ImageState = { source: ImageSource; file: File | null };
-
-export const availabilityLabel: Record<AvailabilityStatus, string> = {
-  available: 'Disponible',
-  open_to_offers: 'À l’écoute des offres',
-  busy: 'Occupé',
-  unavailable: 'Non disponible',
-};
 
 const valuesOf = (profile: MyProfile | undefined, user: { first_name?: string; last_name?: string } | null): ProfileValues => ({
   first_name: user?.first_name ?? '',

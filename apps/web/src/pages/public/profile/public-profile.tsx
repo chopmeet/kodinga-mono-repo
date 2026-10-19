@@ -1,5 +1,5 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { ArrowLeft, CalendarDays, Copy, MapPin, MessageCircle, Pencil, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, CalendarDays, Copy, FolderKanban, MapPin, MessageCircle, Pencil, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -9,6 +9,9 @@ import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
 import { nameInitials, useUser } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
+import { ProfileAbout, ProfileAvailability, ProfileCareer, ProfileLinks, ProfilePortfolio } from './components/profile-details';
+
+type TabId = 'about' | 'career' | 'portfolio' | 'communities' | 'contributions';
 
 const joinedFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -35,7 +38,7 @@ function PublicProfile() {
   const { username = '' } = useParams();
   const { data: profile, isLoading, error } = useGetPublicProfileQuery(username, { skip: !username });
   const me = useUser();
-  const [tab, setTab] = useState<'communities' | 'contributions'>('communities');
+  const [tab, setTab] = useState<TabId>('about');
   const year = new Date().getFullYear();
 
   if (isLoading) {
@@ -103,7 +106,8 @@ function PublicProfile() {
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{name}</h1>
           <p className="mt-2 text-sm text-slate-500">@{profile.user.username}</p>
-          {(profile.headline || profile.bio) && <p className="mt-5 text-slate-700">{profile.headline || profile.bio}</p>}
+          {profile.headline && <p className="mt-5 text-slate-700">{profile.headline}</p>}
+          <ProfileAvailability profile={profile} />
 
           <ul className="mt-5 space-y-2 text-sm text-slate-600">
             {profile.location && (
@@ -117,6 +121,7 @@ function PublicProfile() {
               Inscrit le {joinedFormat.format(new Date(profile.user.date_joined))}
             </li>
           </ul>
+          <ProfileLinks profile={profile} />
 
           <dl className="mt-8 grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-5 text-center">
             {STATS.map((label) => (
@@ -174,9 +179,12 @@ function PublicProfile() {
             <ActivityHeatmap year={year} />
           </div>
 
-          <div className="mt-12 flex gap-2 border-b border-slate-200" role="tablist">
+          <div className="no-scrollbar mt-12 flex gap-2 overflow-x-auto border-b border-slate-200" role="tablist">
             {(
               [
+                { id: 'about', label: 'À propos', icon: UserRound },
+                { id: 'career', label: 'Parcours', icon: Briefcase },
+                { id: 'portfolio', label: 'Portfolio', icon: FolderKanban },
                 { id: 'communities', label: 'Communautés', icon: Users },
                 { id: 'contributions', label: 'Contributions', icon: MessageCircle },
               ] as const
@@ -188,7 +196,7 @@ function PublicProfile() {
                 aria-selected={tab === id}
                 onClick={() => setTab(id)}
                 className={cn(
-                  '-mb-px flex items-center gap-2 border-b-2 px-1 py-3 font-medium transition-colors sm:px-3',
+                  '-mb-px flex shrink-0 items-center gap-2 border-b-2 px-1 py-3 font-medium transition-colors sm:px-3',
                   tab === id ? 'border-primary text-primary' : 'border-transparent text-slate-700 hover:text-slate-900'
                 )}
               >
@@ -197,18 +205,25 @@ function PublicProfile() {
               </button>
             ))}
           </div>
-          <div role="tabpanel" className="flex flex-col items-center py-14 text-center">
-            <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
-              {tab === 'communities' ? <Users className="size-6" /> : <MessageCircle className="size-6" />}
-            </span>
-            <p className="mt-4 font-semibold text-slate-900">
-              {tab === 'communities' ? 'Communautés bientôt visibles' : 'Contributions bientôt visibles'}
-            </p>
-            <p className="mt-1 max-w-sm text-sm text-slate-500">
-              {tab === 'communities'
-                ? `Les communautés de ${name} apparaîtront ici.`
-                : `Les publications et réponses de ${name} apparaîtront ici.`}
-            </p>
+          <div role="tabpanel">
+            {tab === 'about' && <ProfileAbout profile={profile} name={name} />}
+            {tab === 'career' && <ProfileCareer profile={profile} name={name} />}
+            {tab === 'portfolio' && <ProfilePortfolio profile={profile} name={name} />}
+            {(tab === 'communities' || tab === 'contributions') && (
+              <div className="flex flex-col items-center py-14 text-center">
+                <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
+                  {tab === 'communities' ? <Users className="size-6" /> : <MessageCircle className="size-6" />}
+                </span>
+                <p className="mt-4 font-semibold text-slate-900">
+                  {tab === 'communities' ? 'Communautés bientôt visibles' : 'Contributions bientôt visibles'}
+                </p>
+                <p className="mt-1 max-w-sm text-sm text-slate-500">
+                  {tab === 'communities'
+                    ? `Les communautés de ${name} apparaîtront ici.`
+                    : `Les publications et réponses de ${name} apparaîtront ici.`}
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </div>

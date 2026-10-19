@@ -3,9 +3,10 @@ import { type ReactNode, useState } from 'react';
 
 import { Button, Loader } from '@kodinga-mono-repo/ui';
 import type { ProfileEducation, ProfileExperience } from '@/utils/api/profile/profile.type';
-import UseProfileEntries, { period } from '../form/UseProfileEntries';
+import { employmentLabel, period } from '@/pages/shared/profile-labels';
+import UseProfileEntries from '../form/UseProfileEntries';
 import EducationModal from '../modals/education-modal';
-import ExperienceModal, { employmentLabel } from '../modals/experience-modal';
+import ExperienceModal from '../modals/experience-modal';
 
 function Entry({ title, subtitle, meta, children, onEdit, onDelete, label }: { title: string; subtitle: string; meta: string; children?: ReactNode; onEdit: () => void; onDelete: () => void; label: string }) {
   return (

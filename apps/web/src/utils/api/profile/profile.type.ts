@@ -36,6 +36,13 @@ export type PublicProfile = {
   views_count: number;
   reputation_points: number;
   skills: ProfileSkill[];
+  gitlab_username?: string;
+  open_to_freelance?: boolean;
+  open_to_remote?: boolean;
+  open_to_relocation?: boolean;
+  experiences?: ProfileExperience[];
+  educations?: ProfileEducation[];
+  portfolio_projects?: PortfolioProject[];
 };
 
 export type ProfileExperience = {

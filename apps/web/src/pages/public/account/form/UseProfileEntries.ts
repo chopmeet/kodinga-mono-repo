@@ -20,13 +20,6 @@ import {
 export const toMonth = (date: string | null | undefined) => (date ? date.slice(0, 7) : '');
 export const fromMonth = (month: string) => (month ? `${month}-01` : null);
 
-const monthYear = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric' });
-/** "mars 2022 – aujourd’hui" */
-export function period(start: string, end: string | null, current: boolean) {
-  const from = monthYear.format(new Date(start));
-  return `${from} – ${current || !end ? 'aujourd’hui' : monthYear.format(new Date(end))}`;
-}
-
 /**
  * Skills, experiences, educations and portfolio of the signed-in user (profiles/me/<entries>/).
  * Each action returns true when the api accepted it, so that a modal closes only then.

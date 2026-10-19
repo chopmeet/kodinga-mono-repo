@@ -1,14 +1,54 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-import { getCommunityPayments } from '@/data/admin-community-details.data';
-import { getCommunitySubscriptions } from '@/data/community-billing.data';
 import { getMyCommunity } from '@/data/community-space.data';
+import store from '@/redux/store';
 import { must, renderAppAt, SLOW } from '@/test-utils';
-
-const lagos = () => must(getMyCommunity('lagos-ai-data')).community;
+import { CommunityApi } from '@/utils/api/community/community.api';
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
+
+type Call = { method: string; url: URL; body: Record<string, unknown> | null };
+const plan = (id: string, name: string, price: string, billing_interval: string, order: number) => ({
+  id, name, slug: id, description: '', price, currency: 'XOF', billing_interval, interval_count: 1,
+  community_id: 'c-lagos', community_name: 'Lagos AI', features: ['Fil et discussions'], is_active: true, order,
+});
+
+/** Plans of lagos-ai-data (billing/plans/): the api lists the active ones only */
+function stubPlansApi() {
+  const calls: Call[] = [];
+  let plans = [plan('p-month', 'Mensuel', '15000.00', 'month', 0), plan('p-year', 'Annuel', '150000.00', 'year', 1)];
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const request = input as Request;
+    const url = new URL(request.url);
+    const text = request.method === 'GET' ? '' : await request.text();
+    const body = text ? JSON.parse(text) : null;
+    calls.push({ method: request.method, url, body });
+    const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+    const path = url.pathname;
+    if (path.endsWith('/billing/plans/') && request.method === 'GET') return json({ success: true, data: plans.filter((p) => p.is_active) });
+    if (path.endsWith('/billing/plans/') && request.method === 'POST') {
+      const created = plan('p-new', String(body?.name), `${body?.price}.00`, String(body?.billing_interval), plans.length);
+      plans = [...plans, created];
+      return json({ success: true, data: created }, 201);
+    }
+    const id = path.match(/billing\/plans\/([^/]+)\/$/)?.[1];
+    if (id && request.method === 'DELETE') {
+      plans = plans.map((p) => (p.id === id ? { ...p, is_active: false } : p));
+      return json({ success: true, data: null });
+    }
+    return json({ success: true, data: [], pagination: { count: 0 }, results: [] });
+  });
+  return calls;
+}
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  act(() => {
+    store.dispatch(CommunityApi.util.resetApiState());
+  });
+});
 
 describe('Community space: subscriptions & payments', () => {
   it('is reserved to the owner of a paid community', async () => {
@@ -20,72 +60,55 @@ describe('Community space: subscriptions & payments', () => {
     await waitFor(() => expect(freeOwner.where()).toBe('/c/dakar-devops/dashboard'));
   });
 
-  it('opens on the plans with the key figures', async () => {
+  it('opens on the plans of the api, with the key figures', async () => {
+    stubPlansApi();
     const { where } = renderAppAt('/c/lagos-ai-data/payments');
     await waitFor(() => expect(where()).toBe('/c/lagos-ai-data/payments/plans'));
     expect(screen.getByRole('heading', { name: 'Abonnements & paiements' })).toBeTruthy();
-    expect(screen.getByText('Net pour vous (après 10 % de commission)')).toBeTruthy();
-    expect(screen.getByRole('listitem', { name: 'Formule Mensuel' })).toBeTruthy();
+    expect(await screen.findByRole('listitem', { name: 'Formule Mensuel' }, SLOW)).toBeTruthy();
     expect(screen.getByRole('listitem', { name: 'Formule Annuel' })).toBeTruthy();
+    expect(screen.getByText('Formules proposées')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Indicateurs de facturation' }).textContent).toMatch(/15\s000 FCFA \/ moisPrix d’entrée/);
   });
 
-  it('refuses a price under the platform minimum, then creates the plan', async () => {
+  it('refuses a price under the minimum of the api, then creates the plan', async () => {
+    const calls = stubPlansApi();
+    const { community } = must(getMyCommunity('lagos-ai-data'));
     renderAppAt('/c/lagos-ai-data/payments/plans');
     fireEvent.click(await screen.findByRole('button', { name: 'Nouvelle formule' }, SLOW));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     fireEvent.change(within(dialog).getByLabelText(/^Nom/), { target: { value: 'Étudiant' } });
-    fireEvent.change(within(dialog).getByLabelText(/Prix/), { target: { value: '1000' } });
+    fireEvent.change(within(dialog).getByLabelText(/Prix/), { target: { value: '300' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Créer la formule' }));
     expect(await within(dialog).findByText(/Prix minimum/, {}, SLOW)).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/Prix/), { target: { value: '5000' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Créer la formule' }));
     expect(await screen.findByRole('listitem', { name: 'Formule Étudiant' }, SLOW)).toBeTruthy();
+    expect(calls.find((c) => c.method === 'POST')?.body).toMatchObject({ community_id: community.id, name: 'Étudiant', price: 5000, billing_interval: 'month' });
   });
 
-  it('always keeps one plan open to new members', async () => {
+  it('stops offering a plan, but always keeps one', async () => {
+    const calls = stubPlansApi();
     renderAppAt('/c/lagos-ai-data/payments/plans');
-    const monthly = await screen.findByRole('listitem', { name: 'Formule Mensuel' }, SLOW);
-    const yearly = screen.getByRole('listitem', { name: 'Formule Annuel' });
-    fireEvent.click(within(yearly).getByRole('button', { name: 'Désactiver' }));
-    expect(within(yearly).getByText('Désactivée')).toBeTruthy();
-    fireEvent.click(within(monthly).getByRole('button', { name: 'Désactiver' }));
-    expect(await screen.findByText(/Gardez au moins une formule active/, {}, SLOW)).toBeTruthy();
-    expect(within(monthly).getByText('Active')).toBeTruthy();
+    const yearly = await screen.findByRole('listitem', { name: 'Formule Annuel' }, SLOW);
+    fireEvent.click(within(yearly).getByRole('button', { name: 'Ne plus proposer' }));
+    fireEvent.click(within(yearly).getByRole('button', { name: 'Confirmer' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/billing/plans/p-year/'))).toBe(true), SLOW);
+    await waitFor(() => expect(screen.queryByRole('listitem', { name: 'Formule Annuel' })).toBeNull(), SLOW);
+
+    const monthly = screen.getByRole('listitem', { name: 'Formule Mensuel' });
+    fireEvent.click(within(monthly).getByRole('button', { name: 'Ne plus proposer' }));
+    fireEvent.click(within(monthly).getByRole('button', { name: 'Confirmer' }));
+    expect(await screen.findByText(/Gardez au moins une formule/, {}, SLOW)).toBeTruthy();
+    expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
   });
 
-  it('lists unpaid subscriptions and sends a reminder', async () => {
-    const unpaid = getCommunitySubscriptions(lagos()).filter((s) => s.status === 'past_due');
-    expect(unpaid.length).toBeGreaterThan(0);
+  it('says that subscribers and payments are coming soon', async () => {
+    stubPlansApi();
     renderAppAt('/c/lagos-ai-data/payments/subscribers');
-    fireEvent.click(await screen.findByRole('button', { name: /Impayés/ }, SLOW));
-    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(unpaid.length + 1);
-    fireEvent.click(screen.getByRole('button', { name: `Relancer ${unpaid[0].member}` }));
-    expect(await screen.findByText(`Rappel de paiement envoyé à ${unpaid[0].member}.`, {}, SLOW)).toBeTruthy();
-  });
-
-  it('exports the filtered payments as CSV', async () => {
-    const failed = getCommunityPayments(lagos()).filter((p) => p.status === 'FAILED');
-    expect(failed.length).toBeGreaterThan(0);
-    const createObjectURL = vi.fn(() => 'blob:csv');
-    URL.createObjectURL = createObjectURL;
-    URL.revokeObjectURL = vi.fn();
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
-
+    expect(await screen.findByText(/La liste de vos abonnés/, {}, SLOW)).toBeTruthy();
+    cleanup();
     renderAppAt('/c/lagos-ai-data/payments/transactions');
-    fireEvent.click(await screen.findByRole('button', { name: /Échecs/ }, SLOW));
-    fireEvent.click(screen.getByRole('button', { name: 'Exporter (CSV)' }));
-
-    expect(click).toHaveBeenCalledTimes(1);
-    const blob = (createObjectURL.mock.calls[0] as unknown as [Blob])[0];
-    // jsdom's Blob has no .text()
-    const text = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.readAsText(blob);
-    });
-    const lines = text.trim().split('\n');
-    expect(lines[0]).toContain('Date;Membre;Formule');
-    expect(lines).toHaveLength(failed.length + 1);
-    click.mockRestore();
+    expect(await screen.findByText(/L’historique des paiements reçus/, {}, SLOW)).toBeTruthy();
   });
 });

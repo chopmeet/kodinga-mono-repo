@@ -2,17 +2,12 @@ import { Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { skillLevelLabel } from '@/pages/shared/profile-labels';
 import { TechnologyPicker } from '@/pages/shared/technology-picker';
 import type { Technology } from '@/utils/api/opportunity/opportunity.type';
 import type { SkillLevel } from '@/utils/api/profile/profile.type';
 import UseProfileEntries from '../form/UseProfileEntries';
 
-export const skillLevelLabel: Record<SkillLevel, string> = {
-  beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
-  expert: 'Expert',
-};
 const levelStyle: Record<SkillLevel, string> = {
   beginner: 'bg-slate-100 text-slate-600',
   intermediate: 'bg-sky-50 text-sky-800',

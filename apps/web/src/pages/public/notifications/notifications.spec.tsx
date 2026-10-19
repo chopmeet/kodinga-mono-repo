@@ -85,8 +85,10 @@ describe('notificationHref', () => {
     expect(notificationHref('/communities/a/hackathons/h/results')).toBe('/communities/a/hackathons/h?tab=results');
     expect(notificationHref('/communities/a/hackathons/h/judging')).toBe('/c/a/hackathons/h?tab=projects');
     expect(notificationHref('/messages/42')).toBe('/messages/42');
+    expect(notificationHref('/projects/wari-pay')).toBe('/projects/wari-pay');
+    expect(notificationHref('/opportunities/dev-react')).toBe('/opportunities/dev-react');
+    expect(notificationHref('/opportunities/dev-react/applications')).toBe('/opportunities/dev-react');
     // No page in the app (yet), or not a path of the app
-    expect(notificationHref('/projects/wari-pay')).toBeNull();
     expect(notificationHref('/profile/badges')).toBeNull();
     expect(notificationHref('https://evil.example.com')).toBeNull();
     expect(notificationHref('//evil.example.com')).toBeNull();

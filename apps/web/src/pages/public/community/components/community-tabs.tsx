@@ -8,6 +8,8 @@ export const communityTabs = [
   { id: 'members', label: 'Membres' },
   { id: 'events', label: 'Événements' },
   { id: 'hackathons', label: 'Hackathons' },
+  { id: 'opportunities', label: 'Opportunités' },
+  { id: 'projects', label: 'Projets' },
   { id: 'leaderboard', label: 'Classement' },
   { id: 'about', label: 'À propos' },
 ] as const;

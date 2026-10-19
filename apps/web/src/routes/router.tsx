@@ -10,12 +10,15 @@ import CoursePlayerPage from '@/pages/public/community/course/course-player';
 import HackathonPageView from '@/pages/public/community/hackathon/hackathon-page';
 import Messages from '@/pages/public/messages/messages';
 import Notifications from '@/pages/public/notifications/notifications';
+import OpportunityPageView from '@/pages/public/opportunity/opportunity-page';
+import ProjectPageView from '@/pages/public/project/project-page';
 import AccountSettings from '@/pages/public/account/account-settings';
 import AccountProfileTab from '@/pages/public/account/tabs/profile-tab';
 import AccountSkillsTab from '@/pages/public/account/tabs/skills-tab';
 import AccountCareerTab from '@/pages/public/account/tabs/career-tab';
 import AccountPortfolioTab from '@/pages/public/account/tabs/portfolio-tab';
 import AccountSecurityTab from '@/pages/public/account/tabs/security-tab';
+import AccountBillingTab from '@/pages/public/account/tabs/billing-tab';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import Login from '@/pages/auth/login';
 import ResetPassword from '@/pages/auth/reset-password';
@@ -157,8 +160,17 @@ export const AppRoutes: RouteObject[] = [
           { path: 'skills', element: <AccountSkillsTab /> },
           { path: 'career', element: <AccountCareerTab /> },
           { path: 'portfolio', element: <AccountPortfolioTab /> },
+          { path: 'billing', element: <AccountBillingTab /> },
           { path: 'security', element: <AccountSecurityTab /> },
         ],
+      },
+      {
+        path: 'opportunities/:opportunitySlug',
+        element: <OpportunityPageView />,
+      },
+      {
+        path: 'projects/:projectSlug',
+        element: <ProjectPageView />,
       },
       {
         path: 'notifications',

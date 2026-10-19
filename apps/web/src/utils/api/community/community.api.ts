@@ -1,6 +1,6 @@
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
-import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
+import type { CheckoutSession, CommunityPlan, MyPayment, MySubscription, PaymentCheck, PlanWriteData } from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
 import type { AppNotification } from '../notification/notification.type';
@@ -93,6 +93,7 @@ export const CommunityApi = createApi({
     'conversations',
     'messages',
     'notifications',
+    'plans',
   ],
   baseQuery: authBaseQuery,
   endpoints: (builder) => ({
@@ -190,6 +191,38 @@ export const CommunityApi = createApi({
     getCommunityPlans: builder.query<CommunityPlan[], string>({
       query: (community) => ({ url: 'billing/plans/', params: { community } }),
       transformResponse: unwrap<CommunityPlan[]>,
+      providesTags: ['plans'],
+    }),
+    // Plans of a community, for its owner and admins: the api lists the active ones only
+    createPlan: builder.mutation<CommunityPlan, { community_id: string } & PlanWriteData>({
+      query: (body) => ({ url: 'billing/plans/', method: 'POST', body }),
+      transformResponse: unwrap<CommunityPlan>,
+      invalidatesTags: ['plans'],
+    }),
+    updatePlan: builder.mutation<CommunityPlan, { planId: string } & Partial<PlanWriteData>>({
+      query: ({ planId, ...body }) => ({ url: `billing/plans/${planId}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityPlan>,
+      invalidatesTags: ['plans'],
+    }),
+    // No delete: the plan is no longer offered (subscribers keep it until the end of their period)
+    deactivatePlan: builder.mutation<unknown, string>({
+      query: (planId) => ({ url: `billing/plans/${planId}/`, method: 'DELETE' }),
+      invalidatesTags: ['plans'],
+    }),
+    // The signed-in member: subscriptions, payments, and the status of one payment
+    getMySubscriptions: builder.query<MySubscription[], void>({
+      query: () => 'billing/subscriptions/me/',
+      transformResponse: unwrap<MySubscription[]>,
+      providesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    getMyPayments: builder.query<MyPayment[], void>({
+      query: () => 'billing/payments/my/',
+      transformResponse: unwrap<MyPayment[]>,
+      providesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    getPaymentStatus: builder.query<PaymentCheck, string>({
+      query: (paymentId) => `billing/payments/${paymentId}/status/`,
+      transformResponse: unwrap<PaymentCheck>,
     }),
     // PayDunya session: the browser goes to checkout_url, then comes back to return_url
     createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string }>({
@@ -836,6 +869,16 @@ export const CommunityApi = createApi({
       query: (opportunitySlug) => ({ url: `opportunities/${opportunitySlug}/`, method: 'DELETE' }),
       invalidatesTags: ['opportunities'],
     }),
+    // A member applies (CV, letter, portfolio: links); the poster is notified
+    applyToOpportunity: builder.mutation<OpportunityApplication, { opportunitySlug: string; resume_url: string; cover_letter: string; portfolio_url: string }>({
+      query: ({ opportunitySlug, ...body }) => ({ url: `opportunities/${opportunitySlug}/apply/`, method: 'POST', body }),
+      invalidatesTags: (_result, _error, { opportunitySlug }) => ['opportunities', { type: 'opportunities', id: opportunitySlug }, { type: 'opportunities', id: 'my-applications' }],
+    }),
+    // Applications of the signed-in user, with their status
+    getMyOpportunityApplications: builder.query<OpportunityApplication[], void>({
+      query: () => 'opportunities/my-applications/',
+      providesTags: [{ type: 'opportunities', id: 'my-applications' }],
+    }),
     getOpportunityApplications: builder.query<OpportunityApplication[], string>({
       query: (opportunitySlug) => `opportunities/${opportunitySlug}/applications/`,
       providesTags: (_result, _error, opportunitySlug) => [{ type: 'opportunities', id: `${opportunitySlug}-applications` }],
@@ -935,6 +978,12 @@ export const {
   useLeaveCommunityMutation,
   useGetCommunityPlansQuery,
   useCreateCheckoutMutation,
+  useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useDeactivatePlanMutation,
+  useGetMySubscriptionsQuery,
+  useGetMyPaymentsQuery,
+  useGetPaymentStatusQuery,
   useRequestUploadUrlMutation,
   useConfirmUploadMutation,
   useGetConversationsQuery,
@@ -1037,6 +1086,8 @@ export const {
   useUpdateOpportunityMutation,
   useCloseOpportunityMutation,
   useGetOpportunityApplicationsQuery,
+  useApplyToOpportunityMutation,
+  useGetMyOpportunityApplicationsQuery,
   useUpdateOpportunityApplicationStatusMutation,
   useGetTechnologiesQuery,
   useGetCommunityLeaderboardQuery,

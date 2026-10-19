@@ -6,7 +6,8 @@ import { Button, Input, Loader, TextareaInput } from '@kodinga-mono-repo/ui';
 import { ImageField } from '@/pages/public/create-community/components/image-field';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { AvailabilityStatus } from '@/utils/api/profile/profile.type';
-import UseProfileSettings, { availabilityLabel } from '../form/UseProfileSettings';
+import { availabilityLabel } from '@/pages/shared/profile-labels';
+import UseProfileSettings from '../form/UseProfileSettings';
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (

@@ -8,6 +8,7 @@ const tabs: Tab[] = [
   { id: 'skills', title: 'Compétences', link: 'skills' },
   { id: 'career', title: 'Parcours', link: 'career' },
   { id: 'portfolio', title: 'Portfolio', link: 'portfolio' },
+  { id: 'billing', title: 'Abonnements', link: 'billing' },
   { id: 'security', title: 'Sécurité', link: 'security' },
 ];
 

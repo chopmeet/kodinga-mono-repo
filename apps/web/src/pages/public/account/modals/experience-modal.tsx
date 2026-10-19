@@ -1,18 +1,10 @@
 import { useEffect, useState } from 'react';
 
+import { employmentLabel } from '@/pages/shared/profile-labels';
 import { TechnologyPicker } from '@/pages/shared/technology-picker';
 import type { EmploymentType, ProfileExperience } from '@/utils/api/profile/profile.type';
 import { fromMonth, type ProfileEntries, toMonth } from '../form/UseProfileEntries';
 import { EntryModal, Field } from './entry-modal';
-
-export const employmentLabel: Record<EmploymentType, string> = {
-  full_time: 'Temps plein',
-  part_time: 'Temps partiel',
-  freelance: 'Freelance',
-  contract: 'CDD / Prestation',
-  internship: 'Stage / Alternance',
-  apprenticeship: 'Apprentissage',
-};
 
 type Target = { experience: ProfileExperience | null } | null;
 

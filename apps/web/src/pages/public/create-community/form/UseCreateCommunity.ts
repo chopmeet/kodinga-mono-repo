@@ -11,8 +11,7 @@ import { suggestUsername } from '@/pages/auth/hooks/UseRegisterForm';
 import { useLoginUserMutation, useRegisterUserMutation } from '@/utils/api/auth/auth.api';
 import { useCreateCommunityMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
-import { useImageUpload } from '@/utils/api/media/useImageUpload';
-import { slugify } from '@/utils/Utils';
+import { slugify, useImageUpload } from '@/utils/Utils';
 import { type ImageSource, useFilePreview } from '../components/image-field';
 
 

@@ -16,7 +16,7 @@ export const NOTIFICATIONS_POLLING = 30_000;
 /**
  * Page of the app for the action_url of a notification, or null. The api names some pages after
  * its own routes: the hackathon ones go to the tabs of the hackathon page, the jury to the space
- * of the community. Opportunities, projects and badges have no page yet.
+ * of the community. Badges have no page yet.
  */
 export function notificationHref(actionUrl: string): string | null {
   const url = actionUrl.trim();
@@ -31,7 +31,10 @@ export function notificationHref(actionUrl: string): string | null {
     if (section === 'judging') return `/c/${slug}/hackathons/${hackathonSlug}?tab=projects`;
     return page;
   }
-  if (/^\/(communities|messages|profiles|c|invitations)(\/|$)/.test(url)) return url;
+  // The poster of an offer: its page (the applications are managed in the space of the community)
+  const offer = url.match(/^\/opportunities\/([^/?#]+)\/applications\/?$/);
+  if (offer) return `/opportunities/${offer[1]}`;
+  if (/^\/(communities|messages|profiles|c|invitations|opportunities|projects)(\/|$)/.test(url)) return url;
   return null;
 }
 
