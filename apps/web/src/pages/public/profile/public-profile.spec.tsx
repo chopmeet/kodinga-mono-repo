@@ -53,7 +53,7 @@ describe('Public profile', () => {
             years_of_experience: 5,
             github_username: 'ousmane',
             linkedin_url: 'https://linkedin.com/in/ousmane',
-            website_url: 'javascript:alert(1)',
+            website_url: 'https://uploadthing.com',
             skills: [
               { id: 's1', technology: { id: 't1', name: 'Django' }, level: 'advanced', years_of_experience: 4, is_highlighted: false },
               { id: 's2', technology: { id: 't2', name: 'React' }, level: 'expert', years_of_experience: 5, is_highlighted: true },
