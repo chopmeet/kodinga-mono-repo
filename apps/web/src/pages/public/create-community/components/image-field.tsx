@@ -4,7 +4,7 @@ import { AiFillCamera } from 'react-icons/ai';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
 import { cn, Input } from '@kodinga-mono-repo/ui';
-import { checkImage, type ImagePurpose } from '@/utils/api/media/useImageUpload';
+import { checkImage, type ImagePurpose } from '@/utils/Utils';
 
 export type ImageSource = 'file' | 'url';
 

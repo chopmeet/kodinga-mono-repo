@@ -17,6 +17,7 @@ export * from './components/dropdown-menu';
 export * from './components/icon';
 export * from './components/input';
 export * from './components/label';
+export * from './components/loader';
 export * from './components/nav-tabs';
 export * from './components/pagination';
 export * from './components/progress';

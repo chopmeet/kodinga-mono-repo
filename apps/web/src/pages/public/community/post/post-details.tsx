@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleCheck, LoaderCircle, Lock, MessageCircle, Pin, ThumbsUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Loader,
 } from '@kodinga-mono-repo/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { postTypeLabel } from '@/pages/shared/community-labels';
@@ -95,9 +96,7 @@ function PostDetails() {
 
   if (page.isLoading) {
     return (
-      <p className="flex items-center justify-center gap-2 py-24 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" /> Chargement de la publication…
-      </p>
+      <Loader inline className="py-24" message="Chargement de la publication…" />
     );
   }
 

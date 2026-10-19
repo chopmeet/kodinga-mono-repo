@@ -1,4 +1,5 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings, UserRound } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import {
   Avatar,
@@ -41,6 +42,21 @@ function DashboardHeader() {
               <div className="font-medium">{getName(user)}</div>
               <div className="text-xs text-muted-foreground">{user?.email}</div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {user?.username && (
+              <DropdownMenuItem asChild>
+                <Link to={`/profiles/${user.username}`}>
+                  <UserRound />
+                  Mon profil public
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <Link to="/account/profile">
+                <Settings />
+                Paramètres du compte
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={logout}>
               <LogOut />

@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-// Community search shared by the home hero and the header (shown once the hero scrolls away)
+//
 type SearchState = {
   query: string;
   heroSearchVisible: boolean;

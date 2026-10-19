@@ -1,8 +1,8 @@
-import { CircleCheck, LoaderCircle, Mail } from 'lucide-react';
+import { CircleCheck, Mail } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { Input } from '@kodinga-mono-repo/ui';
+import { Input, Loader } from '@kodinga-mono-repo/ui';
 import { useResendVerificationMutation, useVerifyEmailMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
 import AuthWrapper from './auth-wrapper';
@@ -85,10 +85,7 @@ function VerifyEmail() {
   if (status === 'pending') {
     return (
       <AuthWrapper title="Vérification…">
-        <div className="flex items-center gap-3 text-slate-600" role="status">
-          <LoaderCircle className="size-5 animate-spin text-brand" />
-          Nous vérifions votre adresse email.
-        </div>
+        <Loader inline size="sm" className="py-6" message="Nous vérifions votre adresse email." />
       </AuthWrapper>
     );
   }

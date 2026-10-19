@@ -1,6 +1,6 @@
 import { type BaseQueryFn, type FetchArgs, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
-import { onRefreshTokens } from '@/redux/slice/User.slice';
+import { onRefreshTokens, USER_STORAGE_KEY } from '@/redux/slice/User.slice';
 import { ApiBaseUrl } from '@/utils/http';
 import { isTokenExpired } from '@/utils/secure';
 import { AppStorage } from '@/utils/storage';
@@ -8,7 +8,7 @@ import type { AuthState } from './user/user.type';
 
 // Shared by every *Api: attaches the JWT stored by User.slice
 export const prepareHeaders = (headers: Headers, { getState }: { getState: () => unknown }) => {
-  const token = (getState() as { user: AuthState }).user.token ?? AppStorage.getItem<AuthState>('user')?.token;
+  const token = (getState() as { user: AuthState }).user.token ?? AppStorage.getItem<AuthState>(USER_STORAGE_KEY)?.token;
   if (token) headers.set('Authorization', `Bearer ${token}`);
   return headers;
 };

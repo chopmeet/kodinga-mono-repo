@@ -76,7 +76,8 @@ export type CommunitySettings = {
 export type CommunityRuleItem = { id: string; title: string; description: string; order: number };
 
 /** CommunityDetailSerializer (GET communities/<slug>/, and the 201 of POST communities/) */
-export type CommunityDetail = CommunityListItem & {
+export type CommunityDetail = CommunityListItem &
+  CommunityLinks & {
   description: string;
   user_membership: CommunityMembership;
   settings?: CommunitySettings | null;
@@ -96,6 +97,25 @@ export type CommunityCreateData = {
   banner_url?: string;
   settings?: { require_approval_to_join?: boolean };
 };
+
+/** PATCH communities/<slug>/ (CommunityCreateUpdateSerializer, partial) */
+export type CommunityUpdateData = Partial<{
+  name: string;
+  tagline: string;
+  description: string;
+  category_id: string | null;
+  privacy_type: CommunityPrivacy;
+  brand_color: string;
+  website_url: string;
+  github_url: string;
+  discord_url: string;
+  twitter_url: string;
+  whatsapp_url: string;
+  telegram_url: string;
+}>;
+
+/** Links of the detail serializer */
+export type CommunityLinks = { website_url?: string; github_url?: string; discord_url?: string; twitter_url?: string; whatsapp_url?: string; telegram_url?: string };
 
 /** Roles that manage a community (plain members do not): they open /c/<slug> */
 export type ManagedRole = Exclude<CommunityRole, 'member'>;

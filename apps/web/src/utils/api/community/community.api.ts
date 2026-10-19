@@ -1,10 +1,11 @@
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
-import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
+import type { CheckoutSession, CommunityPlan, MyPayment, MySubscription, PaymentCheck, PlanWriteData } from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
+import type { AppNotification } from '../notification/notification.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
-import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
+import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, LiveJoin, RsvpStatus } from '../event/event.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -44,6 +45,9 @@ import type {
   CommunityCategory,
   CommunityCreateData,
   CommunityDetail,
+  CommunityRuleItem,
+  CommunitySettings,
+  CommunityUpdateData,
   CommunityFeedQuery,
   CommunityListItem,
   CommunityListQuery,
@@ -88,6 +92,8 @@ export const CommunityApi = createApi({
     'invitations',
     'conversations',
     'messages',
+    'notifications',
+    'plans',
   ],
   baseQuery: authBaseQuery,
   endpoints: (builder) => ({
@@ -185,6 +191,38 @@ export const CommunityApi = createApi({
     getCommunityPlans: builder.query<CommunityPlan[], string>({
       query: (community) => ({ url: 'billing/plans/', params: { community } }),
       transformResponse: unwrap<CommunityPlan[]>,
+      providesTags: ['plans'],
+    }),
+    // Plans of a community, for its owner and admins: the api lists the active ones only
+    createPlan: builder.mutation<CommunityPlan, { community_id: string } & PlanWriteData>({
+      query: (body) => ({ url: 'billing/plans/', method: 'POST', body }),
+      transformResponse: unwrap<CommunityPlan>,
+      invalidatesTags: ['plans'],
+    }),
+    updatePlan: builder.mutation<CommunityPlan, { planId: string } & Partial<PlanWriteData>>({
+      query: ({ planId, ...body }) => ({ url: `billing/plans/${planId}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityPlan>,
+      invalidatesTags: ['plans'],
+    }),
+    // No delete: the plan is no longer offered (subscribers keep it until the end of their period)
+    deactivatePlan: builder.mutation<unknown, string>({
+      query: (planId) => ({ url: `billing/plans/${planId}/`, method: 'DELETE' }),
+      invalidatesTags: ['plans'],
+    }),
+    // The signed-in member: subscriptions, payments, and the status of one payment
+    getMySubscriptions: builder.query<MySubscription[], void>({
+      query: () => 'billing/subscriptions/me/',
+      transformResponse: unwrap<MySubscription[]>,
+      providesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    getMyPayments: builder.query<MyPayment[], void>({
+      query: () => 'billing/payments/my/',
+      transformResponse: unwrap<MyPayment[]>,
+      providesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    getPaymentStatus: builder.query<PaymentCheck, string>({
+      query: (paymentId) => `billing/payments/${paymentId}/status/`,
+      transformResponse: unwrap<PaymentCheck>,
     }),
     // PayDunya session: the browser goes to checkout_url, then comes back to return_url
     createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string }>({
@@ -445,6 +483,42 @@ export const CommunityApi = createApi({
     getEventAttendees: builder.query<ApiPaginated<EventAttendee>, { slug: string; eventId: string; page?: number; page_size?: number }>({
       query: ({ slug, eventId, ...params }) => ({ url: `communities/${slug}/events/${eventId}/attendees/`, params: cleanParams(params) }),
       providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
+    }),
+    // A member (or anyone, for a public event) registers: attending or maybe; DELETE cancels
+    rsvpEvent: builder.mutation<unknown, { slug: string; eventId: string; status: RsvpStatus }>({
+      query: ({ slug, eventId, status }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'POST', body: { status } }),
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // Token of the LiveKit room of a "livekit" event (it also checks the attendee in); the host publishes
+    joinLiveEvent: builder.mutation<LiveJoin, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/join-live/`, method: 'POST' }),
+      transformResponse: unwrap<LiveJoin>,
+    }),
+    cancelEventRsvp: builder.mutation<unknown, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // In-app notifications of the signed-in user (no realtime: the header polls the unread count)
+    getNotifications: builder.query<ApiPaginated<AppNotification>, { page?: number; page_size?: number; unread?: boolean }>({
+      query: (params) => ({ url: 'notifications/', params: cleanParams(params) }),
+      providesTags: ['notifications'],
+    }),
+    getUnreadNotificationsCount: builder.query<number, void>({
+      query: () => 'notifications/unread-count/',
+      transformResponse: (response: ApiSuccess<{ unread_count: number }>) => unwrap(response).unread_count,
+      providesTags: ['notifications'],
+    }),
+    markNotificationRead: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `notifications/${id}/read/`, method: 'POST' }),
+      invalidatesTags: ['notifications'],
+    }),
+    markAllNotificationsRead: builder.mutation<unknown, void>({
+      query: () => ({ url: 'notifications/read-all/', method: 'POST' }),
+      invalidatesTags: ['notifications'],
+    }),
+    deleteNotification: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `notifications/${id}/`, method: 'DELETE' }),
+      invalidatesTags: ['notifications'],
     }),
     // Hackathons of a community (apps/hackathons): owner and admins manage them
     getCommunityHackathons: builder.query<ApiPaginated<HackathonListItem>, { slug: string; status?: HackathonStatus; page?: number; page_size?: number }>({
@@ -800,6 +874,16 @@ export const CommunityApi = createApi({
       query: (opportunitySlug) => ({ url: `opportunities/${opportunitySlug}/`, method: 'DELETE' }),
       invalidatesTags: ['opportunities'],
     }),
+    // A member applies (CV, letter, portfolio: links); the poster is notified
+    applyToOpportunity: builder.mutation<OpportunityApplication, { opportunitySlug: string; resume_url: string; cover_letter: string; portfolio_url: string }>({
+      query: ({ opportunitySlug, ...body }) => ({ url: `opportunities/${opportunitySlug}/apply/`, method: 'POST', body }),
+      invalidatesTags: (_result, _error, { opportunitySlug }) => ['opportunities', { type: 'opportunities', id: opportunitySlug }, { type: 'opportunities', id: 'my-applications' }],
+    }),
+    // Applications of the signed-in user, with their status
+    getMyOpportunityApplications: builder.query<OpportunityApplication[], void>({
+      query: () => 'opportunities/my-applications/',
+      providesTags: [{ type: 'opportunities', id: 'my-applications' }],
+    }),
     getOpportunityApplications: builder.query<OpportunityApplication[], string>({
       query: (opportunitySlug) => `opportunities/${opportunitySlug}/applications/`,
       providesTags: (_result, _error, opportunitySlug) => [{ type: 'opportunities', id: `${opportunitySlug}-applications` }],
@@ -814,6 +898,32 @@ export const CommunityApi = createApi({
     getTechnologies: builder.query<Technology[], string>({
       query: (search) => ({ url: 'profiles/technologies/', params: search ? { search } : undefined }),
       transformResponse: (response: ApiSuccess<Technology[]>) => unwrap(response),
+    }),
+    // Active categories (directory, settings of a community)
+    getCategories: builder.query<AdminCategoryItem[], void>({
+      query: () => 'communities/categories/',
+      transformResponse: unwrap<AdminCategoryItem[]>,
+      providesTags: ['categories'],
+    }),
+    // Settings of a community (owner and admins): profile, access, charter
+    updateCommunity: builder.mutation<CommunityDetail, { slug: string } & CommunityUpdateData>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityDetail>,
+      invalidatesTags: (_result, _error, { slug }) => ['communities', { type: 'communities', id: slug }],
+    }),
+    updateCommunitySettings: builder.mutation<CommunitySettings, { slug: string } & Partial<CommunitySettings>>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/settings/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunitySettings>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
+    addCommunityRule: builder.mutation<CommunityRuleItem, { slug: string; title: string; description: string; order: number }>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/rules/`, method: 'POST', body }),
+      transformResponse: unwrap<CommunityRuleItem>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
+    deleteCommunityRule: builder.mutation<unknown, { slug: string; ruleId: string }>({
+      query: ({ slug, ruleId }) => ({ url: `communities/${slug}/rules/${ruleId}/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
     }),
     // The api archives (is_active = false): owner or superuser only
     archiveCommunity: builder.mutation<ApiSuccess<undefined>, string>({
@@ -861,6 +971,11 @@ export const {
   useGetMyManagedCommunitiesQuery,
   useCreateCommunityMutation,
   useArchiveCommunityMutation,
+  useGetCategoriesQuery,
+  useUpdateCommunityMutation,
+  useUpdateCommunitySettingsMutation,
+  useAddCommunityRuleMutation,
+  useDeleteCommunityRuleMutation,
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
   useGetCommunityMemberJoinsQuery,
@@ -868,6 +983,12 @@ export const {
   useLeaveCommunityMutation,
   useGetCommunityPlansQuery,
   useCreateCheckoutMutation,
+  useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useDeactivatePlanMutation,
+  useGetMySubscriptionsQuery,
+  useGetMyPaymentsQuery,
+  useGetPaymentStatusQuery,
   useRequestUploadUrlMutation,
   useConfirmUploadMutation,
   useGetConversationsQuery,
@@ -911,6 +1032,14 @@ export const {
   useDeleteEventMutation,
   useUpdateEventStatusMutation,
   useGetEventAttendeesQuery,
+  useRsvpEventMutation,
+  useCancelEventRsvpMutation,
+  useJoinLiveEventMutation,
+  useGetNotificationsQuery,
+  useGetUnreadNotificationsCountQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  useDeleteNotificationMutation,
   useGetCommunityHackathonsQuery,
   useGetHackathonQuery,
   useCreateHackathonMutation,
@@ -963,6 +1092,8 @@ export const {
   useUpdateOpportunityMutation,
   useCloseOpportunityMutation,
   useGetOpportunityApplicationsQuery,
+  useApplyToOpportunityMutation,
+  useGetMyOpportunityApplicationsQuery,
   useUpdateOpportunityApplicationStatusMutation,
   useGetTechnologiesQuery,
   useGetCommunityLeaderboardQuery,
