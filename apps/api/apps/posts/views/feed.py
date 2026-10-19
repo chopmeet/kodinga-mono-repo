@@ -54,13 +54,24 @@ class CommunityFeedView(APIView):
         pinned_param = request.query_params.get('pinned')
         is_pinned = pinned_param.lower() in ['true', '1'] if pinned_param else None
 
+        since_param = request.query_params.get('since')
+        since = None
+        if since_param:
+            try:
+                from django.utils.dateparse import parse_datetime
+
+                since = parse_datetime(since_param)
+            except Exception:
+                pass
+
         queryset = PostSelector.get_community_feed(
             community=community,
             category_slug=category,
             post_type=post_type,
             search=q,
             is_pinned=is_pinned,
-            user=request.user
+            user=request.user,
+            since=since,
         )
 
         paginator = self.pagination_class()

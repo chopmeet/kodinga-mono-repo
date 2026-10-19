@@ -42,18 +42,22 @@ class MessagingSelector:
         return conversation
 
     @classmethod
-    def get_conversation_messages(cls, conversation, user):
+    def get_conversation_messages(cls, conversation, user, since=None):
         from common.permissions.base import is_superadmin_user
+
         is_participant = conversation.participants.filter(user=user).exists()
         if not is_participant and not is_superadmin_user(user):
             raise PermissionDenied("Vous n'avez pas accès à cette conversation.")
 
-        return (
+        qs = (
             Message.objects.filter(conversation=conversation)
             .select_related("sender__profile")
             .prefetch_related("attachments")
             .order_by("created_at")
         )
+        if since is not None:
+            qs = qs.filter(created_at__gt=since)
+        return qs
 
     @classmethod
     def get_pinned_messages(cls, conversation, user):
