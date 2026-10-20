@@ -6,6 +6,9 @@ import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { eventTypeLabel, formatEventPlace } from '@/pages/community-space/events/event-labels';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
+import type { CommunityPage } from '../form/UseCommunityPage';
+import UseEventRsvp from '../form/UseEventRsvp';
+import { EventRsvpActions } from './event-rsvp';
 import { SectionHeader } from './section-header';
 
 const PAGE_SIZE = 10;
@@ -21,7 +24,9 @@ function timeRange(event: CommunityEvent) {
 }
 
 /** Upcoming events of the community (GET communities/<slug>/events/?upcoming=true, public) */
-export function EventsTab({ slug }: { slug: string }) {
+export function EventsTab({ page }: { page: CommunityPage }) {
+  const slug = page.slug;
+  const rsvp = UseEventRsvp(slug);
   const [count, setCount] = useState(PAGE_SIZE);
   const { data, isLoading, isFetching } = useGetCommunityEventsQuery({ slug, upcoming: true, page: 1, page_size: count });
   const events = data?.results ?? [];
@@ -30,7 +35,7 @@ export function EventsTab({ slug }: { slug: string }) {
   return (
     <section>
       <SectionHeader eyebrow="Se retrouver" title="Événements" aside={<CalendarDays className="size-7 text-amber-600" aria-hidden />}>
-        Ateliers, lives et rencontres à venir dans la communauté.
+        Ateliers, lives et rencontres à venir dans la communauté. Inscrivez-vous pour recevoir le lien et l’ajouter à votre agenda.
       </SectionHeader>
 
       {isLoading ? (
@@ -77,9 +82,13 @@ export function EventsTab({ slug }: { slug: string }) {
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Users className="size-4 text-slate-400" /> {event.attendees_count} participant{event.attendees_count > 1 ? 's' : ''}
-                          {event.is_full && <span className="font-medium text-amber-700">· complet</span>}
+                          {event.max_attendees ? ` / ${event.max_attendees}` : ''}
                         </span>
                       </p>
+                      {event.description && <p className="mt-3 line-clamp-3 text-sm text-slate-600">{event.description}</p>}
+                      <div className="mt-4">
+                        <EventRsvpActions event={event} page={page} rsvp={rsvp} />
+                      </div>
                     </div>
                   </div>
                 </li>

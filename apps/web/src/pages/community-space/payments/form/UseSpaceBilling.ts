@@ -1,56 +1,56 @@
-import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
 import { customToast } from '@kodinga-mono-repo/ui';
-import { type AdminPayment, getCommunityPayments } from '@/data/admin-community-details.data';
-import {
-  getCommunityPlans,
-  getCommunitySubscriptions,
-  type SpacePlan,
-  type SpaceSubscription,
-} from '@/data/community-billing.data';
+import type { CommunityPlan, PlanWriteData } from '@/utils/api/billing/billing.type';
+import { useCreatePlanMutation, useDeactivatePlanMutation, useGetCommunityPlansQuery, useUpdatePlanMutation } from '@/utils/api/community/community.api';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
 
-export type PlanInput = Pick<SpacePlan, 'name' | 'description' | 'price' | 'billing_interval' | 'features'>;
+/** Lowest price the api accepts for a plan (CommunityPlanCreateUpdateSerializer) */
+export const MIN_PRICE = 500;
+
+export type PlanInput = PlanWriteData;
 
 /**
- * Billing of one community for its owner. Mock: plan changes live in local state, shared by the
- * three tabs through the Outlet context. With the api: plans CRUD scoped to the community,
- * GET subscriptions / payments of the community.
+ * Billing of one community for its owner: the plans (GET / POST / PATCH / DELETE billing/plans/).
+ * The api lists the active plans only, and has nothing yet on the subscribers, the payments and
+ * the revenue of a community: those parts of the page say so.
  */
 function UseSpaceBilling(community: CommunityListItem) {
-  const [plans, setPlans] = useState<SpacePlan[]>(() => getCommunityPlans(community));
-  const [subscriptions] = useState<SpaceSubscription[]>(() => getCommunitySubscriptions(community));
-  const [payments] = useState<AdminPayment[]>(() => getCommunityPayments(community));
+  const { data = [], isLoading } = useGetCommunityPlansQuery(community.slug);
+  const [createPlan] = useCreatePlanMutation();
+  const [updatePlan] = useUpdatePlanMutation();
+  const [deactivatePlan] = useDeactivatePlanMutation();
+  const plans = [...data].filter((p) => p.is_active).sort((a, b) => a.order - b.order || Number(a.price) - Number(b.price));
 
-  const savePlan = (input: PlanInput, editing: SpacePlan | null) => {
-    if (editing) {
-      setPlans((list) => list.map((p) => (p.id === editing.id ? { ...p, ...input } : p)));
-      customToast.success({ message: `Formule « ${input.name} » mise à jour.` });
-      return;
+  /** true once the api accepted it: the dialog closes */
+  const savePlan = async (input: PlanInput, editing: CommunityPlan | null) => {
+    try {
+      if (editing) await updatePlan({ planId: editing.id, ...input }).unwrap();
+      else await createPlan({ community_id: community.id, ...input }).unwrap();
+      customToast.success({ message: editing ? `Formule « ${input.name} » mise à jour.` : `Formule « ${input.name} » créée.` });
+      return true;
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+      return false;
     }
-    setPlans((list) => [
-      ...list,
-      { ...input, id: `${community.slug}-plan-${Date.now()}`, currency: 'XOF', is_active: true, order: list.length + 1, subscribers_count: 0 },
-    ]);
-    customToast.success({ message: `Formule « ${input.name} » créée.` });
   };
 
-  const togglePlan = (plan: SpacePlan) => {
+  const removePlan = async (plan: CommunityPlan) => {
     // A paid community always keeps one plan open to new members
-    if (plan.is_active && plans.filter((p) => p.is_active).length <= 1) {
-      customToast.error({ message: 'Gardez au moins une formule active pour accueillir de nouveaux membres.' });
+    if (plans.length <= 1) {
+      customToast.error({ message: 'Gardez au moins une formule pour accueillir de nouveaux membres.' });
       return;
     }
-    setPlans((list) => list.map((p) => (p.id === plan.id ? { ...p, is_active: !p.is_active } : p)));
-    customToast.success({
-      message: plan.is_active ? `« ${plan.name} » n'est plus proposée aux nouveaux membres.` : `« ${plan.name} » est de nouveau proposée.`,
-    });
+    try {
+      await deactivatePlan(plan.id).unwrap();
+      customToast.success({ message: `« ${plan.name} » n’est plus proposée aux nouveaux membres.` });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    }
   };
 
-  const remind = (s: SpaceSubscription) => customToast.success({ message: `Rappel de paiement envoyé à ${s.member}.` });
-
-  return { plans, subscriptions, payments, savePlan, togglePlan, remind };
+  return { plans, isLoading, savePlan, removePlan };
 }
 
 export type SpaceBilling = ReturnType<typeof UseSpaceBilling>;

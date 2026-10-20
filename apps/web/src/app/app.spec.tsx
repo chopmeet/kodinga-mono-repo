@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -56,7 +56,8 @@ describe('App', () => {
 
   it('renders the login link in the header', () => {
     const { getByRole } = renderAt('/');
-    expect(getByRole('link', { name: /se connecter/i })).toBeTruthy();
+    // The footer has its own "Se connecter": the header one is checked
+    expect(within(getByRole('banner')).getByRole('link', { name: /se connecter/i })).toBeTruthy();
   });
 
   it('moves the search bar into the header once the hero search scrolls away', async () => {

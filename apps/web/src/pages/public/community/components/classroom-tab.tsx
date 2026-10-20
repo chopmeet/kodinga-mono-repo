@@ -1,7 +1,7 @@
 import { ArrowRight, BookOpen, Code2, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
-import { SoonBadge } from '@/pages/shared/row-actions';
 import { courseLevelLabel } from '@/pages/community-space/courses/course-labels';
 import { useGetCommunityCoursesQuery } from '@/utils/api/community/community.api';
 import type { Course } from '@/utils/api/course/course.type';
@@ -9,7 +9,7 @@ import type { CommunityPage } from '../form/UseCommunityPage';
 import { LockedPanel } from './locked-panel';
 import { SectionHeader } from './section-header';
 
-function CourseCard({ course, open }: { course: Course; open: boolean }) {
+function CourseCard({ course, open, slug }: { course: Course; open: boolean; slug: string }) {
   const progress = Math.round(course.user_progress_percent ?? 0);
   const started = progress > 0;
   return (
@@ -42,10 +42,12 @@ function CourseCard({ course, open }: { course: Course; open: boolean }) {
               <div className="mt-2 h-1.5 rounded-full bg-blue-50" aria-hidden>
                 <div className="h-full rounded-full bg-blue-900" style={{ width: `${progress}%` }} />
               </div>
-              {/* No course player for the members yet */}
-              <button type="button" disabled title="Bientôt disponible" className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg py-3 text-sm text-slate-500">
-                {started ? 'Continuer' : 'Découvrir le parcours'} <ArrowRight className="size-4" /> <SoonBadge />
-              </button>
+              <Link
+                to={`/communities/${slug}/courses/${course.slug}`}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-blue-50 hover:text-blue-950"
+              >
+                {progress >= 100 ? 'Revoir le parcours' : started ? 'Continuer' : 'Découvrir le parcours'} <ArrowRight className="size-4" />
+              </Link>
             </>
           ) : (
             <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
@@ -106,7 +108,7 @@ export function ClassroomTab({ page }: { page: CommunityPage }) {
         <ul className="grid gap-6 sm:grid-cols-2" aria-label="Formations">
           {courses.map((course) => (
             <li key={course.id}>
-              <CourseCard course={course} open={page.membership === 'member'} />
+              <CourseCard course={course} open={page.membership === 'member'} slug={page.slug} />
             </li>
           ))}
         </ul>

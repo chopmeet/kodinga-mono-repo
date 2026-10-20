@@ -109,7 +109,10 @@ describe('Public community page', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Abidjan React' }, SLOW)).toBeTruthy();
     expect(screen.getByText(/Meetup chaque mois à Cocody/)).toBeTruthy();
     expect(screen.getByText('Restez bienveillants')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Rejoindre la communauté' }).getAttribute('href')).toBe(`/auth/login?next=${encodeURIComponent('/communities/abidjan-react')}`);
+    // Twice: in the hero on phones (the side panel comes after the whole page) and in the side panel
+    const joins = screen.getAllByRole('link', { name: 'Rejoindre la communauté' });
+    expect(joins).toHaveLength(2);
+    joins.forEach((link) => expect(link.getAttribute('href')).toBe(`/auth/login?next=${encodeURIComponent('/communities/abidjan-react')}`));
   });
 
   it('opens the feed of a public and free community to everyone', async () => {

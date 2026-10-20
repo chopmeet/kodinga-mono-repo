@@ -1,6 +1,6 @@
-import { LoaderCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Loader } from '@kodinga-mono-repo/ui';
 
 import { useAppDispatch } from '@/redux/hook';
 import { onSetUserToken } from '@/redux/slice/User.slice';
@@ -78,10 +78,7 @@ function OAuthCallback() {
 
   return (
     <AuthWrapper title="Connexion en cours…">
-      <div className="flex items-center gap-3 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" />
-        Nous finalisons votre connexion.
-      </div>
+      <Loader inline size="sm" className="py-6" message="Nous finalisons votre connexion." />
     </AuthWrapper>
   );
 }

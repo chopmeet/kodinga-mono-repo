@@ -2,9 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast, Input, SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
-import { adminCategories } from '@/data/admin-communities.data';
+import { Input, SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
 import FormActions from '@/pages/shared/form-actions';
+import { useGetCategoriesQuery } from '@/utils/api/community/community.api';
 import { useCommunitySpace } from '../../community-space-context';
 import { useSpaceSettings } from '../form/UseSpaceSettings';
 
@@ -28,6 +28,7 @@ type Values = z.infer<typeof schema>;
 function GeneralTab() {
   const { community } = useCommunitySpace();
   const { profile, saveProfile } = useSpaceSettings();
+  const { data: categories = [] } = useGetCategoriesQuery();
   const {
     register,
     handleSubmit,
@@ -37,10 +38,7 @@ function GeneralTab() {
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: profile });
 
   const onSubmit = async (values: Values) => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    saveProfile(values);
-    reset(values);
-    customToast.success({ message: 'Informations de la communauté enregistrées.' });
+    if (await saveProfile(values)) reset(values);
   };
 
   return (
@@ -53,7 +51,7 @@ function GeneralTab() {
         <SelectInput
           label="Catégorie"
           placeholder="Aucune catégorie"
-          options={adminCategories.map((c) => ({ value: c.id, label: c.name }))}
+          options={categories.filter((c) => c.is_active !== false).map((c) => ({ value: c.id, label: c.name }))}
           {...register('category_id')}
         />
         <Input

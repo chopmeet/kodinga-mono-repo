@@ -10,11 +10,13 @@ type Picked = Pick<Technology, 'id' | 'name'>;
 /** Chips of the chosen technologies (offers, projects) + a search on the catalog (GET profiles/technologies/?search=) */
 export function TechnologyPicker({
   id,
+  label = 'Technologies',
   value,
   onAdd,
   onRemove,
 }: {
   id: string;
+  label?: string;
   value: Picked[];
   onAdd: (tech: Technology) => void;
   onRemove: (id: string) => void;
@@ -34,7 +36,7 @@ export function TechnologyPicker({
     <div className="sm:col-span-2">
       <Input
         id={id}
-        label="Technologies"
+        label={label}
         placeholder="Rechercher : React, Python, Docker…"
         autoComplete="off"
         value={text}

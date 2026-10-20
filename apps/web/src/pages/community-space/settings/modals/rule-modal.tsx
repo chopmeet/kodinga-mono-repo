@@ -14,7 +14,7 @@ import {
   Input,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
-import type { CommunityRule } from '@/data/community-settings.data';
+import type { CommunityRule } from '../form/UseSpaceSettings';
 
 const schema = z.object({
   title: z.string().trim().min(3, 'Au moins 3 caractères').max(200, '200 caractères maximum'),
@@ -27,7 +27,8 @@ type Props = {
   open: boolean;
   rule: CommunityRule | null;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: Values, editing: CommunityRule | null) => void;
+  /** true once the api accepted it: the dialog closes */
+  onSave: (values: Values, editing: CommunityRule | null) => Promise<boolean>;
 };
 
 function RuleModal({ open, rule, onOpenChange, onSave }: Props) {
@@ -43,9 +44,7 @@ function RuleModal({ open, rule, onOpenChange, onSave }: Props) {
   }, [open, rule, reset]);
 
   const onSubmit = async (values: Values) => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    onSave(values, rule);
-    onOpenChange(false);
+    if (await onSave(values, rule)) onOpenChange(false);
   };
 
   return (

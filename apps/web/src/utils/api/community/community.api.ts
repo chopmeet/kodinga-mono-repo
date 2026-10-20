@@ -1,11 +1,11 @@
-import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
+import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
-import { ApiBaseUrl } from '@/utils/http';
-import type { CheckoutSession, CommunityPlan } from '../billing/billing.type';
+import type { CheckoutSession, CommunityPlan, MyPayment, MySubscription, PaymentCheck, PlanWriteData } from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
+import type { AppNotification } from '../notification/notification.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
-import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery } from '../event/event.type';
+import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, RsvpStatus } from '../event/event.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -19,6 +19,9 @@ import type {
   HackathonTeam,
   HackathonStatus,
   HackathonWriteData,
+  HackathonApplyData,
+  HackathonSubmissionWriteData,
+  SubmissionFileType,
 } from '../hackathon/hackathon.type';
 import type { LeaderboardEntry } from '../gamification/gamification.type';
 import type { Project, ProjectComment, ProjectListItem, ProjectsQuery, ProjectWriteData } from '../project/project.type';
@@ -32,7 +35,6 @@ import type {
   Technology,
 } from '../opportunity/opportunity.type';
 import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
-import { prepareHeaders } from '../user/user.api';
 import type {
   AdminCategoryItem,
   AssistantChatResult,
@@ -43,6 +45,9 @@ import type {
   CommunityCategory,
   CommunityCreateData,
   CommunityDetail,
+  CommunityRuleItem,
+  CommunitySettings,
+  CommunityUpdateData,
   CommunityFeedQuery,
   CommunityListItem,
   CommunityListQuery,
@@ -64,6 +69,7 @@ import type {
   ManagedRole,
   SanctionData,
 } from './community.type';
+import { authBaseQuery } from '../authBaseQuery';
 
 const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
 
@@ -89,11 +95,10 @@ export const CommunityApi = createApi({
     'invitations',
     'conversations',
     'messages',
+    'notifications',
+    'plans',
   ],
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: ApiBaseUrl, 
-    prepareHeaders 
-  }),
+  baseQuery: authBaseQuery,
   endpoints: (builder) => ({
     getCommunities: builder.query<ApiPaginated<CommunityListItem>, CommunityListQuery>({
       query: (query) => ({ url: 'communities/', params: cleanParams(query) }),
@@ -189,6 +194,38 @@ export const CommunityApi = createApi({
     getCommunityPlans: builder.query<CommunityPlan[], string>({
       query: (community) => ({ url: 'billing/plans/', params: { community } }),
       transformResponse: unwrap<CommunityPlan[]>,
+      providesTags: ['plans'],
+    }),
+    // Plans of a community, for its owner and admins: the api lists the active ones only
+    createPlan: builder.mutation<CommunityPlan, { community_id: string } & PlanWriteData>({
+      query: (body) => ({ url: 'billing/plans/', method: 'POST', body }),
+      transformResponse: unwrap<CommunityPlan>,
+      invalidatesTags: ['plans'],
+    }),
+    updatePlan: builder.mutation<CommunityPlan, { planId: string } & Partial<PlanWriteData>>({
+      query: ({ planId, ...body }) => ({ url: `billing/plans/${planId}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityPlan>,
+      invalidatesTags: ['plans'],
+    }),
+    // No delete: the plan is no longer offered (subscribers keep it until the end of their period)
+    deactivatePlan: builder.mutation<unknown, string>({
+      query: (planId) => ({ url: `billing/plans/${planId}/`, method: 'DELETE' }),
+      invalidatesTags: ['plans'],
+    }),
+    // The signed-in member: subscriptions, payments, and the status of one payment
+    getMySubscriptions: builder.query<MySubscription[], void>({
+      query: () => 'billing/subscriptions/me/',
+      transformResponse: unwrap<MySubscription[]>,
+      providesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    getMyPayments: builder.query<MyPayment[], void>({
+      query: () => 'billing/payments/my/',
+      transformResponse: unwrap<MyPayment[]>,
+      providesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    getPaymentStatus: builder.query<PaymentCheck, string>({
+      query: (paymentId) => `billing/payments/${paymentId}/status/`,
+      transformResponse: unwrap<PaymentCheck>,
     }),
     // PayDunya session: the browser goes to checkout_url, then comes back to return_url
     createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string }>({
@@ -450,6 +487,37 @@ export const CommunityApi = createApi({
       query: ({ slug, eventId, ...params }) => ({ url: `communities/${slug}/events/${eventId}/attendees/`, params: cleanParams(params) }),
       providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
     }),
+    // A member (or anyone, for a public event) registers: attending or maybe; DELETE cancels
+    rsvpEvent: builder.mutation<unknown, { slug: string; eventId: string; status: RsvpStatus }>({
+      query: ({ slug, eventId, status }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'POST', body: { status } }),
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    cancelEventRsvp: builder.mutation<unknown, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // In-app notifications of the signed-in user (no realtime: the header polls the unread count)
+    getNotifications: builder.query<ApiPaginated<AppNotification>, { page?: number; page_size?: number; unread?: boolean }>({
+      query: (params) => ({ url: 'notifications/', params: cleanParams(params) }),
+      providesTags: ['notifications'],
+    }),
+    getUnreadNotificationsCount: builder.query<number, void>({
+      query: () => 'notifications/unread-count/',
+      transformResponse: (response: ApiSuccess<{ unread_count: number }>) => unwrap(response).unread_count,
+      providesTags: ['notifications'],
+    }),
+    markNotificationRead: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `notifications/${id}/read/`, method: 'POST' }),
+      invalidatesTags: ['notifications'],
+    }),
+    markAllNotificationsRead: builder.mutation<unknown, void>({
+      query: () => ({ url: 'notifications/read-all/', method: 'POST' }),
+      invalidatesTags: ['notifications'],
+    }),
+    deleteNotification: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `notifications/${id}/`, method: 'DELETE' }),
+      invalidatesTags: ['notifications'],
+    }),
     // Hackathons of a community (apps/hackathons): owner and admins manage them
     getCommunityHackathons: builder.query<ApiPaginated<HackathonListItem>, { slug: string; status?: HackathonStatus; page?: number; page_size?: number }>({
       query: ({ slug, ...params }) => ({ url: `communities/${slug}/hackathons/`, params: cleanParams(params) }),
@@ -553,6 +621,89 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<HackathonResult[]>,
       providesTags: ['hackathons'],
     }),
+    // Participants (active members of the community): application, team, project
+    getMyHackathonApplication: builder.query<HackathonApplication | null, { slug: string; hackathonSlug: string }>({
+      // 404: not applied yet
+      queryFn: async ({ slug, hackathonSlug }, _api, _extra, baseQuery) => {
+        const result = await baseQuery(`communities/${slug}/hackathons/${hackathonSlug}/my-application/`);
+        if (result.error) return (result.error as FetchBaseQueryError).status === 404 ? { data: null } : { error: result.error as FetchBaseQueryError };
+        return { data: unwrap<HackathonApplication>(result.data as ApiSuccess<HackathonApplication>) };
+      },
+      providesTags: ['hackathons'],
+    }),
+    applyToHackathon: builder.mutation<HackathonApplication, { slug: string; hackathonSlug: string } & HackathonApplyData>({
+      query: ({ slug, hackathonSlug, ...body }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/apply/`, method: 'POST', body }),
+      transformResponse: unwrap<HackathonApplication>,
+      invalidatesTags: ['hackathons'],
+    }),
+    withdrawHackathonApplication: builder.mutation<unknown, { slug: string; hackathonSlug: string }>({
+      query: ({ slug, hackathonSlug }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/my-application/`, method: 'DELETE' }),
+      invalidatesTags: ['hackathons'],
+    }),
+    createHackathonTeam: builder.mutation<HackathonTeam, { slug: string; hackathonSlug: string; name: string; tagline?: string }>({
+      query: ({ slug, hackathonSlug, ...body }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/`, method: 'POST', body }),
+      transformResponse: unwrap<HackathonTeam>,
+      invalidatesTags: ['hackathons'],
+    }),
+    // Leader only; identifier: username or email
+    inviteToHackathonTeam: builder.mutation<unknown, { slug: string; hackathonSlug: string; teamId: string; identifier: string }>({
+      query: ({ slug, hackathonSlug, teamId, identifier }) => ({
+        url: `communities/${slug}/hackathons/${hackathonSlug}/teams/${teamId}/invite/`,
+        method: 'POST',
+        body: { identifier },
+      }),
+      invalidatesTags: ['hackathons'],
+    }),
+    respondHackathonTeamInvite: builder.mutation<unknown, { slug: string; hackathonSlug: string; team_id: string; accept: boolean }>({
+      query: ({ slug, hackathonSlug, ...body }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/respond-invite/`, method: 'POST', body }),
+      invalidatesTags: ['hackathons'],
+    }),
+    // Leaves the team; the leader alone dissolves it
+    leaveHackathonTeam: builder.mutation<unknown, { slug: string; hackathonSlug: string; teamId: string }>({
+      query: ({ slug, hackathonSlug, teamId }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/${teamId}/`, method: 'DELETE' }),
+      invalidatesTags: ['hackathons'],
+    }),
+    // The project of the user (or of the team); created as a draft at the first read
+    getMyHackathonProject: builder.query<HackathonSubmission, { slug: string; hackathonSlug: string }>({
+      query: ({ slug, hackathonSlug }) => `communities/${slug}/hackathons/${hackathonSlug}/submissions/my-project/`,
+      transformResponse: unwrap<HackathonSubmission>,
+      providesTags: [{ type: 'hackathons', id: 'my-project' }],
+    }),
+    updateMyHackathonProject: builder.mutation<HackathonSubmission, { slug: string; hackathonSlug: string } & HackathonSubmissionWriteData>({
+      query: ({ slug, hackathonSlug, ...body }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/submissions/my-project/`, method: 'PATCH', body }),
+      transformResponse: unwrap<HackathonSubmission>,
+      invalidatesTags: ['hackathons', { type: 'hackathons', id: 'my-project' }],
+    }),
+    // A file (sent to UploadThing by the api) or a link to it
+    attachHackathonProjectFile: builder.mutation<
+      unknown,
+      { slug: string; hackathonSlug: string; file_type: SubmissionFileType } & ({ file: File } | { file_url: string; file_name: string })
+    >({
+      query: ({ slug, hackathonSlug, ...data }) => {
+        let body: FormData | object;
+        if ('file' in data) {
+          const form = new FormData();
+          form.append('file', data.file);
+          form.append('file_type', data.file_type);
+          body = form;
+        } else {
+          // The api asks the size and the type of a linked file: unknown here
+          body = { ...data, file_size: 1, mime_type: 'application/octet-stream' };
+        }
+        return { url: `communities/${slug}/hackathons/${hackathonSlug}/submissions/my-project/files/`, method: 'POST', body };
+      },
+      invalidatesTags: [{ type: 'hackathons', id: 'my-project' }],
+    }),
+    deleteHackathonProjectFile: builder.mutation<unknown, { slug: string; hackathonSlug: string; fileId: string }>({
+      query: ({ slug, hackathonSlug, fileId }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/submissions/my-project/files/${fileId}/`, method: 'DELETE' }),
+      invalidatesTags: [{ type: 'hackathons', id: 'my-project' }],
+    }),
+    // Final submission: the api checks the required fields (title, description, links)
+    submitMyHackathonProject: builder.mutation<HackathonSubmission, { slug: string; hackathonSlug: string }>({
+      query: ({ slug, hackathonSlug }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/submissions/my-project/submit/`, method: 'POST' }),
+      transformResponse: unwrap<HackathonSubmission>,
+      invalidatesTags: ['hackathons', { type: 'hackathons', id: 'my-project' }],
+    }),
     // Links prizes to projects, publishes the ranking and completes the hackathon
     publishHackathonResults: builder.mutation<Hackathon, { slug: string; hackathonSlug: string; winners: { prize_id: string; submission_id: string }[] }>({
       query: ({ slug, hackathonSlug, winners }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/publish-results/`, method: 'POST', body: { winners } }),
@@ -597,6 +748,20 @@ export const CommunityApi = createApi({
       query: ({ slug, courseSlug, moduleId }) => ({ url: `communities/${slug}/courses/${courseSlug}/modules/${moduleId}/`, method: 'DELETE' }),
       invalidatesTags: ['courses'],
     }),
+    // Learners (active members): enrolling is also done by the first progress
+    enrollCourse: builder.mutation<unknown, { slug: string; courseSlug: string }>({
+      query: ({ slug, courseSlug }) => ({ url: `communities/${slug}/courses/${courseSlug}/enroll/`, method: 'POST' }),
+      invalidatesTags: ['courses'],
+    }),
+    // Done / not done; the api refuses a locked lesson and recomputes the course progress
+    updateLessonProgress: builder.mutation<unknown, { slug: string; courseSlug: string; lessonId: string; is_completed: boolean }>({
+      query: ({ slug, courseSlug, lessonId, is_completed }) => ({
+        url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/progress/`,
+        method: 'POST',
+        body: { is_completed },
+      }),
+      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }],
+    }),
     // Lesson detail (with its content), for the editor
     getLesson: builder.query<CourseLesson, { slug: string; courseSlug: string; lessonId: string }>({
       query: ({ slug, courseSlug, lessonId }) => `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/`,
@@ -610,6 +775,18 @@ export const CommunityApi = createApi({
     }),
     updateLesson: builder.mutation<CourseLesson, { slug: string; courseSlug: string; lessonId: string } & Partial<LessonWriteData>>({
       query: ({ slug, courseSlug, lessonId, ...body }) => ({ url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CourseLesson>,
+      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }],
+    }),
+    // Video of a lesson: a file (stored on UploadThing) or a link to a video file, ingested by Mux;
+    // the api turns the lesson into a "video" one
+    uploadLessonVideo: builder.mutation<CourseLesson, { slug: string; courseSlug: string; lessonId: string; file?: File; url?: string }>({
+      query: ({ slug, courseSlug, lessonId, file, url }) => {
+        const body = new FormData();
+        if (file) body.append('video', file);
+        else if (url) body.append('video_url', url);
+        return { url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/video/`, method: 'POST', body };
+      },
       transformResponse: unwrap<CourseLesson>,
       invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }],
     }),
@@ -707,6 +884,16 @@ export const CommunityApi = createApi({
       transformResponse: (response: ApiSuccess<{ status: 'closed' }>) => unwrap(response),
       invalidatesTags: ['opportunities'],
     }),
+    // A member applies (CV, letter, portfolio: links); the poster is notified
+    applyToOpportunity: builder.mutation<OpportunityApplication, { opportunitySlug: string; resume_url: string; cover_letter: string; portfolio_url: string }>({
+      query: ({ opportunitySlug, ...body }) => ({ url: `opportunities/${opportunitySlug}/apply/`, method: 'POST', body }),
+      invalidatesTags: (_result, _error, { opportunitySlug }) => ['opportunities', { type: 'opportunities', id: opportunitySlug }, { type: 'opportunities', id: 'my-applications' }],
+    }),
+    // Applications of the signed-in user, with their status
+    getMyOpportunityApplications: builder.query<OpportunityApplication[], void>({
+      query: () => 'opportunities/my-applications/',
+      providesTags: [{ type: 'opportunities', id: 'my-applications' }],
+    }),
     getOpportunityApplications: builder.query<OpportunityApplication[], string>({
       query: (opportunitySlug) => `opportunities/${opportunitySlug}/applications/`,
       transformResponse: (response: ApiSuccess<OpportunityApplication[]>) => unwrap(response),
@@ -723,6 +910,32 @@ export const CommunityApi = createApi({
     getTechnologies: builder.query<Technology[], string>({
       query: (search) => ({ url: 'profiles/technologies/', params: search ? { search } : undefined }),
       transformResponse: (response: ApiSuccess<Technology[]>) => unwrap(response),
+    }),
+    // Active categories (directory, settings of a community)
+    getCategories: builder.query<AdminCategoryItem[], void>({
+      query: () => 'communities/categories/',
+      transformResponse: unwrap<AdminCategoryItem[]>,
+      providesTags: ['categories'],
+    }),
+    // Settings of a community (owner and admins): profile, access, charter
+    updateCommunity: builder.mutation<CommunityDetail, { slug: string } & CommunityUpdateData>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunityDetail>,
+      invalidatesTags: (_result, _error, { slug }) => ['communities', { type: 'communities', id: slug }],
+    }),
+    updateCommunitySettings: builder.mutation<CommunitySettings, { slug: string } & Partial<CommunitySettings>>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/settings/`, method: 'PATCH', body }),
+      transformResponse: unwrap<CommunitySettings>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
+    addCommunityRule: builder.mutation<CommunityRuleItem, { slug: string; title: string; description: string; order: number }>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/rules/`, method: 'POST', body }),
+      transformResponse: unwrap<CommunityRuleItem>,
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+    }),
+    deleteCommunityRule: builder.mutation<unknown, { slug: string; ruleId: string }>({
+      query: ({ slug, ruleId }) => ({ url: `communities/${slug}/rules/${ruleId}/`, method: 'DELETE' }),
+      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
     }),
     // The api archives (is_active = false): owner or superuser only
     archiveCommunity: builder.mutation<ApiSuccess<undefined>, string>({
@@ -780,6 +993,11 @@ export const {
   useGetMyManagedCommunitiesQuery,
   useCreateCommunityMutation,
   useArchiveCommunityMutation,
+  useGetCategoriesQuery,
+  useUpdateCommunityMutation,
+  useUpdateCommunitySettingsMutation,
+  useAddCommunityRuleMutation,
+  useDeleteCommunityRuleMutation,
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
   useGetCommunityMemberJoinsQuery,
@@ -787,6 +1005,12 @@ export const {
   useLeaveCommunityMutation,
   useGetCommunityPlansQuery,
   useCreateCheckoutMutation,
+  useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useDeactivatePlanMutation,
+  useGetMySubscriptionsQuery,
+  useGetMyPaymentsQuery,
+  useGetPaymentStatusQuery,
   useRequestUploadUrlMutation,
   useConfirmUploadMutation,
   useGetConversationsQuery,
@@ -832,6 +1056,13 @@ export const {
   useDeleteEventMutation,
   useUpdateEventStatusMutation,
   useGetEventAttendeesQuery,
+  useRsvpEventMutation,
+  useCancelEventRsvpMutation,
+  useGetNotificationsQuery,
+  useGetUnreadNotificationsCountQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  useDeleteNotificationMutation,
   useGetCommunityHackathonsQuery,
   useGetHackathonQuery,
   useCreateHackathonMutation,
@@ -851,6 +1082,18 @@ export const {
   useEvaluateHackathonSubmissionMutation,
   useGetHackathonResultsQuery,
   usePublishHackathonResultsMutation,
+  useGetMyHackathonApplicationQuery,
+  useApplyToHackathonMutation,
+  useWithdrawHackathonApplicationMutation,
+  useCreateHackathonTeamMutation,
+  useInviteToHackathonTeamMutation,
+  useRespondHackathonTeamInviteMutation,
+  useLeaveHackathonTeamMutation,
+  useGetMyHackathonProjectQuery,
+  useUpdateMyHackathonProjectMutation,
+  useAttachHackathonProjectFileMutation,
+  useDeleteHackathonProjectFileMutation,
+  useSubmitMyHackathonProjectMutation,
   useGetCommunityCoursesQuery,
   useGetCourseQuery,
   useCreateCourseMutation,
@@ -863,12 +1106,17 @@ export const {
   useCreateLessonMutation,
   useUpdateLessonMutation,
   useDeleteLessonMutation,
+  useUploadLessonVideoMutation,
+  useEnrollCourseMutation,
+  useUpdateLessonProgressMutation,
   useGetCommunityOpportunitiesQuery,
   useGetOpportunityQuery,
   useCreateOpportunityMutation,
   useUpdateOpportunityMutation,
   useCloseOpportunityMutation,
   useGetOpportunityApplicationsQuery,
+  useApplyToOpportunityMutation,
+  useGetMyOpportunityApplicationsQuery,
   useUpdateOpportunityApplicationStatusMutation,
   useGetTechnologiesQuery,
   useGetCommunityLeaderboardQuery,

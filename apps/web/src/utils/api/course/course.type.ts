@@ -18,6 +18,16 @@ export type CourseLesson = {
   order: number;
   is_free_preview: boolean;
   content?: string;
+  /** Signed-in learner: done, or not reachable yet (sequential course) */
+  is_completed?: boolean;
+  is_locked?: boolean;
+  reading_time_minutes?: number;
+  video_hls_url?: string;
+  video_source_url?: string;
+  video_thumbnail_url?: string;
+  /** Mux: waiting, preparing (encoding), ready, errored */
+  video_status?: 'waiting' | 'preparing' | 'ready' | 'errored' | 'deleted' | '';
+  attachments?: { name?: string; file_name?: string; url?: string; file_url?: string }[];
 };
 
 export type CourseModule = {

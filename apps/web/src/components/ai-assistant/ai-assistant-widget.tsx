@@ -215,15 +215,17 @@ export function AIAssistantWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-slate-900 px-4 py-3 text-white shadow-xl shadow-brand/20 ring-2 ring-brand/40 transition-all duration-300 hover:scale-105 hover:bg-slate-800 hover:ring-brand focus:outline-none focus:ring-4 focus:ring-brand/30"
+          aria-label="Assistant Kodinga"
+          // Phones: a round button (icon only) that hides less of the page
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 rounded-full bg-slate-900 p-3.5 text-white sm:bottom-6 sm:right-6 sm:px-4 sm:py-3 shadow-xl shadow-brand/20 ring-2 ring-brand/40 transition-all duration-300 hover:scale-105 hover:bg-slate-800 hover:ring-brand focus:outline-none focus:ring-4 focus:ring-brand/30"
           title="Ouvrir l'Assistant IA Kodinga"
         >
-          <span className="relative flex size-3">
+          <span className="relative hidden size-3 sm:flex">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
           </span>
           <Sparkles className="size-5 text-brand" />
-          <span className="text-sm font-semibold tracking-wide">Assistant Kodinga</span>
+          <span className="hidden text-sm font-semibold tracking-wide sm:inline">Assistant Kodinga</span>
         </button>
       )}
 

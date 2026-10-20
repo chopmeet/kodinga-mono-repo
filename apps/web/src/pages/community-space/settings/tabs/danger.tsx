@@ -1,13 +1,14 @@
 import { ArrowRightLeft, Trash2 } from 'lucide-react';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button, customToast } from '@kodinga-mono-repo/ui';
-import { getCommunityMembers } from '@/data/admin-community-details.data';
+import { useAppDispatch } from '@/redux/hook';
+import { CommunityApi, useArchiveCommunityMutation, useChangeMemberRoleMutation, useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
+import { parseApiError } from '@/utils/api/errors';
+import { getName } from '@/utils/Utils';
 import { useCommunitySpace } from '../../community-space-context';
 import ConfirmByNameModal from '../modals/confirm-by-name-modal';
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function DangerBlock({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
@@ -22,27 +23,44 @@ function DangerBlock({ title, description, children }: { title: string; descript
 }
 
 /**
- * Owner only (SectionGuard "danger"). With the api: PATCH .../members/<id>/ role=owner
- * (the previous owner becomes admin) and DELETE communities/<slug>/ (soft delete).
+ * Owner only (SectionGuard "danger"): PATCH .../members/<id>/ role=owner (the previous owner
+ * becomes admin) and DELETE communities/<slug>/ (the api archives it).
  */
 function DangerTab() {
   const { community } = useCommunitySpace();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   // Ownership can only go to an active administrator of the community
-  const admins = useMemo(() => getCommunityMembers(community).filter((m) => m.role === 'admin' && m.status === 'active'), [community]);
+  const { data } = useGetCommunityMembersQuery({ slug: community.slug, role: 'admin', status: 'active', page_size: 100 });
+  const admins = (data?.results ?? []).filter((m) => m.role === 'admin' && m.status === 'active').map((m) => ({ id: m.id, name: getName(m.user) || m.user.username }));
+  const [changeRole] = useChangeMemberRoleMutation();
+  const [archive] = useArchiveCommunityMutation();
   const [heirId, setHeirId] = useState('');
   const [dialog, setDialog] = useState<'transfer' | 'delete' | null>(null);
   const heir = admins.find((a) => a.id === heirId);
 
   const transfer = async () => {
-    await wait(400);
+    if (!heir) return;
+    try {
+      await changeRole({ slug: community.slug, memberId: heir.id, role: 'owner' }).unwrap();
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+      return;
+    }
     setDialog(null);
-    customToast.success({ message: `${heir?.name} est maintenant propriétaire. Vous restez administrateur.` });
+    customToast.success({ message: `${heir.name} est maintenant propriétaire. Vous restez administrateur.` });
+    // Your role changed: the space reads it again
+    dispatch(CommunityApi.util.invalidateTags([{ type: 'communities', id: community.slug }, 'communities']));
     navigate(`/c/${community.slug}/dashboard`);
   };
 
   const remove = async () => {
-    await wait(400);
+    try {
+      await archive(community.slug).unwrap();
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+      return;
+    }
     setDialog(null);
     customToast.success({ message: `« ${community.name} » a été supprimée.` });
     navigate('/c', { replace: true });

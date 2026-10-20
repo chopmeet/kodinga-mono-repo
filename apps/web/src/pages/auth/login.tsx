@@ -6,6 +6,7 @@ import { Button, Input, InputPassword } from '@kodinga-mono-repo/ui';
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';
 import UseLoginForm from './hooks/UseLoginForm';
+import { GoKey } from "react-icons/go";
 
 
 function Login() {
@@ -40,7 +41,7 @@ function Login() {
           {formError && <FormAlert>{formError}</FormAlert>}
 
           <Input
-            id="login-email"
+            id="__login_email"
             label="Adresse email"
             type="email"
             icon={<Mail className="size-4" />}
@@ -52,9 +53,10 @@ function Login() {
 
           <div>
             <InputPassword
-              id="login-password"
+              id="__login_password"
               label="Mot de passe"
               autoComplete="current-password"
+              icon={<GoKey />}
               required
               error={errors.password?.message}
               {...register('password')}

@@ -1,7 +1,7 @@
-import { LoaderCircle, MailOpen, Users } from 'lucide-react';
+import { MailOpen, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga-mono-repo/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import UseAcceptInvitation from './form/UseAcceptInvitation';
 
@@ -13,10 +13,7 @@ function AcceptInvitation() {
     <div className="mx-auto flex min-h-[60svh] max-w-lg items-center px-4 py-12">
       <section aria-labelledby="invitation-title" className="w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-2xs">
         {isLoading ? (
-          <p className="flex items-center justify-center gap-2 text-slate-600" role="status">
-            <LoaderCircle className="size-5 animate-spin text-brand" />
-            Chargement de l'invitation…
-          </p>
+          <Loader inline size="sm" className="py-4" message="Chargement de l'invitation…" />
         ) : (
           <>
             {community ? (

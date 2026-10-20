@@ -1,4 +1,5 @@
 import { ArrowUpRight, Check, ChevronDown, Globe, MessageCircle, Plus, UserRound } from 'lucide-react';
+import { NotificationsMenu } from './notifications-menu';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -119,9 +120,6 @@ function Header() {
             />
           ) : (
             <div className="hidden items-center justify-center gap-6 md:flex lg:gap-9">
-              <NavLink to={`/`} className={navLinkClassName}>
-                  {t('header.home')}
-                </NavLink>
               <NavLink to="/" end className={navLinkClassName}>
                 {t('header.explore')}
               </NavLink>
@@ -131,6 +129,7 @@ function Header() {
 
         <div className="flex items-center gap-0.5 justify-self-end sm:gap-4">
           <LanguageSwitcher />
+          {token && <NotificationsMenu />}
           {token && <MessagesLink />}
           {token ? (
             <NavLink

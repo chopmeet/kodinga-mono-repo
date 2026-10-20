@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast, SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
+import { SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
 import FormActions from '@/pages/shared/form-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import { useSpaceSettings } from '../form/UseSpaceSettings';
@@ -36,10 +36,7 @@ function AccessTab() {
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { ...access, is_read_only: access.is_read_only ?? false } });
 
   const onSubmit = async (values: Values) => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    saveAccess(values);
-    reset(values);
-    customToast.success({ message: 'Règles d’accès enregistrées.' });
+    if (await saveAccess(values)) reset(values);
   };
 
   return (

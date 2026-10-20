@@ -1,7 +1,7 @@
-import { LoaderCircle } from 'lucide-react';
 import { Navigate, useParams } from 'react-router-dom';
 
-import { getMyCommunity, type MyCommunity, type SpaceRole } from '@/data/community-space.data';
+import { Loader } from '@kodinga-mono-repo/ui';
+import type { MyCommunity, SpaceRole } from '@/data/community-space.data';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { useGetCommunityQuery } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
@@ -21,23 +21,16 @@ function spaceFromApi(detail: CommunityDetail | undefined): MyCommunity | undefi
 /**
  * /c/:slug — guard + context of a community space. Only the owner, admins and moderators
  * of that community get in; anyone else is sent back to /c (their own communities).
- * Mock communities (data/community-space.data.ts) first, then the api (user_membership),
- * e.g. a community just created with the creation flow.
+ * The role comes from the api (user_membership of GET communities/<slug>/).
  */
 function CommunitySpaceLayout() {
   const { slug = '' } = useParams();
   const user = useUser();
-  const mock = getMyCommunity(slug);
-  const { data, isLoading, isFetching } = useGetCommunityQuery(slug, { skip: !!mock || !user || !slug });
-  const space = mock ?? spaceFromApi(data);
+  const { data, isLoading, isFetching } = useGetCommunityQuery(slug, { skip: !user || !slug });
+  const space = spaceFromApi(data);
 
-  if (!mock && (isLoading || (isFetching && !space))) {
-    return (
-      <div className="flex min-h-svh items-center justify-center gap-3 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" />
-        Chargement de votre espace…
-      </div>
-    );
+  if (isLoading || (isFetching && !space)) {
+    return <Loader inline size="lg" className="min-h-svh" message="Chargement de votre espace…" />;
   }
 
   if (!space) return <Navigate to="/c" replace state={{ deniedSlug: slug }} />;

@@ -12,6 +12,7 @@ import {
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { communityTabs, type CommunityTabId } from '../components/community-tabs';
+import { rememberPayment } from './UsePaymentReturn';
 
 /** Where the signed-in user stands in the community */
 export type Membership = 'visitor' | 'none' | 'pending' | 'member' | 'banned';
@@ -80,6 +81,8 @@ function UseCommunityPage() {
     const back = `${window.location.origin}${pathname}`;
     try {
       const session = await createCheckout({ plan_id: planId, return_url: `${back}?payment=done`, cancel_url: `${back}?payment=cancelled` }).unwrap();
+      // Its status is checked on the way back
+      rememberPayment(slug, session.payment_id);
       window.location.assign(session.checkout_url);
     } catch (err) {
       customToast.error({ message: parseApiError(err).message });

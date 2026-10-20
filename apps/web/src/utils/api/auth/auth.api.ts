@@ -1,8 +1,6 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
 
-import { ApiBaseUrl } from '@/utils/http';
 import { type ApiSuccess, unwrap } from '../api.type';
-import { prepareHeaders } from '../user/user.api';
 import type { User } from '../user/user.type';
 import type {
   ForgotPasswordFormData,
@@ -15,14 +13,12 @@ import type {
   ResetPasswordFormData,
   VerifyEmailData,
 } from './auth.type';
+import { authBaseQuery } from '../authBaseQuery';
 
 export const AuthApi = createApi({
   reducerPath: 'authApi',
   tagTypes: ['auth'],
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: ApiBaseUrl, 
-    prepareHeaders 
-  }),
+  baseQuery: authBaseQuery,
   endpoints: (builder) => ({
     loginUser: builder.mutation<LoginResult, LoginFormData>({
       query: (body) => ({ url: 'auth/login/', method: 'POST', body }),

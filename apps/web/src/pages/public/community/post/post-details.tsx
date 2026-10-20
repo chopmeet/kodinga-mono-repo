@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleCheck, LoaderCircle, Lock, MessageCircle, Pin, ThumbsUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -14,14 +14,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Loader,
 } from '@kodinga-mono-repo/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { postTypeLabel } from '@/pages/shared/community-labels';
 import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { getName, nameInitials } from '@/utils/Utils';
+import { ago, getName, nameInitials, plain } from '@/utils/Utils';
 import { PollCard } from '../components/poll-card';
-import { ago, plain } from '../components/post-format';
 import UsePostDetails, { type PostDetailsPage } from '../form/UsePostDetails';
 import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
@@ -96,9 +96,7 @@ function PostDetails() {
 
   if (page.isLoading) {
     return (
-      <p className="flex items-center justify-center gap-2 py-24 text-slate-600" role="status">
-        <LoaderCircle className="size-5 animate-spin text-brand" /> Chargement de la publication…
-      </p>
+      <Loader inline className="py-24" message="Chargement de la publication…" />
     );
   }
 

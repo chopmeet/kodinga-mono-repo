@@ -424,6 +424,7 @@ export const InputPassword = forwardRef<
       required, 
       readOnly, 
       icon,
+      iconPosition = "left",
       fieldHelp,
       ...rest 
     } = props;
@@ -441,7 +442,7 @@ export const InputPassword = forwardRef<
           )}
           <div className="input-group custom-input-group relative mb-1">
             <input
-              className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+              className={`w-full block px-4 ${icon ? 'pl-9!' : ''} py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
               name={name}
               id={id}
               ref={ref}
@@ -449,6 +450,7 @@ export const InputPassword = forwardRef<
               type={showPassword ? "text" : "password"}
               {...rest}
             />
+            {!!icon && <span className="pointer-events-none absolute left-3 top-[38%] grid place-items-center text-zinc-400">{icon}</span>}
             <span
               className="input-group-icon icon__wrapper"
               id="basic-addon2"
