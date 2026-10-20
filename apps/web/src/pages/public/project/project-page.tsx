@@ -1,4 +1,4 @@
-import { ArrowLeft, Code2, ExternalLink, MessageCircle, Pencil } from 'lucide-react';
+import { ArrowLeft, Code2, ExternalLink, Images, MessageCircle, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -6,6 +6,7 @@ import { Button, Loader } from '@kodinga-mono-repo/ui';
 import ProjectFormModal from '@/pages/community-space/projects/modals/project-form-modal';
 import { UpvoteButton } from '@/pages/public/community/components/projects-tab';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
+import { ImageGallery } from '@/pages/shared/image-gallery';
 import { Markdown } from '@/pages/shared/markdown';
 import type { ProjectPerson } from '@/utils/api/project/project.type';
 import { ago, nameInitials } from '@/utils/Utils';
@@ -186,6 +187,14 @@ function ProjectPageView() {
             </ul>
           )}
         </article>
+        {(p.demo_images?.length ?? 0) > 0 && (
+          <section aria-labelledby="demo-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
+            <h2 id="demo-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+              <Images className="size-5 text-blue-900" /> Captures ({p.demo_images?.length})
+            </h2>
+            <ImageGallery images={p.demo_images ?? []} title={p.title} className="mt-4" />
+          </section>
+        )}
         <Comments page={page} />
       </div>
       {page.isOwner && p.community_id && <ProjectFormModal communityId={p.community_id} open={editing} project={p} onClose={() => setEditing(false)} />}

@@ -5,6 +5,7 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW, TEST_TOKEN } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import { liveServerUrl } from '@/utils/http';
 
 // No WebRTC in jsdom: the LiveKit room and its components are stand-ins
 const connection = vi.hoisted(() => ({ calls: [] as { serverUrl: string; token: string; isHost: boolean }[] }));
@@ -87,8 +88,8 @@ describe('Live room of an event', () => {
     const { where } = renderAppAt('/communities/abidjan-react/events/e1/live');
     fireEvent.click(await screen.findByRole('button', { name: /Entrer dans la salle d’attente/ }, SLOW));
     await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/join-live/'))).toBe(true), SLOW);
-    // The local server in dev (docker), not the url of the api
-    await waitFor(() => expect(connection.calls.at(-1)).toEqual({ serverUrl: 'ws://localhost:7880', token: 'lk-token', isHost: true, onLeft: expect.any(Function) }), SLOW);
+    // The local server in dev (docker), the url of the api elsewhere (utils/http.ts)
+    await waitFor(() => expect(connection.calls.at(-1)).toEqual({ serverUrl: liveServerUrl('wss://live.kodinga.com'), token: 'lk-token', isHost: true, onLeft: expect.any(Function) }), SLOW);
     expect(screen.getByText('Salle d’attente')).toBeTruthy();
     expect(screen.getByTestId('controls').textContent).toBe('camera,microphone,screenShare,leave');
     expect(screen.getByLabelText('2 dans la salle')).toBeTruthy();

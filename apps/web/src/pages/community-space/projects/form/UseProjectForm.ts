@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { customToast } from '@kodinga-mono-repo/ui';
 import { useCreateProjectMutation, useUpdateProjectMutation } from '@/utils/api/community/community.api';
-import { parseApiError } from '@/utils/api/errors';
+import { parseApiError, toFrench } from '@/utils/api/errors';
 import type { Technology } from '@/utils/api/opportunity/opportunity.type';
 import type { Project, ProjectWriteData } from '@/utils/api/project/project.type';
 
@@ -19,7 +19,7 @@ const schema = z
     repository_url: optionalUrl,
     demo_url: optionalUrl,
     cover_image_url: optionalUrl,
-    demo_images: z.array(z.string().trim()).default([]),
+    demo_images: z.array(z.string().trim()),
     technologies: z.array(z.object({ id: z.string(), name: z.string(), slug: z.string() })),
   })
   // A showcase needs something to look at
@@ -53,6 +53,13 @@ const fromProject = (p: Project): ProjectFormValues => ({
   demo_images: p.demo_images ?? [],
   technologies: p.technologies.map(({ id, name, slug }) => ({ id, name, slug })),
 });
+
+/** First message of a DRF error: a list, or an object per item ({"0": ["..."]} for demo_images) */
+const flatMessage = (value: unknown): string => {
+  if (Array.isArray(value)) return value.length ? flatMessage(value[0]) : '';
+  if (value && typeof value === 'object') return flatMessage(Object.values(value));
+  return toFrench(String(value ?? ''));
+};
 
 /**
  * Share a project in the community (POST projects/ with community_id) or edit it (PATCH by slug).
@@ -101,7 +108,15 @@ function UseProjectForm({ communityId, project, open, onDone }: { communityId: s
       customToast.success({ message: project ? 'Projet mis à jour.' : 'Projet partagé avec la communauté.' });
       onDone(saved);
     } catch (error) {
-      const { message, fields } = parseApiError(error);
+      const parsed = parseApiError(error);
+      // The projects app answers raw DRF errors ({"demo_images": ["..."]}), not the envelope
+      const raw = (error as { data?: unknown }).data;
+      const rawFields =
+        raw && typeof raw === 'object' && !('success' in raw)
+          ? Object.fromEntries(Object.entries(raw).map(([field, value]) => [field, flatMessage(value)]))
+          : {};
+      const fields: Record<string, string> = { ...rawFields, ...parsed.fields };
+      const message = (raw as { detail?: string } | undefined)?.detail ?? parsed.message;
       let onField = false;
       for (const field of FIELDS) {
         if (fields[field]) {

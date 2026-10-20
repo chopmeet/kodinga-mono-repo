@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -12,7 +12,6 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Save,
-  Check,
   Lock,
   Info,
   CheckCircle2,
@@ -49,6 +48,12 @@ interface CategoryDefinition {
   color: string;
   permissions: PermissionDefinition[];
 }
+
+/**
+ * The permissions the api checks today (has_community_permission in EventService and
+ * ClassroomService); the others are saved and will apply as the api checks them
+ */
+const ENFORCED_PERMISSIONS: RolePermissionKey[] = ['can_manage_events', 'can_manage_courses'];
 
 const PERMISSION_CATEGORIES: CategoryDefinition[] = [
   {
@@ -280,6 +285,14 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
   },
 };
 
+/** Permissions of a role in the matrix; the owner has them all (it is optional in the matrix) */
+function permissionsOf(matrix: RolePermissionsMatrix, role: DisplayRole): RolePermissionsMap {
+  if (role === 'owner') {
+    return matrix.owner ?? (Object.fromEntries(Object.keys(DEFAULT_ROLE_PERMISSIONS.admin).map((key) => [key, true])) as RolePermissionsMap);
+  }
+  return matrix[role] ?? DEFAULT_ROLE_PERMISSIONS[role];
+}
+
 const ROLE_INFO: Record<
   DisplayRole,
   { title: string; badge: string; description: string; icon: typeof Crown; color: string }
@@ -382,13 +395,13 @@ export function SpaceRolesTab() {
       [role]: { ...DEFAULT_ROLE_PERMISSIONS[role] },
     }));
     setHasUnsavedChanges(true);
-    customToast.info({ message: `Permissions du rôle "${ROLE_INFO[role].title}" rétablies par défaut.` });
+    customToast.success({ message: `Permissions du rôle "${ROLE_INFO[role].title}" rétablies par défaut.` });
   };
 
   const handleResetAllDefaults = () => {
     setMatrix(DEFAULT_ROLE_PERMISSIONS);
     setHasUnsavedChanges(true);
-    customToast.info({ message: 'Toutes les permissions ont été réinitialisées aux valeurs par défaut.' });
+    customToast.success({ message: 'Toutes les permissions ont été réinitialisées aux valeurs par défaut.' });
   };
 
   const handleSave = async () => {
@@ -418,7 +431,7 @@ export function SpaceRolesTab() {
     );
   }
 
-  const currentRolePerms = matrix[activeRole] || DEFAULT_ROLE_PERMISSIONS[activeRole];
+  const currentRolePerms = permissionsOf(matrix, activeRole);
   const activeCount = Object.values(currentRolePerms).filter(Boolean).length;
   const totalCount = Object.keys(DEFAULT_ROLE_PERMISSIONS.admin).length;
   const isOwner = activeRole === 'owner';
@@ -455,7 +468,7 @@ export function SpaceRolesTab() {
           const info = ROLE_INFO[role];
           const Icon = info.icon;
           const isSelected = activeRole === role;
-          const rolePerms = matrix[role] || DEFAULT_ROLE_PERMISSIONS[role];
+          const rolePerms = permissionsOf(matrix, role);
           const count = Object.values(rolePerms).filter(Boolean).length;
 
           return (
@@ -547,6 +560,14 @@ export function SpaceRolesTab() {
         </div>
       </div>
 
+      <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-sm text-blue-950">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+        <p>
+          Les permissions marquées <strong>Active</strong> s’appliquent dès l’enregistrement. Les autres sont enregistrées et
+          s’appliqueront au fur et à mesure qu’elles seront prises en charge par la plateforme.
+        </p>
+      </div>
+
       {/* Owner Inviolability Notice */}
       {isOwner && (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-900">
@@ -597,6 +618,15 @@ export function SpaceRolesTab() {
                           >
                             {perm.label}
                           </label>
+                          {ENFORCED_PERMISSIONS.includes(perm.key) ? (
+                            <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-800" title="Appliquée dès l’enregistrement">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-slate-500 uppercase" title="Enregistrée, appliquée bientôt">
+                              Bientôt
+                            </span>
+                          )}
                           {isAllowed ? (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />

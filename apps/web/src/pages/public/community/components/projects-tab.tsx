@@ -1,4 +1,4 @@
-import { ChevronUp, FolderKanban, MessageCircle, Plus } from 'lucide-react';
+import { ChevronUp, FolderKanban, Images, MessageCircle, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -109,6 +109,13 @@ export function ProjectsTab({ page }: { page: CommunityPage }) {
             <li key={p.id} className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4">
               <div className="relative hidden h-24 w-36 shrink-0 overflow-hidden rounded-lg sm:block">
                 {p.cover_image_url ? <img src={p.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
+                {(p.demo_images?.length ?? 0) > 0 && (
+                  <span className="absolute right-1.5 bottom-1.5 inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                    <Images className="size-3" aria-hidden />
+                    <span className="sr-only">Captures : </span>
+                    {p.demo_images?.length}
+                  </span>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg text-slate-900">

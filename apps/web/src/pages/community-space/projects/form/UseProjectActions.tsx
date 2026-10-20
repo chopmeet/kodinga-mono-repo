@@ -16,7 +16,7 @@ import { useDeleteProjectMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { ProjectListItem } from '@/utils/api/project/project.type';
 import { isAdmin, useUser } from '@/utils/Utils';
-import { canManageEvents, useCommunitySpace } from '../../community-space-context';
+import { isCommunityManager, useCommunitySpace } from '../../community-space-context';
 
 /**
  * Actions on a project. The api lets only its owner (or the platform staff) edit and delete it;
@@ -37,7 +37,7 @@ function UseProjectActions({ onEdit, afterDelete }: { onEdit: (p: ProjectListIte
     if (withEdit && canHandle(p)) {
       actions.push({ label: 'Modifier', icon: <Pencil />, onSelect: () => onEdit(p) });
     }
-    if (canManageEvents(space)) {
+    if (isCommunityManager(space)) {
       actions.push({ label: p.is_featured ? 'Ne plus mettre en avant' : 'Mettre en avant', icon: <Star />, soon: true, onSelect: () => undefined });
       if (!isOwner(p)) actions.push({ label: 'Retirer de la communauté', icon: <EyeOff />, soon: true, onSelect: () => undefined });
     }
@@ -79,7 +79,12 @@ function UseProjectActions({ onEdit, afterDelete }: { onEdit: (p: ProjectListIte
     </Dialog>
   );
 
-  return { isOwner, canHandle, actionsFor, confirmDialog };
+  return { 
+    isOwner, 
+    canHandle, 
+    actionsFor, 
+    confirmDialog 
+  };
 }
 
 export default UseProjectActions;

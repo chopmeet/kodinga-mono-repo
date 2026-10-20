@@ -96,6 +96,7 @@ function ProjectFormModal({ communityId, open, project, onClose, onSaved }: Prop
           <div className="sm:col-span-2">
             <DemoImagesUploadField
               id="project-demos"
+              error={errors.demo_images?.message}
               label="Images de démonstration & Captures d'écran"
               help="Ajoutez jusqu'à 6 captures d'écran de l'application (UploadThing ou URL)"
               value={demoImages}

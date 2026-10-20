@@ -12,6 +12,8 @@ type Props = {
   onChange: (images: string[]) => void;
   maxImages?: number;
   className?: string;
+  /** Refusal of the api for the list (an invalid link…) */
+  error?: string;
 };
 
 export function DemoImagesUploadField({
@@ -22,6 +24,7 @@ export function DemoImagesUploadField({
   onChange,
   maxImages = 6,
   className,
+  error,
 }: Props) {
   const autoId = useId();
   const id = customId || autoId;
@@ -46,7 +49,7 @@ export function DemoImagesUploadField({
 
     const filesToUpload = files.slice(0, remainingSlots);
     if (files.length > remainingSlots) {
-      customToast.info({ message: `Seules ${remainingSlots} image(s) peuvent encore être ajoutées.` });
+      customToast.warning({ message: `Seules ${remainingSlots} image(s) peuvent encore être ajoutées.` });
     }
 
     setUploadError(null);
@@ -102,6 +105,7 @@ export function DemoImagesUploadField({
       return;
     }
     onChange([...value, trimmed]);
+    setUploadError(null);
     setManualUrl('');
     setShowUrlInput(false);
   };
@@ -160,8 +164,8 @@ export function DemoImagesUploadField({
             value={manualUrl}
             onChange={(e) => setManualUrl(e.target.value)}
             placeholder="https://…/screenshot.png"
-            className="flex-1"
-            size="sm"
+            aria-label="Lien de l’image"
+            customClassContainer="mb-0! flex-1"
           />
           <Button type="button" size="sm" onClick={handleAddManualUrl}>
             Ajouter
@@ -189,7 +193,7 @@ export function DemoImagesUploadField({
               className="group relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-100 shadow-2xs"
             >
               <img src={url} alt={`Démo ${idx + 1}`} className="size-full object-cover" />
-              <div className="absolute inset-0 flex items-start justify-between bg-black/40 p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute inset-0 flex items-start justify-between bg-black/40 p-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                 <span className="rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                   #{idx + 1}
                 </span>
@@ -197,6 +201,7 @@ export function DemoImagesUploadField({
                   type="button"
                   onClick={() => handleRemove(idx)}
                   title="Supprimer cette capture"
+                  aria-label={`Supprimer la capture ${idx + 1}`}
                   className="flex size-6 items-center justify-center rounded-md bg-red-600/90 text-white transition hover:bg-red-700"
                 >
                   <Trash2 className="size-3" />
@@ -237,7 +242,11 @@ export function DemoImagesUploadField({
         )
       )}
 
-      {uploadError && <p className="text-xs font-medium text-red-600">{uploadError}</p>}
+      {(uploadError || error) && (
+        <p role="alert" className="text-xs font-medium text-red-600">
+          {uploadError ?? error}
+        </p>
+      )}
     </div>
   );
 }
