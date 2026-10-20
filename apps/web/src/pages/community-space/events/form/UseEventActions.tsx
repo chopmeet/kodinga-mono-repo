@@ -49,6 +49,9 @@ function UseEventActions({ onEdit, afterDelete }: { onEdit: (event: CommunityEve
     const actions: RowAction[] = withView
       ? [{ label: 'Voir le détail', icon: <Eye />, onSelect: () => navigate(`/c/${slug}/events/${event.id}`) }]
       : [];
+    if (event.format === 'livekit' && (event.status === 'scheduled' || event.status === 'live')) {
+      actions.push({ label: 'Ouvrir le salon live', icon: <Radio />, onSelect: () => navigate(`/communities/${slug}/events/${event.id}/live`) });
+    }
     if (!canManage) return actions;
     if (event.status === 'scheduled') {
       actions.push({ label: 'Modifier', icon: <Pencil />, onSelect: () => onEdit(event) });

@@ -13,9 +13,11 @@ function EventLink({ slug, event }: { slug: string; event: CommunityEvent }) {
   const { data } = useGetCommunityEventQuery({ slug, eventId: event.id });
   if (event.format === 'livekit') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-slate-500" title="Bientôt disponible">
-        <Radio className="size-4" /> Salon live Kodinga : bientôt
-      </span>
+      <Button asChild size="sm" variant={event.status === 'live' ? 'default' : 'outline'}>
+        <Link to={`/communities/${slug}/events/${event.id}/live`}>
+          <Radio /> {event.status === 'live' ? 'Rejoindre le live' : 'Salle du live'}
+        </Link>
+      </Button>
     );
   }
   if (!hasLink(event.format) || !data?.location_url) return null;

@@ -8,6 +8,7 @@ import CommunityDetails from '@/pages/public/community/community-details';
 import PostDetails from '@/pages/public/community/post/post-details';
 import CoursePlayerPage from '@/pages/public/community/course/course-player';
 import HackathonPageView from '@/pages/public/community/hackathon/hackathon-page';
+import LiveRoomPage from '@/pages/public/community/live/live-room';
 import Messages from '@/pages/public/messages/messages';
 import Notifications from '@/pages/public/notifications/notifications';
 import OpportunityPageView from '@/pages/public/opportunity/opportunity-page';
@@ -146,6 +147,10 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:slug/hackathons/:hackathonSlug',
         element: <HackathonPageView />,
+      },
+      {
+        path: 'communities/:slug/events/:eventId/live',
+        element: <LiveRoomPage />,
       },
       {
         path: 'communities/:slug/posts/:postId',
