@@ -38,8 +38,22 @@ class PostCommentsView(APIView):
 
         check_community_read_permission(request.user, post.community)
 
-        comments = PostSelector.get_post_comments(post, user=request.user)
-        serializer = CommentSerializer(comments, many=True, context={'request': request})
+        since_param = request.query_params.get('since')
+        since = None
+        if since_param:
+            try:
+                from django.utils.dateparse import parse_datetime
+
+                since = parse_datetime(since_param)
+            except Exception:
+                pass
+
+        comments = PostSelector.get_post_comments(
+            post, user=request.user, since=since
+        )
+        serializer = CommentSerializer(
+            comments, many=True, context={'request': request}
+        )
         return success_response(data=serializer.data)
 
     @extend_schema(

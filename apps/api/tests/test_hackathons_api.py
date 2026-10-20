@@ -23,6 +23,7 @@ from apps.hackathons.models import (
     HackathonStatus,
     HackathonSubmission,
     HackathonTeam,
+    HackathonTeamMember,
 )
 from apps.memberships.models.member import (
     CommunityMember,
@@ -430,6 +431,50 @@ class TestHackathonTeams:
         # Verify team now has 2 active members
         team = HackathonTeam.objects.get(id=team_id)
         assert team.active_members_count == 2
+
+    def test_list_teams_unauthenticated_does_not_leak_emails(
+        self,
+        api_client,
+        community,
+        member,
+        teammate,
+        active_membership,
+        active_teammate_membership,
+        open_hackathon,
+    ):
+        team = HackathonTeam.objects.create(
+            hackathon=open_hackathon,
+            name="Alpha Squad",
+            leader=member,
+        )
+        HackathonTeamMember.objects.create(
+            team=team,
+            user=member,
+            role="leader",
+            status="active",
+        )
+        HackathonTeamMember.objects.create(
+            team=team,
+            user=teammate,
+            role="developer",
+            status="active",
+        )
+
+        api_client.logout()
+        res = api_client.get(
+            f"/api/v1/communities/{community.slug}/hackathons/{open_hackathon.slug}/teams/"
+        )
+        assert res.status_code == status.HTTP_200_OK
+        data = res.data["results"]
+        assert len(data) >= 1
+        team_data = next(t for t in data if t["id"] == str(team.id))
+
+        # Security check: emails must NOT be leaked
+        assert "email" not in team_data["leader"]
+        assert team_data["leader"]["username"] == member.username
+        for m in team_data["members"]:
+            assert "email" not in m["user"]
+            assert "username" in m["user"]
 
 
 @pytest.mark.django_db

@@ -1,6 +1,8 @@
 from django.db.models import F, Q
 from rest_framework.exceptions import PermissionDenied
 
+from apps.communities.models.community import CommunityPricing, CommunityPrivacy
+from apps.memberships.models.member import MembershipStatus
 from apps.opportunities.models.application import OpportunityApplication
 from apps.opportunities.models.opportunity import (
     Opportunity,
@@ -24,6 +26,7 @@ class OpportunitySelector:
         technology_slug=None,
         community_slug=None,
         status=OpportunityStatus.OPEN,
+        viewer=None,
     ):
         qs = (
             Opportunity.objects.filter(status=status)
@@ -53,6 +56,32 @@ class OpportunitySelector:
 
         if community_slug:
             qs = qs.filter(community__slug=community_slug)
+        else:
+            # Privacy isolation for public feed:
+            # Exclude opportunities belonging to private, secret, or paid communities
+            # unless the viewer has permission (owner, active member, or superadmin).
+            if viewer and viewer.is_authenticated:
+                if not (viewer.is_staff or is_superadmin_user(viewer)):
+                    qs = qs.filter(
+                        Q(community__isnull=True)
+                        | Q(
+                            community__privacy_type=CommunityPrivacy.PUBLIC,
+                            community__pricing_type=CommunityPricing.FREE,
+                        )
+                        | Q(
+                            community__memberships__user=viewer,
+                            community__memberships__status=MembershipStatus.ACTIVE,
+                        )
+                        | Q(community__owner=viewer)
+                    )
+            else:
+                qs = qs.filter(
+                    Q(community__isnull=True)
+                    | Q(
+                        community__privacy_type=CommunityPrivacy.PUBLIC,
+                        community__pricing_type=CommunityPricing.FREE,
+                    )
+                )
 
         return qs.distinct().order_by("-created_at")
 

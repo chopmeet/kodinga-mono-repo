@@ -52,11 +52,18 @@ class MessagingService:
             role=ParticipantRole.MEMBER,
             last_read_at=timezone.now(),
         )
+        from realtime.broadcast import broadcast_conversation_created
+
+        broadcast_conversation_created(
+            conversation, participant_ids=[str(user1.id), str(user2.id)]
+        )
         return conversation, True
 
     @classmethod
     @transaction.atomic
-    def create_group_conversation(cls, creator, title, participants_users, community=None):
+    def create_group_conversation(
+        cls, creator, title, participants_users, community=None
+    ):
         if not title:
             raise ValidationError("Le titre du groupe est obligatoire.")
 
@@ -79,8 +86,20 @@ class MessagingService:
                 ConversationParticipant.objects.get_or_create(
                     conversation=conversation,
                     user=user,
-                    defaults={"role": ParticipantRole.MEMBER, "last_read_at": timezone.now()},
+                    defaults={
+                        "role": ParticipantRole.MEMBER,
+                        "last_read_at": timezone.now(),
+                    },
                 )
+
+        from realtime.broadcast import broadcast_conversation_created
+
+        all_ids = [str(creator.id)] + [
+            str(u.id) for u in participants_users if u.id != creator.id
+        ]
+        broadcast_conversation_created(
+            conversation, participant_ids=all_ids
+        )
 
         return conversation
 
@@ -166,6 +185,13 @@ class MessagingService:
                 metadata={"conversation_id": str(conversation.id), "message_id": str(message.id)},
             )
 
+        from realtime.broadcast import broadcast_message_created
+
+        participant_ids = list(
+            conversation.participants.values_list("user_id", flat=True)
+        )
+        broadcast_message_created(message, participant_ids=participant_ids)
+
         return message
 
     @classmethod
@@ -176,6 +202,11 @@ class MessagingService:
         if participant:
             participant.last_read_at = timezone.now()
             participant.save(update_fields=["last_read_at"])
+            from realtime.broadcast import broadcast_message_read
+
+            broadcast_message_read(
+                conversation.id, user.id, participant.last_read_at
+            )
             return True
         return False
 
@@ -191,6 +222,10 @@ class MessagingService:
         message.content = new_content
         message.is_edited = True
         message.save(update_fields=["content", "is_edited", "updated_at"])
+
+        from realtime.broadcast import broadcast_message_updated
+
+        broadcast_message_updated(message)
         return message
 
     @classmethod
@@ -207,6 +242,10 @@ class MessagingService:
         message.content = "[Ce message a été supprimé]"
         message.deleted_at = timezone.now()
         message.save(update_fields=["is_deleted", "content", "deleted_at", "updated_at"])
+
+        from realtime.broadcast import broadcast_message_deleted
+
+        broadcast_message_deleted(message.conversation_id, message.id)
         return message
 
     @classmethod
@@ -245,4 +284,10 @@ class MessagingService:
 
         message.is_pinned = not message.is_pinned
         message.save(update_fields=["is_pinned", "updated_at"])
+
+        from realtime.broadcast import broadcast_message_pinned
+
+        broadcast_message_pinned(
+            message.conversation_id, message.id, message.is_pinned
+        )
         return message.is_pinned

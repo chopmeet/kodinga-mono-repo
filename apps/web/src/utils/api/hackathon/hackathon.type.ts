@@ -199,7 +199,7 @@ export type HackathonApplication = {
 };
 
 /** User shape of the team / submission / judge serializers */
-export type HackathonPerson = { id: string; username: string; first_name: string; last_name: string; email: string };
+export type HackathonPerson = { id: string; username: string; first_name: string; last_name: string; email?: string };
 
 export type HackathonJudge = { id: string; user: HackathonPerson; user_id: string; can_evaluate_all: boolean; created_at: string };
 

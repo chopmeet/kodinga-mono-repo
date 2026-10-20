@@ -65,13 +65,56 @@ export type CommunityMembership = {
   status: string | null;
 };
 
+export type RolePermissionKey =
+  | 'can_create_posts'
+  | 'can_pin_posts'
+  | 'can_delete_posts'
+  | 'can_moderate_comments'
+  | 'can_create_events'
+  | 'can_manage_events'
+  | 'can_create_courses'
+  | 'can_manage_courses'
+  | 'can_create_hackathons'
+  | 'can_manage_hackathons'
+  | 'can_create_projects'
+  | 'can_feature_projects'
+  | 'can_invite_members'
+  | 'can_review_requests'
+  | 'can_sanction_members'
+  | 'can_assign_roles'
+  | 'can_manage_settings'
+  | 'can_view_analytics';
+
+export type RolePermissionsMap = Record<RolePermissionKey, boolean>;
+
+export type RolePermissionsMatrix = {
+  admin: RolePermissionsMap;
+  moderator: RolePermissionsMap;
+  member: RolePermissionsMap;
+  owner?: RolePermissionsMap;
+};
+
 export type CommunitySettings = {
   allow_member_invites: boolean;
   require_approval_to_join: boolean;
   welcome_message: string;
   default_post_permission: 'all_members' | 'moderators_only' | 'admins_only';
   is_read_only?: boolean;
+  enabled_features?: Record<string, boolean>;
+  role_permissions?: Partial<Record<'admin' | 'moderator' | 'member', Partial<RolePermissionsMap>>>;
+  all_role_permissions?: RolePermissionsMatrix;
+  updated_at?: string;
 };
+
+export type CommunitySettingsWriteData = Partial<{
+  allow_member_invites: boolean;
+  require_approval_to_join: boolean;
+  welcome_message: string;
+  default_post_permission: 'all_members' | 'moderators_only' | 'admins_only';
+  is_read_only: boolean;
+  enabled_features: Record<string, boolean>;
+  role_permissions: Partial<Record<'admin' | 'moderator' | 'member', Partial<RolePermissionsMap>>>;
+}>;
 
 export type CommunityRuleItem = { id: string; title: string; description: string; order: number };
 

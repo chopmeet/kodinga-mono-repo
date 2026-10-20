@@ -12,7 +12,6 @@ from apps.events.models.event import Event, EventFormat, EventStatus
 from apps.media.models.video_asset import VideoAsset
 from apps.memberships.models.member import (
     CommunityMember,
-    CommunityRole,
     MembershipStatus,
 )
 
@@ -30,17 +29,12 @@ class EventService:
         from common.permissions.base import is_superadmin_user
         if is_superadmin_user(actor_user) or community.owner_id == actor_user.id:
             return True
-        is_mgr = CommunityMember.objects.filter(
-            community=community,
-            user=actor_user,
-            status=MembershipStatus.ACTIVE,
-            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN],
-        ).exists()
-        if not is_mgr:
-            raise PermissionDenied(
-                "Seul le propriétaire ou un administrateur peut gérer les événements."
-            )
-        return True
+        from apps.memberships.permissions import has_community_permission
+        if has_community_permission(actor_user, community, 'can_manage_events'):
+            return True
+        raise PermissionDenied(
+            "Votre rôle ne vous autorise pas à gérer les événements dans cette communauté."
+        )
 
     @classmethod
     def check_active_member(cls, user: User, community: Community) -> bool:

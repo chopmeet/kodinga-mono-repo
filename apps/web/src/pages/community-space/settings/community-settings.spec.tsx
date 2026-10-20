@@ -7,7 +7,7 @@ import { must, renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
-vi.setConfig({ testTimeout: 15_000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 

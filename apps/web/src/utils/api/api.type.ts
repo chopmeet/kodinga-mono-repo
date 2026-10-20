@@ -15,7 +15,10 @@ export type ApiErrorBody = {
 };
 
 /** RTK Query `transformResponse` helper: keep only `data` */
-export const unwrap = <T>(response: ApiSuccess<T>) => response.data;
+export const unwrap = <T>(response: ApiSuccess<T> | T): T =>
+  response && typeof response === 'object' && 'data' in response
+    ? (response as ApiSuccess<T>).data
+    : (response as T);
 
 /** Paginated list (common/utils/pagination.py: StandardResultsSetPagination) */
 export type ApiPaginated<T> = {

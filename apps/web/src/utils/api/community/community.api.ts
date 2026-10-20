@@ -62,6 +62,7 @@ import type {
   PostWriteData,
   CommunityProposalResult,
   CommunityRecommendationResult,
+  CommunitySettingsWriteData,
   ContentSuggestionResult,
   ManagedCommunity,
   ManagedRole,
@@ -82,6 +83,7 @@ export const CommunityApi = createApi({
     'categories', 
     'members', 
     'posts',
+    'settings',
     'ai-settings',
     'events',
     'hackathons',
@@ -797,21 +799,25 @@ export const CommunityApi = createApi({
       transformResponse: (response: ApiSuccess<LeaderboardEntry[]>) => unwrap(response),
       providesTags: ['leaderboard'],
     }),
-    // Projects: raw responses (no envelope); lists are not paginated and only hold published projects
+    // Projects: lists and details wrapped in standard ApiSuccess envelope
     getCommunityProjects: builder.query<ProjectListItem[], ProjectsQuery>({
       query: (params) => ({ url: 'projects/', params: cleanParams(params) }),
+      transformResponse: (response: ApiSuccess<ProjectListItem[]>) => unwrap(response),
       providesTags: ['projects'],
     }),
     getProject: builder.query<Project, string>({
       query: (projectSlug) => `projects/${projectSlug}/`,
+      transformResponse: (response: ApiSuccess<Project>) => unwrap(response),
       providesTags: (_result, _error, projectSlug) => [{ type: 'projects', id: projectSlug }],
     }),
     createProject: builder.mutation<Project, ProjectWriteData>({
       query: (body) => ({ url: 'projects/', method: 'POST', body }),
+      transformResponse: (response: ApiSuccess<Project>) => unwrap(response),
       invalidatesTags: ['projects'],
     }),
     updateProject: builder.mutation<Project, Partial<ProjectWriteData> & { projectSlug: string }>({
       query: ({ projectSlug, ...body }) => ({ url: `projects/${projectSlug}/`, method: 'PATCH', body }),
+      transformResponse: (response: ApiSuccess<Project>) => unwrap(response),
       invalidatesTags: ['projects'],
     }),
     // Owner or staff only
@@ -822,6 +828,7 @@ export const CommunityApi = createApi({
     // Toggles the vote of the signed-in user; the cached project is patched, without a new GET (it counts a view)
     toggleProjectUpvote: builder.mutation<{ is_upvoted: boolean; upvotes_count: number }, string>({
       query: (projectSlug) => ({ url: `projects/${projectSlug}/upvote/`, method: 'POST' }),
+      transformResponse: (response: ApiSuccess<{ is_upvoted: boolean; upvotes_count: number }>) => unwrap(response),
       async onQueryStarted(projectSlug, { dispatch, getState, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
@@ -841,32 +848,39 @@ export const CommunityApi = createApi({
     }),
     getProjectComments: builder.query<ProjectComment[], string>({
       query: (projectSlug) => `projects/${projectSlug}/comments/`,
+      transformResponse: (response: ApiSuccess<ProjectComment[]>) => unwrap(response),
       providesTags: (_result, _error, projectSlug) => [{ type: 'projects', id: `${projectSlug}-comments` }],
     }),
     addProjectComment: builder.mutation<ProjectComment, { projectSlug: string; content: string; parent_id?: string }>({
       query: ({ projectSlug, ...body }) => ({ url: `projects/${projectSlug}/comments/`, method: 'POST', body }),
+      transformResponse: (response: ApiSuccess<ProjectComment>) => unwrap(response),
       invalidatesTags: (_result, _error, { projectSlug }) => [{ type: 'projects', id: `${projectSlug}-comments` }],
     }),
-    // Opportunities: raw responses (no envelope), lists are not paginated and only hold open offers
+    // Opportunities: lists and details wrapped in standard ApiSuccess envelope
     getCommunityOpportunities: builder.query<OpportunityListItem[], OpportunitiesQuery>({
       query: (params) => ({ url: 'opportunities/', params: cleanParams(params) }),
+      transformResponse: (response: ApiSuccess<OpportunityListItem[]>) => unwrap(response),
       providesTags: ['opportunities'],
     }),
     getOpportunity: builder.query<Opportunity, string>({
       query: (opportunitySlug) => `opportunities/${opportunitySlug}/`,
+      transformResponse: (response: ApiSuccess<Opportunity>) => unwrap(response),
       providesTags: (_result, _error, opportunitySlug) => [{ type: 'opportunities', id: opportunitySlug }],
     }),
     createOpportunity: builder.mutation<Opportunity, OpportunityWriteData>({
       query: (body) => ({ url: 'opportunities/', method: 'POST', body }),
+      transformResponse: (response: ApiSuccess<Opportunity>) => unwrap(response),
       invalidatesTags: ['opportunities'],
     }),
     updateOpportunity: builder.mutation<Opportunity, Partial<OpportunityWriteData> & { opportunitySlug: string }>({
       query: ({ opportunitySlug, ...body }) => ({ url: `opportunities/${opportunitySlug}/`, method: 'PATCH', body }),
+      transformResponse: (response: ApiSuccess<Opportunity>) => unwrap(response),
       invalidatesTags: ['opportunities'],
     }),
     // The api does not delete: DELETE closes the offer (status = closed), poster or staff only
     closeOpportunity: builder.mutation<{ status: 'closed' }, string>({
       query: (opportunitySlug) => ({ url: `opportunities/${opportunitySlug}/`, method: 'DELETE' }),
+      transformResponse: (response: ApiSuccess<{ status: 'closed' }>) => unwrap(response),
       invalidatesTags: ['opportunities'],
     }),
     // A member applies (CV, letter, portfolio: links); the poster is notified
@@ -881,6 +895,7 @@ export const CommunityApi = createApi({
     }),
     getOpportunityApplications: builder.query<OpportunityApplication[], string>({
       query: (opportunitySlug) => `opportunities/${opportunitySlug}/applications/`,
+      transformResponse: (response: ApiSuccess<OpportunityApplication[]>) => unwrap(response),
       providesTags: (_result, _error, opportunitySlug) => [{ type: 'opportunities', id: `${opportunitySlug}-applications` }],
     }),
     updateOpportunityApplicationStatus: builder.mutation<
@@ -888,6 +903,7 @@ export const CommunityApi = createApi({
       { applicationId: string; opportunitySlug: string; status: OpportunityApplicationStatus }
     >({
       query: ({ applicationId, status }) => ({ url: `opportunities/applications/${applicationId}/status/`, method: 'PATCH', body: { status } }),
+      transformResponse: (response: ApiSuccess<OpportunityApplication>) => unwrap(response),
       invalidatesTags: (_result, _error, { opportunitySlug }) => [{ type: 'opportunities', id: `${opportunitySlug}-applications` }],
     }),
     getTechnologies: builder.query<Technology[], string>({
@@ -909,7 +925,7 @@ export const CommunityApi = createApi({
     updateCommunitySettings: builder.mutation<CommunitySettings, { slug: string } & Partial<CommunitySettings>>({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/settings/`, method: 'PATCH', body }),
       transformResponse: unwrap<CommunitySettings>,
-      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+      invalidatesTags: (_result, _error, { slug }) => ['communities', { type: 'communities', id: slug }, { type: 'settings', id: slug }],
     }),
     addCommunityRule: builder.mutation<CommunityRuleItem, { slug: string; title: string; description: string; order: number }>({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/rules/`, method: 'POST', body }),
@@ -944,6 +960,11 @@ export const CommunityApi = createApi({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/ai-settings/`, method: 'PATCH', body }),
       transformResponse: unwrap<CommunityAISettings>,
       invalidatesTags: (_result, _error, { slug }) => [{ type: 'ai-settings', id: slug }],
+    }),
+    getCommunitySettings: builder.query<CommunitySettings, string>({
+      query: (slug) => `communities/${slug}/settings/`,
+      transformResponse: unwrap<CommunitySettings>,
+      providesTags: (_result, _error, slug) => [{ type: 'settings', id: slug }],
     }),
     analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
@@ -1018,6 +1039,7 @@ export const {
   useSuggestContentMutation,
   useAnalyzeCommunityMutation,
   useAssistantChatMutation,
+  useGetCommunitySettingsQuery,
   useGetCommunityAISettingsQuery,
   useUpdateCommunityAISettingsMutation,
   useGetCommunityEventsQuery,

@@ -5,10 +5,14 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 from rest_framework import permissions, status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.communities.models.community import Community
+from apps.communities.selectors.community_selector import CommunitySelector
+from apps.memberships.permissions import (
+    check_community_membership,
+    check_community_read_permission,
+)
 from apps.opportunities.models.application import (
     OpportunityApplication,
 )
@@ -30,6 +34,7 @@ from apps.opportunities.serializers.opportunity_serializers import (
     UpdateApplicationStatusSerializer,
 )
 from apps.opportunities.services.opportunity_service import OpportunityService
+from common.utils.responses import error_response, success_response
 
 
 class OpportunityListView(APIView):
@@ -103,7 +108,18 @@ class OpportunityListView(APIView):
         experience = request.query_params.get("experience")
         search = request.query_params.get("search")
         tech = request.query_params.get("tech")
-        community = request.query_params.get("community")
+        community_slug = request.query_params.get("community")
+
+        if community_slug:
+            try:
+                community = CommunitySelector.get_community_by_slug(community_slug, user=request.user)
+            except Community.DoesNotExist:
+                return error_response(
+                    "Communauté introuvable.",
+                    code="resource_not_found",
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+            check_community_read_permission(request.user, community)
 
         opportunities = OpportunitySelector.list_opportunities(
             opportunity_type=opp_type,
@@ -111,7 +127,8 @@ class OpportunityListView(APIView):
             experience_level=experience,
             search=search,
             technology_slug=tech,
-            community_slug=community,
+            community_slug=community_slug,
+            viewer=request.user,
         )
 
         if request.user.is_authenticated:
@@ -123,7 +140,7 @@ class OpportunityListView(APIView):
             for o in opportunities:
                 o.has_applied = o.id in applied_ids
 
-        return Response(OpportunitySerializer(opportunities, many=True).data)
+        return success_response(data=OpportunitySerializer(opportunities, many=True).data)
 
     @extend_schema(
         tags=["Opportunities"],
@@ -223,8 +240,10 @@ class OpportunityListView(APIView):
     )
     def post(self, request):
         if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Authentification requise."}, status=status.HTTP_401_UNAUTHORIZED
+            return error_response(
+                "Authentification requise.",
+                code="authentication_required",
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         serializer = CreateOpportunitySerializer(data=request.data)
@@ -236,19 +255,22 @@ class OpportunityListView(APIView):
         if community_id:
             community = Community.objects.filter(id=community_id).first()
             if not community:
-                return Response(
-                    {"detail": "Communauté introuvable."},
-                    status=status.HTTP_404_NOT_FOUND,
+                return error_response(
+                    "Communauté introuvable.",
+                    code="resource_not_found",
+                    status_code=status.HTTP_404_NOT_FOUND,
                 )
+            check_community_membership(request.user, community, "publier une opportunité dans cette communauté")
 
         opportunity = OpportunityService.create_opportunity(
             poster=request.user,
             validated_data={**serializer.validated_data, "community": community},
             technology_ids=tech_ids,
         )
-        return Response(
-            OpportunityDetailSerializer(opportunity).data,
-            status=status.HTTP_201_CREATED,
+        return success_response(
+            data=OpportunityDetailSerializer(opportunity).data,
+            message="Opportunité créée avec succès.",
+            status_code=status.HTTP_201_CREATED,
         )
 
 
@@ -277,7 +299,7 @@ class MyOpportunityListView(APIView):
     )
     def get(self, request):
         opportunities = OpportunitySelector.get_user_posted_opportunities(request.user)
-        return Response(OpportunitySerializer(opportunities, many=True).data)
+        return success_response(data=OpportunitySerializer(opportunities, many=True).data)
 
 
 class MyApplicationListView(APIView):
@@ -305,7 +327,7 @@ class MyApplicationListView(APIView):
     )
     def get(self, request):
         applications = OpportunitySelector.get_user_applications(request.user)
-        return Response(OpportunityApplicationSerializer(applications, many=True).data)
+        return success_response(data=OpportunityApplicationSerializer(applications, many=True).data)
 
 
 class OpportunityDetailView(APIView):
@@ -343,8 +365,14 @@ class OpportunityDetailView(APIView):
     def get(self, request, slug):
         opportunity = OpportunitySelector.get_opportunity_by_slug(slug, viewer=request.user)
         if not opportunity:
-            return Response({"detail": "Opportunité introuvable."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(OpportunityDetailSerializer(opportunity).data)
+            return error_response(
+                "Opportunité introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if opportunity.community:
+            check_community_read_permission(request.user, opportunity.community)
+        return success_response(data=OpportunityDetailSerializer(opportunity).data)
 
     @extend_schema(
         tags=["Opportunities"],
@@ -372,10 +400,20 @@ class OpportunityDetailView(APIView):
     )
     def patch(self, request, slug):
         if not request.user.is_authenticated:
-            return Response({"detail": "Non authentifié."}, status=status.HTTP_401_UNAUTHORIZED)
+            return error_response(
+                "Authentification requise.",
+                code="authentication_required",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
         opportunity = Opportunity.objects.filter(slug=slug).first()
         if not opportunity:
-            return Response({"detail": "Opportunité introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Opportunité introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if opportunity.community:
+            check_community_membership(request.user, opportunity.community, "modifier cette offre")
 
         serializer = CreateOpportunitySerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -386,10 +424,12 @@ class OpportunityDetailView(APIView):
             if community_id:
                 community = Community.objects.filter(id=community_id).first()
                 if not community:
-                    return Response(
-                        {"detail": "Communauté introuvable."},
-                        status=status.HTTP_404_NOT_FOUND,
+                    return error_response(
+                        "Communauté introuvable.",
+                        code="resource_not_found",
+                        status_code=status.HTTP_404_NOT_FOUND,
                     )
+                check_community_membership(request.user, community, "associer cette opportunité à cette communauté")
                 serializer.validated_data["community"] = community
             else:
                 serializer.validated_data["community"] = None
@@ -400,7 +440,10 @@ class OpportunityDetailView(APIView):
             validated_data=serializer.validated_data,
             technology_ids=tech_ids,
         )
-        return Response(OpportunityDetailSerializer(updated_opp).data)
+        return success_response(
+            data=OpportunityDetailSerializer(updated_opp).data,
+            message="Opportunité mise à jour avec succès.",
+        )
 
     @extend_schema(
         tags=["Opportunities"],
@@ -423,13 +466,26 @@ class OpportunityDetailView(APIView):
     )
     def delete(self, request, slug):
         if not request.user.is_authenticated:
-            return Response({"detail": "Non authentifié."}, status=status.HTTP_401_UNAUTHORIZED)
+            return error_response(
+                "Authentification requise.",
+                code="authentication_required",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
         opportunity = Opportunity.objects.filter(slug=slug).first()
         if not opportunity:
-            return Response({"detail": "Opportunité introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Opportunité introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if opportunity.community:
+            check_community_membership(request.user, opportunity.community, "clôturer cette offre")
 
         OpportunityService.close_opportunity(opportunity, request.user)
-        return Response({"status": "closed", "message": "Opportunité clôturée avec succès."})
+        return success_response(
+            data={"status": "closed"},
+            message="Opportunité clôturée avec succès.",
+        )
 
 
 class OpportunityApplyView(APIView):
@@ -482,7 +538,14 @@ class OpportunityApplyView(APIView):
     def post(self, request, slug):
         opportunity = Opportunity.objects.filter(slug=slug).first()
         if not opportunity:
-            return Response({"detail": "Opportunité introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Opportunité introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if opportunity.community:
+            check_community_read_permission(request.user, opportunity.community)
+            check_community_membership(request.user, opportunity.community, "postuler à cette opportunité")
 
         serializer = CreateApplicationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -492,9 +555,10 @@ class OpportunityApplyView(APIView):
             applicant=request.user,
             data=serializer.validated_data,
         )
-        return Response(
-            OpportunityApplicationSerializer(application).data,
-            status=status.HTTP_201_CREATED,
+        return success_response(
+            data=OpportunityApplicationSerializer(application).data,
+            message="Candidature enregistrée avec succès.",
+            status_code=status.HTTP_201_CREATED,
         )
 
 
@@ -534,10 +598,16 @@ class OpportunityApplicationsListView(APIView):
     def get(self, request, slug):
         opportunity = Opportunity.objects.filter(slug=slug).first()
         if not opportunity:
-            return Response({"detail": "Opportunité introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Opportunité introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if opportunity.community:
+            check_community_read_permission(request.user, opportunity.community)
 
         applications = OpportunitySelector.get_opportunity_applications(opportunity, request.user)
-        return Response(OpportunityApplicationSerializer(applications, many=True).data)
+        return success_response(data=OpportunityApplicationSerializer(applications, many=True).data)
 
 
 class ApplicationStatusUpdateView(APIView):
@@ -593,7 +663,13 @@ class ApplicationStatusUpdateView(APIView):
     def patch(self, request, application_id):
         application = OpportunityApplication.objects.filter(id=application_id).first()
         if not application:
-            return Response({"detail": "Candidature introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Candidature introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if application.opportunity.community:
+            check_community_membership(request.user, application.opportunity.community, "gérer cette candidature")
 
         serializer = UpdateApplicationStatusSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -603,4 +679,7 @@ class ApplicationStatusUpdateView(APIView):
             user=request.user,
             new_status=serializer.validated_data["status"],
         )
-        return Response(OpportunityApplicationSerializer(updated_app).data)
+        return success_response(
+            data=OpportunityApplicationSerializer(updated_app).data,
+            message="Statut de la candidature mis à jour avec succès.",
+        )

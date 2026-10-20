@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react';
 import type { MyCommunity, SpaceRole } from '@/data/community-space.data';
 
 /** Sections of the space; what each role may open */
-export type SpaceSection = 'dashboard' | 'members' | 'posts' | 'events' | 'hackathons' | 'courses' | 'opportunities' | 'leaderboard' | 'projects' | 'payments' | 'settings' | 'danger';
+export type SpaceSection = 'dashboard' | 'members' | 'posts' | 'events' | 'hackathons' | 'courses' | 'opportunities' | 'leaderboard' | 'projects' | 'payments' | 'settings' | 'roles' | 'danger';
 
 const ACCESS: Record<SpaceSection, SpaceRole[]> = {
   dashboard: ['owner', 'admin', 'moderator'],
@@ -19,6 +19,7 @@ const ACCESS: Record<SpaceSection, SpaceRole[]> = {
   payments: ['owner'],
   // Same as the api: owner and admins edit the community, only the owner deletes or transfers it
   settings: ['owner', 'admin'],
+  roles: ['owner'],
   danger: ['owner'],
 };
 

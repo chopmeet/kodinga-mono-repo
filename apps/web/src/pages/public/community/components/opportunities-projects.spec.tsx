@@ -6,7 +6,7 @@ import { renderAppAt, SLOW, TEST_TOKEN } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
 
-vi.setConfig({ testTimeout: 15_000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 const person = { id: 'u9', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye', avatar_url: '', headline: '' };

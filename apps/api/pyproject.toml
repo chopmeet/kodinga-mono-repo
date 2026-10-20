@@ -12,6 +12,8 @@ python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 norecursedirs = [".venv", "venv", "dist", "scratch", ".git"]
 addopts = "-v --reuse-db --nomigrations"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [project]
 name = "api"
@@ -37,6 +39,9 @@ dependencies = [
     "resend>=2.49.0",
     "google-genai>=1.47.0",
     "openai>=2.48.0",
+    "daphne>=4.1.0",
+    "channels>=4.0.0",
+    "channels-redis>=4.2.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -54,6 +59,7 @@ dev = [
   "pytest-sugar>=1.0.0",
   "pytest-cov>=6.0.0",
   "pytest-html>=4.1.1",
+  "pytest-asyncio>=0.24.0",
   "factory-boy>=3.3.0",
 ]
 

@@ -97,7 +97,19 @@ class ConversationMessagesView(APIView):
         if not conversation:
             return Response({"detail": "Conversation introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
-        messages = MessagingSelector.get_conversation_messages(conversation, request.user)
+        since_param = request.query_params.get("since")
+        since = None
+        if since_param:
+            try:
+                from django.utils.dateparse import parse_datetime
+
+                since = parse_datetime(since_param)
+            except Exception:
+                pass
+
+        messages = MessagingSelector.get_conversation_messages(
+            conversation, request.user, since=since
+        )
         return Response(MessageSerializer(messages, many=True).data)
 
     def post(self, request, conversation_id):

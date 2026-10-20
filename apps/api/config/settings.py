@@ -40,6 +40,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -54,9 +55,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'drf_spectacular',
+    'channels',
 
     # Internal applications & common core
     'common',
+    'realtime.apps.RealtimeConfig',
     'apps.accounts.apps.AccountsConfig',
     'apps.profiles.apps.ProfilesConfig',
     'apps.media.apps.MediaConfig',
@@ -338,6 +341,24 @@ if 'CACHES' not in globals() or not IS_TESTING:
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if (DEBUG or IS_TESTING) else 'django.core.cache.backends.redis.RedisCache',
             'LOCATION': env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/1'),
         }
+    }
+
+# Channels & Redis Channel Layer Configuration
+REDIS_CHANNEL_URL = env('REDIS_CHANNEL_URL', default=env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/2'))
+if IS_TESTING:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_CHANNEL_URL],
+            },
+        },
     }
 
 # External OAuth Credentials
