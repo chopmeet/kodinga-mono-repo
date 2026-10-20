@@ -36,15 +36,8 @@ class ClassroomService:
         if is_superadmin_user(user) or community.owner_id == user.id:
             return
 
-        is_manager = CommunityMember.objects.filter(
-            community=community,
-            user=user,
-            status=MembershipStatus.ACTIVE,
-            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
-        ).exists()
-
-        if not is_manager:
-            raise PermissionDenied("Seul le propriétaire ou un administrateur de la communauté peut gérer les cours.")
+        from apps.memberships.permissions import check_community_permission
+        check_community_permission(user, community, 'can_manage_courses', "gérer les cours dans cette communauté")
 
     # ---------------- Course Operations ----------------
 

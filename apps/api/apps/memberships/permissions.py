@@ -241,3 +241,55 @@ def check_last_admin_protection(community: Community, target_user_id) -> None:
         )
 
 
+def get_community_member_role(user, community) -> str | None:
+    """
+    Returns the role ('owner', 'admin', 'moderator', 'member') of the user in the given community.
+    Returns 'owner' if the user is the creator/owner of the community or a superadmin.
+    Returns None if the user is not an active member.
+    """
+    if not user or not user.is_authenticated or not community:
+        return None
+    if is_superadmin_user(user) or getattr(community, 'owner_id', None) == user.id:
+        return CommunityRole.OWNER
+
+    member = CommunityMember.objects.filter(
+        community=community,
+        user=user,
+        status=MembershipStatus.ACTIVE,
+    ).only('role').first()
+    return member.role if member else None
+
+
+def has_community_permission(user, community, permission_name: str) -> bool:
+    """
+    Evaluates whether the user has a specific community permission,
+    checking dynamic CommunitySettings.role_permissions overrides and defaults.
+    Superadmins and community owners always return True.
+    """
+    if not user or not user.is_authenticated or not community:
+        return False
+    if is_superadmin_user(user) or getattr(community, 'owner_id', None) == user.id:
+        return True
+
+    role = get_community_member_role(user, community)
+    if not role:
+        return False
+
+    settings = getattr(community, 'settings', None)
+    if not settings:
+        from apps.communities.models.settings import CommunitySettings
+        settings, _ = CommunitySettings.objects.get_or_create(community=community)
+
+    return settings.has_permission(role, permission_name)
+
+
+def check_community_permission(user, community, permission_name: str, action_label: str = "effectuer cette action") -> None:
+    """
+    Raises rest_framework.exceptions.PermissionDenied if user lacks the specified community permission.
+    """
+    from rest_framework.exceptions import PermissionDenied
+
+    if not has_community_permission(user, community, permission_name):
+        raise PermissionDenied(f"Votre rôle actuel ne vous permet pas de {action_label}.")
+
+

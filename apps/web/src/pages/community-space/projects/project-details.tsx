@@ -24,6 +24,7 @@ function ProjectDetails() {
   const { data: p, isLoading, error } = useGetProjectQuery(projectSlug, { skip: !projectSlug });
   const [toggleUpvote, { isLoading: isVoting }] = useToggleProjectUpvoteMutation();
   const [editing, setEditing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { canHandle, actionsFor, confirmDialog } = UseProjectActions({ onEdit: () => setEditing(true), afterDelete: () => navigate(back) });
 
   // "Modifier" from the list lands here with { edit: true }
@@ -123,6 +124,40 @@ function ProjectDetails() {
               </div>
             )}
           </ColgateWrapper>
+
+          {/* Galerie des captures d'écran de démo */}
+          {p.demo_images && p.demo_images.length > 0 && (
+            <ColgateWrapper className="border border-neutral-200 p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-slate-900">
+                  Captures d'écran & Démo ({p.demo_images.length})
+                </h2>
+                <span className="text-xs text-slate-500">Cliquer pour agrandir</span>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {p.demo_images.map((imgUrl, i) => (
+                  <button
+                    key={`${imgUrl}-${i}`}
+                    type="button"
+                    onClick={() => setSelectedImage(imgUrl)}
+                    className="group relative aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 transition hover:border-blue-400 hover:shadow-md"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Capture démo ${i + 1}`}
+                      className="size-full object-cover transition duration-200 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition group-hover:opacity-100">
+                      <span className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white shadow-xs">
+                        Agrandir
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </ColgateWrapper>
+          )}
+
           <ProjectComments projectSlug={p.slug} />
         </div>
 
@@ -155,6 +190,27 @@ function ProjectDetails() {
 
       <ProjectFormModal communityId={community.id} open={editing} project={p} onClose={() => setEditing(false)} />
       {confirmDialog}
+
+      {/* Lightbox plein écran pour les captures démo */}
+      {selectedImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedImage} alt="Capture d'écran plein écran" className="max-h-[85vh] w-auto rounded-xl object-contain shadow-2xl" />
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-3 -right-3 flex size-8 items-center justify-center rounded-full bg-white font-bold text-slate-800 shadow-lg transition hover:bg-slate-200"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

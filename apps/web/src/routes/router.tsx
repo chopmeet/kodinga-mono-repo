@@ -48,6 +48,7 @@ import CommunitySettings from '@/pages/community-space/settings/community-settin
 import SpaceAccessTab from '@/pages/community-space/settings/tabs/access';
 import SpaceDangerTab from '@/pages/community-space/settings/tabs/danger';
 import SpaceGeneralTab from '@/pages/community-space/settings/tabs/general';
+import SpaceRolesTab from '@/pages/community-space/settings/tabs/roles';
 import SpaceRulesTab from '@/pages/community-space/settings/tabs/rules';
 import SpaceAITab from '@/pages/community-space/settings/tabs/ai';
 import SectionGuard from '@/pages/community-space/section-guard';
@@ -198,6 +199,7 @@ export const AppRoutes: RouteObject[] = [
           { index: true, element: <Navigate to="general" replace /> },
           { path: 'general', element: <SpaceGeneralTab /> },
           { path: 'access', element: <SpaceAccessTab /> },
+          { path: 'roles', element: <SectionGuard section="roles"><SpaceRolesTab /></SectionGuard> },
           { path: 'rules', element: <SpaceRulesTab /> },
           { path: 'ai', element: <SpaceAITab /> },
           { path: 'danger', element: <SectionGuard section="danger"><SpaceDangerTab /></SectionGuard> },

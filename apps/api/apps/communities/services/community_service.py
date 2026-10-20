@@ -215,7 +215,8 @@ class CommunityService:
         data: dict[str, Any]
     ) -> CommunitySettings:
         from common.permissions.base import is_superadmin_user
-        if not is_superadmin_user(user) and community.owner_id != user.id:
+        is_owner_or_super = is_superadmin_user(user) or community.owner_id == user.id
+        if not is_owner_or_super:
             is_admin = CommunityMember.objects.filter(
                 community=community,
                 user=user,
@@ -224,6 +225,8 @@ class CommunityService:
             ).exists()
             if not is_admin:
                 raise PermissionDenied("Droits administrateur requis.")
+            if 'role_permissions' in data:
+                raise PermissionDenied("Seul le propriétaire de la communauté peut modifier les permissions des rôles.")
 
         settings, _ = CommunitySettings.objects.get_or_create(community=community)
         for key, value in data.items():

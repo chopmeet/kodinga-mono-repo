@@ -35,12 +35,8 @@ class IsCommunityClassroomManager(BasePermission):
         if community.owner_id == request.user.id:
             return True
 
-        return CommunityMember.objects.filter(
-            community=community,
-            user=request.user,
-            status=MembershipStatus.ACTIVE,
-            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
-        ).exists()
+        from apps.memberships.permissions import has_community_permission
+        return has_community_permission(request.user, community, 'can_manage_courses')
 
 
 

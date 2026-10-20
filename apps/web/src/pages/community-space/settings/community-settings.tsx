@@ -12,6 +12,7 @@ function CommunitySettings() {
   const tabs: Tab[] = [
     { id: 'general', title: 'Informations', link: 'general' },
     { id: 'access', title: 'Accès & publication', link: 'access' },
+    ...(canAccess(space, 'roles') ? [{ id: 'roles', title: 'Rôles & Permissions', link: 'roles' }] : []),
     { id: 'rules', title: 'Règles', link: 'rules' },
     { id: 'ai', title: 'Intelligence Artificielle', link: 'ai' },
     ...(canAccess(space, 'danger') ? [{ id: 'danger', title: 'Zone sensible', link: 'danger' }] : []),

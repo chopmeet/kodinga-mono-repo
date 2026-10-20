@@ -22,6 +22,7 @@ export type ProjectListItem = {
   slug: string;
   tagline: string;
   cover_image_url: string;
+  demo_images?: string[];
   demo_url: string;
   repository_url: string;
   status: ProjectStatus;
@@ -39,6 +40,7 @@ export type Project = ProjectListItem & {
   description: string;
   community_id: string | null;
   updated_at: string;
+  demo_images: string[];
 };
 
 /** CreateProjectSerializer (PATCH takes any subset) */
@@ -47,6 +49,7 @@ export type ProjectWriteData = {
   tagline: string;
   description: string;
   cover_image_url: string;
+  demo_images?: string[];
   demo_url: string;
   repository_url: string;
   community_id: string | null;

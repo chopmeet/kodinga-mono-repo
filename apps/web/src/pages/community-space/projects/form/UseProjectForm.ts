@@ -19,6 +19,7 @@ const schema = z
     repository_url: optionalUrl,
     demo_url: optionalUrl,
     cover_image_url: optionalUrl,
+    demo_images: z.array(z.string().trim()).default([]),
     technologies: z.array(z.object({ id: z.string(), name: z.string(), slug: z.string() })),
   })
   // A showcase needs something to look at
@@ -29,9 +30,18 @@ const schema = z
 
 export type ProjectFormValues = z.infer<typeof schema>;
 
-const FIELDS = ['title', 'tagline', 'description', 'repository_url', 'demo_url', 'cover_image_url'] as const;
+const FIELDS = ['title', 'tagline', 'description', 'repository_url', 'demo_url', 'cover_image_url', 'demo_images'] as const;
 
-const DEFAULTS: ProjectFormValues = { title: '', tagline: '', description: '', repository_url: '', demo_url: '', cover_image_url: '', technologies: [] };
+const DEFAULTS: ProjectFormValues = {
+  title: '',
+  tagline: '',
+  description: '',
+  repository_url: '',
+  demo_url: '',
+  cover_image_url: '',
+  demo_images: [],
+  technologies: [],
+};
 
 const fromProject = (p: Project): ProjectFormValues => ({
   title: p.title,
@@ -40,6 +50,7 @@ const fromProject = (p: Project): ProjectFormValues => ({
   repository_url: p.repository_url,
   demo_url: p.demo_url,
   cover_image_url: p.cover_image_url,
+  demo_images: p.demo_images ?? [],
   technologies: p.technologies.map(({ id, name, slug }) => ({ id, name, slug })),
 });
 
@@ -69,6 +80,9 @@ function UseProjectForm({ communityId, project, open, onDone }: { communityId: s
       { shouldDirty: true },
     );
 
+  const setCoverImageUrl = (url: string) => setValue('cover_image_url', url, { shouldDirty: true, shouldValidate: true });
+  const setDemoImages = (images: string[]) => setValue('demo_images', images, { shouldDirty: true, shouldValidate: true });
+
   const onSubmit = async (v: ProjectFormValues) => {
     const body: ProjectWriteData = {
       title: v.title,
@@ -77,6 +91,7 @@ function UseProjectForm({ communityId, project, open, onDone }: { communityId: s
       repository_url: v.repository_url,
       demo_url: v.demo_url,
       cover_image_url: v.cover_image_url,
+      demo_images: v.demo_images,
       community_id: communityId,
       status: 'published',
       technology_ids: v.technologies.map((t) => t.id),
@@ -98,7 +113,17 @@ function UseProjectForm({ communityId, project, open, onDone }: { communityId: s
     }
   };
 
-  return { form, technologies: watch('technologies'), addTechnology, removeTechnology, onSubmit: handleSubmit(onSubmit) };
+  return {
+    form,
+    technologies: watch('technologies'),
+    coverImageUrl: watch('cover_image_url'),
+    demoImages: watch('demo_images'),
+    addTechnology,
+    removeTechnology,
+    setCoverImageUrl,
+    setDemoImages,
+    onSubmit: handleSubmit(onSubmit),
+  };
 }
 
 export default UseProjectForm;
