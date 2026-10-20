@@ -1,6 +1,6 @@
 type ENV = 'dev' | 'prod' | 'demo';
 
-export const currentEnv: ENV = 'dev';
+export const currentEnv: ENV = 'demo';
 
 const env: ENV = currentEnv;
 
