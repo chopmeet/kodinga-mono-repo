@@ -9,6 +9,7 @@ import {
   useMarkNotificationReadMutation,
 } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
+import { useRealtime } from '@/utils/realtime/use-realtime';
 import type { AppNotification } from '@/utils/api/notification/notification.type';
 
 export const NOTIFICATIONS_POLLING = 30_000;
@@ -38,10 +39,12 @@ export function notificationHref(actionUrl: string): string | null {
   return null;
 }
 
-/** Unread count of the header bell, refreshed every 30 s */
+/** Unread count of the header bell: live through the WebSocket, every 30 s without it */
 export function useUnreadNotifications() {
   const signedIn = !!useAppSelector((s) => s.user.token);
-  const { data = 0 } = useGetUnreadNotificationsCountQuery(undefined, { skip: !signedIn, pollingInterval: NOTIFICATIONS_POLLING });
+  // Pushed by the realtime api; polled only while the WebSocket is down
+  const { connected } = useRealtime();
+  const { data = 0 } = useGetUnreadNotificationsCountQuery(undefined, { skip: !signedIn, pollingInterval: connected ? 0 : NOTIFICATIONS_POLLING });
   return data;
 }
 

@@ -15,6 +15,7 @@ import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';
 import { PollCard } from './poll-card';
 import { Pill } from './section-header';
+import { useRealtimeCommunityFeed } from '@/utils/realtime/use-realtime';
 
 const PAGE_SIZE = 10;
 const FILTERS: { id: PostType | 'all'; label: string }[] = [
@@ -118,6 +119,8 @@ function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact:
 
 /** Feed of the community (GET communities/<slug>/feed/, pinned posts first) */
 export function FeedTab({ page }: { page: CommunityPage }) {
+  // New posts, reactions and comment counts of the others appear live
+  useRealtimeCommunityFeed(page.canSee ? page.community?.id : undefined);
   const user = useUser();
   const [type, setType] = useState<PostType | 'all'>('all');
   const [search, setSearch] = useState('');

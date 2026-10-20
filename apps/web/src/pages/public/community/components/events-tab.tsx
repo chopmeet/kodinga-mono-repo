@@ -1,15 +1,16 @@
-import { CalendarDays, CalendarX2, Clock, MapPin, Users } from 'lucide-react';
+import { CalendarDays, CalendarX2, Clock, MapPin, PlayCircle, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
+import { ReplayPlayer } from '@/pages/shared/replay-player';
 import { eventTypeLabel, formatEventPlace } from '@/pages/community-space/events/event-labels';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import UseEventRsvp from '../form/UseEventRsvp';
 import { EventRsvpActions } from './event-rsvp';
-import { SectionHeader } from './section-header';
+import { Pill, SectionHeader } from './section-header';
 
 const PAGE_SIZE = 10;
 const day = new Intl.DateTimeFormat('fr-FR', { day: '2-digit' });
@@ -23,12 +24,34 @@ function timeRange(event: CommunityEvent) {
   return `${hour.format(start)} – ${hour.format(new Date(event.end_time))}${zone ? ` (${zone})` : ''}`;
 }
 
-/** Upcoming events of the community (GET communities/<slug>/events/?upcoming=true, public) */
+/** Replay of a past event, opened on demand (the player loads hls.js only then) */
+function PastEventReplay({ event, page }: { event: CommunityEvent; page: CommunityPage }) {
+  const [open, setOpen] = useState(false);
+  if (!event.replay_video_asset) return <p className="text-sm text-slate-500">Pas de replay pour cet événement.</p>;
+  if (!page.canSee) return <p className="text-sm text-slate-500">Replay réservé aux membres de la communauté.</p>;
+  if (!open) {
+    return (
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+        <PlayCircle /> Voir le replay
+      </Button>
+    );
+  }
+  return <ReplayPlayer video={event.replay_video_asset} title={event.title} />;
+}
+
+/**
+ * Events of the community (public): the upcoming ones (GET .../events/?upcoming=true) to register
+ * to, the past ones (status=completed) with their replay
+ */
 export function EventsTab({ page }: { page: CommunityPage }) {
   const slug = page.slug;
   const rsvp = UseEventRsvp(slug);
+  const [view, setView] = useState<'upcoming' | 'past'>('upcoming');
   const [count, setCount] = useState(PAGE_SIZE);
-  const { data, isLoading, isFetching } = useGetCommunityEventsQuery({ slug, upcoming: true, page: 1, page_size: count });
+  const past = view === 'past';
+  const { data, isLoading, isFetching } = useGetCommunityEventsQuery(
+    past ? { slug, status: 'completed', page: 1, page_size: count } : { slug, upcoming: true, page: 1, page_size: count },
+  );
   const events = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
 
@@ -38,17 +61,37 @@ export function EventsTab({ page }: { page: CommunityPage }) {
         Ateliers, lives et rencontres à venir dans la communauté. Inscrivez-vous pour recevoir le lien et l’ajouter à votre agenda.
       </SectionHeader>
 
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Période">
+        {(
+          [
+            ['upcoming', 'À venir'],
+            ['past', 'Passés et replays'],
+          ] as const
+        ).map(([id, label]) => (
+          <Pill
+            key={id}
+            active={view === id}
+            onClick={() => {
+              setView(id);
+              setCount(PAGE_SIZE);
+            }}
+          >
+            {label}
+          </Pill>
+        ))}
+      </div>
+
       {isLoading ? (
         <p className="py-12 text-center text-sm text-slate-500">Chargement du calendrier…</p>
       ) : events.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <CalendarX2 className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">Aucun événement à venir</p>
-          <p className="mt-1 text-sm text-slate-500">Les lives, ateliers et rencontres apparaîtront ici.</p>
+          <p className="mt-3 font-semibold text-slate-900">{past ? 'Aucun événement passé' : 'Aucun événement à venir'}</p>
+          <p className="mt-1 text-sm text-slate-500">{past ? 'Les événements terminés et leurs replays seront ici.' : 'Les lives, ateliers et rencontres apparaîtront ici.'}</p>
         </div>
       ) : (
         <>
-          <ul className="flex flex-col gap-6" aria-label="Événements à venir">
+          <ul className="flex flex-col gap-6" aria-label={past ? 'Événements passés' : 'Événements à venir'}>
             {events.map((event) => {
               const start = new Date(event.start_time);
               return (
@@ -87,7 +130,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
                       </p>
                       {event.description && <p className="mt-3 line-clamp-3 text-sm text-slate-600">{event.description}</p>}
                       <div className="mt-4">
-                        <EventRsvpActions event={event} page={page} rsvp={rsvp} />
+                        {past ? <PastEventReplay event={event} page={page} /> : <EventRsvpActions event={event} page={page} rsvp={rsvp} />}
                       </div>
                     </div>
                   </div>

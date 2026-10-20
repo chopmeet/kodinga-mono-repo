@@ -23,46 +23,37 @@ export function useRealtime() {
 }
 
 /**
- * Top-level hook that connects to the Realtime API when a user is signed in,
- * and disconnects when they sign out.
+ * Top-level hook (mounted once by App) that connects to the Realtime API when a user is signed
+ * in, and disconnects when they sign out. The ticket is asked through the api client (an expired
+ * access token is renewed first).
  */
 export function useRealtimeSync() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.user.token);
 
   useEffect(() => {
-    if (token) {
-      realtimeClient.connect();
-    } else {
+    if (!token) {
       realtimeClient.disconnect();
+      realtimeClient.setTicketProvider(null);
+      return;
     }
-  }, [token]);
+    realtimeClient.setTicketProvider(async () => (await dispatch(CommunityApi.endpoints.createWsTicket.initiate()).unwrap()).ticket ?? null);
+    realtimeClient.connect();
+  }, [token, dispatch]);
 
-  // Global personal listeners (notifications & direct message previews)
+  // Global personal listeners: notifications, conversations, and what was missed while offline
   useEffect(() => {
     if (!token) return;
-
-    // When an unread update or new message preview arrives for the user
-    const unsubPreview = realtimeClient.on('conversation.message_preview', () => {
-      dispatch(CommunityApi.util.invalidateTags(['conversations']));
-    });
-
-    // When a new conversation is created
-    const unsubConv = realtimeClient.on('conversation.created', () => {
-      dispatch(CommunityApi.util.invalidateTags(['conversations']));
-    });
-
-    // When an in-app notification is pushed
-    const unsubNotif = realtimeClient.on('notification.created', () => {
-      // Invalidate header notifications count
-      dispatch(CommunityApi.util.invalidateTags(['conversations']));
-    });
-
-    return () => {
-      unsubPreview();
-      unsubConv();
-      unsubNotif();
-    };
+    const conversations = () => dispatch(CommunityApi.util.invalidateTags(['conversations']));
+    const unsubscribers = [
+      realtimeClient.on('conversation.message_preview', conversations),
+      realtimeClient.on('conversation.created', conversations),
+      // The bell (unread count) and the lists of notifications
+      realtimeClient.on('notification.created', () => dispatch(CommunityApi.util.invalidateTags(['notifications']))),
+      // Back after a network cut: everything that may have changed is read again
+      realtimeClient.on('reconnected', () => dispatch(CommunityApi.util.invalidateTags(['notifications', 'conversations', 'messages', 'posts']))),
+    ];
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, [token, dispatch]);
 }
 
@@ -86,8 +77,16 @@ interface TypingEventData {
  * Subscribes to a conversation topic, manages incoming real-time messages,
  * typing indicators, and updates RTK Query cache.
  */
+/** A "typing" signal at most every 2 s while typing (the api accepts 1 per second), "stopped" after 3 s of silence */
+const TYPING_THROTTLE = 2000;
+const TYPING_IDLE = 3000;
+
 export function useRealtimeConversation(conversationId: string | undefined) {
   const dispatch = useAppDispatch();
+  // The api echoes the signal to its sender too: their own is ignored
+  const meId = useAppSelector((state) => state.user.user?.id);
+  const lastTypingSent = useRef(0);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, { username: string; timestamp: number }>>({});
   const typingTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
@@ -144,7 +143,7 @@ export function useRealtimeConversation(conversationId: string | undefined) {
 
     // 6. Typing started
     const unsubTypingStarted = realtimeClient.on<TypingEventData>('typing.started', (data) => {
-      if (data?.conversation_id === conversationId && data.user) {
+      if (data?.conversation_id === conversationId && data.user && data.user.id !== meId) {
         const userId = data.user.id;
         const username = data.user.username;
 
@@ -195,12 +194,29 @@ export function useRealtimeConversation(conversationId: string | undefined) {
       Object.values(typingTimers.current).forEach(clearTimeout);
       typingTimers.current = {};
     };
-  }, [conversationId, dispatch]);
+  }, [conversationId, dispatch, meId]);
 
+  const stopTyping = () => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = null;
+    if (conversationId && lastTypingSent.current) realtimeClient.sendTyping(conversationId, false);
+    lastTypingSent.current = 0;
+  };
+
+  // Leaving the conversation ends the signal
+  useEffect(() => () => stopTyping(), [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Called at each keystroke: throttled, and stopped after a silence */
   const sendTyping = (isTyping: boolean) => {
-    if (conversationId) {
-      realtimeClient.sendTyping(conversationId, isTyping);
+    if (!conversationId) return;
+    if (!isTyping) return stopTyping();
+    const now = Date.now();
+    if (now - lastTypingSent.current >= TYPING_THROTTLE) {
+      realtimeClient.sendTyping(conversationId, true);
+      lastTypingSent.current = now;
     }
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(stopTyping, TYPING_IDLE);
   };
 
   const activeTypingList = Object.values(typingUsers).map((u) => u.username);

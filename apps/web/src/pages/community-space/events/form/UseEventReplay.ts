@@ -1,0 +1,84 @@
+import { useState } from 'react';
+
+import { customToast } from '@kodinga-mono-repo/ui';
+import { useAttachEventReplayMutation, useCreateVideoUploadMutation } from '@/utils/api/community/community.api';
+import type { CommunityEvent } from '@/utils/api/event/event.type';
+import { parseApiError } from '@/utils/api/errors';
+
+export const REPLAY_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+export const REPLAY_MAX_GB = 5;
+
+/** Error of a replay file, or null */
+export function checkReplay(file: File) {
+  if (!REPLAY_TYPES.includes(file.type)) return 'Format non pris en charge : MP4, WebM ou MOV.';
+  if (file.size > REPLAY_MAX_GB * 1024 ** 3) return `Vidéo trop lourde : ${REPLAY_MAX_GB} Go au maximum.`;
+  return null;
+}
+
+/** PUT of the file to the direct upload url of Mux, with its progress (fetch has none) */
+function putToMux(url: string, file: File, onProgress: (percent: number) => void) {
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(String(xhr.status))));
+    xhr.onerror = () => reject(new Error('network'));
+    xhr.send(file);
+  });
+}
+
+/**
+ * Replay of a finished event, by its team: a video is created on the api (media/videos/upload-url/),
+ * the file goes straight to Mux, then the video is attached to the event (events/<id>/replay/).
+ * Mux encodes it afterwards: the event shows "en préparation" until it is ready.
+ */
+function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
+  const [createUpload] = useCreateVideoUploadMutation();
+  const [attach] = useAttachEventReplayMutation();
+  const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const upload = async (file: File) => {
+    if (!event) return;
+    const invalid = checkReplay(file);
+    setError(invalid);
+    if (invalid) return;
+    setProgress(0);
+    try {
+      let target;
+      try {
+        target = await createUpload({ title: `${event.title} (replay)`, cors_origin: window.location.origin }).unwrap();
+      } catch (err) {
+        throw new Error(parseApiError(err).message);
+      }
+      try {
+        await putToMux(target.upload_url, file, setProgress);
+      } catch {
+        throw new Error('L’envoi de la vidéo vers Mux a échoué. Vérifiez votre connexion et réessayez.');
+      }
+      try {
+        await attach({ slug, eventId: event.id, video_asset_id: target.video_asset_id }).unwrap();
+      } catch (err) {
+        throw new Error(parseApiError(err).message);
+      }
+      customToast.success({ message: 'Replay ajouté : il sera visible dès que Mux aura fini de le préparer.' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'L’ajout du replay a échoué.';
+      setError(message);
+      customToast.error({ message });
+    } finally {
+      setProgress(null);
+    }
+  };
+
+  return { 
+    upload, 
+    progress, 
+    isUploading: progress !== null, 
+    error 
+  };
+}
+
+export type EventReplay = ReturnType<typeof UseEventReplay>;
+
+export default UseEventReplay;

@@ -17,6 +17,7 @@ import type { PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { isAdmin, useUser } from '@/utils/Utils';
 import { canSeeContent, membershipOf } from './UseCommunityPage';
+import { useRealtimePostComments } from '@/utils/realtime/use-realtime';
 
 /**
  * /communities/:slug/posts/:postId — one post and its comments (GET posts/<id>/ and .../comments/).
@@ -35,6 +36,8 @@ function UsePostDetails() {
   const canSee = community ? canSeeContent(community, membership) : false;
   const { data: post, isLoading: isPostLoading, error } = useGetPostQuery(postId, { skip: !postId || !canSee });
   const { data: comments = [], isLoading: isCommentsLoading } = useGetPostCommentsQuery(postId, { skip: !post });
+  // Comments, reactions and the accepted answer of others appear live
+  useRealtimePostComments(post ? postId : undefined);
 
   const [addComment, { isLoading: isSending }] = useAddPostCommentMutation();
   const [deleteComment] = useDeletePostCommentMutation();

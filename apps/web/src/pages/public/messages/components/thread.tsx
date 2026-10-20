@@ -102,6 +102,14 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
 }
 
 /** Open conversation: messages by day, newest at the bottom, and the composer */
+/** "Awa est en train d’écrire…", "Awa et Kofi sont en train d’écrire…" */
+export function typingLabel(names: string[]) {
+  if (names.length === 0) return '';
+  if (names.length === 1) return `${names[0]} est en train d’écrire…`;
+  if (names.length === 2) return `${names[0]} et ${names[1]} sont en train d’écrire…`;
+  return 'Plusieurs personnes sont en train d’écrire…';
+}
+
 export function Thread({ page }: { page: MessagesPage }) {
   const [content, setContent] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
@@ -119,6 +127,7 @@ export function Thread({ page }: { page: MessagesPage }) {
   const submit = async () => {
     const text = content.trim();
     if (!text) return;
+    page.sendTyping(false);
     if (await page.send(text)) setContent('');
   };
 
@@ -171,6 +180,10 @@ export function Thread({ page }: { page: MessagesPage }) {
         <div ref={endRef} />
       </div>
 
+      <p className="min-h-6 bg-slate-50 px-5 pb-1 text-xs text-slate-500 italic" aria-live="polite">
+        {typingLabel(page.typingUsers)}
+      </p>
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -185,7 +198,11 @@ export function Thread({ page }: { page: MessagesPage }) {
           id="message-input"
           rows={1}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value);
+            page.sendTyping(!!e.target.value.trim());
+          }}
+          onBlur={() => page.sendTyping(false)}
           onKeyDown={onKeyDown}
           placeholder={`Écrire à ${name}…`}
           className="max-h-40 min-h-11 flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-blue-900 focus:bg-white focus:outline-none"

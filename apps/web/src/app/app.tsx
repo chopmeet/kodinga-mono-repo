@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetUser } from '@/redux/slice/User.slice';
 import { AppRoutes } from '@/routes/router';
 import { useMeAccountQuery } from '@/utils/api/user/user.api';
+import { useRealtimeSync } from '@/utils/realtime/use-realtime';
 import { isTokenExpired } from '@/utils/secure';
 
 function ScrollToTop() {
@@ -33,6 +34,12 @@ function FetchUser() {
   return null;
 }
 
+/** WebSocket of the realtime api for the signed-in user (notifications, messages, feeds) */
+function RealtimeSync() {
+  useRealtimeSync();
+  return null;
+}
+
 function ExpiredSession() {
   const { logout } = useLogout();
   useEffect(() => {
@@ -52,6 +59,7 @@ export function App() {
     <>
       <ScrollToTop />
       {token && (expired ? <ExpiredSession /> : <FetchUser />)}
+      {token && !expired && <RealtimeSync />}
       {routes}
       {/* Renders the customToast notifications of the ui lib */}
       <Toaster richColors closeButton />

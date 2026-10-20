@@ -38,7 +38,7 @@ const baseEvent = {
 };
 
 /** Two upcoming events: an online workshop for members, a public meetup already full */
-function stubEventsApi({ member = true } = {}) {
+function stubEventsApi({ member = true, rsvpAnswer = 'ok' as 'ok' | 'slow' | 'refused' } = {}) {
   const calls: Call[] = [];
   const rsvp: Record<string, string | null> = { e1: null, e2: null };
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -65,6 +65,8 @@ function stubEventsApi({ member = true } = {}) {
     }
     const id = path.match(/events\/([^/]+)\/rsvp\/$/)?.[1];
     if (id) {
+      if (rsvpAnswer === 'refused') return new Response(JSON.stringify({ success: false, code: 'validation_error', message: 'Cet événement est complet.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      if (rsvpAnswer === 'slow') await new Promise((r) => setTimeout(r, 1500));
       rsvp[id] = request.method === 'DELETE' ? null : (body?.status as string);
       return json({ success: true, data: {} });
     }
@@ -107,6 +109,28 @@ describe('Community events: registration', () => {
     fireEvent.click(within(workshop).getByRole('button', { name: 'Annuler mon inscription' }));
     await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/events/e1/rsvp/'))).toBe(true), SLOW);
     expect(await within(workshop).findByRole('button', { name: 'Je participe' }, SLOW)).toBeTruthy();
+  });
+
+  it('counts the registration at once, before the api answers', async () => {
+    signIn();
+    stubEventsApi({ rsvpAnswer: 'slow' });
+    renderAppAt(URL_PATH);
+    const workshop = await card('Atelier React 19');
+    expect(workshop.textContent).toMatch(/3 participants/);
+    fireEvent.click(within(workshop).getByRole('button', { name: 'Je participe' }));
+    expect(workshop.textContent).toMatch(/4 participants/);
+    expect(within(workshop).getByText('Inscrit')).toBeTruthy();
+  });
+
+  it('puts everything back when the api refuses', async () => {
+    signIn();
+    stubEventsApi({ rsvpAnswer: 'refused' });
+    renderAppAt(URL_PATH);
+    const workshop = await card('Atelier React 19');
+    fireEvent.click(within(workshop).getByRole('button', { name: 'Je participe' }));
+    expect(await screen.findByText('Cet événement est complet.', {}, SLOW)).toBeTruthy();
+    expect(within(workshop).getByRole('button', { name: 'Je participe' })).toBeTruthy();
+    expect(workshop.textContent).toMatch(/3 participants/);
   });
 
   it('lets one say "maybe" to a full event', async () => {

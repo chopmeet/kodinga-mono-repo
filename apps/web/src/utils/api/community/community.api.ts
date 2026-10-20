@@ -5,7 +5,7 @@ import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
 import type { AppNotification } from '../notification/notification.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
-import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, LiveJoin, RsvpStatus } from '../event/event.type';
+import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, LiveJoin, RsvpStatus, VideoUploadTarget } from '../event/event.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -75,6 +75,43 @@ const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
 /** Drops empty filters so the api does not receive `?q=&category=` */
 const cleanParams = (query: object) =>
   Object.fromEntries(Object.entries(query).filter(([, v]) => v !== undefined && v !== null && v !== ''));
+
+type RsvpPatchApi = {
+  dispatch: (action: unknown) => { undo: () => void };
+  getState: () => unknown;
+  queryFulfilled: Promise<unknown>;
+};
+
+/**
+ * Registration of the user to an event, shown before the api answers: their status and the
+ * counter (attending only) in the cached lists and detail; undone if the api refuses
+ */
+async function patchRsvp({ dispatch, getState, queryFulfilled }: RsvpPatchApi, slug: string, eventId: string, next: RsvpStatus | null) {
+  const apply = (event: CommunityEvent) => {
+    const was = event.user_rsvp_status === 'attending';
+    const will = next === 'attending';
+    event.attendees_count = Math.max(0, event.attendees_count + (will && !was ? 1 : !will && was ? -1 : 0));
+    event.user_rsvp_status = next;
+  };
+  const patches = [
+    ...CommunityApi.util.selectCachedArgsForQuery(getState() as never, 'getCommunityEvents')
+      .filter((args) => args.slug === slug)
+      .map((args) =>
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityEvents', args, (page) => {
+            const event = page.results.find((e) => e.id === eventId);
+            if (event) apply(event);
+          }),
+        ),
+      ),
+    dispatch(CommunityApi.util.updateQueryData('getCommunityEvent', { slug, eventId }, apply)),
+  ];
+  try {
+    await queryFulfilled;
+  } catch {
+    patches.forEach((patch) => patch.undo());
+  }
+}
 
 export const CommunityApi = createApi({
   reducerPath: 'communityApi',
@@ -482,6 +519,22 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityEvent>,
       invalidatesTags: ['events'],
     }),
+    // Replay of an event: a video created on the api (Mux direct upload), then attached to the event
+    createVideoUpload: builder.mutation<VideoUploadTarget, { title: string; cors_origin: string }>({
+      query: (body) => ({ url: 'media/videos/upload-url/', method: 'POST', body }),
+      transformResponse: unwrap<VideoUploadTarget>,
+    }),
+    attachEventReplay: builder.mutation<CommunityEvent, { slug: string; eventId: string; video_asset_id: string }>({
+      query: ({ slug, eventId, video_asset_id }) => ({ url: `communities/${slug}/events/${eventId}/replay/`, method: 'POST', body: { video_asset_id } }),
+      transformResponse: unwrap<CommunityEvent>,
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // Every attendee at once (?all=true): the api has no search, the page searches them
+    getAllEventAttendees: builder.query<EventAttendee[], { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/attendees/`, params: { all: true } }),
+      transformResponse: unwrap<EventAttendee[]>,
+      providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
+    }),
     getEventAttendees: builder.query<ApiPaginated<EventAttendee>, { slug: string; eventId: string; page?: number; page_size?: number }>({
       query: ({ slug, eventId, ...params }) => ({ url: `communities/${slug}/events/${eventId}/attendees/`, params: cleanParams(params) }),
       providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
@@ -489,6 +542,8 @@ export const CommunityApi = createApi({
     // A member (or anyone, for a public event) registers: attending or maybe; DELETE cancels
     rsvpEvent: builder.mutation<unknown, { slug: string; eventId: string; status: RsvpStatus }>({
       query: ({ slug, eventId, status }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'POST', body: { status } }),
+      // The button and the counter change at once; the api confirms (or everything is put back)
+      onQueryStarted: ({ slug, eventId, status }, { dispatch, getState, queryFulfilled }) => patchRsvp({ dispatch, getState, queryFulfilled }, slug, eventId, status),
       invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
     }),
     // Token of the LiveKit room of a "livekit" event (it also checks the attendee in); the host publishes
@@ -498,9 +553,14 @@ export const CommunityApi = createApi({
     }),
     cancelEventRsvp: builder.mutation<unknown, { slug: string; eventId: string }>({
       query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/rsvp/`, method: 'DELETE' }),
+      onQueryStarted: ({ slug, eventId }, { dispatch, getState, queryFulfilled }) => patchRsvp({ dispatch, getState, queryFulfilled }, slug, eventId, null),
       invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
     }),
-    // In-app notifications of the signed-in user (no realtime: the header polls the unread count)
+    // Single-use ticket (30 s) to open the WebSocket of the realtime api (/ws/?ticket=)
+    createWsTicket: builder.mutation<{ ticket: string }, void>({
+      query: () => ({ url: 'auth/ws-ticket/', method: 'POST' }),
+    }),
+    // In-app notifications of the signed-in user (pushed by the realtime api; polled as a fallback)
     getNotifications: builder.query<ApiPaginated<AppNotification>, { page?: number; page_size?: number; unread?: boolean }>({
       query: (params) => ({ url: 'notifications/', params: cleanParams(params) }),
       providesTags: ['notifications'],
@@ -1054,6 +1114,9 @@ export const {
   useDeleteEventMutation,
   useUpdateEventStatusMutation,
   useGetEventAttendeesQuery,
+  useGetAllEventAttendeesQuery,
+  useCreateVideoUploadMutation,
+  useAttachEventReplayMutation,
   useRsvpEventMutation,
   useCancelEventRsvpMutation,
   useJoinLiveEventMutation,

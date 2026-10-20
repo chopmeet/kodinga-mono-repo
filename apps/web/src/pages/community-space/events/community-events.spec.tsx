@@ -58,11 +58,14 @@ function stubEventsApi() {
     const id = path.match(/events\/([^/]+)\//)?.[1];
 
     if (path.endsWith('/attendees/')) {
-      return json({
-        success: true,
-        pagination: { count: 1 },
-        results: [{ id: 'a1', event_id: id, status: 'attending', checked_in_at: null, created_at: '2026-10-01T10:00:00Z', user: { id: 'u2', username: 'awa', full_name: 'Awa Ndiaye' } }],
-      });
+      const attendees = [
+        { id: 'a1', event_id: id, status: 'attending', checked_in_at: '2026-10-02T18:05:00Z', created_at: '2026-10-01T10:00:00Z', user: { id: 'u2', username: 'awa', full_name: 'Awa Ndiaye' } },
+        { id: 'a2', event_id: id, status: 'maybe', checked_in_at: null, created_at: '2026-10-01T11:00:00Z', user: { id: 'u3', username: 'kofi', full_name: 'Kofi Mensah' } },
+        { id: 'a3', event_id: id, status: 'attending', checked_in_at: null, created_at: '2026-10-01T12:00:00Z', user: { id: 'u4', username: 'seynabou', full_name: 'Seynabou Fall' } },
+      ];
+      // ?all=true: the whole list, not paginated (like the api)
+      if (url.searchParams.get('all') === 'true') return json({ success: true, data: attendees });
+      return json({ success: true, pagination: { count: attendees.length }, results: attendees });
     }
     if (path.endsWith('/status/')) {
       events = events.map((e) => (e.id === id ? { ...e, status: body?.status } : e));
@@ -157,5 +160,26 @@ describe('Community space: events', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Atelier Kubernetes' }, SLOW)).toBeTruthy();
     expect(await screen.findByText('Awa Ndiaye', {}, SLOW)).toBeTruthy();
     expect(screen.getByRole('link', { name: /Ajouter à l'agenda/ }).getAttribute('href')).toMatch(/\/communities\/dakar-devops\/events\/e1\/calendar\.ics$/);
+  });
+
+  it('searches the attendees and filters them by answer or presence', async () => {
+    stubEventsApi();
+    renderAppAt('/c/dakar-devops/events/e1');
+    expect(await screen.findByText('Kofi Mensah', {}, SLOW)).toBeTruthy();
+    // Without accents nor case
+    fireEvent.change(screen.getByLabelText('Rechercher un participant'), { target: { value: 'seynabou' } });
+    await waitFor(() => expect(screen.queryByText('Awa Ndiaye')).toBeNull(), SLOW);
+    expect(screen.getByText('Seynabou Fall')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('Rechercher un participant'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Intéressés (1)' }));
+    await waitFor(() => expect(screen.queryByText('Awa Ndiaye')).toBeNull(), SLOW);
+    expect(screen.getByText('Kofi Mensah')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Présents (1)' }));
+    expect(await screen.findByText('Awa Ndiaye', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByText('Kofi Mensah')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Rechercher un participant'), { target: { value: 'personne' } });
+    expect(await screen.findByText('Aucun participant ne correspond à cette recherche.', {}, SLOW)).toBeTruthy();
   });
 });

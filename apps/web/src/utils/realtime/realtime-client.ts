@@ -1,6 +1,4 @@
 import { ApiBaseUrl } from '@/utils/http';
-import { AppStorage } from '@/utils/storage';
-import type { AuthState } from '@/utils/api/user/user.type';
 
 export type RealtimeEventHandler<T = unknown> = (payload: T) => void;
 
@@ -51,6 +49,10 @@ class RealtimeClient {
   // Status callbacks
   private statusListeners = new Set<(connected: boolean) => void>();
 
+  // Gives a ticket for the WebSocket (set by useRealtimeSync: through the api client, which renews
+  // an expired access token)
+  private ticketProvider: (() => Promise<string | null>) | null = null;
+
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
@@ -69,32 +71,15 @@ class RealtimeClient {
     return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
   }
 
-  /**
-   * Fetches an ephemeral 30s ticket from the REST API using current user auth.
-   */
+  /** How to obtain a ticket (POST auth/ws-ticket/, single use, 30 s) */
+  public setTicketProvider(provider: (() => Promise<string | null>) | null): void {
+    this.ticketProvider = provider;
+  }
+
   private async fetchTicket(): Promise<string | null> {
+    if (!this.ticketProvider) return null;
     try {
-      const stored = AppStorage.getItem<AuthState>('user');
-      const token = stored?.token;
-      if (!token) return null;
-
-      const res = await fetch(`${ApiBaseUrl}auth/ws-ticket/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          console.warn('[Realtime] Auth token expired or invalid.');
-        }
-        return null;
-      }
-
-      const data = await res.json();
-      return data.ticket || null;
+      return await this.ticketProvider();
     } catch (err) {
       console.warn('[Realtime] Unable to obtain ticket:', err);
       return null;

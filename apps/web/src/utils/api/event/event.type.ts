@@ -42,7 +42,7 @@ export type CommunityEvent = {
   is_public: boolean;
   duration_minutes: number;
   user_rsvp_status: RsvpStatus | null;
-  replay_video_asset: { id: string; playback_url?: string; status?: string } | null;
+  replay_video_asset: ReplayVideo | null;
   location_url?: string;
   created_at: string;
 };
@@ -87,3 +87,18 @@ export type EventAttendee = {
 
 /** POST communities/<slug>/events/<id>/join-live/ (LiveKitTokenResponseSerializer) */
 export type LiveJoin = { room_name: string; token: string; server_url: string; is_host: boolean };
+
+/** VideoAssetSerializer (Mux): the stream is served once `ready` (hls_url empty before) */
+export type ReplayVideo = {
+  id: string;
+  title?: string;
+  playback_id?: string | null;
+  duration?: number | null;
+  status: 'waiting' | 'preparing' | 'ready' | 'errored' | 'deleted';
+  hls_url: string;
+  thumbnail_url?: string;
+  poster_url?: string;
+};
+
+/** POST media/videos/upload-url/: a video waiting for its file, sent straight to Mux (PUT upload_url) */
+export type VideoUploadTarget = { video_asset_id: string; upload_id: string; upload_url: string; status: string };
