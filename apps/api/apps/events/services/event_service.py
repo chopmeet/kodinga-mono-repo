@@ -12,7 +12,6 @@ from apps.events.models.event import Event, EventFormat, EventStatus
 from apps.media.models.video_asset import VideoAsset
 from apps.memberships.models.member import (
     CommunityMember,
-    CommunityRole,
     MembershipStatus,
 )
 

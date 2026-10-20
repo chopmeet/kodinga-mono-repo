@@ -5,7 +5,7 @@ from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course
@@ -15,11 +15,6 @@ from apps.communities.models.community import Community
 from apps.media.models.video_asset import VideoAsset
 from apps.media.services.mux_service import MuxVideoService
 from apps.media.services.uploadthing_service import UploadThingService
-from apps.memberships.models.member import (
-    CommunityMember,
-    CommunityRole,
-    MembershipStatus,
-)
 
 
 class ClassroomService:

@@ -1,11 +1,6 @@
 from rest_framework.permissions import BasePermission
 
 from apps.communities.models.community import Community
-from apps.memberships.models.member import (
-    CommunityMember,
-    CommunityRole,
-    MembershipStatus,
-)
 from common.permissions.base import is_superadmin_user
 
 

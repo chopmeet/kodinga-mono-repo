@@ -62,7 +62,6 @@ import type {
   PostWriteData,
   CommunityProposalResult,
   CommunityRecommendationResult,
-  CommunitySettings,
   CommunitySettingsWriteData,
   ContentSuggestionResult,
   ManagedCommunity,
@@ -926,7 +925,7 @@ export const CommunityApi = createApi({
     updateCommunitySettings: builder.mutation<CommunitySettings, { slug: string } & Partial<CommunitySettings>>({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/settings/`, method: 'PATCH', body }),
       transformResponse: unwrap<CommunitySettings>,
-      invalidatesTags: (_result, _error, { slug }) => [{ type: 'communities', id: slug }],
+      invalidatesTags: (_result, _error, { slug }) => ['communities', { type: 'communities', id: slug }, { type: 'settings', id: slug }],
     }),
     addCommunityRule: builder.mutation<CommunityRuleItem, { slug: string; title: string; description: string; order: number }>({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/rules/`, method: 'POST', body }),
@@ -966,11 +965,6 @@ export const CommunityApi = createApi({
       query: (slug) => `communities/${slug}/settings/`,
       transformResponse: unwrap<CommunitySettings>,
       providesTags: (_result, _error, slug) => [{ type: 'settings', id: slug }],
-    }),
-    updateCommunitySettings: builder.mutation<CommunitySettings, { slug: string } & CommunitySettingsWriteData>({
-      query: ({ slug, ...body }) => ({ url: `communities/${slug}/settings/`, method: 'PATCH', body }),
-      transformResponse: unwrap<CommunitySettings>,
-      invalidatesTags: (_result, _error, { slug }) => [{ type: 'settings', id: slug }, 'communities'],
     }),
     analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
@@ -1046,7 +1040,6 @@ export const {
   useAnalyzeCommunityMutation,
   useAssistantChatMutation,
   useGetCommunitySettingsQuery,
-  useUpdateCommunitySettingsMutation,
   useGetCommunityAISettingsQuery,
   useUpdateCommunityAISettingsMutation,
   useGetCommunityEventsQuery,
