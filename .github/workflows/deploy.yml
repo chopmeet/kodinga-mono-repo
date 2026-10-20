@@ -62,19 +62,6 @@ jobs:
 
       - uses: actions/checkout@v7
 
-      # currentEnv is set by hand in http.ts: never ship recette pointing to the prod api (or the reverse)
-      - name: Check currentEnv in apps/web/src/utils/http.ts
-        if: inputs.deploy && matrix.app == 'web'
-        env:
-          EXPECTED: ${{ inputs.environment == 'production' && 'prod' || 'demo' }}
-        run: |
-          actual=$(sed -nE "s/^export const currentEnv: ENV = ['\"]([a-z]+)['\"];.*/\1/p" apps/web/src/utils/http.ts)
-          if [ "$actual" != "$EXPECTED" ]; then
-            echo "::error file=apps/web/src/utils/http.ts::currentEnv is '${actual:-not found}', expected '$EXPECTED' for ${{ inputs.environment }}. Fix it on this branch and push again."
-            exit 1
-          fi
-          echo "currentEnv = $actual"
-
       - name: Image name and tag
         id: meta
         run: |
@@ -103,6 +90,7 @@ jobs:
           # Only the web Dockerfile declares these (the api build just ignores them)
           build-args: |
             VITE_SITE_URL=${{ inputs.site-url }}
+            VITE_APP_ENV=${{ inputs.environment == 'production' && 'prod' || 'demo' }}
           push: ${{ inputs.deploy }}
           # Immutable tag (rollback) + moving tag per environment
           tags: |

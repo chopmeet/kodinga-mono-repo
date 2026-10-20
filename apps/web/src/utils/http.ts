@@ -1,6 +1,6 @@
 type ENV = 'dev' | 'prod' | 'demo';
 
-export const currentEnv: ENV = 'dev';
+export const currentEnv: ENV = (import.meta.env.VITE_APP_ENV as ENV | undefined) || 'dev';
 
 const env: ENV = currentEnv;
 
