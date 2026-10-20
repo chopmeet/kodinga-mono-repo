@@ -1,4 +1,4 @@
-import { ArrowBigUp, Eye, Star } from 'lucide-react';
+import { ArrowBigUp, Eye, Images, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga-mono-repo/ui';
@@ -17,6 +17,12 @@ export function ProjectCard({ project: p, href, actions, mine }: { project: Proj
           <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-amber-950">
             <Star className="size-3" aria-hidden />
             En avant
+          </span>
+        )}
+        {p.demo_images && p.demo_images.length > 0 && (
+          <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-xs">
+            <Images className="size-3" aria-hidden />
+            {p.demo_images.length}
           </span>
         )}
         {actions.length > 0 && (

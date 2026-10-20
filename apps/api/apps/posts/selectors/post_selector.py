@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from django.db.models import Prefetch, Q, QuerySet
 
@@ -42,7 +42,8 @@ class PostSelector:
         post_type: Optional[str] = None,
         search: Optional[str] = None,
         is_pinned: Optional[bool] = None,
-        user: Optional[User] = None
+        user: Optional[User] = None,
+        since: Optional[Any] = None,
     ) -> QuerySet[Post]:
         if user is not None:
             check_community_read_permission(user, community)
@@ -56,6 +57,9 @@ class PostSelector:
 
         if is_pinned is not None:
             qs = qs.filter(is_pinned=is_pinned)
+
+        if since is not None:
+            qs = qs.filter(updated_at__gt=since)
 
         if search:
             qs = qs.filter(
@@ -72,12 +76,14 @@ class PostSelector:
         return cls.get_base_post_queryset().get(id=post_id)
 
     @classmethod
-    def get_post_comments(cls, post: Post, user: Optional[User] = None) -> QuerySet[Comment]:
+    def get_post_comments(
+        cls, post: Post, user: Optional[User] = None, since: Optional[Any] = None
+    ) -> QuerySet[Comment]:
         replies_prefetch = Prefetch(
             'replies',
             queryset=Comment.objects.select_related('author', 'author__profile').prefetch_related('media_attachments', 'reactions').order_by('created_at')
         )
-        return Comment.objects.filter(
+        qs = Comment.objects.filter(
             post=post,
             parent__isnull=True
         ).select_related(
@@ -87,7 +93,10 @@ class PostSelector:
             'media_attachments',
             'reactions',
             replies_prefetch
-        ).order_by('-is_accepted_answer', 'created_at')
+        )
+        if since is not None:
+            qs = qs.filter(updated_at__gt=since)
+        return qs.order_by('-is_accepted_answer', 'created_at')
 
     @classmethod
     def get_categories(cls, community: Community) -> QuerySet[PostCategory]:

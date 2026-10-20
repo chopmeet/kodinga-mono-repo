@@ -30,6 +30,7 @@ services:
       - '127.0.0.1:${WEB_PORT:-8081}:80'
     depends_on:
       - api
+      - asgi
 
   api:
     <<: *api
@@ -37,6 +38,14 @@ services:
       - '127.0.0.1:${API_PORT:-8091}:8000'
     environment:
       MIGRATE_ON_BOOT: 'true'
+
+  asgi:
+    <<: *api
+    command: ['daphne', '-b', '0.0.0.0', '-p', '8001', 'config.asgi:application']
+    ports:
+      - '127.0.0.1:${ASGI_PORT:-8093}:8001'
+    environment:
+      MIGRATE_ON_BOOT: 'false'
 
   celery_worker:
     <<: *api

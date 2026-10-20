@@ -44,6 +44,11 @@ class Project(BaseModel):
     repository_url = models.URLField(max_length=1000, blank=True)
     demo_url = models.URLField(max_length=1000, blank=True)
     cover_image_url = models.URLField(max_length=1000, blank=True)
+    demo_images = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Liste des URLs d'images ou captures d'écran de démonstration",
+    )
 
     status = models.CharField(
         max_length=20,

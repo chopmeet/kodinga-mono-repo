@@ -42,6 +42,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "slug",
             "tagline",
             "cover_image_url",
+            "demo_images",
             "demo_url",
             "repository_url",
             "status",
@@ -69,6 +70,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
             "tagline",
             "description",
             "cover_image_url",
+            "demo_images",
             "demo_url",
             "repository_url",
             "status",
@@ -89,6 +91,9 @@ class CreateProjectSerializer(serializers.Serializer):
     tagline = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     description = serializers.CharField(required=False, allow_blank=True, default="")
     cover_image_url = serializers.URLField(required=False, allow_blank=True, default="")
+    demo_images = serializers.ListField(
+        child=serializers.URLField(max_length=1000), required=False, default=list
+    )
     demo_url = serializers.URLField(required=False, allow_blank=True, default="")
     repository_url = serializers.URLField(required=False, allow_blank=True, default="")
     community_id = serializers.UUIDField(required=False, allow_null=True)

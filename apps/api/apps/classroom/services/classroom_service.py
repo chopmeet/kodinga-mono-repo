@@ -5,7 +5,7 @@ from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course
@@ -15,11 +15,6 @@ from apps.communities.models.community import Community
 from apps.media.models.video_asset import VideoAsset
 from apps.media.services.mux_service import MuxVideoService
 from apps.media.services.uploadthing_service import UploadThingService
-from apps.memberships.models.member import (
-    CommunityMember,
-    CommunityRole,
-    MembershipStatus,
-)
 
 
 class ClassroomService:
@@ -36,15 +31,8 @@ class ClassroomService:
         if is_superadmin_user(user) or community.owner_id == user.id:
             return
 
-        is_manager = CommunityMember.objects.filter(
-            community=community,
-            user=user,
-            status=MembershipStatus.ACTIVE,
-            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
-        ).exists()
-
-        if not is_manager:
-            raise PermissionDenied("Seul le propriétaire ou un administrateur de la communauté peut gérer les cours.")
+        from apps.memberships.permissions import check_community_permission
+        check_community_permission(user, community, 'can_manage_courses', "gérer les cours dans cette communauté")
 
     # ---------------- Course Operations ----------------
 

@@ -1,9 +1,13 @@
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import permissions, status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.communities.models.community import Community
+from apps.communities.selectors.community_selector import CommunitySelector
+from apps.memberships.permissions import (
+    check_community_membership,
+    check_community_read_permission,
+)
 from apps.projects.models.project import Project
 from apps.projects.selectors.project_selector import ProjectSelector
 from apps.projects.serializers.project_serializers import (
@@ -15,6 +19,7 @@ from apps.projects.serializers.project_serializers import (
     ProjectUpvoteResponseSerializer,
 )
 from apps.projects.services.project_service import ProjectService
+from common.utils.responses import error_response, success_response
 
 
 class ProjectListView(APIView):
@@ -47,14 +52,26 @@ class ProjectListView(APIView):
     def get(self, request):
         search = request.query_params.get("search")
         tech = request.query_params.get("tech")
-        community = request.query_params.get("community")
+        community_slug = request.query_params.get("community")
         order_by = request.query_params.get("order_by", "upvotes")
+
+        if community_slug:
+            try:
+                community = CommunitySelector.get_community_by_slug(community_slug, user=request.user)
+            except Community.DoesNotExist:
+                return error_response(
+                    "Communauté introuvable.",
+                    code="resource_not_found",
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+            check_community_read_permission(request.user, community)
 
         projects = ProjectSelector.list_projects(
             search=search,
             technology_slug=tech,
-            community_slug=community,
+            community_slug=community_slug,
             order_by=order_by,
+            viewer=request.user,
         )
         if request.user.is_authenticated:
             from apps.projects.models.upvote import ProjectUpvote
@@ -67,7 +84,7 @@ class ProjectListView(APIView):
             for p in projects:
                 p.is_upvoted = p.id in upvoted_ids
 
-        return Response(ProjectSerializer(projects, many=True).data)
+        return success_response(data=ProjectSerializer(projects, many=True).data)
 
     @extend_schema(
         tags=["Hackathons"],
@@ -78,13 +95,16 @@ class ProjectListView(APIView):
             201: ProjectDetailSerializer,
             400: OpenApiResponse(description="Erreur de validation"),
             401: OpenApiResponse(description="Authentification requise"),
+            403: OpenApiResponse(description="Non autorisé à publier dans cette communauté"),
             404: OpenApiResponse(description="Communauté spécifiée introuvable"),
         },
     )
     def post(self, request):
         if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Authentification requise."}, status=status.HTTP_401_UNAUTHORIZED
+            return error_response(
+                "Authentification requise.",
+                code="authentication_required",
+                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         serializer = CreateProjectSerializer(data=request.data)
@@ -95,19 +115,22 @@ class ProjectListView(APIView):
         if community_id:
             community = Community.objects.filter(id=community_id).first()
             if not community:
-                return Response(
-                    {"detail": "Communauté introuvable."},
-                    status=status.HTTP_404_NOT_FOUND,
+                return error_response(
+                    "Communauté introuvable.",
+                    code="resource_not_found",
+                    status_code=status.HTTP_404_NOT_FOUND,
                 )
+            check_community_membership(request.user, community, "publier un projet dans cette communauté")
 
         project = ProjectService.create_project(
             owner=request.user,
             validated_data={**serializer.validated_data, "community": community},
             technology_ids=tech_ids,
         )
-        return Response(
-            ProjectDetailSerializer(project).data,
-            status=status.HTTP_201_CREATED,
+        return success_response(
+            data=ProjectDetailSerializer(project).data,
+            message="Projet publié avec succès.",
+            status_code=status.HTTP_201_CREATED,
         )
 
 
@@ -128,7 +151,7 @@ class MyProjectListView(APIView):
     )
     def get(self, request):
         projects = ProjectSelector.get_user_projects(request.user)
-        return Response(ProjectSerializer(projects, many=True).data)
+        return success_response(data=ProjectSerializer(projects, many=True).data)
 
 
 class ProjectDetailView(APIView):
@@ -155,8 +178,14 @@ class ProjectDetailView(APIView):
     def get(self, request, slug):
         project = ProjectSelector.get_project_by_slug(slug, viewer=request.user)
         if not project:
-            return Response({"detail": "Projet introuvable."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(ProjectDetailSerializer(project).data)
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if project.community:
+            check_community_read_permission(request.user, project.community)
+        return success_response(data=ProjectDetailSerializer(project).data)
 
     @extend_schema(
         tags=["Hackathons"],
@@ -176,10 +205,20 @@ class ProjectDetailView(APIView):
     )
     def patch(self, request, slug):
         if not request.user.is_authenticated:
-            return Response({"detail": "Non authentifié."}, status=status.HTTP_401_UNAUTHORIZED)
+            return error_response(
+                "Authentification requise.",
+                code="authentication_required",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
         project = Project.objects.filter(slug=slug).first()
         if not project:
-            return Response({"detail": "Projet introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if project.community:
+            check_community_membership(request.user, project.community, "modifier ce projet")
 
         serializer = CreateProjectSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -188,10 +227,12 @@ class ProjectDetailView(APIView):
         if community_id is not None:
             community = Community.objects.filter(id=community_id).first()
             if not community:
-                return Response(
-                    {"detail": "Communauté introuvable."},
-                    status=status.HTTP_404_NOT_FOUND,
+                return error_response(
+                    "Communauté introuvable.",
+                    code="resource_not_found",
+                    status_code=status.HTTP_404_NOT_FOUND,
                 )
+            check_community_membership(request.user, community, "associer ce projet à cette communauté")
             serializer.validated_data["community"] = community
 
         updated_project = ProjectService.update_project(
@@ -200,7 +241,10 @@ class ProjectDetailView(APIView):
             validated_data=serializer.validated_data,
             technology_ids=tech_ids,
         )
-        return Response(ProjectDetailSerializer(updated_project).data)
+        return success_response(
+            data=ProjectDetailSerializer(updated_project).data,
+            message="Projet mis à jour avec succès.",
+        )
 
     @extend_schema(
         tags=["Hackathons"],
@@ -210,7 +254,7 @@ class ProjectDetailView(APIView):
             OpenApiParameter(name="slug", type=str, location=OpenApiParameter.PATH, description="Slug du projet"),
         ],
         responses={
-            204: OpenApiResponse(description="Projet supprimé"),
+            200: OpenApiResponse(description="Projet supprimé"),
             401: OpenApiResponse(description="Authentification requise"),
             403: OpenApiResponse(description="Non autorisé à supprimer ce projet"),
             404: OpenApiResponse(description="Projet introuvable"),
@@ -218,13 +262,23 @@ class ProjectDetailView(APIView):
     )
     def delete(self, request, slug):
         if not request.user.is_authenticated:
-            return Response({"detail": "Non authentifié."}, status=status.HTTP_401_UNAUTHORIZED)
+            return error_response(
+                "Authentification requise.",
+                code="authentication_required",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
         project = Project.objects.filter(slug=slug).first()
         if not project:
-            return Response({"detail": "Projet introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if project.community:
+            check_community_membership(request.user, project.community, "supprimer ce projet")
 
         ProjectService.delete_project(project, request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return success_response(message="Projet supprimé avec succès.")
 
 
 class ProjectUpvoteView(APIView):
@@ -252,10 +306,17 @@ class ProjectUpvoteView(APIView):
     def post(self, request, slug):
         project = Project.objects.filter(slug=slug).first()
         if not project:
-            return Response({"detail": "Projet introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if project.community:
+            check_community_read_permission(request.user, project.community)
+            check_community_membership(request.user, project.community, "voter pour ce projet")
 
         is_upvoted, count = ProjectService.toggle_upvote(project, request.user)
-        return Response({"is_upvoted": is_upvoted, "upvotes_count": count})
+        return success_response(data={"is_upvoted": is_upvoted, "upvotes_count": count})
 
 
 class ProjectCommentListView(APIView):
@@ -286,10 +347,16 @@ class ProjectCommentListView(APIView):
     def get(self, request, slug):
         project = Project.objects.filter(slug=slug).first()
         if not project:
-            return Response({"detail": "Projet introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if project.community:
+            check_community_read_permission(request.user, project.community)
 
         comments = ProjectSelector.get_project_comments(project)
-        return Response(ProjectCommentSerializer(comments, many=True).data)
+        return success_response(data=ProjectCommentSerializer(comments, many=True).data)
 
     @extend_schema(
         tags=["Hackathons"],
@@ -309,7 +376,14 @@ class ProjectCommentListView(APIView):
     def post(self, request, slug):
         project = Project.objects.filter(slug=slug).first()
         if not project:
-            return Response({"detail": "Projet introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if project.community:
+            check_community_read_permission(request.user, project.community)
+            check_community_membership(request.user, project.community, "commenter ce projet")
 
         serializer = CreateProjectCommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -320,4 +394,8 @@ class ProjectCommentListView(APIView):
             content=serializer.validated_data["content"],
             parent_id=serializer.validated_data.get("parent_id"),
         )
-        return Response(ProjectCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+        return success_response(
+            data=ProjectCommentSerializer(comment).data,
+            message="Commentaire publié avec succès.",
+            status_code=status.HTTP_201_CREATED,
+        )

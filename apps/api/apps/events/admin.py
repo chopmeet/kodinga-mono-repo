@@ -85,11 +85,11 @@ class EventAdmin(admin.ModelAdmin):
             "Options LiveKit & Visibilité",
             {
                 "fields": (
-                    "room_name",
+                    "live_room_name",
                     "is_recorded",
+                    "replay_video_asset",
                     "is_public",
-                    "allow_chat",
-                    "allow_screen_share",
+                    "metadata",
                     "attendees_count",
                     "created_at",
                     "updated_at",

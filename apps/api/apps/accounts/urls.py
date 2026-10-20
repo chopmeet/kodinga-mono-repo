@@ -20,6 +20,7 @@ from apps.accounts.views.user import (
     UserListView,
     UserProfileMeView,
 )
+from realtime.views import WebSocketTicketView
 
 app_name = 'accounts'
 
@@ -35,6 +36,7 @@ urlpatterns = [
     path('auth/password/reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('auth/password/reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('auth/password/change/', ChangePasswordView.as_view(), name='password_change'),
+    path('auth/ws-ticket/', WebSocketTicketView.as_view(), name='ws_ticket'),
     
     # Active sessions
     path('auth/sessions/', UserSessionListView.as_view(), name='session_list'),

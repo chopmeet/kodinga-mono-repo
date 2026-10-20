@@ -129,6 +129,9 @@ class PostService:
                 post.save(update_fields=['post_type', 'updated_at'])
 
             Community.objects.filter(id=community.id).update(posts_count=F('posts_count') + 1)
+            from realtime.broadcast import broadcast_post_created
+
+            broadcast_post_created(post)
             return post
 
     @classmethod
@@ -160,6 +163,9 @@ class PostService:
             if media_ids is not None:
                 post.media_attachments.set(media_ids)
 
+            from realtime.broadcast import broadcast_post_updated
+
+            broadcast_post_updated(post)
             return post
 
     @classmethod
@@ -175,8 +181,12 @@ class PostService:
 
         with transaction.atomic():
             community_id = post.community_id
+            post_id = post.id
             post.delete()
             Community.objects.filter(id=community_id, posts_count__gt=0).update(posts_count=F('posts_count') - 1)
+            from realtime.broadcast import broadcast_post_deleted
+
+            broadcast_post_deleted(community_id, post_id)
 
     @classmethod
     def toggle_post_pin(cls, user: User, post: Post) -> bool:
@@ -191,11 +201,14 @@ class PostService:
 
         post.is_pinned = not post.is_pinned
         post.save(update_fields=['is_pinned', 'updated_at'])
+        from realtime.broadcast import broadcast_post_pinned
+
+        broadcast_post_pinned(post.community_id, post.id, post.is_pinned)
         return post.is_pinned
 
     @classmethod
     def toggle_post_lock(cls, user: User, post: Post) -> bool:
-        if not is_superadmin_user(user):
+        if not is_superadmin_user(user) and post.community.owner_id != user.id:
             membership = CommunityMember.objects.filter(
                 community=post.community,
                 user=user,
@@ -206,6 +219,9 @@ class PostService:
 
         post.is_locked = not post.is_locked
         post.save(update_fields=['is_locked', 'updated_at'])
+        from realtime.broadcast import broadcast_post_locked
+
+        broadcast_post_locked(post.community_id, post.id, post.is_locked)
         return post.is_locked
 
     # --- Comments ---
@@ -260,6 +276,12 @@ class PostService:
                 comment.media_attachments.set(media_ids)
 
             Post.objects.filter(id=post.id).update(comments_count=F('comments_count') + 1)
+            post.refresh_from_db(fields=['comments_count'])
+            comment.post = post
+
+            from realtime.broadcast import broadcast_comment_created
+
+            broadcast_comment_created(comment)
             return comment
 
     @classmethod
@@ -275,8 +297,25 @@ class PostService:
 
         with transaction.atomic():
             post_id = comment.post_id
+            comment_id = comment.id
+            community_id = (
+                comment.post.community_id
+                if getattr(comment, 'post', None)
+                else None
+            )
             comment.delete()
             Post.objects.filter(id=post_id, comments_count__gt=0).update(comments_count=F('comments_count') - 1)
+            updated_post = Post.objects.filter(id=post_id).first()
+            new_count = updated_post.comments_count if updated_post else 0
+
+            from realtime.broadcast import broadcast_comment_deleted
+
+            broadcast_comment_deleted(
+                post_id,
+                comment_id,
+                community_id=community_id,
+                new_comments_count=new_count,
+            )
 
     @classmethod
     def mark_accepted_answer(cls, user: User, comment: Comment) -> Comment:
@@ -299,6 +338,9 @@ class PostService:
                 user=comment.author
             ).update(reputation_score=F('reputation_score') + 15)
 
+            from realtime.broadcast import broadcast_comment_accepted
+
+            broadcast_comment_accepted(post.id, comment.id, True)
             return comment
 
     # --- Reactions ---
@@ -312,13 +354,33 @@ class PostService:
 
         with transaction.atomic():
             existing = PostReaction.objects.filter(post=post, user=user, reaction_type=reaction_type).first()
+            from realtime.broadcast import broadcast_post_reaction
+
             if existing:
                 existing.delete()
                 Post.objects.filter(id=post.id, reactions_count__gt=0).update(reactions_count=F('reactions_count') - 1)
+                post.refresh_from_db(fields=['reactions_count'])
+                broadcast_post_reaction(
+                    post.community_id,
+                    post.id,
+                    reaction_type,
+                    post.reactions_count,
+                    user.id,
+                    "removed",
+                )
                 return False
             else:
                 PostReaction.objects.create(post=post, user=user, reaction_type=reaction_type)
                 Post.objects.filter(id=post.id).update(reactions_count=F('reactions_count') + 1)
+                post.refresh_from_db(fields=['reactions_count'])
+                broadcast_post_reaction(
+                    post.community_id,
+                    post.id,
+                    reaction_type,
+                    post.reactions_count,
+                    user.id,
+                    "added",
+                )
                 return True
 
     @classmethod
@@ -330,13 +392,33 @@ class PostService:
 
         with transaction.atomic():
             existing = CommentReaction.objects.filter(comment=comment, user=user, reaction_type=reaction_type).first()
+            from realtime.broadcast import broadcast_comment_reaction
+
             if existing:
                 existing.delete()
                 Comment.objects.filter(id=comment.id, reactions_count__gt=0).update(reactions_count=F('reactions_count') - 1)
+                comment.refresh_from_db(fields=['reactions_count'])
+                broadcast_comment_reaction(
+                    comment.post_id,
+                    comment.id,
+                    reaction_type,
+                    comment.reactions_count,
+                    user.id,
+                    "removed",
+                )
                 return False
             else:
                 CommentReaction.objects.create(comment=comment, user=user, reaction_type=reaction_type)
                 Comment.objects.filter(id=comment.id).update(reactions_count=F('reactions_count') + 1)
+                comment.refresh_from_db(fields=['reactions_count'])
+                broadcast_comment_reaction(
+                    comment.post_id,
+                    comment.id,
+                    reaction_type,
+                    comment.reactions_count,
+                    user.id,
+                    "added",
+                )
                 return True
 
     # --- Polls ---

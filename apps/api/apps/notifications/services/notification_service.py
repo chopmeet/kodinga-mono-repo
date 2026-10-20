@@ -47,6 +47,9 @@ class NotificationService:
                 target_id=str(target_id).strip(),
                 metadata=metadata or {},
             )
+            from realtime.broadcast import broadcast_notification_created
+
+            broadcast_notification_created(notification)
             return notification
         except Exception as exc:
             logger.error(

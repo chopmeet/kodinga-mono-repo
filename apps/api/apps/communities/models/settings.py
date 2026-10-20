@@ -81,6 +81,11 @@ class CommunitySettings(BaseModel):
         default=True,
         help_text="Activer l'analyse de sentiment globale et anonymisée"
     )
+    role_permissions = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Matrice de permissions personnalisées par rôle (admin, moderator, member)"
+    )
 
     class Meta:
         db_table = 'communities_settings'
@@ -101,11 +106,117 @@ class CommunitySettings(BaseModel):
             'projects': True,
         }
 
+    @classmethod
+    def get_default_role_permissions(cls) -> dict:
+        import copy
+        return copy.deepcopy(DEFAULT_ROLE_PERMISSIONS)
+
+    def get_role_permissions(self, role: str) -> dict[str, bool]:
+        """
+        Returns the resolved permission map for a specific role.
+        'owner' always receives True for every known permission.
+        """
+        if role == 'owner':
+            all_keys = set()
+            for r_perms in DEFAULT_ROLE_PERMISSIONS.values():
+                all_keys.update(r_perms.keys())
+            return {k: True for k in all_keys}
+
+        defaults = DEFAULT_ROLE_PERMISSIONS.get(role, {})
+        overrides = (self.role_permissions or {}).get(role, {})
+        resolved = dict(defaults)
+        resolved.update({k: bool(v) for k, v in overrides.items() if k in defaults})
+        return resolved
+
+    def get_all_role_permissions(self) -> dict[str, dict[str, bool]]:
+        """
+        Returns the full matrix of permissions for all roles including defaults and overrides.
+        """
+        return {
+            role: self.get_role_permissions(role)
+            for role in ['owner', 'admin', 'moderator', 'member']
+        }
+
+    def has_permission(self, role: str, permission_name: str) -> bool:
+        """
+        Checks whether the given role has a specific permission enabled.
+        """
+        if role == 'owner':
+            return True
+        perms = self.get_role_permissions(role)
+        return perms.get(permission_name, False)
+
     def save(self, *args, **kwargs):
         if not self.enabled_features:
             self.enabled_features = self.get_default_features()
+        if not self.role_permissions:
+            self.role_permissions = self.get_default_role_permissions()
         if not self.supported_languages:
             self.supported_languages = ['fr', 'en', 'wo', 'bm']
         if not self.target_languages:
             self.target_languages = ['fr', 'en', 'wo', 'bm']
         super().save(*args, **kwargs)
+
+
+DEFAULT_ROLE_PERMISSIONS = {
+    'admin': {
+        'can_create_posts': True,
+        'can_pin_posts': True,
+        'can_delete_posts': True,
+        'can_moderate_comments': True,
+        'can_create_events': True,
+        'can_manage_events': True,
+        'can_create_courses': True,
+        'can_manage_courses': True,
+        'can_create_hackathons': True,
+        'can_manage_hackathons': True,
+        'can_create_projects': True,
+        'can_feature_projects': True,
+        'can_invite_members': True,
+        'can_review_requests': True,
+        'can_sanction_members': True,
+        'can_assign_roles': True,
+        'can_manage_settings': True,
+        'can_view_analytics': True,
+    },
+    'moderator': {
+        'can_create_posts': True,
+        'can_pin_posts': True,
+        'can_delete_posts': True,
+        'can_moderate_comments': True,
+        'can_create_events': True,
+        'can_manage_events': False,
+        'can_create_courses': False,
+        'can_manage_courses': False,
+        'can_create_hackathons': False,
+        'can_manage_hackathons': False,
+        'can_create_projects': True,
+        'can_feature_projects': True,
+        'can_invite_members': True,
+        'can_review_requests': True,
+        'can_sanction_members': True,
+        'can_assign_roles': False,
+        'can_manage_settings': False,
+        'can_view_analytics': True,
+    },
+    'member': {
+        'can_create_posts': True,
+        'can_pin_posts': False,
+        'can_delete_posts': False,
+        'can_moderate_comments': False,
+        'can_create_events': False,
+        'can_manage_events': False,
+        'can_create_courses': False,
+        'can_manage_courses': False,
+        'can_create_hackathons': False,
+        'can_manage_hackathons': False,
+        'can_create_projects': True,
+        'can_feature_projects': False,
+        'can_invite_members': True,
+        'can_review_requests': False,
+        'can_sanction_members': False,
+        'can_assign_roles': False,
+        'can_manage_settings': False,
+        'can_view_analytics': False,
+    },
+}

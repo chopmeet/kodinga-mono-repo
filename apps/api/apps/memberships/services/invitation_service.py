@@ -261,9 +261,9 @@ class InvitationService:
         token_hash = hash_token(raw_token.strip())
 
         with transaction.atomic():
-            # Pessimistic row-level lock on invitation
+            # Pessimistic row-level lock on invitation (only non-nullable inner join to avoid PostgreSQL outer join lock error)
             invitation = CommunityInvitation.objects.select_for_update().select_related(
-                'community', 'invited_by'
+                'community'
             ).filter(token_hash=token_hash).first()
 
             if not invitation:

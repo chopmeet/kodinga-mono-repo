@@ -1,11 +1,6 @@
 from rest_framework.permissions import BasePermission
 
 from apps.communities.models.community import Community
-from apps.memberships.models.member import (
-    CommunityMember,
-    CommunityRole,
-    MembershipStatus,
-)
 from common.permissions.base import is_superadmin_user
 
 
@@ -35,12 +30,8 @@ class IsCommunityClassroomManager(BasePermission):
         if community.owner_id == request.user.id:
             return True
 
-        return CommunityMember.objects.filter(
-            community=community,
-            user=request.user,
-            status=MembershipStatus.ACTIVE,
-            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
-        ).exists()
+        from apps.memberships.permissions import has_community_permission
+        return has_community_permission(request.user, community, 'can_manage_courses')
 
 
 
