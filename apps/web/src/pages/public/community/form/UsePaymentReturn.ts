@@ -2,19 +2,25 @@ import { useEffect, useState } from 'react';
 
 import { useAppDispatch } from '@/redux/hook';
 import { CommunityApi, useGetMyPaymentsQuery, useGetPaymentStatusQuery } from '@/utils/api/community/community.api';
-import type { CommunityDetail } from '@/utils/api/community/community.type';
 
 const KEY = 'kodinga_pending_payment';
 const POLLING = 3_000;
 /** After this, the payment is told "pending": PayDunya confirms it later (IPN) */
 const PATIENCE = 90_000;
 
-/** The payment started for a community, kept for the return from PayDunya (same tab) */
+/**
+ * What the payment buys: a community (its slug and id), or Kodinga Pro (PRO_SCOPE: plans with no
+ * community)
+ */
+export type PaymentScope = { slug: string; communityId: string | null };
+export const PRO_SCOPE: PaymentScope = { slug: 'kodinga-pro', communityId: null };
+
+/** The payment started for a scope, kept for the return from PayDunya (same tab) */
 export function rememberPayment(slug: string, paymentId: string) {
   try {
     sessionStorage.setItem(KEY, JSON.stringify({ slug, paymentId }));
   } catch {
-    // Private mode: the latest payment of the community is used instead
+    // Private mode: the latest payment of the scope is used instead
   }
 }
 
@@ -39,16 +45,16 @@ export type PaymentReturn = 'checking' | 'paid' | 'pending' | 'failed' | 'cancel
 
 /**
  * Back from PayDunya (?payment=done|cancelled): the payment is checked with the api (it asks
- * PayDunya while pending) until it is paid or failed. Paid: the membership is read again.
+ * PayDunya while pending) until it is paid or failed. Paid: the membership (or Pro) is read again.
  */
-function UsePaymentReturn(community: CommunityDetail | undefined, param: string | null): PaymentReturn {
+function UsePaymentReturn(scope: PaymentScope | undefined, param: string | null): PaymentReturn {
   const dispatch = useAppDispatch();
-  const slug = community?.slug ?? '';
+  const slug = scope?.slug ?? '';
   const done = param === 'done';
   const remembered = done && slug ? rememberedPayment(slug) : null;
-  // Paid in another tab, or no storage: the latest payment of this community
+  // Paid in another tab, or no storage: the latest payment of this scope
   const payments = useGetMyPaymentsQuery(undefined, { skip: !done || !slug || !!remembered });
-  const latest = (payments.data ?? []).find((p) => p.plan?.community_id === community?.id);
+  const latest = (payments.data ?? []).find((p) => !!p.plan && p.plan.community_id === scope?.communityId);
   const paymentId = remembered ?? latest?.id ?? '';
 
   const [startedAt] = useState(() => Date.now());
@@ -68,7 +74,7 @@ function UsePaymentReturn(community: CommunityDetail | undefined, param: string 
     if (param === 'cancelled') forget();
     if (!paid) return;
     forget();
-    // The payment created the membership: the page and the account read it again
+    // The payment created the membership or the Pro subscription: the page and the account read it again
     dispatch(CommunityApi.util.invalidateTags([{ type: 'communities', id: slug }, { type: 'communities', id: 'my-billing' }]));
   }, [paid, param, slug, dispatch]);
 

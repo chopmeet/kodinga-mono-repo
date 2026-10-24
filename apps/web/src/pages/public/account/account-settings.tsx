@@ -1,36 +1,36 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-import { NavTabs, type Tab } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
+import DashboardLayout from '@/layouts/dashboard-layout';
 import { useAppSelector } from '@/redux/hook';
 
-const tabs: Tab[] = [
-  { id: 'profile', title: 'Profil', link: 'profile' },
-  { id: 'skills', title: 'Compétences', link: 'skills' },
-  { id: 'career', title: 'Parcours', link: 'career' },
-  { id: 'portfolio', title: 'Portfolio', link: 'portfolio' },
-  { id: 'billing', title: 'Abonnements', link: 'billing' },
-  { id: 'security', title: 'Sécurité', link: 'security' },
-];
+/** Title of each section of the account (the menu is in the sidebar, see dashboard-sidebar) */
+const sections: Record<string, { title: string; paragraph: string }> = {
+  profile: { title: 'Profil', paragraph: 'Ce que les autres voient sur votre profil public.' },
+  skills: { title: 'Compétences', paragraph: 'Votre stack technique, avec un niveau pour chaque technologie.' },
+  career: { title: 'Parcours', paragraph: 'Vos expériences et vos formations, de la plus récente à la plus ancienne.' },
+  portfolio: { title: 'Portfolio', paragraph: 'Les projets montrés sur votre profil public.' },
+  billing: { title: 'Abonnements', paragraph: 'Vos adhésions payantes et leurs paiements.' },
+  security: { title: 'Sécurité', paragraph: 'Votre mot de passe et les appareils connectés à votre compte.' },
+};
 
-/** /account — the account of the signed-in user: public profile, career, portfolio, security */
+/** /account — the account of the signed-in user, as a dashboard: public profile, career, portfolio, security */
 function AccountSettings() {
   const signedIn = !!useAppSelector((s) => s.user.token);
   const { pathname } = useLocation();
   if (!signedIn) return <Navigate to={`/auth/login?next=${encodeURIComponent(pathname)}`} replace />;
 
+  const section = sections[pathname.split('/')[2] ?? ''];
+
   return (
-    <div className="min-h-full bg-slate-50/60">
-      <div className="mx-auto max-w-285 px-4 py-10 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Mon compte</h1>
-        <p className="mt-1 text-slate-500">Votre profil de développeur, votre parcours et la sécurité de votre compte.</p>
-        <div className="mt-6">
-          <NavTabs tabs={tabs} />
-        </div>
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+    <DashboardLayout>
+      <div className="account__settings">
+        {section && <TopTitle title={section.title} paragraph={section.paragraph} />}
+        <ColgateWrapper className="mt-4 border border-neutral-200 p-4 md:p-6">
           <Outlet />
-        </div>
+        </ColgateWrapper>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
 

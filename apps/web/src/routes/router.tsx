@@ -158,19 +158,6 @@ export const AppRoutes: RouteObject[] = [
         element: <PostDetails />,
       },
       {
-        path: 'account',
-        element: <AccountSettings />,
-        children: [
-          { index: true, element: <Navigate to="profile" replace /> },
-          { path: 'profile', element: <AccountProfileTab /> },
-          { path: 'skills', element: <AccountSkillsTab /> },
-          { path: 'career', element: <AccountCareerTab /> },
-          { path: 'portfolio', element: <AccountPortfolioTab /> },
-          { path: 'billing', element: <AccountBillingTab /> },
-          { path: 'security', element: <AccountSecurityTab /> },
-        ],
-      },
-      {
         path: 'opportunities/:opportunitySlug',
         element: <OpportunityPageView />,
       },
@@ -203,6 +190,21 @@ export const AppRoutes: RouteObject[] = [
         path: 'c',
         element: <MyCommunities />,
       },
+    ],
+  },
+  {
+    // Account of the signed-in user, in the dashboard layout (sections in the sidebar)
+    path: '/account',
+    element: <AccountSettings />,
+    children: [
+      { index: true, element: <Navigate to="profile" replace /> },
+      { path: 'profile', element: <AccountProfileTab /> },
+      { path: 'skills', element: <AccountSkillsTab /> },
+      { path: 'career', element: <AccountCareerTab /> },
+      { path: 'portfolio', element: <AccountPortfolioTab /> },
+      { path: 'billing', element: <AccountBillingTab /> },
+      { path: 'security', element: <AccountSecurityTab /> },
+      { path: '*', element: <Navigate to="profile" replace /> },
     ],
   },
   {
