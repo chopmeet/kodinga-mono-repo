@@ -112,6 +112,19 @@ describe('Account settings', () => {
     await waitFor(() => expect(where()).toBe('/auth/login?next=%2Faccount%2Fprofile'), SLOW);
   });
 
+  it('shows the account as a dashboard, its sections in the sidebar', async () => {
+    signIn();
+    stubAccountApi();
+    const { where } = renderAppAt('/account/skills');
+    expect(await screen.findByRole('heading', { name: 'Compétences' }, SLOW)).toBeTruthy();
+    const security = screen.getByRole('link', { name: 'Sécurité' });
+    expect(security.getAttribute('href')).toBe('/account/security');
+    expect(screen.getByRole('link', { name: 'Compétences' }).getAttribute('data-active')).toBe('true');
+    fireEvent.click(security);
+    expect(await screen.findByRole('heading', { name: 'Sécurité' }, SLOW)).toBeTruthy();
+    expect(where()).toBe('/account/security');
+  });
+
   it('saves the identity and the developer profile', async () => {
     signIn();
     const calls = stubAccountApi();

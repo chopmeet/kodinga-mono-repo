@@ -66,11 +66,15 @@ import type {
   ContentSuggestionResult,
   ManagedCommunity,
   ManagedRole,
+  MyCommunityMembership,
   SanctionData,
 } from './community.type';
 import { authBaseQuery } from '../authBaseQuery';
 
 const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
+
+/** The memberships that open /c/<slug> (owner, admin, moderator) */
+export const isManaged = (m: MyCommunityMembership): m is ManagedCommunity => MANAGED_ROLES.includes(m.role as ManagedRole);
 
 /** Drops empty filters so the api does not receive `?q=&category=` */
 const cleanParams = (query: object) =>
@@ -193,22 +197,21 @@ export const CommunityApi = createApi({
       providesTags: (_result, _error, slug) => [{ type: 'communities', id: slug }],
     }),
     //
-    getMyManagedCommunities: builder.query<ManagedCommunity[], void>({
+    // Every active membership of the user, with the role (only the detail carries it)
+    getMyCommunities: builder.query<MyCommunityMembership[], void>({
       async queryFn(_arg, _api, _extra, baseQuery) {
-        const list = await baseQuery({ url: 'communities/my/', params: { page_size: 10 } });
+        const list = await baseQuery({ url: 'communities/my/', params: { page_size: 20 } });
         if (list.error) return { error: list.error };
         const items = (list.data as ApiPaginated<CommunityListItem>).results ?? [];
         const details = await Promise.all(items.map((c) => baseQuery(`communities/${c.slug}/`)));
         const failed = details.find((d) => d.error);
         if (failed?.error) return { error: failed.error as FetchBaseQueryError };
-        const managed = details.flatMap((d) => {
+        const memberships = details.flatMap((d) => {
           const detail = (d.data as ApiSuccess<CommunityDetail>).data;
           const role = detail.user_membership?.role;
-          return detail.user_membership?.is_member && role && MANAGED_ROLES.includes(role as ManagedRole)
-            ? [{ community: detail, role: role as ManagedRole }]
-            : [];
+          return detail.user_membership?.is_member && role ? [{ community: detail, role: role as CommunityRole }] : [];
         });
-        return { data: managed };
+        return { data: memberships };
       },
       providesTags: ['communities'],
     }),
@@ -229,6 +232,12 @@ export const CommunityApi = createApi({
     // Active plans of a paid community (public)
     getCommunityPlans: builder.query<CommunityPlan[], string>({
       query: (community) => ({ url: 'billing/plans/', params: { community } }),
+      transformResponse: unwrap<CommunityPlan[]>,
+      providesTags: ['plans'],
+    }),
+    // Kodinga Pro plans (no community): paid communities and their plans need it
+    getProPlans: builder.query<CommunityPlan[], void>({
+      query: () => 'billing/plans/',
       transformResponse: unwrap<CommunityPlan[]>,
       providesTags: ['plans'],
     }),
@@ -1049,7 +1058,7 @@ export const {
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
   useGetCommunityQuery,
-  useGetMyManagedCommunitiesQuery,
+  useGetMyCommunitiesQuery,
   useCreateCommunityMutation,
   useArchiveCommunityMutation,
   useGetCategoriesQuery,
@@ -1063,6 +1072,7 @@ export const {
   useJoinCommunityMutation,
   useLeaveCommunityMutation,
   useGetCommunityPlansQuery,
+  useGetProPlansQuery,
   useCreateCheckoutMutation,
   useCreatePlanMutation,
   useUpdatePlanMutation,

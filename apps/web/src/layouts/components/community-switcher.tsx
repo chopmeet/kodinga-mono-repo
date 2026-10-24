@@ -1,4 +1,5 @@
 import { Check, ChevronsUpDown, LayoutGrid } from 'lucide-react';
+import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
@@ -11,7 +12,7 @@ import {
 } from '@kodinga-mono-repo/ui';
 import { type MyCommunity, roleLabel } from '@/data/community-space.data';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
-import { useGetMyManagedCommunitiesQuery } from '@/utils/api/community/community.api';
+import { isManaged, useGetMyCommunitiesQuery } from '@/utils/api/community/community.api';
 import { useUser } from '@/utils/Utils';
 
 /** Sidebar header of /c/:slug: current community, and a menu to switch to another one on the same page */
@@ -21,7 +22,8 @@ function CommunitySwitcher({ current, collapsed }: { current: MyCommunity; colla
   // /c/lagos-ai-data/members -> /members, kept when switching community
   const subPath = pathname.split('/').slice(3).join('/') || 'dashboard';
   const user = useUser();
-  const { data: managed = [] } = useGetMyManagedCommunitiesQuery(undefined, { skip: !user });
+  const { data: memberships } = useGetMyCommunitiesQuery(undefined, { skip: !user });
+  const managed = useMemo(() => (memberships ?? []).filter(isManaged), [memberships]);
   // The current space is always listed (e.g. a demo community the api does not return)
   const communities = managed.some((m) => m.community.slug === current.community.slug) ? managed : [current, ...managed];
 

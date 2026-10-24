@@ -19,9 +19,10 @@ const signIn = () =>
 const ok = (data: unknown) => ({ body: { success: true, data } });
 
 /** communities/my/ + one detail per community (the role lives in user_membership) */
-function stubMyCommunities(memberships: [slug: string, role: CommunityRole][]) {
+function stubMyCommunities(memberships: [slug: string, role: CommunityRole][], extra: Parameters<typeof stubApi>[0] = {}) {
   const communities = memberships.map(([slug]) => must(getAdminCommunity(slug), slug));
   return stubApi({
+    ...extra,
     'communities/my/': { body: { success: true, pagination: { count: communities.length }, results: communities } },
     ...Object.fromEntries(
       memberships.map(([slug, role], i) => [
@@ -31,6 +32,23 @@ function stubMyCommunities(memberships: [slug: string, role: CommunityRole][]) {
     ),
   });
 }
+
+/** A Kodinga Pro plan (no community) */
+const proPlan = {
+  id: 'pro-m',
+  name: 'Pro mensuel',
+  slug: 'pro-month',
+  description: '',
+  price: '5000.00',
+  currency: 'XOF',
+  billing_interval: 'month',
+  interval_count: 1,
+  community_id: null,
+  community_name: null,
+  features: ['Communautés payantes'],
+  is_active: true,
+  order: 1,
+};
 
 afterEach(() => {
   cleanup();
@@ -42,7 +60,7 @@ afterEach(() => {
 });
 
 describe('My communities /c', () => {
-  it('lists the communities the user manages, with the role, not the ones they only joined', async () => {
+  it('lists the communities the user manages, with the role, then the ones they only joined', async () => {
     signIn();
     stubMyCommunities([
       ['lagos-ai-data', 'owner'],
@@ -50,20 +68,62 @@ describe('My communities /c', () => {
       ['dakar-devops', 'member'],
     ]);
     renderAppAt('/c');
-    await screen.findByText('Propriétaire', {}, SLOW);
-    // The page list, not the ones of the footer
-    const list = within(screen.getByRole('main')).getByRole('list');
-    expect(within(list).getAllByRole('link')).toHaveLength(2);
-    expect(within(list).getByText('Propriétaire')).toBeTruthy();
-    expect(within(list).getByText('Modérateur')).toBeTruthy();
-    expect(within(list).queryByText(/Dakar DevOps/)).toBeNull();
+    const managed = await screen.findByRole('list', { name: 'Communautés que je gère' }, SLOW);
+    expect(within(managed).getAllByRole('link')).toHaveLength(2);
+    expect(within(managed).getByText('Propriétaire')).toBeTruthy();
+    expect(within(managed).getByText('Modérateur')).toBeTruthy();
+    expect(within(managed).queryByText(/Dakar DevOps/)).toBeNull();
+    // A plain member opens the public page, not the space
+    const joined = screen.getByRole('list', { name: 'Communautés dont je suis membre' });
+    expect(within(joined).getByRole('link', { name: /Dakar DevOps/ }).getAttribute('href')).toBe('/communities/dakar-devops');
   });
 
-  it('goes straight to the space when the user manages one community', async () => {
+  it('stays on /c when the user manages one community', async () => {
     signIn();
     stubMyCommunities([['lagos-ai-data', 'owner']]);
     const { where } = renderAppAt('/c');
-    await waitFor(() => expect(where()).toBe('/c/lagos-ai-data/dashboard'), SLOW);
+    const managed = await screen.findByRole('list', { name: 'Communautés que je gère' }, SLOW);
+    expect(within(managed).getByRole('link').getAttribute('href')).toBe('/c/lagos-ai-data/dashboard');
+    expect(where()).toBe('/c');
+  });
+
+  it('sends to PayDunya to become Pro, and tells a Pro member their plan', async () => {
+    signIn();
+    const assign = vi.fn();
+    const original = window.location;
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...original, origin: 'http://localhost:4200', assign } });
+    try {
+      const calls = stubMyCommunities([], {
+        'billing/plans/': ok([proPlan]),
+        'billing/subscriptions/me/': ok([]),
+        'billing/checkout/': ok({ payment_id: 'pay1', token: 't', checkout_url: 'https://paydunya.com/checkout/t', amount: '5000', currency: 'XOF', plan_name: 'Pro mensuel' }),
+      });
+      renderAppAt('/c');
+      const plans = await screen.findByRole('list', { name: 'Formules Pro' }, SLOW);
+      expect(within(plans).getByText('5 000 FCFA')).toBeTruthy();
+      fireEvent.click(within(plans).getByRole('button', { name: 'Devenir Pro — Pro mensuel' }));
+      await waitFor(() => expect(assign).toHaveBeenCalledWith('https://paydunya.com/checkout/t'), SLOW);
+      expect(calls.find((c) => c.url.endsWith('/billing/checkout/'))?.body).toEqual({
+        plan_id: proPlan.id,
+        return_url: 'http://localhost:4200/c?payment=done',
+        cancel_url: 'http://localhost:4200/c?payment=cancelled',
+      });
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: original });
+    }
+  });
+
+  it('shows the Pro plan of a subscribed user', async () => {
+    signIn();
+    stubMyCommunities([], {
+      'billing/plans/': ok([proPlan]),
+      'billing/subscriptions/me/': ok([{ id: 'sub1', plan: proPlan, community_id: null, status: 'active', is_active: true, current_period_start: '2026-10-01T00:00:00Z', current_period_end: '2026-11-01T00:00:00Z', cancel_at_period_end: false, canceled_at: null, created_at: '2026-10-01T00:00:00Z' }]),
+    });
+    renderAppAt('/c');
+    expect(await screen.findByText('Membre Pro', {}, SLOW)).toBeTruthy();
+    const plans = screen.getByRole('list', { name: 'Formules Pro' });
+    expect(within(plans).getByText('Votre formule')).toBeTruthy();
+    expect(within(plans).queryByRole('button')).toBeNull();
   });
 
   it('invites to create a first community when there is none', async () => {
