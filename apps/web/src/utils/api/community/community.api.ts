@@ -862,6 +862,11 @@ export const CommunityApi = createApi({
             comments.forEach((c) => {
               c.is_accepted_answer = c.id === commentId;
             });
+            comments.sort((a, b) => {
+              if (a.is_accepted_answer && !b.is_accepted_answer) return -1;
+              if (!a.is_accepted_answer && b.is_accepted_answer) return 1;
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
           }),
         );
         const patchPost = dispatch(
@@ -870,7 +875,19 @@ export const CommunityApi = createApi({
           }),
         );
         try {
-          await queryFulfilled;
+          const { data: accepted } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+              comments.forEach((c) => {
+                c.is_accepted_answer = c.id === accepted.id;
+              });
+              comments.sort((a, b) => {
+                if (a.is_accepted_answer && !b.is_accepted_answer) return -1;
+                if (!a.is_accepted_answer && b.is_accepted_answer) return 1;
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              });
+            }),
+          );
         } catch {
           patchComments.undo();
           patchPost.undo();

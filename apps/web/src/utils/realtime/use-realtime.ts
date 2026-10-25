@@ -538,6 +538,11 @@ export function useRealtimePostComments(postId: string | undefined) {
           comments.forEach((c) => {
             c.is_accepted_answer = c.id === acceptedComment.id;
           });
+          comments.sort((a, b) => {
+            if (a.is_accepted_answer && !b.is_accepted_answer) return -1;
+            if (!a.is_accepted_answer && b.is_accepted_answer) return 1;
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          });
         }),
       );
       dispatch(
