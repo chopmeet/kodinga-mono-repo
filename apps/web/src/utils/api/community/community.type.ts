@@ -163,9 +163,11 @@ export type CommunityLinks = { website_url?: string; github_url?: string; discor
 /** Roles that manage a community (plain members do not): they open /c/<slug> */
 export type ManagedRole = Exclude<CommunityRole, 'member'>;
 
+/** A community the signed-in user belongs to, with their role in it; the detail carries the settings (role permissions) */
+export type MyCommunityMembership = { community: CommunityListItem & { settings?: CommunitySettings | null }; role: CommunityRole };
+
 /** A community the signed-in user manages, with their role in it */
-/** A community the signed-in user manages, with their role in it; the detail carries the settings (role permissions) */
-export type ManagedCommunity = { community: CommunityListItem & { settings?: CommunitySettings | null }; role: ManagedRole };
+export type ManagedCommunity = MyCommunityMembership & { role: ManagedRole };
 
 // Mirrors apps/memberships (serializers/member.py, models/member.py, models/sanction.py)
 

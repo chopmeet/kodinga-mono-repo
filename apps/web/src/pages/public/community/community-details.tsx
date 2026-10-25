@@ -21,7 +21,7 @@ import UsePaymentReturn from './form/UsePaymentReturn';
 
 /** Back from PayDunya (?payment=done|cancelled): the real status of the payment */
 function PaymentNotice({ community, param }: { community: CommunityDetail | undefined; param: string | null }) {
-  const state = UsePaymentReturn(community, param);
+  const state = UsePaymentReturn(community && { slug: community.slug, communityId: community.id }, param);
   if (!state) return null;
   const notices = {
     checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950', text: 'Vérification de votre paiement auprès de PayDunya…' },
