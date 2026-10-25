@@ -93,10 +93,9 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
                   isSending={page.isSending}
                   autoFocus
                   onCancel={() => setReplying(false)}
-                  onSend={async (content) => {
-                    const ok = await page.send(content, c.id);
-                    if (ok) setReplying(false);
-                    return ok;
+                  onSend={(content) => {
+                    page.send(content, c.id);
+                    setReplying(false);
                   }}
                 />
               </div>

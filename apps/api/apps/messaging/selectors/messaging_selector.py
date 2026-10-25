@@ -20,7 +20,7 @@ class MessagingSelector:
             .select_related("created_by", "community")
             .prefetch_related("participants__user__profile", "messages")
             .distinct()
-            .order_by("-last_message_at")
+            .order_by("-last_message_at", "-created_at")
         )
 
     @classmethod
@@ -42,18 +42,19 @@ class MessagingSelector:
         return conversation
 
     @classmethod
-    def get_conversation_messages(cls, conversation, user, since=None):
+    def get_conversation_messages(cls, conversation, user, since=None, ordering=None):
         from common.permissions.base import is_superadmin_user
 
         is_participant = conversation.participants.filter(user=user).exists()
         if not is_participant and not is_superadmin_user(user):
             raise PermissionDenied("Vous n'avez pas accès à cette conversation.")
 
+        order = ordering if ordering in ("created_at", "-created_at") else "created_at"
         qs = (
             Message.objects.filter(conversation=conversation)
             .select_related("sender__profile")
             .prefetch_related("attachments")
-            .order_by("created_at")
+            .order_by(order)
         )
         if since is not None:
             qs = qs.filter(created_at__gt=since)

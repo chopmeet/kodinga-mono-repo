@@ -81,7 +81,7 @@ class PostSelector:
     ) -> QuerySet[Comment]:
         replies_prefetch = Prefetch(
             'replies',
-            queryset=Comment.objects.select_related('author', 'author__profile').prefetch_related('media_attachments', 'reactions').order_by('created_at')
+            queryset=Comment.objects.select_related('author', 'author__profile').prefetch_related('media_attachments', 'reactions').order_by('-created_at')
         )
         qs = Comment.objects.filter(
             post=post,
@@ -96,7 +96,7 @@ class PostSelector:
         )
         if since is not None:
             qs = qs.filter(updated_at__gt=since)
-        return qs.order_by('-is_accepted_answer', 'created_at')
+        return qs.order_by('-is_accepted_answer', '-created_at')
 
     @classmethod
     def get_categories(cls, community: Community) -> QuerySet[PostCategory]:

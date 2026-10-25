@@ -43,11 +43,27 @@ class RealtimeAuthService:
         user = User.objects.filter(id=user_id, is_active=True).first()
         return user
 
+    @classmethod
+    def validate_jwt_token(cls, raw_token: str):
+        if not raw_token or not isinstance(raw_token, str):
+            return None
+        try:
+            from rest_framework_simplejwt.tokens import AccessToken
+
+            validated_token = AccessToken(raw_token.strip())
+            user_id = validated_token.get("user_id")
+            if not user_id:
+                return None
+            return User.objects.filter(id=user_id, is_active=True).first()
+        except Exception:
+            return None
+
 
 class WebSocketTicketAuthMiddleware:
     """
-    ASGI middleware for authenticating WebSocket connections via single-use tickets.
-    Extracts 'ticket' query parameter from the connection handshake URL.
+    ASGI middleware for authenticating WebSocket connections via single-use tickets
+    or fallback JWT access tokens.
+    Extracts 'ticket' or 'token' query parameters from the connection handshake URL.
     """
 
     def __init__(self, inner):
@@ -62,15 +78,22 @@ class WebSocketTicketAuthMiddleware:
                 query_string = scope.get("query_string", b"").decode("utf-8")
                 query_params = parse_qs(query_string)
                 ticket_list = query_params.get("ticket")
+                token_list = query_params.get("token")
 
+                user = None
                 if ticket_list and len(ticket_list) > 0:
                     ticket = ticket_list[0]
                     user = await sync_to_async(
                         RealtimeAuthService.validate_and_consume_ticket
                     )(ticket)
-                    scope["user"] = user if user else AnonymousUser()
-                else:
-                    scope["user"] = AnonymousUser()
+
+                if not user and token_list and len(token_list) > 0:
+                    raw_token = token_list[0]
+                    user = await sync_to_async(
+                        RealtimeAuthService.validate_jwt_token
+                    )(raw_token)
+
+                scope["user"] = user if user else AnonymousUser()
 
         return await self.inner(scope, receive, send)
 

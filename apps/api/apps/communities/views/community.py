@@ -52,6 +52,7 @@ class CommunityListCreateView(APIView):
         pricing = request.query_params.get('pricing')
         featured_param = request.query_params.get('is_featured')
         featured = featured_param.lower() in ['true', '1'] if featured_param else None
+        sort = request.query_params.get('sort')
 
         queryset = CommunitySelector.search_communities(
             search_query=q,
@@ -59,7 +60,8 @@ class CommunityListCreateView(APIView):
             privacy=privacy,
             pricing=pricing,
             is_featured=featured,
-            user=request.user
+            user=request.user,
+            sort=sort,
         )
 
         paginator = self.pagination_class()

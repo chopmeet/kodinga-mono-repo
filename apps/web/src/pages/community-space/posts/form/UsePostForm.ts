@@ -97,8 +97,13 @@ function UsePostForm({
     try {
       if (post) {
         await updatePost({ postId: post.id, ...body }).unwrap();
+        customToast.success({ message: 'Publication mise à jour.' });
+        onDone();
       } else {
-        await createPost({
+        // Optimistic instant feedback (Facebook/LinkedIn-style: 0ms close & DOM insertion)
+        onDone();
+        customToast.success({ message: 'Publication partagée avec la communauté.' });
+        createPost({
           slug,
           ...body,
           ...(v.post_type === 'poll'
@@ -111,10 +116,13 @@ function UsePostForm({
                 },
               }
             : {}),
-        }).unwrap();
+        })
+          .unwrap()
+          .catch((error) => {
+            const { message } = parseApiError(error);
+            customToast.error({ message });
+          });
       }
-      customToast.success({ message: post ? 'Publication mise à jour.' : 'Publication partagée avec la communauté.' });
-      onDone();
     } catch (error) {
       const { message, fields } = parseApiError(error);
       if (fields.title) setError('title', { message: fields.title });
