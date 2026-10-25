@@ -69,6 +69,7 @@ class CommunitySelector:
         pricing: str = None,
         is_featured: bool = None,
         user: Optional[User] = None,
+        sort: Optional[str] = None,
     ) -> QuerySet[Community]:
         # By default, hide secret communities from discovery
         qs = cls.get_base_queryset().exclude(privacy_type=CommunityPrivacy.SECRET)
@@ -98,7 +99,9 @@ class CommunitySelector:
         if is_featured is not None:
             qs = qs.filter(is_featured=is_featured)
 
-        return qs.order_by('-is_featured', '-members_count', '-created_at')
+        if sort == "popular":
+            return qs.order_by("-is_featured", "-members_count", "-created_at")
+        return qs.order_by("-is_featured", "-created_at")
 
     @classmethod
     def get_user_communities(cls, user: User) -> QuerySet[Community]:

@@ -351,3 +351,48 @@ class TestPostsAPI:
             community=community, user=user_member
         )
         assert member_record.reputation_score == 15
+
+    def test_comments_ordered_newest_first(
+        self, api_client, user_owner, user_member, community
+    ):
+        """
+        Verify that newly posted comments and messages always appear at the top
+        (most recent first) in the backend response.
+        """
+        api_client.force_authenticate(user=user_owner)
+        res = api_client.post(
+            f"/api/v1/communities/{community.slug}/feed/",
+            {
+                "title": "Post de test pour l'ordonnancement des commentaires",
+                "content": "Contenu du post pour tester l'ordre des réponses.",
+                "post_type": PostType.DISCUSSION,
+            },
+            format="json",
+        )
+        post_id = (res.data.get("data") or res.data)["id"]
+        comment_url = f"/api/v1/posts/{post_id}/comments/"
+
+        # Member posts first comment
+        api_client.force_authenticate(user=user_member)
+        api_client.post(
+            comment_url,
+            {"content": "Premier commentaire (ancien)"},
+            format="json",
+        )
+
+        # Member posts second comment shortly after
+        api_client.post(
+            comment_url,
+            {"content": "Deuxième commentaire (récent)"},
+            format="json",
+        )
+
+        # Fetch comments list
+        list_res = api_client.get(comment_url)
+        assert list_res.status_code == status.HTTP_200_OK
+        comments_list = list_res.data.get("data") or list_res.data
+        assert len(comments_list) == 2
+        # The most recent comment must always be at index 0 (at the top)
+        assert comments_list[0]["content"] == "Deuxième commentaire (récent)"
+        assert comments_list[1]["content"] == "Premier commentaire (ancien)"
+

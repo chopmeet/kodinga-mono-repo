@@ -2,6 +2,7 @@ import contextlib
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.test import APIClient
@@ -377,6 +378,10 @@ class TestMultilingualTranslation:
 
 @pytest.mark.django_db
 class TestContentModerationAndSafety:
+    @pytest.fixture(autouse=True)
+    def enable_moderation(self, settings):
+        settings.AI_MODERATION_ENABLED = True
+
     def test_legitimate_criticism_allowed_not_banned(self):
         """11. Negative but legitimate technical criticism is NOT automatically banned."""
         with patch("apps.ai.router.ai_router.moderate_content") as mock_mod:

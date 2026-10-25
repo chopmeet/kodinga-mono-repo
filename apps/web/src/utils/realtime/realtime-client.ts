@@ -52,6 +52,8 @@ class RealtimeClient {
   // Gives a ticket for the WebSocket (set by useRealtimeSync: through the api client, which renews
   // an expired access token)
   private ticketProvider: (() => Promise<string | null>) | null = null;
+  // Fallback JWT token provider if ticket endpoint is unavailable
+  private tokenProvider: (() => string | null) | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -76,6 +78,11 @@ class RealtimeClient {
     this.ticketProvider = provider;
   }
 
+  /** Fallback access token supplier */
+  public setTokenProvider(provider: (() => string | null) | null): void {
+    this.tokenProvider = provider;
+  }
+
   private async fetchTicket(): Promise<string | null> {
     if (!this.ticketProvider) return null;
     try {
@@ -97,7 +104,16 @@ class RealtimeClient {
     this.shouldReconnect = true;
 
     const ticket = await this.fetchTicket();
-    if (!ticket) {
+    let tokenFallback: string | null = null;
+    if (!ticket && this.tokenProvider) {
+      try {
+        tokenFallback = this.tokenProvider();
+      } catch {
+        tokenFallback = null;
+      }
+    }
+
+    if (!ticket && !tokenFallback) {
       this.isConnecting = false;
       this.scheduleReconnect();
       return;
@@ -105,7 +121,10 @@ class RealtimeClient {
 
     try {
       const baseUrl = getWebSocketBaseUrl();
-      const wsUrl = `${baseUrl}?ticket=${encodeURIComponent(ticket)}`;
+      const authQuery = ticket
+        ? `ticket=${encodeURIComponent(ticket)}`
+        : `token=${encodeURIComponent(tokenFallback!)}`;
+      const wsUrl = `${baseUrl}?${authQuery}`;
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {

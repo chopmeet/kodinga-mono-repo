@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import uuid
@@ -65,7 +66,7 @@ def send_groups_event(
     sender_channel: str | None = None,
 ) -> None:
     """
-    Safely dispatches an event to multiple Channels groups after the current DB transaction commits.
+    Safely dispatches an event to multiple Channels groups concurrently after the current DB transaction commits.
     """
     if not group_names:
         return
@@ -74,16 +75,24 @@ def send_groups_event(
     def _execute():
         try:
             channel_layer = get_channel_layer()
-            if channel_layer:
-                for group in set(group_names):
-                    async_to_sync(channel_layer.group_send)(
-                        group,
-                        {
-                            "type": "event_broadcast",
-                            "sender_channel": sender_channel,
-                            "payload": envelope,
-                        },
-                    )
+            if not channel_layer:
+                return
+
+            unique_groups = set(group_names)
+            payload = {
+                "type": "event_broadcast",
+                "sender_channel": sender_channel,
+                "payload": envelope,
+            }
+
+            async def _send_all():
+                coros = [
+                    channel_layer.group_send(group, payload)
+                    for group in unique_groups
+                ]
+                await asyncio.gather(*coros, return_exceptions=True)
+
+            async_to_sync(_send_all)()
         except Exception as e:
             logger.warning(
                 f"[REALTIME BROADCAST ERROR] Could not send {event_type} to groups {group_names}: {e}"

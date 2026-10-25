@@ -68,12 +68,16 @@ class ProjectSelector:
                     )
                 )
 
-        if order_by == "recent":
+        if order_by in ("recent", "newest"):
             qs = qs.order_by("-created_at")
         elif order_by == "views":
             qs = qs.order_by("-views_count", "-upvotes_count")
-        else:
+        elif order_by == "upvotes":
             qs = qs.order_by("-upvotes_count", "-created_at")
+        elif order_by == "oldest":
+            qs = qs.order_by("created_at")
+        else:
+            qs = qs.order_by("-created_at")
 
         return qs.distinct()
 
@@ -110,9 +114,15 @@ class ProjectSelector:
 
     @classmethod
     def get_project_comments(cls, project):
+        from django.db.models import Prefetch
+
+        replies_prefetch = Prefetch(
+            "replies",
+            queryset=ProjectComment.objects.select_related("author__profile").order_by("-created_at"),
+        )
         return (
             ProjectComment.objects.filter(project=project, parent__isnull=True)
             .select_related("author__profile")
-            .prefetch_related("replies__author__profile")
-            .order_by("created_at")
+            .prefetch_related(replies_prefetch)
+            .order_by("-created_at")
         )
