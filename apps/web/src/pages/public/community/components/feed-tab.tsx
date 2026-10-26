@@ -15,7 +15,7 @@ import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';
 import { PollCard } from './poll-card';
 import { Pill } from './section-header';
-import { useRealtimeCommunityFeed } from '@/utils/realtime/use-realtime';
+import { useRealtime, useRealtimeCommunityFeed } from '@/utils/realtime/use-realtime';
 
 const PAGE_SIZE = 10;
 const FILTERS: { id: PostType | 'all'; label: string }[] = [
@@ -119,6 +119,7 @@ function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact:
 
 /** Feed of the community (GET communities/<slug>/feed/, pinned posts first) */
 export function FeedTab({ page }: { page: CommunityPage }) {
+  const { connected } = useRealtime();
   // New posts, reactions and comment counts of the others appear live
   useRealtimeCommunityFeed(page.canSee ? page.community?.id : undefined);
   const user = useUser();
@@ -131,7 +132,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
 
   const { data, isLoading, isFetching } = useGetCommunityFeedQuery(
     { slug: page.slug, type: type === 'all' ? undefined : type, q: q || undefined, page: 1, page_size: count },
-    { skip: !page.canSee },
+    { skip: !page.canSee, pollingInterval: connected ? 0 : 30_000 },
   );
 
   if (!page.canSee) {

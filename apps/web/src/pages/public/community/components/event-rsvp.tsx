@@ -34,6 +34,23 @@ function EventLink({ slug, event }: { slug: string; event: CommunityEvent }) {
 export function EventRsvpActions({ event, page, rsvp }: { event: CommunityEvent; page: CommunityPage; rsvp: EventRsvp }) {
   const busy = rsvp.busyId === event.id;
   if (event.status === 'cancelled') return <p className="text-sm font-medium text-amber-700">Événement annulé</p>;
+  if (event.status === 'live') {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild size="sm" className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/30 hover:bg-red-500">
+          <Link to={`/communities/${page.slug}/events/${event.id}/live`}>
+            <Radio className="size-4 animate-pulse" /> Rejoindre le direct
+          </Link>
+        </Button>
+        {event.user_rsvp_status === 'attending' && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+            <Check className="size-3.5" /> Inscrit
+          </span>
+        )}
+      </div>
+    );
+  }
+
   if (page.membership === 'visitor') {
     return (
       <Button asChild size="sm">

@@ -197,7 +197,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
+        'common.filters.order_filter.AutoRecentOrderingFilter',
     ),
     'EXCEPTION_HANDLER': 'common.exceptions.handler.custom_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -345,20 +345,27 @@ if 'CACHES' not in globals() or not IS_TESTING:
 
 # Channels & Redis Channel Layer Configuration
 REDIS_CHANNEL_URL = env('REDIS_CHANNEL_URL', default=env('REDIS_CACHE_URL', default='redis://127.0.0.1:6379/2'))
-if IS_TESTING:
-    CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        }
-    }
-else:
+USE_REDIS_CHANNEL_LAYER = env.bool(
+    'USE_REDIS_CHANNEL_LAYER',
+    default=(not DEBUG and not IS_TESTING),
+)
+
+if USE_REDIS_CHANNEL_LAYER:
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
                 'hosts': [REDIS_CHANNEL_URL],
+                'capacity': 1500,
+                'expiry': 10,
             },
         },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        }
     }
 
 # External OAuth Credentials
@@ -407,6 +414,7 @@ AI_FALLBACK_PROVIDER = env('AI_FALLBACK_PROVIDER', default='openai')
 AI_FALLBACK_ENABLED = env.bool('AI_FALLBACK_ENABLED', default=True)
 AI_PROVIDER_TIMEOUT_MS = env.int('AI_PROVIDER_TIMEOUT_MS', default=15000)
 AI_MAX_RETRIES = env.int('AI_MAX_RETRIES', default=1)
+AI_MODERATION_ENABLED = env.bool('AI_MODERATION_ENABLED', default=False)
 
 # Supported language codes and names (extensible)
 AI_SUPPORTED_LANGUAGES = {

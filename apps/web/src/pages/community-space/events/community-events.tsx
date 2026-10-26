@@ -1,7 +1,8 @@
-import { CalendarPlus, RotateCw } from 'lucide-react';
+import { CalendarPlus, Radio, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga-mono-repo/ui';
+import { QuickLiveModal } from '@/pages/public/community/components/quick-live-modal';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventsQuery } from '@/utils/api/event/event.type';
@@ -28,6 +29,7 @@ function CommunityEvents() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [editing, setEditing] = useState<CommunityEvent | 'new' | null>(null);
+  const [quickLiveOpen, setQuickLiveOpen] = useState(false);
   const { canManage, actionsFor, confirmDialog } = UseEventActions({ onEdit: setEditing });
 
   const params = FILTERS.find((f) => f.id === filter)?.params ?? {};
@@ -40,10 +42,19 @@ function CommunityEvents() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <TopTitle title="Événements" paragraph={`Lives, ateliers et rencontres de ${community.name}`} />
         {canManage && (
-          <Button onClick={() => setEditing('new')}>
-            <CalendarPlus />
-            Nouvel événement
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => setQuickLiveOpen(true)}
+              className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/25 hover:bg-red-500"
+            >
+              <Radio className="size-4 animate-pulse" />
+              Lancer un direct
+            </Button>
+            <Button onClick={() => setEditing('new')}>
+              <CalendarPlus />
+              Nouvel événement
+            </Button>
+          </div>
         )}
       </div>
 
@@ -118,6 +129,7 @@ function CommunityEvents() {
       </ColgateWrapper>
 
       <EventFormModal slug={community.slug} open={editing !== null} event={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+      <QuickLiveModal slug={community.slug} open={quickLiveOpen} onClose={() => setQuickLiveOpen(false)} />
       {confirmDialog}
     </div>
   );

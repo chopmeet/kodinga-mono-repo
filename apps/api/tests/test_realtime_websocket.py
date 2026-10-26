@@ -298,3 +298,19 @@ async def test_websocket_typing_indicator(auth_user, other_user):
 
     await c_alice.disconnect()
     await c_bob.disconnect()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_websocket_jwt_auth_fallback(auth_user):
+    from rest_framework_simplejwt.tokens import AccessToken
+
+    token = str(AccessToken.for_user(auth_user))
+    communicator = WebsocketCommunicator(application, f"/ws/?token={token}")
+    connected, _ = await communicator.connect()
+    assert connected
+
+    hello = await communicator.receive_json_from()
+    assert hello["type"] == "connection.established"
+    assert hello["data"]["user_id"] == str(auth_user.id)
+    await communicator.disconnect()

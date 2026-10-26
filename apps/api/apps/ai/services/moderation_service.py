@@ -54,6 +54,17 @@ class ModerationService:
                 provider="noop",
             )
 
+        from django.conf import settings
+
+        if not getattr(settings, "AI_MODERATION_ENABLED", False):
+            return ModerationResult(
+                decision="allow",
+                flagged=False,
+                categories=[],
+                confidence=1.0,
+                provider="disabled",
+            )
+
         content_hash = cls.get_content_hash(clean_text)
         preview = clean_text[:200]
 
@@ -135,6 +146,11 @@ class ModerationService:
         - Blocks content violating mandatory platform safety rules.
         - Fails closed with user-friendly error if providers are unavailable.
         """
+        from django.conf import settings
+
+        if not getattr(settings, "AI_MODERATION_ENABLED", False):
+            return
+
         try:
             result = cls.evaluate_content(text, community=community, author=author)
         except AllProvidersFailedError as err:
