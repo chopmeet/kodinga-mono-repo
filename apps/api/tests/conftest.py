@@ -11,6 +11,7 @@ def configure_test_settings(settings):
     from config.celery import app as celery_app
 
     settings.IS_TESTING = True
+    settings.AI_MODERATION_ENABLED = True
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True

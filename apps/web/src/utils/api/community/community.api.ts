@@ -69,12 +69,19 @@ import type {
   MyCommunityMembership,
   SanctionData,
 } from './community.type';
+import type { User } from '../user/user.type';
 import { authBaseQuery } from '../authBaseQuery';
 
 const MANAGED_ROLES: ManagedRole[] = ['owner', 'admin', 'moderator'];
 
 /** The memberships that open /c/<slug> (owner, admin, moderator) */
 export const isManaged = (m: MyCommunityMembership): m is ManagedCommunity => MANAGED_ROLES.includes(m.role as ManagedRole);
+
+type StateWithUser = {
+  user?: {
+    user?: User | null;
+  };
+};
 
 /** Drops empty filters so the api does not receive `?q=&category=` */
 const cleanParams = (query: object) =>
@@ -309,7 +316,63 @@ export const CommunityApi = createApi({
     }),
     sendMessage: builder.mutation<ChatMessage, { conversationId: string; content: string }>({
       query: ({ conversationId, content }) => ({ url: `conversations/${conversationId}/messages/`, method: 'POST', body: { content } }),
-      invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'messages', id: conversationId }, 'conversations'],
+      async onQueryStarted({ conversationId, content }, { dispatch, getState, queryFulfilled }) {
+        const state = getState() as StateWithUser;
+        const currentUser = state.user?.user;
+        const tempId = `temp-msg-${Date.now()}`;
+        const optimisticMsg: ChatMessage = {
+          id: tempId,
+          conversation_id: conversationId,
+          sender: {
+            id: currentUser?.id ?? 'me',
+            username: currentUser?.username ?? 'moi',
+            first_name: currentUser?.first_name ?? '',
+            last_name: currentUser?.last_name ?? '',
+            avatar_url: currentUser?.avatar ?? '',
+          },
+          content,
+          is_edited: false,
+          is_deleted: false,
+          is_pinned: false,
+          deleted_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const msgPatch = dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            messages.push(optimisticMsg);
+          }),
+        );
+
+        const convPatch = dispatch(
+          CommunityApi.util.updateQueryData('getConversations', undefined, (conversations) => {
+            const conv = conversations.find((c) => c.id === conversationId);
+            if (conv) {
+              conv.last_message_at = optimisticMsg.created_at;
+              conv.last_message = {
+                id: tempId,
+                sender_username: currentUser?.username ?? 'moi',
+                content,
+                created_at: optimisticMsg.created_at,
+              };
+            }
+          }),
+        );
+
+        try {
+          const { data: createdMsg } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+              const idx = messages.findIndex((m) => m.id === tempId);
+              if (idx !== -1) messages[idx] = createdMsg;
+            }),
+          );
+        } catch {
+          msgPatch.undo();
+          convPatch.undo();
+        }
+      },
     }),
     markConversationRead: builder.mutation<unknown, string>({
       query: (conversationId) => ({ url: `conversations/${conversationId}/read/`, method: 'POST' }),
@@ -318,11 +381,47 @@ export const CommunityApi = createApi({
     // Own messages only
     editMessage: builder.mutation<ChatMessage, { conversationId: string; messageId: string; content: string }>({
       query: ({ messageId, content }) => ({ url: `messages/${messageId}/`, method: 'PATCH', body: { content } }),
-      invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'messages', id: conversationId }, 'conversations'],
+      async onQueryStarted({ conversationId, messageId, content }, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            const m = messages.find((item) => item.id === messageId);
+            if (m) {
+              m.content = content;
+              m.is_edited = true;
+            }
+          }),
+        );
+        try {
+          const { data: updatedMsg } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+              const idx = messages.findIndex((item) => item.id === messageId);
+              if (idx !== -1) messages[idx] = updatedMsg;
+            }),
+          );
+        } catch {
+          patch.undo();
+        }
+      },
     }),
     deleteMessage: builder.mutation<unknown, { conversationId: string; messageId: string }>({
       query: ({ messageId }) => ({ url: `messages/${messageId}/`, method: 'DELETE' }),
-      invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'messages', id: conversationId }, 'conversations'],
+      async onQueryStarted({ conversationId, messageId }, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            const m = messages.find((item) => item.id === messageId);
+            if (m) {
+              m.is_deleted = true;
+              m.content = '[Ce message a été supprimé]';
+            }
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
     // Signed-in users only; the api makes the creator the owner (active membership)
     createCommunity: builder.mutation<CommunityDetail, CommunityCreateData>({
@@ -395,12 +494,126 @@ export const CommunityApi = createApi({
     createPost: builder.mutation<CommunityPostItem, PostWriteData & { slug: string }>({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/feed/`, method: 'POST', body }),
       transformResponse: unwrap<CommunityPostItem>,
-      invalidatesTags: ['posts', 'communities'],
+      invalidatesTags: ['communities'],
+      async onQueryStarted({ slug, ...body }, { dispatch, getState, queryFulfilled }) {
+        const state = getState() as StateWithUser;
+        const currentUser = state.user?.user ?? {
+          id: 'me',
+          username: 'moi',
+          email: 'user@example.com',
+          first_name: 'Moi',
+          last_name: '',
+          full_name: 'Moi',
+          is_active: true,
+          is_email_verified: true,
+          preferred_language: 'fr',
+          timezone: 'UTC',
+          date_joined: new Date().toISOString(),
+          last_login: null,
+        };
+
+        const tempId = `temp-post-${Date.now()}`;
+        const optimisticPost: CommunityPostItem = {
+          id: tempId,
+          community_id: '',
+          author: currentUser,
+          title: body.title,
+          content: body.content,
+          post_type: body.post_type,
+          code_snippet: body.code_snippet,
+          code_language: body.code_language,
+          user_reactions: [],
+          poll: body.poll
+            ? {
+                id: `temp-poll-${Date.now()}`,
+                question: body.poll.question,
+                is_multiple_choice: body.poll.is_multiple_choice,
+                expires_at: null,
+                total_votes: 0,
+                is_expired: false,
+                user_has_voted: false,
+                user_voted_option_ids: [],
+                options: (body.poll.options ?? []).map((text, idx) => ({
+                  id: `temp-opt-${idx}`,
+                  text,
+                  votes_count: 0,
+                  percentage: 0,
+                  order: idx,
+                })),
+              }
+            : null,
+          is_pinned: false,
+          is_locked: false,
+          is_resolved: false,
+          views_count: 0,
+          reactions_count: 0,
+          comments_count: 0,
+          created_at: new Date().toISOString(),
+        };
+
+        const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(getState() as never, 'getCommunityFeed')
+          .filter((args) => args.slug === slug);
+
+        const patches = cachedArgs.map((args) =>
+          dispatch(
+            CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+              feed.results.unshift(optimisticPost);
+              if (feed.pagination) feed.pagination.count += 1;
+            }),
+          ),
+        );
+
+        try {
+          const { data: createdPost } = await queryFulfilled;
+          cachedArgs.forEach((args) => {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const idx = feed.results.findIndex((p) => p.id === tempId);
+                if (idx !== -1) {
+                  feed.results[idx] = createdPost;
+                }
+              }),
+            );
+          });
+        } catch {
+          patches.forEach((patch) => patch.undo());
+        }
+      },
     }),
     updatePost: builder.mutation<CommunityPostItem, Partial<Omit<PostWriteData, 'poll'>> & { postId: string }>({
       query: ({ postId, ...body }) => ({ url: `posts/${postId}/`, method: 'PATCH', body }),
       transformResponse: unwrap<CommunityPostItem>,
-      invalidatesTags: ['posts'],
+      async onQueryStarted({ postId, ...body }, { dispatch, getState, queryFulfilled }) {
+        const patchDetail = dispatch(
+          CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+            Object.assign(post, body);
+          }),
+        );
+        const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(getState() as never, 'getCommunityFeed');
+        const feedPatches = cachedArgs.map((args) =>
+          dispatch(
+            CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+              const p = feed.results.find((item) => item.id === postId);
+              if (p) Object.assign(p, body);
+            }),
+          ),
+        );
+        try {
+          const { data: updatedPost } = await queryFulfilled;
+          dispatch(CommunityApi.util.updateQueryData('getPost', postId, (post) => Object.assign(post, updatedPost)));
+          cachedArgs.forEach((args) => {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const idx = feed.results.findIndex((item) => item.id === postId);
+                if (idx !== -1) feed.results[idx] = updatedPost;
+              }),
+            );
+          });
+        } catch {
+          patchDetail.undo();
+          feedPatches.forEach((p) => p.undo());
+        }
+      },
     }),
     // Like / unlike (signed-in users): the cached feeds are patched, no new GET
     togglePostLike: builder.mutation<{ reacted: boolean }, string>({
@@ -468,23 +681,218 @@ export const CommunityApi = createApi({
     addPostComment: builder.mutation<PostComment, { postId: string; content: string; parent_id?: string }>({
       query: ({ postId, ...body }) => ({ url: `posts/${postId}/comments/`, method: 'POST', body }),
       transformResponse: unwrap<PostComment>,
-      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }, { type: 'posts', id: postId }, 'posts'],
+      async onQueryStarted({ postId, content, parent_id }, { dispatch, getState, queryFulfilled }) {
+        const state = getState() as StateWithUser;
+        const currentUser = state.user?.user ?? {
+          id: 'me',
+          username: 'moi',
+          email: 'user@example.com',
+          first_name: 'Moi',
+          last_name: '',
+          full_name: 'Moi',
+          is_active: true,
+          is_email_verified: true,
+          preferred_language: 'fr',
+          timezone: 'UTC',
+          date_joined: new Date().toISOString(),
+          last_login: null,
+        };
+
+        const tempCommentId = `temp-cmt-${Date.now()}`;
+        const optimisticComment: PostComment = {
+          id: tempCommentId,
+          post_id: postId,
+          parent_id: parent_id ?? null,
+          author: currentUser,
+          content,
+          is_accepted_answer: false,
+          reactions_count: 0,
+          user_reactions: [],
+          replies: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const commentsPatch = dispatch(
+          CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+            if (parent_id) {
+              const parent = comments.find((c) => c.id === parent_id);
+              if (parent) {
+                parent.replies = parent.replies ?? [];
+                parent.replies.unshift(optimisticComment);
+                return;
+              }
+            }
+            if (comments.length > 0 && comments[0].is_accepted_answer) {
+              comments.splice(1, 0, optimisticComment);
+            } else {
+              comments.unshift(optimisticComment);
+            }
+          }),
+        );
+
+        const postPatch = dispatch(
+          CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+            post.comments_count = (post.comments_count ?? 0) + 1;
+          }),
+        );
+
+        const feedArgs = CommunityApi.util.selectCachedArgsForQuery(getState() as never, 'getCommunityFeed');
+        const feedPatches = feedArgs.map((args) =>
+          dispatch(
+            CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+              const p = feed.results.find((item) => item.id === postId);
+              if (p) p.comments_count = (p.comments_count ?? 0) + 1;
+            }),
+          ),
+        );
+
+        try {
+          const { data: createdComment } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+              if (parent_id) {
+                const parent = comments.find((c) => c.id === parent_id);
+                if (parent?.replies) {
+                  const idx = parent.replies.findIndex((r) => r.id === tempCommentId);
+                  if (idx !== -1) {
+                    parent.replies[idx] = createdComment;
+                    return;
+                  }
+                }
+              }
+              const idx = comments.findIndex((c) => c.id === tempCommentId);
+              if (idx !== -1) comments[idx] = createdComment;
+            }),
+          );
+        } catch {
+          commentsPatch.undo();
+          postPatch.undo();
+          feedPatches.forEach((p) => p.undo());
+        }
+      },
     }),
     // The author, or the moderators of the community
     deletePostComment: builder.mutation<unknown, { postId: string; commentId: string }>({
       query: ({ commentId }) => ({ url: `comments/${commentId}/`, method: 'DELETE' }),
-      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }, { type: 'posts', id: postId }, 'posts'],
+      async onQueryStarted({ postId, commentId }, { dispatch, getState, queryFulfilled }) {
+        const commentsPatch = dispatch(
+          CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+            const idx = comments.findIndex((c) => c.id === commentId);
+            if (idx !== -1) {
+              comments.splice(idx, 1);
+              return;
+            }
+            for (const parent of comments) {
+              if (parent.replies) {
+                const rIdx = parent.replies.findIndex((r) => r.id === commentId);
+                if (rIdx !== -1) {
+                  parent.replies.splice(rIdx, 1);
+                  return;
+                }
+              }
+            }
+          }),
+        );
+
+        const postPatch = dispatch(
+          CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+            post.comments_count = Math.max(0, (post.comments_count ?? 1) - 1);
+          }),
+        );
+
+        const feedArgs = CommunityApi.util.selectCachedArgsForQuery(getState() as never, 'getCommunityFeed');
+        const feedPatches = feedArgs.map((args) =>
+          dispatch(
+            CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+              const p = feed.results.find((item) => item.id === postId);
+              if (p) p.comments_count = Math.max(0, (p.comments_count ?? 1) - 1);
+            }),
+          ),
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          commentsPatch.undo();
+          postPatch.undo();
+          feedPatches.forEach((p) => p.undo());
+        }
+      },
     }),
     toggleCommentLike: builder.mutation<{ reacted: boolean }, { postId: string; commentId: string }>({
       query: ({ commentId }) => ({ url: `comments/${commentId}/react/`, method: 'POST', body: { reaction_type: 'like' } }),
       transformResponse: unwrap<{ reacted: boolean }>,
-      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }],
+      async onQueryStarted({ postId, commentId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+              const update = (c: PostComment) => {
+                const others = (c.user_reactions ?? []).filter((r) => r !== 'like');
+                c.user_reactions = data.reacted ? [...others, 'like'] : others;
+                c.reactions_count = Math.max(0, c.reactions_count + (data.reacted ? 1 : -1));
+              };
+              const top = comments.find((c) => c.id === commentId);
+              if (top) {
+                update(top);
+                return;
+              }
+              for (const p of comments) {
+                const rep = (p.replies ?? []).find((r) => r.id === commentId);
+                if (rep) {
+                  update(rep);
+                  return;
+                }
+              }
+            }),
+          );
+        } catch {
+          // ignore
+        }
+      },
     }),
     // Only the author of the post: replaces a previous accepted answer, the post becomes resolved
     acceptAnswer: builder.mutation<PostComment, { postId: string; commentId: string }>({
       query: ({ commentId }) => ({ url: `comments/${commentId}/accept/`, method: 'POST' }),
       transformResponse: unwrap<PostComment>,
-      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `${postId}-comments` }, { type: 'posts', id: postId }, 'posts'],
+      async onQueryStarted({ postId, commentId }, { dispatch, queryFulfilled }) {
+        const patchComments = dispatch(
+          CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+            comments.forEach((c) => {
+              c.is_accepted_answer = c.id === commentId;
+            });
+            comments.sort((a, b) => {
+              if (a.is_accepted_answer && !b.is_accepted_answer) return -1;
+              if (!a.is_accepted_answer && b.is_accepted_answer) return 1;
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
+          }),
+        );
+        const patchPost = dispatch(
+          CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+            post.is_resolved = true;
+          }),
+        );
+        try {
+          const { data: accepted } = await queryFulfilled;
+          dispatch(
+            CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+              comments.forEach((c) => {
+                c.is_accepted_answer = c.id === accepted.id;
+              });
+              comments.sort((a, b) => {
+                if (a.is_accepted_answer && !b.is_accepted_answer) return -1;
+                if (!a.is_accepted_answer && b.is_accepted_answer) return 1;
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              });
+            }),
+          );
+        } catch {
+          patchComments.undo();
+          patchPost.undo();
+        }
+      },
     }),
     togglePostPin: builder.mutation<unknown, string>({
       query: (postId) => ({ url: `posts/${postId}/pin/`, method: 'POST' }),
@@ -496,7 +904,26 @@ export const CommunityApi = createApi({
     }),
     deletePost: builder.mutation<unknown, string>({
       query: (postId) => ({ url: `posts/${postId}/`, method: 'DELETE' }),
-      invalidatesTags: ['posts', 'communities'],
+      async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
+        const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(getState() as never, 'getCommunityFeed');
+        const patches = cachedArgs.map((args) =>
+          dispatch(
+            CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+              const idx = feed.results.findIndex((p) => p.id === postId);
+              if (idx !== -1) {
+                feed.results.splice(idx, 1);
+                if (feed.pagination) feed.pagination.count = Math.max(0, feed.pagination.count - 1);
+              }
+            }),
+          ),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patches.forEach((patch) => patch.undo());
+        }
+      },
+      invalidatesTags: ['communities'],
     }),
     // Events of a community (apps/events): owner, admins and the host manage them
     getCommunityEvents: builder.query<ApiPaginated<CommunityEvent>, EventsQuery>({

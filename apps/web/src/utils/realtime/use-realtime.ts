@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
+import store from '@/redux/store';
 import { CommunityApi } from '@/utils/api/community/community.api';
+import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
+import type { ChatMessage } from '@/utils/api/messaging/messaging.type';
 import { realtimeClient } from './realtime-client';
 
 /**
@@ -35,9 +38,11 @@ export function useRealtimeSync() {
     if (!token) {
       realtimeClient.disconnect();
       realtimeClient.setTicketProvider(null);
+      realtimeClient.setTokenProvider(null);
       return;
     }
     realtimeClient.setTicketProvider(async () => (await dispatch(CommunityApi.endpoints.createWsTicket.initiate()).unwrap()).ticket ?? null);
+    realtimeClient.setTokenProvider(() => token);
     realtimeClient.connect();
   }, [token, dispatch]);
 
@@ -96,41 +101,78 @@ export function useRealtimeConversation(conversationId: string | undefined) {
     realtimeClient.subscribeConversation(conversationId);
 
     // 1. New message
-    const unsubCreated = realtimeClient.on<MessageEventData>('message.created', (message) => {
+    const unsubCreated = realtimeClient.on<ChatMessage>('message.created', (message) => {
       if (message?.conversation_id === conversationId) {
-        // Instantly invalidate messages and conversations query tags
-        dispatch(CommunityApi.util.invalidateTags([
-          { type: 'messages', id: conversationId },
-          'conversations',
-        ]));
+        dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            const existingIdx = messages.findIndex((m) => m.id === message.id);
+            if (existingIdx !== -1) {
+              messages[existingIdx] = message;
+              return;
+            }
+            const tempIdx = messages.findIndex(
+              (m) => m.id.startsWith('temp-msg-') && m.sender?.id === message.sender?.id && m.content === message.content,
+            );
+            if (tempIdx !== -1) {
+              messages[tempIdx] = message;
+              return;
+            }
+            messages.push(message);
+          }),
+        );
+        dispatch(
+          CommunityApi.util.updateQueryData('getConversations', undefined, (conversations) => {
+            const conv = conversations.find((c) => c.id === conversationId);
+            if (conv) {
+              conv.last_message_at = message.created_at;
+              conv.last_message = {
+                id: message.id,
+                sender_username: message.sender?.username ?? '',
+                content: message.content,
+                created_at: message.created_at,
+              };
+            }
+          }),
+        );
       }
     });
 
     // 2. Updated message
-    const unsubUpdated = realtimeClient.on<MessageEventData>('message.updated', (message) => {
+    const unsubUpdated = realtimeClient.on<ChatMessage>('message.updated', (message) => {
       if (message?.conversation_id === conversationId) {
-        dispatch(CommunityApi.util.invalidateTags([
-          { type: 'messages', id: conversationId },
-        ]));
+        dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            const idx = messages.findIndex((m) => m.id === message.id);
+            if (idx !== -1) messages[idx] = message;
+          }),
+        );
       }
     });
 
     // 3. Deleted message
     const unsubDeleted = realtimeClient.on<IdEventData>('message.deleted', (data) => {
-      if (data?.conversation_id === conversationId) {
-        dispatch(CommunityApi.util.invalidateTags([
-          { type: 'messages', id: conversationId },
-          'conversations',
-        ]));
+      if (data?.conversation_id === conversationId && data.message_id) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            const idx = messages.findIndex((m) => m.id === data.message_id);
+            if (idx !== -1) {
+              messages[idx].is_deleted = true;
+              messages[idx].content = '[Ce message a été supprimé]';
+            }
+          }),
+        );
       }
     });
 
     // 4. Pinned message
-    const unsubPinned = realtimeClient.on<IdEventData>('message.pinned', (data) => {
-      if (data?.conversation_id === conversationId) {
-        dispatch(CommunityApi.util.invalidateTags([
-          { type: 'messages', id: conversationId },
-        ]));
+    const unsubPinned = realtimeClient.on<{ conversation_id: string; message_id: string; is_pinned: boolean }>('message.pinned', (data) => {
+      if (data?.conversation_id === conversationId && data.message_id) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getMessages', conversationId, (messages) => {
+            const m = messages.find((item) => item.id === data.message_id);
+            if (m) m.is_pinned = data.is_pinned;
+          }),
+        );
       }
     });
 
@@ -238,28 +280,110 @@ export function useRealtimeCommunityFeed(communityId: string | undefined) {
 
     realtimeClient.subscribeCommunity(communityId);
 
-    const unsubCreated = realtimeClient.on('post.created', () => {
-      dispatch(CommunityApi.util.invalidateTags(['posts']));
+    // 1. Direct injection of newly created post
+    const unsubCreated = realtimeClient.on<CommunityPostItem>('post.created', (newPost) => {
+      if (!newPost?.id) {
+        dispatch(CommunityApi.util.invalidateTags(['posts']));
+        return;
+      }
+      const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
+      for (const args of cachedArgs) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const existingIdx = feed.results.findIndex((p) => p.id === newPost.id);
+            if (existingIdx !== -1) {
+              feed.results[existingIdx] = newPost;
+              return;
+            }
+            const tempIdx = feed.results.findIndex(
+              (p) => p.id.startsWith('temp-post-') && p.author?.id === newPost.author?.id && p.title === newPost.title,
+            );
+            if (tempIdx !== -1) {
+              feed.results[tempIdx] = newPost;
+              return;
+            }
+            feed.results.unshift(newPost);
+            if (feed.pagination) feed.pagination.count += 1;
+          }),
+        );
+      }
     });
 
-    const unsubUpdated = realtimeClient.on('post.updated', () => {
-      dispatch(CommunityApi.util.invalidateTags(['posts']));
+    // 2. Direct injection of updated post
+    const unsubUpdated = realtimeClient.on<CommunityPostItem>('post.updated', (updatedPost) => {
+      if (!updatedPost?.id) return;
+      dispatch(CommunityApi.util.updateQueryData('getPost', updatedPost.id, (post) => Object.assign(post, updatedPost)));
+      const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
+      for (const args of cachedArgs) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const idx = feed.results.findIndex((p) => p.id === updatedPost.id);
+            if (idx !== -1) feed.results[idx] = updatedPost;
+          }),
+        );
+      }
     });
 
-    const unsubDeleted = realtimeClient.on('post.deleted', () => {
-      dispatch(CommunityApi.util.invalidateTags(['posts']));
+    // 3. Direct removal of deleted post
+    const unsubDeleted = realtimeClient.on<{ community_id: string; post_id: string }>('post.deleted', (data) => {
+      if (!data?.post_id) return;
+      const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
+      for (const args of cachedArgs) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const idx = feed.results.findIndex((p) => p.id === data.post_id);
+            if (idx !== -1) {
+              feed.results.splice(idx, 1);
+              if (feed.pagination) feed.pagination.count = Math.max(0, feed.pagination.count - 1);
+            }
+          }),
+        );
+      }
     });
 
-    const unsubPinned = realtimeClient.on('post.pinned', () => {
-      dispatch(CommunityApi.util.invalidateTags(['posts']));
+    // 4. Pin toggle
+    const unsubPinned = realtimeClient.on<{ post_id: string; is_pinned: boolean }>('post.pinned', (data) => {
+      if (!data?.post_id) return;
+      dispatch(CommunityApi.util.updateQueryData('getPost', data.post_id, (post) => { post.is_pinned = data.is_pinned; }));
+      const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
+      for (const args of cachedArgs) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const p = feed.results.find((item) => item.id === data.post_id);
+            if (p) p.is_pinned = data.is_pinned;
+          }),
+        );
+      }
     });
 
-    const unsubReaction = realtimeClient.on('post.reaction', () => {
-      dispatch(CommunityApi.util.invalidateTags(['posts']));
+    // 5. Reaction update
+    const unsubReaction = realtimeClient.on<{ post_id: string; reactions_count: number }>('post.reaction', (data) => {
+      if (!data?.post_id || data.reactions_count === undefined) return;
+      dispatch(CommunityApi.util.updateQueryData('getPost', data.post_id, (post) => { post.reactions_count = data.reactions_count; }));
+      const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
+      for (const args of cachedArgs) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const p = feed.results.find((item) => item.id === data.post_id);
+            if (p) p.reactions_count = data.reactions_count;
+          }),
+        );
+      }
     });
 
-    const unsubCommentCount = realtimeClient.on('post.comments_count', () => {
-      dispatch(CommunityApi.util.invalidateTags(['posts']));
+    // 6. Comments count update
+    const unsubCommentCount = realtimeClient.on<{ post_id: string; comments_count: number }>('post.comments_count', (data) => {
+      if (!data?.post_id || data.comments_count === undefined) return;
+      dispatch(CommunityApi.util.updateQueryData('getPost', data.post_id, (post) => { post.comments_count = data.comments_count; }));
+      const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
+      for (const args of cachedArgs) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const p = feed.results.find((item) => item.id === data.post_id);
+            if (p) p.comments_count = data.comments_count;
+          }),
+        );
+      }
     });
 
     return () => {
@@ -285,38 +409,147 @@ export function useRealtimePostComments(postId: string | undefined) {
 
     realtimeClient.subscribePost(postId);
 
-    const unsubCommentCreated = realtimeClient.on('comment.created', () => {
-      dispatch(CommunityApi.util.invalidateTags([
-        { type: 'posts', id: `${postId}-comments` },
-        { type: 'posts', id: postId },
-      ]));
+    const unsubCommentCreated = realtimeClient.on<PostComment>('comment.created', (newComment) => {
+      if (!newComment?.id) {
+        dispatch(CommunityApi.util.invalidateTags([{ type: 'posts', id: `${postId}-comments` }]));
+        return;
+      }
+      dispatch(
+        CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+          if (newComment.parent_id) {
+            const parent = comments.find((c) => c.id === newComment.parent_id);
+            if (parent) {
+              parent.replies = parent.replies ?? [];
+              const rIdx = parent.replies.findIndex((r) => r.id === newComment.id);
+              if (rIdx !== -1) {
+                parent.replies[rIdx] = newComment;
+                return;
+              }
+              const tempRIdx = parent.replies.findIndex(
+                (r) => r.id.startsWith('temp-cmt-') && r.author?.id === newComment.author?.id && r.content === newComment.content,
+              );
+              if (tempRIdx !== -1) {
+                parent.replies[tempRIdx] = newComment;
+                return;
+              }
+              parent.replies.unshift(newComment);
+              return;
+            }
+          }
+          const idx = comments.findIndex((c) => c.id === newComment.id);
+          if (idx !== -1) {
+            comments[idx] = newComment;
+            return;
+          }
+          const tempIdx = comments.findIndex(
+            (c) => c.id.startsWith('temp-cmt-') && c.author?.id === newComment.author?.id && c.content === newComment.content,
+          );
+          if (tempIdx !== -1) {
+            comments[tempIdx] = newComment;
+            return;
+          }
+          if (comments.length > 0 && comments[0].is_accepted_answer) {
+            comments.splice(1, 0, newComment);
+          } else {
+            comments.unshift(newComment);
+          }
+        }),
+      );
+      dispatch(
+        CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+          post.comments_count = (post.comments_count ?? 0) + 1;
+        }),
+      );
     });
 
-    const unsubCommentUpdated = realtimeClient.on('comment.updated', () => {
-      dispatch(CommunityApi.util.invalidateTags([
-        { type: 'posts', id: `${postId}-comments` },
-      ]));
+    const unsubCommentUpdated = realtimeClient.on<PostComment>('comment.updated', (updatedComment) => {
+      if (!updatedComment?.id) return;
+      dispatch(
+        CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+          const idx = comments.findIndex((c) => c.id === updatedComment.id);
+          if (idx !== -1) {
+            comments[idx] = updatedComment;
+            return;
+          }
+          for (const parent of comments) {
+            if (parent.replies) {
+              const rIdx = parent.replies.findIndex((r) => r.id === updatedComment.id);
+              if (rIdx !== -1) {
+                parent.replies[rIdx] = updatedComment;
+                return;
+              }
+            }
+          }
+        }),
+      );
     });
 
-    const unsubCommentDeleted = realtimeClient.on('comment.deleted', () => {
-      dispatch(CommunityApi.util.invalidateTags([
-        { type: 'posts', id: `${postId}-comments` },
-        { type: 'posts', id: postId },
-      ]));
+    const unsubCommentDeleted = realtimeClient.on<{ post_id: string; comment_id: string }>('comment.deleted', (data) => {
+      if (!data?.comment_id) return;
+      dispatch(
+        CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+          const idx = comments.findIndex((c) => c.id === data.comment_id);
+          if (idx !== -1) {
+            comments.splice(idx, 1);
+            return;
+          }
+          for (const parent of comments) {
+            if (parent.replies) {
+              const rIdx = parent.replies.findIndex((r) => r.id === data.comment_id);
+              if (rIdx !== -1) {
+                parent.replies.splice(rIdx, 1);
+                return;
+              }
+            }
+          }
+        }),
+      );
+      dispatch(
+        CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+          post.comments_count = Math.max(0, (post.comments_count ?? 1) - 1);
+        }),
+      );
     });
 
-    const unsubCommentReaction = realtimeClient.on('comment.reaction', () => {
-      dispatch(CommunityApi.util.invalidateTags([
-        { type: 'posts', id: `${postId}-comments` },
-      ]));
+    const unsubCommentReaction = realtimeClient.on<{ comment_id: string; reactions_count: number }>('comment.reaction', (data) => {
+      if (!data?.comment_id || data.reactions_count === undefined) return;
+      dispatch(
+        CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+          const target = comments.find((c) => c.id === data.comment_id);
+          if (target) {
+            target.reactions_count = data.reactions_count;
+            return;
+          }
+          for (const parent of comments) {
+            const rep = (parent.replies ?? []).find((r) => r.id === data.comment_id);
+            if (rep) {
+              rep.reactions_count = data.reactions_count;
+              return;
+            }
+          }
+        }),
+      );
     });
 
-    const unsubAccepted = realtimeClient.on('comment.accepted', () => {
-      dispatch(CommunityApi.util.invalidateTags([
-        { type: 'posts', id: `${postId}-comments` },
-        { type: 'posts', id: postId },
-        'posts',
-      ]));
+    const unsubAccepted = realtimeClient.on<PostComment>('comment.accepted', (acceptedComment) => {
+      if (!acceptedComment?.id) return;
+      dispatch(
+        CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
+          comments.forEach((c) => {
+            c.is_accepted_answer = c.id === acceptedComment.id;
+          });
+          comments.sort((a, b) => {
+            if (a.is_accepted_answer && !b.is_accepted_answer) return -1;
+            if (!a.is_accepted_answer && b.is_accepted_answer) return 1;
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          });
+        }),
+      );
+      dispatch(
+        CommunityApi.util.updateQueryData('getPost', postId, (post) => {
+          post.is_resolved = true;
+        }),
+      );
     });
 
     return () => {

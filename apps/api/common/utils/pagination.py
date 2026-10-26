@@ -7,6 +7,23 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+    def paginate_queryset(self, queryset, request, view=None):
+        if hasattr(queryset, "model"):
+            query_order = getattr(queryset.query, "order_by", None)
+            if not query_order:
+                fields = {f.name for f in queryset.model._meta.get_fields()}
+                if "is_pinned" in fields and "created_at" in fields:
+                    queryset = queryset.order_by("-is_pinned", "-created_at")
+                elif "last_message_at" in fields and "created_at" in fields:
+                    queryset = queryset.order_by("-last_message_at", "-created_at")
+                elif "last_message_at" in fields:
+                    queryset = queryset.order_by("-last_message_at")
+                elif "created_at" in fields:
+                    queryset = queryset.order_by("-created_at")
+                elif "date_joined" in fields:
+                    queryset = queryset.order_by("-date_joined")
+        return super().paginate_queryset(queryset, request, view)
+
     def get_paginated_response(self, data):
         return Response({
             'success': True,

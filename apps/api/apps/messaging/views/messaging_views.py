@@ -107,8 +107,9 @@ class ConversationMessagesView(APIView):
             except Exception:
                 pass
 
+        ordering = request.query_params.get("ordering")
         messages = MessagingSelector.get_conversation_messages(
-            conversation, request.user, since=since
+            conversation, request.user, since=since, ordering=ordering
         )
         return Response(MessageSerializer(messages, many=True).data)
 

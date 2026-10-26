@@ -26,8 +26,9 @@ export function useRoomConnection({ serverUrl, token, isHost, onLeft }: { server
             customToast.error({ message: 'Caméra ou micro refusés par le navigateur : autorisez-les, puis réactivez-les en bas de l’écran.' });
           });
         }
-      } catch {
+      } catch (err) {
         if (!active) return;
+        console.error('[LiveKit] Connection failed to:', serverUrl, err);
         customToast.error({ message: 'Impossible de rejoindre le live. Vérifiez votre connexion et réessayez.' });
         left.current();
       }

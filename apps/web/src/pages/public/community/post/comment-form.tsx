@@ -7,23 +7,25 @@ type Props = {
   label: string;
   placeholder: string;
   submitLabel: string;
-  isSending: boolean;
+  isSending?: boolean;
   /** true when published: the field empties */
-  onSend: (content: string) => Promise<boolean>;
+  onSend: (content: string) => boolean | Promise<boolean> | void;
   onCancel?: () => void;
   autoFocus?: boolean;
 };
 
 /** Text area + publish (answer to the post, or reply to a comment) */
-export function CommentForm({ label, placeholder, submitLabel, isSending, onSend, onCancel, autoFocus }: Props) {
+export function CommentForm({ label, placeholder, submitLabel, isSending = false, onSend, onCancel, autoFocus }: Props) {
   const id = useId();
   const [content, setContent] = useState('');
   const text = content.trim();
 
-  const submit = async (e: FormEvent) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!text) return;
-    if (await onSend(text)) setContent('');
+    const sentText = text;
+    setContent('');
+    onSend(sentText);
   };
 
   return (

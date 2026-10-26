@@ -17,7 +17,7 @@ import type { PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { isAdmin, useUser } from '@/utils/Utils';
 import { canSeeContent, membershipOf } from './UseCommunityPage';
-import { useRealtimePostComments } from '@/utils/realtime/use-realtime';
+import { useRealtime, useRealtimePostComments } from '@/utils/realtime/use-realtime';
 
 /**
  * /communities/:slug/posts/:postId — one post and its comments (GET posts/<id>/ and .../comments/).
@@ -30,16 +30,20 @@ function UsePostDetails() {
   const { pathname } = useLocation();
   const user = useUser();
   const signedIn = !!useAppSelector((s) => s.user.token);
+  const { connected } = useRealtime();
 
   const { data: community, isLoading: isCommunityLoading } = useGetCommunityQuery(slug, { skip: !slug });
   const membership = membershipOf(community, signedIn);
   const canSee = community ? canSeeContent(community, membership) : false;
   const { data: post, isLoading: isPostLoading, error } = useGetPostQuery(postId, { skip: !postId || !canSee });
-  const { data: comments = [], isLoading: isCommentsLoading } = useGetPostCommentsQuery(postId, { skip: !post });
+  const { data: comments = [], isLoading: isCommentsLoading } = useGetPostCommentsQuery(postId, {
+    skip: !post,
+    pollingInterval: connected ? 0 : 15_000,
+  });
   // Comments, reactions and the accepted answer of others appear live
   useRealtimePostComments(post ? postId : undefined);
 
-  const [addComment, { isLoading: isSending }] = useAddPostCommentMutation();
+  const [addComment] = useAddPostCommentMutation();
   const [deleteComment] = useDeletePostCommentMutation();
   const [toggleCommentLike] = useToggleCommentLikeMutation();
   const [togglePostLike, { isLoading: isLiking }] = useTogglePostLikeMutation();
@@ -81,11 +85,17 @@ function UsePostDetails() {
     /** Stack Overflow way: the author of the question picks the answer that solved it */
     canAccept: (c: PostComment) => isQuestion && isAuthor && !c.parent_id && !c.is_accepted_answer,
     canDelete: (c: PostComment) => !!user && (c.author.id === user.id || isModerator || isAdmin(user)),
-    isSending,
+    isSending: false,
     isLiking,
     isAccepting,
-    send: (content: string, parentId?: string) =>
-      run(addComment({ postId, content, ...(parentId ? { parent_id: parentId } : {}) }).unwrap(), parentId ? 'Réponse publiée.' : isQuestion ? 'Réponse publiée.' : 'Commentaire publié.'),
+    send: (content: string, parentId?: string) => {
+      addComment({ postId, content, ...(parentId ? { parent_id: parentId } : {}) })
+        .unwrap()
+        .catch((err) => {
+          customToast.error({ message: parseApiError(err).message });
+        });
+      return true;
+    },
     remove: (c: PostComment) => run(deleteComment({ postId, commentId: c.id }).unwrap(), 'Commentaire supprimé.'),
     likeComment: (c: PostComment) => run(toggleCommentLike({ postId, commentId: c.id }).unwrap()),
     likePost: () => run(togglePostLike(postId).unwrap()),
