@@ -34,4 +34,5 @@ export const isDev: boolean = currentEnv === 'dev'
 // port 7880); elsewhere the url given by the api with the token (LIVEKIT_URL of the api)
 const LIVEKIT_DEV_URL = 'ws://localhost:7880';
 
-export const liveServerUrl = (fromApi: string) => (env === 'dev' ? LIVEKIT_DEV_URL : fromApi);
+export const liveServerUrl = (fromApi: string) =>
+  (import.meta.env.VITE_LIVEKIT_URL as string | undefined) || fromApi || LIVEKIT_DEV_URL;
