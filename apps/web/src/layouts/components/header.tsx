@@ -1,5 +1,6 @@
-import { ArrowUpRight, Check, ChevronDown, Globe, MessageCircle, Plus, UserRound } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronDown, Globe, MessageCircle, Plus } from 'lucide-react';
 import { NotificationsMenu } from './notifications-menu';
+import { UserMenu } from './user-menu';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -16,7 +17,7 @@ import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { languages } from '@/utils/i18n';
 import { useUnreadMessages } from '@/pages/public/messages/form/UseMessages';
-import { isAdmin, scrollToResults } from '@/utils/Utils';
+import { scrollToResults } from '@/utils/Utils';
 
 function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
@@ -90,7 +91,7 @@ function Header() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const dispatch = useAppDispatch();
-  const { token, user } = useAppSelector((s) => s.user);
+  const { token } = useAppSelector((s) => s.user);
   const { query, heroSearchVisible } = useAppSelector((s) => s.search);
 
   // Home only: the hero search bar moves here once it has scrolled under the header
@@ -132,14 +133,7 @@ function Header() {
           {token && <NotificationsMenu />}
           {token && <MessagesLink />}
           {token ? (
-            <NavLink
-              to={isAdmin(user) ? '/admin/dashboard' : '/c'}
-              aria-label={t('header.mySpace')}
-              title={t('header.mySpace')}
-              className="flex size-10 items-center justify-center rounded-lg text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              <UserRound className="size-5" />
-            </NavLink>
+            <UserMenu />
           ) : (
             <NavLink to="/auth/login" className="px-2 text-[15px] font-medium whitespace-nowrap text-slate-900 hover:text-primary">
               {t('header.login')}
