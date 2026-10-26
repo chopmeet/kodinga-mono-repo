@@ -23,3 +23,158 @@
     display: none;
   }
 }
+
+/* ==========================================================================
+   LiveKit Live Event Chat Panel Customization
+   Prevents overflow, hides duplicate header, styles message bubbles and margins
+   ========================================================================== */
+.live-chat-panel .lk-chat {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  position: static !important;
+  box-sizing: border-box !important;
+}
+
+.live-chat-panel .lk-chat-header {
+  display: none !important;
+}
+
+.live-chat-panel .lk-chat-messages {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 1rem !important;
+  gap: 0.75rem !important;
+  list-style: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.live-chat-panel .lk-chat-entry {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.25rem !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+.live-chat-panel .lk-chat-entry .lk-meta-data {
+  font-size: 0.75rem !important;
+  color: #94a3b8 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0 0.25rem !important;
+}
+
+.live-chat-panel .lk-chat-entry[data-lk-message-origin="local"] .lk-meta-data {
+  justify-content: flex-end !important;
+}
+
+.live-chat-panel .lk-chat-entry .lk-meta-data .lk-participant-name {
+  margin-top: 0 !important;
+  font-weight: 600 !important;
+  color: #cbd5e1 !important;
+  font-size: 0.75rem !important;
+}
+
+.live-chat-panel .lk-chat-entry .lk-meta-data .lk-timestamp {
+  font-size: 0.7rem !important;
+  color: #64748b !important;
+}
+
+.live-chat-panel .lk-chat-entry .lk-message-body {
+  display: inline-block !important;
+  border-radius: 1rem !important;
+  padding: 0.5rem 0.875rem !important;
+  word-break: break-word !important;
+  width: fit-content !important;
+  max-width: 88% !important;
+  font-size: 0.875rem !important;
+  line-height: 1.35rem !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  box-sizing: border-box !important;
+}
+
+.live-chat-panel .lk-chat-entry[data-lk-message-origin="local"] .lk-message-body {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  margin-left: auto !important;
+  border-bottom-right-radius: 0.25rem !important;
+}
+
+.live-chat-panel .lk-chat-entry[data-lk-message-origin="remote"] .lk-message-body {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f1f5f9 !important;
+  border-bottom-left-radius: 0.25rem !important;
+}
+
+.live-chat-panel .lk-chat-form {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem 1rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  max-height: none !important;
+}
+
+.live-chat-panel .lk-chat-form-input {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  height: 2.5rem !important;
+  padding: 0.5rem 0.875rem !important;
+  border-radius: 0.75rem !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  font-size: 0.875rem !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+.live-chat-panel .lk-chat-form-input:focus {
+  border-color: #3b82f6 !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.live-chat-panel .lk-chat-form-input::placeholder {
+  color: #64748b !important;
+}
+
+.live-chat-panel .lk-chat-form-button {
+  height: 2.5rem !important;
+  padding: 0 1rem !important;
+  border-radius: 0.75rem !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  transition: background-color 0.15s !important;
+}
+
+.live-chat-panel .lk-chat-form-button:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+}
+
+.live-chat-panel .lk-chat-form-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}

@@ -1,7 +1,8 @@
-import { CalendarDays, CalendarX2, Clock, MapPin, PlayCircle, Users } from 'lucide-react';
+import { CalendarDays, CalendarPlus, CalendarX2, Clock, MapPin, PlayCircle, Radio, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@kodinga-mono-repo/ui';
+import EventFormModal from '@/pages/community-space/events/modals/event-form-modal';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { ReplayPlayer } from '@/pages/shared/replay-player';
 import { eventTypeLabel, formatEventPlace } from '@/pages/community-space/events/event-labels';
@@ -10,6 +11,7 @@ import type { CommunityEvent } from '@/utils/api/event/event.type';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import UseEventRsvp from '../form/UseEventRsvp';
 import { EventRsvpActions } from './event-rsvp';
+import { QuickLiveModal } from './quick-live-modal';
 import { Pill, SectionHeader } from './section-header';
 
 const PAGE_SIZE = 10;
@@ -48,7 +50,12 @@ export function EventsTab({ page }: { page: CommunityPage }) {
   const rsvp = UseEventRsvp(slug);
   const [view, setView] = useState<'upcoming' | 'past'>('upcoming');
   const [count, setCount] = useState(PAGE_SIZE);
+  const [quickLiveOpen, setQuickLiveOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const past = view === 'past';
+
+  const canCreate = page.isTeam || (page.community?.user_membership?.permissions as string[] | undefined)?.includes('can_create_events');
+
   const { data, isLoading, isFetching } = useGetCommunityEventsQuery(
     past ? { slug, status: 'completed', page: 1, page_size: count } : { slug, upcoming: true, page: 1, page_size: count },
   );
@@ -57,9 +64,25 @@ export function EventsTab({ page }: { page: CommunityPage }) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Se retrouver" title="Événements" aside={<CalendarDays className="size-7 text-amber-600" aria-hidden />}>
-        Ateliers, lives et rencontres à venir dans la communauté. Inscrivez-vous pour recevoir le lien et l’ajouter à votre agenda.
-      </SectionHeader>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <SectionHeader eyebrow="Se retrouver" title="Événements" aside={<CalendarDays className="size-7 text-amber-600" aria-hidden />}>
+          Ateliers, lives et rencontres à venir dans la communauté. Inscrivez-vous pour recevoir le lien et l’ajouter à votre agenda.
+        </SectionHeader>
+
+        {canCreate && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button
+              onClick={() => setQuickLiveOpen(true)}
+              className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/25 hover:bg-red-500"
+            >
+              <Radio className="size-4 animate-pulse" /> Démarrer un direct
+            </Button>
+            <Button variant="outline" onClick={() => setScheduleOpen(true)}>
+              <CalendarPlus className="size-4" /> Programmer
+            </Button>
+          </div>
+        )}
+      </div>
 
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Période">
         {(
@@ -143,6 +166,13 @@ export function EventsTab({ page }: { page: CommunityPage }) {
               Afficher plus
             </Button>
           )}
+        </>
+      )}
+
+      {canCreate && (
+        <>
+          <QuickLiveModal slug={slug} open={quickLiveOpen} onClose={() => setQuickLiveOpen(false)} />
+          <EventFormModal slug={slug} open={scheduleOpen} event={null} onClose={() => setScheduleOpen(false)} />
         </>
       )}
     </section>
