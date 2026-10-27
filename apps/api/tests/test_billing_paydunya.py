@@ -14,7 +14,7 @@ from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment, PaymentStatus
 from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
-from apps.billing.models.wallet import CommunityPayout, CommunityWallet, PayoutStatus
+from apps.billing.models.wallet import CommunityWallet
 from apps.billing.tasks import check_and_expire_subscriptions
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import (

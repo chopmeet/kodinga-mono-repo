@@ -215,8 +215,8 @@ class TestRolePermissions:
         assert response.status_code == 403
 
     def test_can_start_live_permission_and_enforcement(self, test_community, owner_user, member_user):
-        from apps.events.services.event_service import EventService
         from apps.events.models.event import EventFormat, EventStatus
+        from apps.events.services.event_service import EventService
 
         # 1. Owner always has can_start_live permission
         assert has_community_permission(owner_user, test_community, 'can_start_live') is True
