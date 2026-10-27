@@ -16,7 +16,7 @@ import type { RowAction } from '@/pages/shared/row-actions';
 import { useDeleteEventMutation, useUpdateEventStatusMutation } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventStatus } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
-import { canManageEvents, useCommunitySpace } from '../../community-space-context';
+import { canManageEvents, canStartLive, useCommunitySpace } from '../../community-space-context';
 
 type Confirm = { event: CommunityEvent; kind: 'cancel' | 'delete' } | null;
 
@@ -28,6 +28,7 @@ function UseEventActions({ onEdit, afterDelete }: { onEdit: (event: CommunityEve
   const space = useCommunitySpace();
   const slug = space.community.slug;
   const canManage = canManageEvents(space);
+  const canLive = canStartLive(space);
   const navigate = useNavigate();
   const [updateStatus] = useUpdateEventStatusMutation();
   const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation();
@@ -55,7 +56,9 @@ function UseEventActions({ onEdit, afterDelete }: { onEdit: (event: CommunityEve
     if (!canManage) return actions;
     if (event.status === 'scheduled') {
       actions.push({ label: 'Modifier', icon: <Pencil />, onSelect: () => onEdit(event) });
-      actions.push({ label: 'Démarrer le direct', icon: <Radio />, onSelect: () => changeStatus(event, 'live', `« ${event.title} » est en direct.`) });
+      if (canLive) {
+        actions.push({ label: 'Démarrer le direct', icon: <Radio />, onSelect: () => changeStatus(event, 'live', `« ${event.title} » est en direct.`) });
+      }
       actions.push({ label: 'Annuler', icon: <Ban />, danger: true, onSelect: () => setConfirm({ event, kind: 'cancel' }) });
     }
     if (event.status === 'live') {

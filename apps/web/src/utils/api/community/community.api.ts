@@ -4,8 +4,21 @@ import type { CheckoutSession, CommunityPlan, MyPayment, MySubscription, Payment
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
 import type { AppNotification } from '../notification/notification.type';
+import type {
+  ChatTranscriptRequest,
+  ChatTranscriptResponse,
+  CommunityEvent,
+  EventAttendee,
+  EventStatus,
+  EventWriteData,
+  EventsQuery,
+  LiveEventSummary,
+  LiveJoin,
+  LiveTranscriptionResponse,
+  RsvpStatus,
+  VideoUploadTarget,
+} from '../event/event.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
-import type { CommunityEvent, EventAttendee, EventStatus, EventWriteData, EventsQuery, LiveJoin, RsvpStatus, VideoUploadTarget } from '../event/event.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -960,10 +973,41 @@ export const CommunityApi = createApi({
       query: (body) => ({ url: 'media/videos/upload-url/', method: 'POST', body }),
       transformResponse: unwrap<VideoUploadTarget>,
     }),
-    attachEventReplay: builder.mutation<CommunityEvent, { slug: string; eventId: string; video_asset_id: string }>({
-      query: ({ slug, eventId, video_asset_id }) => ({ url: `communities/${slug}/events/${eventId}/replay/`, method: 'POST', body: { video_asset_id } }),
+    attachEventReplay: builder.mutation<CommunityEvent, { slug: string; eventId: string; video_asset_id?: string; video_url?: string; file?: File | Blob }>({
+      query: ({ slug, eventId, video_asset_id, video_url, file }) => {
+        if (file) {
+          const formData = new FormData();
+          formData.append('video', file, (file as File).name || 'recording.webm');
+          return { url: `communities/${slug}/events/${eventId}/replay/`, method: 'POST', body: formData };
+        }
+        return {
+          url: `communities/${slug}/events/${eventId}/replay/`,
+          method: 'POST',
+          body: { ...(video_asset_id ? { video_asset_id } : {}), ...(video_url ? { video_url } : {}) },
+        };
+      },
       transformResponse: unwrap<CommunityEvent>,
       invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }],
+    }),
+    // AI Live Replay: Asynchronous Transcription, Executive Summary & Grounded Chat with Docs
+    transcribeEventLive: builder.mutation<LiveTranscriptionResponse, { slug: string; eventId: string; force?: boolean; language?: string }>({
+      query: ({ slug, eventId, ...body }) => ({ url: `communities/${slug}/events/${eventId}/transcribe/`, method: 'POST', body }),
+      transformResponse: unwrap<LiveTranscriptionResponse>,
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }, { type: 'events', id: `${eventId}-transcription` }],
+    }),
+    getEventTranscription: builder.query<LiveTranscriptionResponse, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => `communities/${slug}/events/${eventId}/transcription/`,
+      transformResponse: unwrap<LiveTranscriptionResponse>,
+      providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-transcription` }],
+    }),
+    generateEventSummary: builder.mutation<{ summary: LiveEventSummary }, { slug: string; eventId: string }>({
+      query: ({ slug, eventId }) => ({ url: `communities/${slug}/events/${eventId}/summary/`, method: 'POST' }),
+      transformResponse: unwrap<{ summary: LiveEventSummary }>,
+      invalidatesTags: (_result, _error, { eventId }) => ['events', { type: 'events', id: eventId }, { type: 'events', id: `${eventId}-transcription` }],
+    }),
+    chatEventTranscript: builder.mutation<ChatTranscriptResponse, ChatTranscriptRequest>({
+      query: ({ slug, eventId, ...body }) => ({ url: `communities/${slug}/events/${eventId}/chat-transcript/`, method: 'POST', body }),
+      transformResponse: unwrap<ChatTranscriptResponse>,
     }),
     // Every attendee at once (?all=true): the api has no search, the page searches them
     getAllEventAttendees: builder.query<EventAttendee[], { slug: string; eventId: string }>({
@@ -1554,6 +1598,10 @@ export const {
   useGetAllEventAttendeesQuery,
   useCreateVideoUploadMutation,
   useAttachEventReplayMutation,
+  useTranscribeEventLiveMutation,
+  useGetEventTranscriptionQuery,
+  useGenerateEventSummaryMutation,
+  useChatEventTranscriptMutation,
   useRsvpEventMutation,
   useCancelEventRsvpMutation,
   useJoinLiveEventMutation,
@@ -1629,3 +1677,5 @@ export const {
   useAddProjectCommentMutation,
 } = CommunityApi;
 
+export { CommunityApi as communityApi };
+export default CommunityApi;

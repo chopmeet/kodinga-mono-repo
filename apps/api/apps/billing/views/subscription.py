@@ -75,3 +75,39 @@ class PaymentStatusView(APIView):
 
         serializer = PaymentStatusSerializer(payment)
         return success_response(data=serializer.data)
+
+
+class CancelSubscriptionView(APIView):
+    """
+    Cancel an active subscription.
+    Sets cancel_at_period_end=True, ensuring access remains valid until current_period_end.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Billing & Affiliates'],
+        summary="Résilier un abonnement à l'échéance",
+        responses={200: SubscriptionSerializer}
+    )
+    def post(self, request, subscription_id):
+        from django.utils import timezone
+        from apps.billing.models.subscription import Subscription, SubscriptionStatus
+
+        try:
+            subscription = Subscription.objects.select_related('plan').get(id=subscription_id, user=request.user)
+        except Subscription.DoesNotExist:
+            return error_response("Abonnement introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        if subscription.status != SubscriptionStatus.ACTIVE:
+            return error_response("Cet abonnement n'est pas actif.", status_code=status.HTTP_400_BAD_REQUEST)
+
+        subscription.cancel_at_period_end = True
+        subscription.canceled_at = timezone.now()
+        subscription.save(update_fields=['cancel_at_period_end', 'canceled_at', 'updated_at'])
+
+        serializer = SubscriptionSerializer(subscription, context={'request': request})
+        return success_response(
+            data=serializer.data,
+            message="Votre abonnement a été résilié et ne sera pas renouvelé à l'échéance."
+        )
+

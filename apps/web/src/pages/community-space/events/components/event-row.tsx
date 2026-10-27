@@ -1,4 +1,4 @@
-import { Clock, MapPin, Users } from 'lucide-react';
+import { Clock, Film, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { Badge } from '@kodinga-mono-repo/ui';
@@ -36,6 +36,12 @@ export function EventRow({ event, href, actions }: { event: CommunityEvent; href
           <Badge variant="outline" className="text-slate-600">
             {eventTypeLabel[event.event_type]}
           </Badge>
+          {event.replay_video_asset && (
+            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center gap-1 font-medium">
+              <Film className="size-3 text-emerald-600" />
+              Replay dispo
+            </Badge>
+          )}
         </div>
         <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
           <span className="flex items-center gap-1.5">

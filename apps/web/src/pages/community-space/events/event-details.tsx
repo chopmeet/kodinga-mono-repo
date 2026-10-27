@@ -7,6 +7,7 @@ import { Badge, Button, ColgateWrapper, DataTable, DetailsPageSkeleton, EmptyAle
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { ReplayPlayer } from '@/pages/shared/replay-player';
+import { EventAIReplayHub } from './components/event-ai-replay-hub';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import { useGetCommunityEventQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventAttendee, RsvpStatus } from '@/utils/api/event/event.type';
@@ -148,7 +149,7 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
       )}
       <div className="mt-4">
         {video ? (
-          <ReplayPlayer video={video} title={event.title} className="max-w-3xl" />
+          <EventAIReplayHub slug={slug} event={event} canManage={canManage} />
         ) : (
           <p className="text-sm text-slate-500">
             {canManage ? `Ajoutez l’enregistrement du live (MP4, WebM ou MOV, ${REPLAY_MAX_GB} Go au maximum) : les membres pourront le revoir.` : 'Pas encore de replay pour cet événement.'}

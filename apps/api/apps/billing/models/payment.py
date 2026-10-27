@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 
@@ -64,6 +66,25 @@ class Payment(BaseModel):
         max_digits=12,
         decimal_places=2,
         help_text="Montant exact calculé côté serveur"
+    )
+    platform_fee = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Commission de plateforme Kodinga"
+    )
+    net_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Montant net revenant au créateur de la communauté"
+    )
+    referral_code = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_index=True,
+        help_text="Code d'affiliation partenaire"
     )
     currency = models.CharField(max_length=10, default='XOF')
     status = models.CharField(

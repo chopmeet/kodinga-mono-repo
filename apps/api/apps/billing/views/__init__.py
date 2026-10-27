@@ -1,8 +1,15 @@
 from apps.billing.views.affiliate import JoinAffiliateView, MyAffiliateView
 from apps.billing.views.checkout import CreateCheckoutView
+from apps.billing.views.community_billing import (
+    CommunityPayoutsView,
+    CommunityRevenueView,
+    CommunitySubscribersView,
+    CommunityTransactionsView,
+)
 from apps.billing.views.ipn import PayDunyaIPNView
 from apps.billing.views.plans import CommunityPlanDetailView, PlansListView
 from apps.billing.views.subscription import (
+    CancelSubscriptionView,
     MyPaymentsView,
     MySubscriptionsView,
     PaymentStatusView,
@@ -16,6 +23,12 @@ __all__ = [
     'MySubscriptionsView',
     'MyPaymentsView',
     'PaymentStatusView',
+    'CancelSubscriptionView',
+    'CommunitySubscribersView',
+    'CommunityTransactionsView',
+    'CommunityRevenueView',
+    'CommunityPayoutsView',
     'MyAffiliateView',
     'JoinAffiliateView',
 ]
+

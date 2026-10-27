@@ -58,6 +58,7 @@ class PayDunyaGateway:
         user_id: str,
         user_email: str,
         description: str = "",
+        referral_code: Optional[str] = None,
         return_url: Optional[str] = None,
         cancel_url: Optional[str] = None,
         callback_url: Optional[str] = None,
@@ -98,7 +99,8 @@ class PayDunyaGateway:
                 "payment_id": str(payment_id),
                 "user_id": str(user_id),
                 "plan_id": str(plan_id),
-                "user_email": str(user_email)
+                "user_email": str(user_email),
+                "referral_code": str(referral_code or "")
             },
             "actions": {
                 "cancel_url": resolved_cancel_url,

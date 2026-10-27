@@ -53,7 +53,7 @@ interface CategoryDefinition {
  * The permissions the api checks today (has_community_permission in EventService and
  * ClassroomService); the others are saved and will apply as the api checks them
  */
-const ENFORCED_PERMISSIONS: RolePermissionKey[] = ['can_manage_events', 'can_manage_courses'];
+const ENFORCED_PERMISSIONS: RolePermissionKey[] = ['can_manage_events', 'can_manage_courses', 'can_start_live'];
 
 const PERMISSION_CATEGORIES: CategoryDefinition[] = [
   {
@@ -101,6 +101,11 @@ const PERMISSION_CATEGORIES: CategoryDefinition[] = [
         key: 'can_manage_events',
         label: 'Modifier et annuler les événements',
         description: 'Éditer les dates, le statut (en cours, terminé) ou annuler des événements existants.',
+      },
+      {
+        key: 'can_start_live',
+        label: 'Démarrer un direct (Live)',
+        description: 'Lancer un direct vidéo ou audio interactif pour la communauté.',
       },
     ],
   },
@@ -210,6 +215,7 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     can_moderate_comments: true,
     can_create_events: true,
     can_manage_events: true,
+    can_start_live: false,
     can_create_courses: true,
     can_manage_courses: true,
     can_create_hackathons: true,
@@ -230,6 +236,7 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     can_moderate_comments: true,
     can_create_events: true,
     can_manage_events: false,
+    can_start_live: false,
     can_create_courses: false,
     can_manage_courses: false,
     can_create_hackathons: false,
@@ -250,6 +257,7 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     can_moderate_comments: false,
     can_create_events: false,
     can_manage_events: false,
+    can_start_live: false,
     can_create_courses: false,
     can_manage_courses: false,
     can_create_hackathons: false,
@@ -270,6 +278,7 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
     can_moderate_comments: true,
     can_create_events: true,
     can_manage_events: true,
+    can_start_live: true,
     can_create_courses: true,
     can_manage_courses: true,
     can_create_hackathons: true,

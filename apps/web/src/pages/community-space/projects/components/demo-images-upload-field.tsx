@@ -19,7 +19,7 @@ type Props = {
 export function DemoImagesUploadField({
   id: customId,
   label = "Images de démonstration / Captures d'écran",
-  help = 'Téléversez des captures d’écran (JPG, PNG, WebP — max 10 Mo par image)',
+  help = 'Téléversez des captures d’écran (JPG, PNG, WebP — max 5 Mo par image)',
   value = [],
   onChange,
   maxImages = 6,

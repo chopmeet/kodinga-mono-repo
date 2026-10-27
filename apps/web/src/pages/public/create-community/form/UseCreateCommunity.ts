@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -169,9 +169,43 @@ function UseCreateCommunity() {
     banner: images.banner.source === 'file' ? bannerFile : values.banner_url.trim() || null,
   };
 
+  const [uploadedUrls, setUploadedUrls] = useState<Record<ImageKind, string | null>>({ avatar: null, banner: null });
+  const [uploading, setUploading] = useState<Record<ImageKind, boolean>>({ avatar: false, banner: false });
+  const pendingUploads = useRef<Record<ImageKind, Promise<string> | null>>({ avatar: null, banner: null });
+
+  const triggerEarlyUpload = (kind: ImageKind, file: File) => {
+    // If not authenticated yet, wait until sign-in at step 5
+    if (!token) return;
+
+    setUploading((prev) => ({ ...prev, [kind]: true }));
+    const task = (async () => {
+      try {
+        const url = await uploadImage(file, kind);
+        setUploadedUrls((prev) => ({ ...prev, [kind]: url }));
+        return url;
+      } catch (err) {
+        console.warn(`[CreateCommunity] Early upload for ${kind} failed, will retry on submit:`, err);
+        throw err;
+      } finally {
+        setUploading((prev) => ({ ...prev, [kind]: false }));
+        pendingUploads.current[kind] = null;
+      }
+    })();
+    pendingUploads.current[kind] = task;
+  };
+
   const setImage = (kind: ImageKind, changes: Partial<ImageState>) => {
     setImages((current) => ({ ...current, [kind]: { ...current[kind], ...changes } }));
     form.clearErrors(IMAGES[kind]);
+
+    if (changes.file) {
+      setUploadedUrls((prev) => ({ ...prev, [kind]: null }));
+      triggerEarlyUpload(kind, changes.file);
+    } else if (changes.file === null || changes.source === 'url') {
+      setUploadedUrls((prev) => ({ ...prev, [kind]: null }));
+      pendingUploads.current[kind] = null;
+      setUploading((prev) => ({ ...prev, [kind]: false }));
+    }
   };
 
   /** Fields to check on a step: a link is only checked in url mode */
@@ -181,22 +215,54 @@ function UseCreateCommunity() {
   /** Url of each image: the link, or the chosen file once sent (null when there is none) */
   const resolveImages = async (v: CommunityValues): Promise<Record<ImageKind, string | null> | null> => {
     const result: Record<ImageKind, string | null> = { avatar: null, banner: null };
-    for (const kind of Object.keys(IMAGES) as ImageKind[]) {
+
+    // Parallel upload of both avatar and banner via Promise.all
+    const uploadTasks = (Object.keys(IMAGES) as ImageKind[]).map(async (kind) => {
       const { source, file } = images[kind];
       if (source === 'url') {
-        result[kind] = v[IMAGES[kind]] || null;
-        continue;
+        return { kind, url: v[IMAGES[kind]] || null };
       }
-      if (!file) continue;
+      if (!file) return { kind, url: null };
+
+      // 1. If already pre-uploaded in the background, reuse immediately (0ms wait!)
+      if (uploadedUrls[kind]) {
+        return { kind, url: uploadedUrls[kind] };
+      }
+
+      // 2. If an early upload is currently in flight, await it
+      if (pendingUploads.current[kind]) {
+        try {
+          const url = await pendingUploads.current[kind]!;
+          return { kind, url };
+        } catch {
+          // Fall through to retry upload below
+        }
+      }
+
+      // 3. Otherwise, perform parallel upload now
+      setUploading((prev) => ({ ...prev, [kind]: true }));
       try {
-        result[kind] = await uploadImage(file, kind);
+        const url = await uploadImage(file, kind);
+        setUploadedUrls((prev) => ({ ...prev, [kind]: url }));
+        return { kind, url };
       } catch (error) {
         form.setError(IMAGES[kind], { message: error instanceof Error ? error.message : "L'envoi de l'image a échoué." });
-        goTo('look');
-        return null;
+        throw error;
+      } finally {
+        setUploading((prev) => ({ ...prev, [kind]: false }));
       }
+    });
+
+    try {
+      const settled = await Promise.all(uploadTasks);
+      settled.forEach(({ kind, url }) => {
+        result[kind] = url;
+      });
+      return result;
+    } catch {
+      goTo('look');
+      return null;
     }
-    return result;
   };
 
   useEffect(() => {
@@ -334,6 +400,9 @@ function UseCreateCommunity() {
     back,
     isSubmitting,
     formError,
+    uploading,
+    uploadedUrls,
+    isAnyUploading: uploading.avatar || uploading.banner,
   };
 }
 

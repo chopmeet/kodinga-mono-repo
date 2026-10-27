@@ -111,6 +111,97 @@ export function checkImage(file: File, purpose: ImagePurpose): string | null {
   return null;
 }
 
+export type CompressOptions = {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+};
+
+/**
+ * Compresses and resizes an image client-side using HTML5 Canvas.
+ * Drastically reduces payload size (e.g. 5-10 MB raw phone photo -> ~100-300 KB) and upload time.
+ * Leaves SVG, GIF (animated) and already small files (< 150 KB) untouched.
+ */
+export async function compressImage(file: File, options: CompressOptions = {}): Promise<File> {
+  if (
+    typeof window === 'undefined' ||
+    typeof document === 'undefined' ||
+    file.type === 'image/svg+xml' ||
+    file.type === 'image/gif' ||
+    file.size < 150 * 1024
+  ) {
+    return file;
+  }
+
+  const maxWidth = options.maxWidth ?? 1600;
+  const maxHeight = options.maxHeight ?? 1600;
+  const quality = options.quality ?? 0.82;
+
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        try {
+          let { width, height } = img;
+          if (width <= 0 || height <= 0) {
+            resolve(file);
+            return;
+          }
+
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          canvas.toBlob(
+            (blob) => {
+              if (!blob || blob.size >= file.size) {
+                resolve(file);
+                return;
+              }
+              const optimized = new File([blob], file.name, {
+                type: blob.type || mimeType,
+                lastModified: Date.now(),
+              });
+              resolve(optimized);
+            },
+            mimeType,
+            quality
+          );
+        } catch {
+          resolve(file);
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+
+      img.src = objectUrl;
+    } catch {
+      resolve(file);
+    }
+  });
+}
+
 /** Url of the stored file in the answer of the storage (UploadThing names it url or ufsUrl) */
 async function storedUrl(response: Response) {
   const body: unknown = await response.json().catch(() => null);
@@ -134,19 +225,43 @@ export function useImageUpload() {
     const invalid = checkImage(file, purpose);
     if (invalid) throw new Error(invalid);
     try {
-      const target = await requestUploadUrl({ file_name: file.name, file_size: file.size, mime_type: file.type, purpose }).unwrap();
+      // 1. Client-side compression / downscaling for fast network transfer
+      const compressOpts: CompressOptions =
+        purpose === 'avatar'
+          ? { maxWidth: 512, maxHeight: 512, quality: 0.85 }
+          : { maxWidth: 1600, maxHeight: 900, quality: 0.85 };
+      const readyFile = await compressImage(file, compressOpts);
+
+      const target = await requestUploadUrl({
+        file_name: readyFile.name,
+        file_size: readyFile.size,
+        mime_type: readyFile.type,
+        purpose,
+      }).unwrap();
+
       const body = new FormData();
-      Object.entries(target.fields).forEach(([key, value]) => body.append(key, value));
-      body.append('file', file);
-      const response = await fetch(target.upload_url, { method: 'POST', body });
+      if (target.fields) {
+        Object.entries(target.fields).forEach(([key, value]) => body.append(key, value));
+      }
+      // UploadThing v7 ingestion expects 'files', standard S3/mocks expect 'file'
+      body.append('file', readyFile);
+      body.append('files', readyFile);
+
+      const method = (target.method || (target.upload_url.includes('ingest.uploadthing.com') ? 'PUT' : 'POST')).toUpperCase();
+      const response = await fetch(target.upload_url, { method, body });
       const url = response.ok ? await storedUrl(response) : null;
-      if (!url) throw new Error('storage');
-      const asset = await confirmUpload({ file_key: target.file_key, file_url: url, file_size: file.size }).unwrap();
+      if (!url) {
+        console.error('Storage upload failed with status:', response.status);
+        throw new Error('storage');
+      }
+      const asset = await confirmUpload({ file_key: target.file_key, file_url: url, file_size: readyFile.size }).unwrap();
       return asset.file_url;
     } catch (error) {
+      console.error('Image upload failed:', error);
       // Api refusal (plain RTK error): its message; storage or network failure: a generic one
       if (!(error instanceof Error)) throw new Error(parseApiError(error).message);
       throw new Error("L'envoi de l'image a échoué. Réessayez, ou collez plutôt un lien vers l'image.");
     }
   };
 }
+

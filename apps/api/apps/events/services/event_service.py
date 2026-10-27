@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 from django.db import transaction
 from django.utils.text import slugify
@@ -9,7 +9,7 @@ from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
 from apps.events.models.event import Event, EventFormat, EventStatus
-from apps.media.models.video_asset import VideoAsset
+from apps.media.models.video_asset import VideoAsset, VideoStatus
 from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
@@ -37,6 +37,20 @@ class EventService:
         )
 
     @classmethod
+    def check_can_start_live(cls, actor_user: User, community: Community) -> bool:
+        if not actor_user or not actor_user.is_authenticated:
+            raise PermissionDenied("Authentification requise.")
+        from common.permissions.base import is_superadmin_user
+        if is_superadmin_user(actor_user) or community.owner_id == actor_user.id:
+            return True
+        from apps.memberships.permissions import has_community_permission
+        if has_community_permission(actor_user, community, 'can_start_live'):
+            return True
+        raise PermissionDenied(
+            "Seul le propriétaire ou un membre ayant reçu la permission peut lancer un direct."
+        )
+
+    @classmethod
     def check_active_member(cls, user: User, community: Community) -> bool:
         if not user or not user.is_authenticated:
             raise PermissionDenied("Connexion requise pour accéder aux événements.")
@@ -54,7 +68,14 @@ class EventService:
     def create_event(
         cls, actor_user: User, community: Community, data: dict[str, Any]
     ) -> Event:
-        cls.check_is_manager(actor_user, community)
+        is_live_launch = (
+            data.get("event_type") == "live_stream"
+            or (data.get("format") == EventFormat.LIVEKIT and data.get("status") == EventStatus.LIVE)
+        )
+        if is_live_launch:
+            cls.check_can_start_live(actor_user, community)
+        else:
+            cls.check_is_manager(actor_user, community)
 
         title = data.get("title", "").strip()
         if not title:
@@ -226,7 +247,9 @@ class EventService:
     def update_event_status(
         cls, actor_user: User, event: Event, new_status: str
     ) -> Event:
-        if event.host_id != actor_user.id:
+        if new_status == EventStatus.LIVE:
+            cls.check_can_start_live(actor_user, event.community)
+        elif event.host_id != actor_user.id:
             cls.check_is_manager(actor_user, event.community)
 
         if new_status not in EventStatus.values:
@@ -240,17 +263,76 @@ class EventService:
 
     @classmethod
     def attach_replay(
-        cls, actor_user: User, event: Event, video_asset_id: str
+        cls,
+        actor_user: User,
+        event: Event,
+        video_asset_id: Optional[str] = None,
+        video_file: Optional[Any] = None,
+        video_url: Optional[str] = None,
     ) -> Event:
         if event.host_id != actor_user.id:
             cls.check_is_manager(actor_user, event.community)
 
-        try:
-            video_asset = VideoAsset.objects.get(id=video_asset_id)
-        except (VideoAsset.DoesNotExist, ValueError):
+        video_asset = None
+
+        if video_file:
+            from apps.media.services.uploadthing_service import UploadThingService
+            file_name = getattr(video_file, "name", f"replay-event-{event.id}.webm")
+            file_bytes = video_file.read()
+            mime_type = getattr(video_file, "content_type", "video/webm") or "video/webm"
+            upload_res = UploadThingService.upload_file_direct(
+                user=actor_user,
+                file_name=file_name,
+                file_bytes=file_bytes,
+                mime_type=mime_type,
+                purpose="general",
+            )
+            file_url = upload_res["file_url"]
+            file_key = upload_res.get("file_key") or str(uuid.uuid4())
+            video_asset = VideoAsset.objects.create(
+                user=actor_user,
+                title=f"Replay - {event.title}",
+                provider="uploadthing",
+                playback_id=file_key,
+                asset_id=file_key,
+                upload_id=upload_res.get("asset_id") or str(uuid.uuid4()),
+                status=VideoStatus.READY,
+                is_public=event.is_public,
+                metadata={
+                    "file_url": file_url,
+                    "file_key": file_key,
+                    "file_size": upload_res.get("file_size"),
+                    "mime_type": mime_type,
+                    "source_provider": "uploadthing",
+                },
+            )
+        elif video_url:
+            unique_key = f"ut-{uuid.uuid4().hex[:12]}"
+            video_asset = VideoAsset.objects.create(
+                user=actor_user,
+                title=f"Replay - {event.title}",
+                provider="uploadthing",
+                playback_id=unique_key,
+                asset_id=unique_key,
+                upload_id=str(uuid.uuid4()),
+                status=VideoStatus.READY,
+                is_public=event.is_public,
+                metadata={
+                    "file_url": video_url,
+                    "source_provider": "uploadthing",
+                },
+            )
+        elif video_asset_id:
+            try:
+                video_asset = VideoAsset.objects.get(id=video_asset_id)
+            except (VideoAsset.DoesNotExist, ValueError):
+                raise ValidationError(
+                    {"video_asset_id": "Asset vidéo introuvable."}
+                ) from None
+        else:
             raise ValidationError(
-                {"video_asset_id": "Asset vidéo introuvable."}
-            ) from None
+                {"video": "Aucune vidéo fournie (fichier, url ou video_asset_id requis)."}
+            )
 
         event.replay_video_asset = video_asset
         if event.status != EventStatus.COMPLETED:

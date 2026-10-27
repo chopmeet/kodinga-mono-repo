@@ -1,4 +1,4 @@
-import { ArrowRight, Plus, RotateCw, Sparkles } from 'lucide-react';
+import { ArrowRight, Plus, Radio, RotateCw, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
@@ -92,20 +92,39 @@ function MyCommunities() {
       ) : (
         <ul className="mt-4 grid gap-4 sm:grid-cols-2" aria-label="Communautés que je gère">
           {communities.map(({ community, role }) => (
-            <li key={community.id}>
+            <li key={community.id} className="relative">
               <Link
                 to={`/c/${community.slug}/dashboard`}
                 className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md"
               >
                 <CommunityAvatar community={community} className="size-14 rounded-xl font-mono" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold text-slate-900 group-hover:text-primary">{community.name}</span>
+                  <span className="flex items-center gap-2 truncate font-semibold text-slate-900 group-hover:text-primary">
+                    <span className="truncate">{community.name}</span>
+                    {community.active_live && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase animate-pulse">
+                        <span className="size-1.5 rounded-full bg-white animate-ping" />
+                        Live
+                      </span>
+                    )}
+                  </span>
                   <span className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                     <Badge variant="outline" className="text-slate-700">{roleLabel[role]}</Badge>
                     {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
                   </span>
                 </span>
-                <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:text-primary" />
+                {community.active_live ? (
+                  <Link
+                    to={`/communities/${community.slug}/events/${community.active_live.id}/live`}
+                    className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-red-500"
+                    title="Rejoindre le direct en cours"
+                  >
+                    <Radio className="size-3.5 animate-pulse" />
+                    Rejoindre
+                  </Link>
+                ) : (
+                  <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:text-primary" />
+                )}
               </Link>
             </li>
           ))}
@@ -119,19 +138,38 @@ function MyCommunities() {
           </h2>
           <ul className="mt-4 grid gap-4 sm:grid-cols-2" aria-label="Communautés dont je suis membre">
             {joined.map(({ community }) => (
-              <li key={community.id}>
+              <li key={community.id} className="relative">
                 <Link
                   to={`/communities/${community.slug}`}
                   className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md"
                 >
                   <CommunityAvatar community={community} className="size-12 rounded-xl font-mono" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold text-slate-900 group-hover:text-primary">{community.name}</span>
+                    <span className="flex items-center gap-2 truncate font-semibold text-slate-900 group-hover:text-primary">
+                      <span className="truncate">{community.name}</span>
+                      {community.active_live && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase animate-pulse">
+                          <span className="size-1.5 rounded-full bg-white animate-ping" />
+                          Live
+                        </span>
+                      )}
+                    </span>
                     <span className="mt-1 block text-sm text-slate-500">
                       {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
                     </span>
                   </span>
-                  <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:text-primary" />
+                  {community.active_live ? (
+                    <Link
+                      to={`/communities/${community.slug}/events/${community.active_live.id}/live`}
+                      className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-red-500"
+                      title="Rejoindre le direct en cours"
+                    >
+                      <Radio className="size-3.5 animate-pulse" />
+                      Rejoindre
+                    </Link>
+                  ) : (
+                    <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:text-primary" />
+                  )}
                 </Link>
               </li>
             ))}

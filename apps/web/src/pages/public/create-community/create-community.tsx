@@ -116,7 +116,11 @@ function CreateCommunity() {
               {flow.isLast ? (
                 <>
                   <Sparkles className="size-4.5" />
-                  Créer ma communauté
+                  {flow.isSubmitting
+                    ? flow.isAnyUploading
+                      ? 'Téléversement des images…'
+                      : 'Création de la communauté…'
+                    : 'Créer ma communauté'}
                 </>
               ) : (
                 <>
