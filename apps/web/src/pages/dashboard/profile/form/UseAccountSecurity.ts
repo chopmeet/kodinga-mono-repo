@@ -21,7 +21,7 @@ const passwordSchema = z
 
 export type PasswordValues = z.infer<typeof passwordSchema>;
 
-/** /account/security — password and the sessions open on other devices */
+/** /dashboard/profile/security — password and the sessions open on other devices */
 function UseAccountSecurity() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();

@@ -29,7 +29,7 @@ function Entry({ title, subtitle, meta, children, onEdit, onDelete, label }: { t
   );
 }
 
-/** /account/career — experiences and educations, most recent first */
+/** /dashboard/profile/career — experiences and educations, most recent first */
 function CareerTab() {
   const entries = UseProfileEntries();
   const [experience, setExperience] = useState<{ experience: ProfileExperience | null } | null>(null);

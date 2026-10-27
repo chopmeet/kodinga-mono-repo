@@ -59,35 +59,74 @@ afterEach(() => {
   });
 });
 
-describe('My communities /c', () => {
-  it('lists the communities the user manages, with the role, then the ones they only joined', async () => {
+describe('Dashboard: my communities', () => {
+  it('lists every community with the role, the space and member page for managers, the public page for members', async () => {
     signIn();
     stubMyCommunities([
       ['lagos-ai-data', 'owner'],
       ['python-africa-core', 'moderator'],
       ['dakar-devops', 'member'],
     ]);
-    renderAppAt('/c');
-    const managed = await screen.findByRole('list', { name: 'Communautés que je gère' }, SLOW);
-    expect(within(managed).getAllByRole('link')).toHaveLength(2);
-    expect(within(managed).getByText('Propriétaire')).toBeTruthy();
-    expect(within(managed).getByText('Modérateur')).toBeTruthy();
-    expect(within(managed).queryByText(/Dakar DevOps/)).toBeNull();
+    renderAppAt('/dashboard/communities');
+    const list = await screen.findByRole('list', { name: 'Mes communautés' }, SLOW);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getByRole('heading', { name: '3 communautés' })).toBeTruthy();
+    const lagos = must(getAdminCommunity('lagos-ai-data'), 'lagos-ai-data');
+    expect(within(list).getByRole('link', { name: `Administrer ${lagos.name}` }).getAttribute('href')).toBe('/c/lagos-ai-data/dashboard');
+    expect(within(list).getByRole('link', { name: `Espace membre de ${lagos.name}` }).getAttribute('href')).toBe('/communities/lagos-ai-data');
     // A plain member opens the public page, not the space
-    const joined = screen.getByRole('list', { name: 'Communautés dont je suis membre' });
-    expect(within(joined).getByRole('link', { name: /Dakar DevOps/ }).getAttribute('href')).toBe('/communities/dakar-devops');
+    const devops = must(getAdminCommunity('dakar-devops'), 'dakar-devops');
+    expect(within(list).getByRole('link', { name: `Ouvrir ${devops.name}` }).getAttribute('href')).toBe('/communities/dakar-devops');
+    expect(within(list).queryByRole('link', { name: `Administrer ${devops.name}` })).toBeNull();
   });
 
-  it('stays on /c when the user manages one community', async () => {
+  it('filters by role', async () => {
+    signIn();
+    stubMyCommunities([
+      ['lagos-ai-data', 'owner'],
+      ['python-africa-core', 'moderator'],
+      ['dakar-devops', 'member'],
+    ]);
+    renderAppAt('/dashboard/communities');
+    await screen.findByRole('list', { name: 'Mes communautés' }, SLOW);
+    fireEvent.click(within(screen.getByRole('group', { name: 'Filtrer par rôle' })).getByRole('button', { name: 'Modérateur' }));
+    const list = screen.getByRole('list', { name: 'Mes communautés' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(list).getByText(/Modérateur/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '1 communauté' })).toBeTruthy();
+  });
+
+  it('invites to create a first community when there is none', async () => {
+    signIn();
+    stubMyCommunities([]);
+    renderAppAt('/dashboard/communities');
+    expect(await screen.findByText('Vous n\'avez encore aucune communauté', {}, SLOW)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Créer ma communauté' }).getAttribute('href')).toBe('/create-community');
+  });
+
+  it('offers to retry when the api cannot be reached', async () => {
+    signIn();
+    stubApi({ 'communities/my/': { status: 500, body: { success: false, code: 'error', message: 'Erreur serveur.' } } });
+    renderAppAt('/dashboard/communities');
+    expect(await screen.findByText('Erreur serveur.', {}, SLOW)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Réessayer' })).toBeTruthy();
+  });
+
+  it('asks anonymous visitors to log in first', async () => {
+    const { where } = renderAppAt('/dashboard/communities');
+    await waitFor(() => expect(where()).toBe('/auth/login?next=%2Fdashboard%2Fcommunities'), SLOW);
+  });
+
+  it('sends the old /c address to the dashboard', async () => {
     signIn();
     stubMyCommunities([['lagos-ai-data', 'owner']]);
     const { where } = renderAppAt('/c');
-    const managed = await screen.findByRole('list', { name: 'Communautés que je gère' }, SLOW);
-    expect(within(managed).getByRole('link').getAttribute('href')).toBe('/c/lagos-ai-data/dashboard');
-    expect(where()).toBe('/c');
+    await waitFor(() => expect(where()).toBe('/dashboard/communities'), SLOW);
   });
+});
 
-  it('sends to PayDunya to become Pro, and tells a Pro member their plan', async () => {
+describe('Dashboard: Kodinga Pro', () => {
+  it('sends to PayDunya to become Pro, back to the billing page', async () => {
     signIn();
     const assign = vi.fn();
     const original = window.location;
@@ -96,17 +135,18 @@ describe('My communities /c', () => {
       const calls = stubMyCommunities([], {
         'billing/plans/': ok([proPlan]),
         'billing/subscriptions/me/': ok([]),
+        'billing/payments/my/': ok([]),
         'billing/checkout/': ok({ payment_id: 'pay1', token: 't', checkout_url: 'https://paydunya.com/checkout/t', amount: '5000', currency: 'XOF', plan_name: 'Pro mensuel' }),
       });
-      renderAppAt('/c');
+      renderAppAt('/dashboard/billing');
       const plans = await screen.findByRole('list', { name: 'Formules Pro' }, SLOW);
       expect(within(plans).getByText('5 000 FCFA')).toBeTruthy();
       fireEvent.click(within(plans).getByRole('button', { name: 'Devenir Pro — Pro mensuel' }));
       await waitFor(() => expect(assign).toHaveBeenCalledWith('https://paydunya.com/checkout/t'), SLOW);
       expect(calls.find((c) => c.url.endsWith('/billing/checkout/'))?.body).toEqual({
         plan_id: proPlan.id,
-        return_url: 'http://localhost:4200/c?payment=done',
-        cancel_url: 'http://localhost:4200/c?payment=cancelled',
+        return_url: 'http://localhost:4200/dashboard/billing?payment=done',
+        cancel_url: 'http://localhost:4200/dashboard/billing?payment=cancelled',
       });
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: original });
@@ -117,43 +157,55 @@ describe('My communities /c', () => {
     signIn();
     stubMyCommunities([], {
       'billing/plans/': ok([proPlan]),
+      'billing/payments/my/': ok([]),
       'billing/subscriptions/me/': ok([{ id: 'sub1', plan: proPlan, community_id: null, status: 'active', is_active: true, current_period_start: '2026-10-01T00:00:00Z', current_period_end: '2026-11-01T00:00:00Z', cancel_at_period_end: false, canceled_at: null, created_at: '2026-10-01T00:00:00Z' }]),
     });
-    renderAppAt('/c');
+    renderAppAt('/dashboard/billing');
     expect(await screen.findByText('Membre Pro', {}, SLOW)).toBeTruthy();
     const plans = screen.getByRole('list', { name: 'Formules Pro' });
     expect(within(plans).getByText('Votre formule')).toBeTruthy();
     expect(within(plans).queryByRole('button')).toBeNull();
   });
 
-  it('invites to create a first community when there is none', async () => {
+  it('lands the old Pro payment return of /c on the billing page', async () => {
     signIn();
-    stubMyCommunities([]);
-    renderAppAt('/c');
-    expect(await screen.findByText('Vous ne gérez encore aucune communauté', {}, SLOW)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Créer ma communauté' }).getAttribute('href')).toBe('/create-community');
+    stubMyCommunities([], { 'billing/plans/': ok([proPlan]), 'billing/subscriptions/me/': ok([]), 'billing/payments/my/': ok([]) });
+    const { where } = renderAppAt('/c?payment=cancelled');
+    await waitFor(() => expect(where()).toBe('/dashboard/billing?payment=cancelled'), SLOW);
   });
+});
 
-  it('offers to retry when the api cannot be reached', async () => {
+describe('Dashboard: overview', () => {
+  it('greets the user with their figures, and logs out', async () => {
     signIn();
-    stubApi({ 'communities/my/': { status: 500, body: { success: false, code: 'error', message: 'Erreur serveur.' } } });
-    renderAppAt('/c');
-    expect(await screen.findByText('Erreur serveur.', {}, SLOW)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Réessayer' })).toBeTruthy();
-  });
-
-  it('asks anonymous visitors to log in first', async () => {
-    const { where } = renderAppAt('/c');
-    await waitFor(() => expect(where()).toBe('/auth/login?next=/c'), SLOW);
+    stubMyCommunities(
+      [
+        ['lagos-ai-data', 'owner'],
+        ['dakar-devops', 'member'],
+      ],
+      { 'billing/subscriptions/me/': ok([]), 'profiles/me/': ok({ reputation_points: 340 }) }
+    );
+    const { where } = renderAppAt('/dashboard');
+    expect(await screen.findByRole('heading', { name: 'Bonjour, Awa' }, SLOW)).toBeTruthy();
+    const figures = screen.getByRole('region', { name: 'Mes chiffres' });
+    await waitFor(() => expect(within(figures).getByRole('link', { name: /Communautés rejointes/ }).textContent).toContain('2'), SLOW);
+    expect(within(figures).getByRole('link', { name: /Communauté créée/ }).textContent).toContain('1');
+    await waitFor(() => expect(within(figures).getByRole('link', { name: /Points de réputation/ }).textContent).toContain('340'), SLOW);
+    // Not served by the api yet: no amount
+    expect(within(figures).getByText('Total reçu en tant que propriétaire (30 j)').parentElement?.textContent).toMatch(/^Bientôt/);
+    expect(screen.getByRole('link', { name: 'Facturation' }).getAttribute('href')).toBe('/dashboard/billing');
+    fireEvent.click(within(screen.getByRole('region', { name: 'Session' })).getByRole('button', { name: 'Se déconnecter' }));
+    await waitFor(() => expect(store.getState().user.token).toBeNull(), SLOW);
+    expect(where()).not.toMatch(/^\/dashboard/);
   });
 });
 
 describe('Community space /c/:slug', () => {
-  it('sends back to /c when the user does not manage the community', async () => {
+  it('sends back to the dashboard when the user does not manage the community', async () => {
     signIn();
     stubMyCommunities([['abidjan-flutter-devs', 'member']]);
     const { where } = renderAppAt('/c/abidjan-flutter-devs/dashboard');
-    await waitFor(() => expect(where()).toBe('/c'), SLOW);
+    await waitFor(() => expect(where()).toBe('/dashboard/communities'), SLOW);
     expect((await screen.findByRole('alert', {}, SLOW)).textContent).toContain('abidjan-flutter-devs');
   });
 

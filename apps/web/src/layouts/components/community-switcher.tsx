@@ -57,7 +57,7 @@ function CommunitySwitcher({ current, collapsed }: { current: MyCommunity; colla
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => navigate('/c')}>
+        <DropdownMenuItem onSelect={() => navigate('/dashboard/communities')}>
           <LayoutGrid />
           Toutes mes communautés
         </DropdownMenuItem>

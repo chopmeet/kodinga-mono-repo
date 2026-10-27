@@ -16,7 +16,7 @@ export function deviceOf(s: UserSession) {
   return [browser, os].filter(Boolean).join(' · ');
 }
 
-/** /account/security — change the password, see and close the sessions */
+/** /dashboard/profile/security — change the password, see and close the sessions */
 function SecurityTab() {
   const security = UseAccountSecurity();
   const [confirmAll, setConfirmAll] = useState(false);

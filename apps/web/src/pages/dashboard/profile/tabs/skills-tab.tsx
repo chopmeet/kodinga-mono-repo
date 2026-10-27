@@ -15,7 +15,7 @@ const levelStyle: Record<SkillLevel, string> = {
   expert: 'bg-amber-50 text-amber-800',
 };
 
-/** /account/skills — the stack of the developer, with a level for each technology */
+/** /dashboard/profile/skills — the stack of the developer, with a level for each technology */
 function SkillsTab() {
   const entries = UseProfileEntries();
   const [tech, setTech] = useState<Technology | null>(null);

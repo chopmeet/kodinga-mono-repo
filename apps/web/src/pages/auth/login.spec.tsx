@@ -42,10 +42,10 @@ describe('Login', () => {
         },
       },
     });
-    const { where } = renderAppAt('/auth/login?next=/c');
+    const { where } = renderAppAt('/auth/login?next=/dashboard/overview');
     await screen.findByRole('heading', { name: 'Se connecter' }, SLOW);
     submit('Awa@Example.com', 'kodinga2026');
-    await waitFor(() => expect(where()).toBe('/c'), SLOW);
+    await waitFor(() => expect(where()).toBe('/dashboard/overview'), SLOW);
     expect(calls[0].body).toMatchObject({ email: 'awa@example.com', password: 'kodinga2026' });
     expect(store.getState().user.token).toBe('access-token');
   });

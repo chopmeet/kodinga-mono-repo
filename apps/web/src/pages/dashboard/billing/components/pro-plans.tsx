@@ -1,5 +1,4 @@
 import { Check, CircleCheck, CircleX, Clock, Crown, LoaderCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 import { Badge, Button, cn } from '@kodinga-mono-repo/ui';
 import { intervalLabel, xof } from '@/pages/shared/community-labels';
@@ -20,12 +19,12 @@ const notices = {
   cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-slate-200 bg-white text-slate-700', text: 'Paiement annulé : vous n’avez pas été débité.' },
 } as const;
 
-/** /c — Kodinga Pro: the user's status, then the plans with their PayDunya checkout */
+/** /dashboard/billing — Kodinga Pro: the user's status, then the plans with their PayDunya checkout */
 export function ProPlans({ pro }: { pro: KodingaPro }) {
   const notice = pro.payment ? notices[pro.payment] : null;
 
   return (
-    <section aria-labelledby="kodinga-pro" className="mt-12">
+    <section aria-labelledby="kodinga-pro">
       <div className="flex flex-wrap items-center gap-2">
         <Crown className="size-5 text-amber-500" aria-hidden />
         <h2 id="kodinga-pro" className="text-lg font-semibold text-slate-900">
@@ -40,9 +39,9 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
           {notice.icon}
           {notice.text}
           {pro.payment === 'pending' && (
-            <Link to="/account/billing" className="ml-auto shrink-0 font-semibold underline">
+            <a href="#subscriptions-title" className="ml-auto shrink-0 font-semibold underline">
               Voir
-            </Link>
+            </a>
           )}
         </p>
       )}
@@ -51,9 +50,9 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
         <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           Formule {pro.subscription.plan.name} :{' '}
           {pro.subscription.cancel_at_period_end ? 'se termine' : 'renouvelée'} le {dateFormat.format(new Date(pro.subscription.current_period_end))}.{' '}
-          <Link to="/account/billing" className="font-semibold underline">
+          <a href="#subscriptions-title" className="font-semibold underline">
             Gérer
-          </Link>
+          </a>
         </p>
       )}
 

@@ -33,7 +33,7 @@ function CommunitySpaceLayout() {
     return <Loader inline size="lg" className="min-h-svh" message="Chargement de votre espace…" />;
   }
 
-  if (!space) return <Navigate to="/c" replace state={{ deniedSlug: slug }} />;
+  if (!space) return <Navigate to="/dashboard/communities" replace state={{ deniedSlug: slug }} />;
 
   return (
     <CommunitySpaceContext.Provider value={space}>

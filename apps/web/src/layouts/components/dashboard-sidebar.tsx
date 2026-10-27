@@ -3,20 +3,14 @@ import { FaUsers } from 'react-icons/fa';
 import {
   LuBriefcase,
   LuCalendarDays,
-  LuCode,
   LuCreditCard,
-  LuExternalLink,
   LuFileText,
-  LuFolderKanban,
   LuGraduationCap,
   LuLayoutDashboard,
   LuLogOut,
   LuMedal,
   LuRocket,
-  LuRoute,
-  LuShieldCheck,
   LuTrophy,
-  LuUserRound,
   LuUsers,
   LuWallet,
 } from 'react-icons/lu';
@@ -124,40 +118,22 @@ function communitySpace(space: MyCommunity): SidebarSpace {
   return { sections, roleLabel: roleLabel[space.role] };
 }
 
-/** /account — the sections of the user's own account, then shortcuts out of it */
-function accountSpace(username: string | undefined): SidebarSpace {
-  return {
-    roleLabel: 'Mon compte',
-    sections: [
-      {
-        id: 'profile',
-        title: 'Mon profil',
-        items: [
-          { id: 'account-profile', label: 'Profil', path: '/account/profile', icon: <LuUserRound /> },
-          { id: 'account-skills', label: 'Compétences', path: '/account/skills', icon: <LuCode /> },
-          { id: 'account-career', label: 'Parcours', path: '/account/career', icon: <LuRoute /> },
-          { id: 'account-portfolio', label: 'Portfolio', path: '/account/portfolio', icon: <LuFolderKanban /> },
-        ],
-      },
-      {
-        id: 'account',
-        title: 'Compte',
-        items: [
-          { id: 'account-billing', label: 'Abonnements', path: '/account/billing', icon: <LuCreditCard /> },
-          { id: 'account-security', label: 'Sécurité', path: '/account/security', icon: <LuShieldCheck /> },
-        ],
-      },
-      {
-        id: 'shortcuts',
-        title: 'Raccourcis',
-        items: [
-          { id: 'my-communities', label: 'Mes communautés', path: '/c', icon: <LuUsers /> },
-          ...(username ? [{ id: 'public-profile', label: 'Mon profil public', path: `/profiles/${username}`, icon: <LuExternalLink /> }] : []),
-        ],
-      },
-    ],
-  };
-}
+/** /dashboard — the user's own space (the profile has its sub-sections in tabs) */
+const userSpace: SidebarSpace = {
+  roleLabel: 'Mon espace',
+  sections: [
+    {
+      id: 'my-space',
+      title: 'Mon espace',
+      items: [
+        { id: 'dashboard-overview', label: "Vue d'ensemble", path: '/dashboard/overview', icon: <LuLayoutDashboard /> },
+        { id: 'dashboard-communities', label: 'Mes communautés', path: '/dashboard/communities', icon: <LuUsers /> },
+        { id: 'dashboard-billing', label: 'Facturation', path: '/dashboard/billing', icon: <LuCreditCard /> },
+        { id: 'dashboard-profile', label: 'Mon profil', path: '/dashboard/profile', icon: <FiSettings /> },
+      ],
+    },
+  ],
+};
 
 /** Signed-in user + role, with the logout action (avatar only when the sidebar is collapsed) */
 function SidebarUserCard({ roleLabel }: { roleLabel: string }) {
@@ -217,14 +193,13 @@ function SidebarUserCard({ roleLabel }: { roleLabel: string }) {
 export function DashboardSidebar() {
   const { pathname } = useLocation();
   const { open } = useSidebar();
-  const user = useUser();
   const communitySpaceValue = useOptionalCommunitySpace();
   const space: SidebarSpace | null = communitySpaceValue
     ? communitySpace(communitySpaceValue)
     : pathname.startsWith('/admin')
       ? adminSpace
-      : pathname.startsWith('/account')
-        ? accountSpace(user?.username)
+      : pathname.startsWith('/dashboard')
+        ? userSpace
         : null;
 
   return (

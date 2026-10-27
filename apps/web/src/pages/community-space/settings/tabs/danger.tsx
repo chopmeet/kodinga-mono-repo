@@ -63,7 +63,7 @@ function DangerTab() {
     }
     setDialog(null);
     customToast.success({ message: `« ${community.name} » a été supprimée.` });
-    navigate('/c', { replace: true });
+    navigate('/dashboard/communities', { replace: true });
   };
 
   return (

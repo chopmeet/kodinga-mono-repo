@@ -13,13 +13,16 @@ import Messages from '@/pages/public/messages/messages';
 import Notifications from '@/pages/public/notifications/notifications';
 import OpportunityPageView from '@/pages/public/opportunity/opportunity-page';
 import ProjectPageView from '@/pages/public/project/project-page';
-import AccountSettings from '@/pages/public/account/account-settings';
-import AccountProfileTab from '@/pages/public/account/tabs/profile-tab';
-import AccountSkillsTab from '@/pages/public/account/tabs/skills-tab';
-import AccountCareerTab from '@/pages/public/account/tabs/career-tab';
-import AccountPortfolioTab from '@/pages/public/account/tabs/portfolio-tab';
-import AccountSecurityTab from '@/pages/public/account/tabs/security-tab';
-import AccountBillingTab from '@/pages/public/account/tabs/billing-tab';
+import Dashboard, { LegacyAccountRedirect, LegacyCommunitiesRedirect } from '@/pages/dashboard/dashboard';
+import DashboardOverview from '@/pages/dashboard/overview/overview';
+import MyCommunities from '@/pages/dashboard/communities/my-communities';
+import DashboardBilling from '@/pages/dashboard/billing/billing';
+import ProfileSettings from '@/pages/dashboard/profile/profile-settings';
+import ProfileGeneralTab from '@/pages/dashboard/profile/tabs/profile-tab';
+import ProfileSkillsTab from '@/pages/dashboard/profile/tabs/skills-tab';
+import ProfileCareerTab from '@/pages/dashboard/profile/tabs/career-tab';
+import ProfilePortfolioTab from '@/pages/dashboard/profile/tabs/portfolio-tab';
+import ProfileSecurityTab from '@/pages/dashboard/profile/tabs/security-tab';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import Login from '@/pages/auth/login';
 import ResetPassword from '@/pages/auth/reset-password';
@@ -39,7 +42,6 @@ import AdminDashboard from '@/pages/admin/dashboard/admin-dashboard';
 import CommunitySpaceLayout from '@/pages/community-space/community-space-layout';
 import CommunityDashboardPage from '@/pages/community-space/dashboard/community-dashboard';
 import CommunityMembers from '@/pages/community-space/members/community-members';
-import MyCommunities from '@/pages/community-space/my-communities';
 import CommunityPosts from '@/pages/community-space/posts/community-posts';
 import CommunityEvents from '@/pages/community-space/events/community-events';
 import EventDetails from '@/pages/community-space/events/event-details';
@@ -186,26 +188,41 @@ export const AppRoutes: RouteObject[] = [
         element: <PublicProfile />,
       },
       {
-        // Communities managed by the signed-in user (owner / admin / moderator)
+        // Old list of the user's communities, now in /dashboard
         path: 'c',
-        element: <MyCommunities />,
+        element: <LegacyCommunitiesRedirect />,
       },
     ],
   },
   {
-    // Account of the signed-in user, in the dashboard layout (sections in the sidebar)
-    path: '/account',
-    element: <AccountSettings />,
+    // Space of the signed-in user, in the dashboard layout (sections in the sidebar)
+    path: '/dashboard',
+    element: <Dashboard />,
     children: [
-      { index: true, element: <Navigate to="profile" replace /> },
-      { path: 'profile', element: <AccountProfileTab /> },
-      { path: 'skills', element: <AccountSkillsTab /> },
-      { path: 'career', element: <AccountCareerTab /> },
-      { path: 'portfolio', element: <AccountPortfolioTab /> },
-      { path: 'billing', element: <AccountBillingTab /> },
-      { path: 'security', element: <AccountSecurityTab /> },
-      { path: '*', element: <Navigate to="profile" replace /> },
+      { index: true, element: <Navigate to="overview" replace /> },
+      { path: 'overview', element: <DashboardOverview /> },
+      { path: 'communities', element: <MyCommunities /> },
+      { path: 'billing', element: <DashboardBilling /> },
+      {
+        path: 'profile',
+        element: <ProfileSettings />,
+        children: [
+          { index: true, element: <Navigate to="general" replace /> },
+          { path: 'general', element: <ProfileGeneralTab /> },
+          { path: 'skills', element: <ProfileSkillsTab /> },
+          { path: 'career', element: <ProfileCareerTab /> },
+          { path: 'portfolio', element: <ProfilePortfolioTab /> },
+          { path: 'security', element: <ProfileSecurityTab /> },
+          { path: '*', element: <Navigate to="general" replace /> },
+        ],
+      },
+      { path: '*', element: <Navigate to="overview" replace /> },
     ],
+  },
+  {
+    // Old address of the account, now /dashboard/profile and /dashboard/billing
+    path: '/account/*',
+    element: <LegacyAccountRedirect />,
   },
   {
     // Creation flow, full screen (open to visitors: the account is asked at the last step)

@@ -69,7 +69,7 @@ const valuesOf = (profile: MyProfile | undefined, user: { first_name?: string; l
 });
 
 /**
- * /account/profile — identity (users/me/) and developer profile (profiles/me/). Images are a file
+ * /dashboard/profile/general — identity (users/me/) and developer profile (profiles/me/). Images are a file
  * (sent to UploadThing on save) or a link, like for the communities.
  */
 function UseProfileSettings() {

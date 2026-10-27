@@ -91,11 +91,11 @@ describe('Back from PayDunya', () => {
   });
 });
 
-describe('Account: subscriptions', () => {
+describe('Dashboard: billing', () => {
   it('lists the subscriptions and the payments', async () => {
     signIn();
     stubBillingApi();
-    renderAppAt('/account/billing');
+    renderAppAt('/dashboard/billing');
     const subs = await screen.findByRole('list', { name: 'Mes abonnements' }, SLOW);
     expect(subs.textContent).toMatch(/Lagos AI/);
     expect(subs.textContent).toMatch(/Renouvellement le 19 novembre 2026/);

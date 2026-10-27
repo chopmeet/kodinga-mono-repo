@@ -41,7 +41,7 @@ function PaymentNotice({ community, param }: { community: CommunityDetail | unde
       {notice.icon}
       {notice.text}
       {state === 'pending' && (
-        <Link to="/account/billing" className="ml-auto shrink-0 font-semibold underline">
+        <Link to="/dashboard/billing" className="ml-auto shrink-0 font-semibold underline">
           Voir
         </Link>
       )}

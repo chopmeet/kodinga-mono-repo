@@ -105,30 +105,37 @@ afterEach(() => {
   });
 });
 
-describe('Account settings', () => {
+describe('Dashboard: my profile', () => {
   it('sends a visitor to the login page', async () => {
     stubAccountApi();
-    const { where } = renderAppAt('/account/profile');
-    await waitFor(() => expect(where()).toBe('/auth/login?next=%2Faccount%2Fprofile'), SLOW);
+    const { where } = renderAppAt('/dashboard/profile/general');
+    await waitFor(() => expect(where()).toBe('/auth/login?next=%2Fdashboard%2Fprofile%2Fgeneral'), SLOW);
   });
 
-  it('shows the account as a dashboard, its sections in the sidebar', async () => {
+  it('shows the profile in the dashboard, its sections in tabs', async () => {
     signIn();
     stubAccountApi();
-    const { where } = renderAppAt('/account/skills');
-    expect(await screen.findByRole('heading', { name: 'Compétences' }, SLOW)).toBeTruthy();
-    const security = screen.getByRole('link', { name: 'Sécurité' });
-    expect(security.getAttribute('href')).toBe('/account/security');
-    expect(screen.getByRole('link', { name: 'Compétences' }).getAttribute('data-active')).toBe('true');
+    const { where } = renderAppAt('/dashboard/profile/skills');
+    expect(await screen.findByRole('heading', { name: 'Mon profil' }, SLOW)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Mon profil' }).getAttribute('data-active')).toBe('true');
+    const security = screen.getByRole('button', { name: 'Sécurité' });
+    expect(security.getAttribute('href')).toBe('/dashboard/profile/security');
     fireEvent.click(security);
-    expect(await screen.findByRole('heading', { name: 'Sécurité' }, SLOW)).toBeTruthy();
-    expect(where()).toBe('/account/security');
+    expect(await screen.findByLabelText('Mot de passe actuel', {}, SLOW)).toBeTruthy();
+    expect(where()).toBe('/dashboard/profile/security');
+  });
+
+  it('sends the old /account addresses to the dashboard', async () => {
+    signIn();
+    stubAccountApi();
+    const { where } = renderAppAt('/dashboard/profile/career');
+    await waitFor(() => expect(where()).toBe('/dashboard/profile/career'), SLOW);
   });
 
   it('saves the identity and the developer profile', async () => {
     signIn();
     const calls = stubAccountApi();
-    renderAppAt('/account');
+    renderAppAt('/dashboard/profile');
     const headline = await screen.findByLabelText('Titre', {}, SLOW);
     expect(screen.getByRole('progressbar', { name: 'Profil complété' }).getAttribute('aria-valuenow')).toBe('40');
     fireEvent.change(headline, { target: { value: 'Développeuse full-stack' } });
@@ -148,7 +155,7 @@ describe('Account settings', () => {
   it('adds a skill from the catalog and removes another one', async () => {
     signIn();
     const calls = stubAccountApi();
-    renderAppAt('/account/skills');
+    renderAppAt('/dashboard/profile/skills');
     const list = await screen.findByRole('list', { name: 'Mes compétences' }, SLOW);
     expect(within(list).getByText('React')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Technologie'), { target: { value: 'Dja' } });
@@ -165,7 +172,7 @@ describe('Account settings', () => {
   it('adds an experience with month dates', async () => {
     signIn();
     const calls = stubAccountApi();
-    renderAppAt('/account/career');
+    renderAppAt('/dashboard/profile/career');
     fireEvent.click(await screen.findByRole('button', { name: /Ajouter une expérience/ }, SLOW));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     fireEvent.change(within(dialog).getByLabelText('Poste'), { target: { value: 'Développeuse backend' } });
@@ -182,7 +189,7 @@ describe('Account settings', () => {
   it('changes the password, with the errors of the api under the fields', async () => {
     signIn();
     const calls = stubAccountApi();
-    renderAppAt('/account/security');
+    renderAppAt('/dashboard/profile/security');
     const current = await screen.findByLabelText('Mot de passe actuel', {}, SLOW);
     fireEvent.change(current, { target: { value: 'faux-mdp' } });
     fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'Teranga2026!' } });
@@ -201,7 +208,7 @@ describe('Account settings', () => {
   it('closes a session, then logs out everywhere', async () => {
     signIn();
     const calls = stubAccountApi();
-    const { where } = renderAppAt('/account/security');
+    const { where } = renderAppAt('/dashboard/profile/security');
     const sessions = await screen.findByRole('list', { name: 'Appareils connectés' }, SLOW);
     expect(within(sessions).getByText('Chrome · Android')).toBeTruthy();
     fireEvent.click(within(sessions).getByRole('button', { name: 'Déconnecter' }));

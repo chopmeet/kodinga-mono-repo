@@ -136,7 +136,7 @@ function PublicProfile() {
             <MessageButton userId={profile.user.id} size="lg" className="h-13 w-full text-base" />
             {me?.id === profile.user.id && (
               <Button asChild size="lg" className="h-13 w-full text-base">
-                <Link to="/account/profile">
+                <Link to="/dashboard/profile">
                   <Pencil /> Modifier mon profil
                 </Link>
               </Button>
