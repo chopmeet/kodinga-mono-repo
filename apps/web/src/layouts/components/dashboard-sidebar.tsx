@@ -39,6 +39,7 @@ import { type MyCommunity, roleLabel } from '@/data/community-space.data';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { canAccess, type SpaceSection, useOptionalCommunitySpace } from '@/pages/community-space/community-space-context';
 import CommunitySwitcher from './community-switcher';
+import { Logo } from './header';
 import { getInitials, getName, useUser } from '@/utils/Utils';
 
 type Menu = {
@@ -208,15 +209,7 @@ export function DashboardSidebar() {
         {communitySpaceValue ? (
           <CommunitySwitcher current={communitySpaceValue} collapsed={!open} />
         ) : (
-          <NavLink to="/" className="px-2 py-1.5 text-center text-lg font-semibold">
-            {open ? (
-              <span>Kodinga</span>
-            ) : (
-              <span className="flex size-9 items-center justify-center rounded-xl bg-slate-900 font-mono text-base font-bold text-brand">
-                K
-              </span>
-            )}
-          </NavLink>
+          <Logo variant={open ? 'full' : 'mark'} className={open ? 'px-2 py-1.5' : 'justify-center py-1.5'} />
         )}
       </SidebarHeader>
 

@@ -50,14 +50,15 @@ function LanguageSwitcher() {
   );
 }
 
-export function Logo({ compact = false }: { compact?: boolean }) {
+export function Logo({ compact = false, variant = 'responsive', className }: { compact?: boolean; variant?: 'responsive' | 'full' | 'mark'; className?: string }) {
   return (
-    <NavLink to="/" title="Kodinga" className="flex items-center gap-2.5">
-      <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white shadow-sm">K</span>
-      {/* Phones: the "K" tile alone, so the actions fit */}
-      <span className={cn('hidden text-2xl font-bold tracking-tight text-slate-900 sm:inline', compact && 'md:hidden lg:inline')}>
-        kodinga<span className="text-primary">.</span>
-      </span>
+    <NavLink to="/" title="Kodinga" className={cn('flex items-center gap-2.5', className)}>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white shadow-sm">K</span>
+      {variant !== 'mark' && (
+        <span className={cn('text-2xl font-bold tracking-tight text-slate-900', variant === 'responsive' && 'hidden sm:inline', compact && 'md:hidden lg:inline')}>
+          kodinga<span className="text-primary">.</span>
+        </span>
+      )}
     </NavLink>
   );
 }
