@@ -118,3 +118,29 @@ def send_event_reminders_task(self) -> int:
         f"[Event Reminders] Dispatched {total_sent} reminders for upcoming events."
     )
     return total_sent
+
+
+@shared_task(bind=True, max_retries=2, default_retry_delay=30)
+def transcribe_event_replay_task(
+    self, event_id: str, language: str = "fr", force: bool = False
+) -> dict:
+    """
+    Asynchronous Celery task to transcribe a live event replay,
+    extract timestamps and speakers, and generate the executive summary.
+    Updates event.metadata["transcription_status"] to 'ready' or 'failed'.
+    """
+    from apps.events.models.event import Event
+    from apps.events.services.transcription_service import EventTranscriptionService
+
+    try:
+        event = Event.objects.select_related(
+            "community", "host", "replay_video_asset"
+        ).get(id=event_id)
+    except Event.DoesNotExist:
+        logger.warning(f"Event {event_id} not found for async transcription.")
+        return {"status": "failed", "error": "Événement introuvable."}
+
+    return EventTranscriptionService.process_transcription(
+        event=event, language=language, force=force
+    )
+

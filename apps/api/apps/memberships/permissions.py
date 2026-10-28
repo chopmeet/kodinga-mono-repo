@@ -280,6 +280,11 @@ def has_community_permission(user, community, permission_name: str) -> bool:
         from apps.communities.models.settings import CommunitySettings
         settings, _ = CommunitySettings.objects.get_or_create(community=community)
 
+    # Check direct member overrides if configured in settings
+    user_overrides = (settings.role_permissions or {}).get('user_overrides', {}).get(str(user.id), {})
+    if permission_name in user_overrides:
+        return bool(user_overrides[permission_name])
+
     return settings.has_permission(role, permission_name)
 
 

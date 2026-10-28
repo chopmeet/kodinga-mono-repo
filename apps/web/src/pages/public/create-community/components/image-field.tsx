@@ -1,4 +1,4 @@
-import { ImageOff, ImagePlus, Link2, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, ImageOff, ImagePlus, Link2, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { type ChangeEvent, useEffect, useId, useState } from 'react';
 import { AiFillCamera } from 'react-icons/ai';
 import type { UseFormRegisterReturn } from 'react-hook-form';
@@ -22,6 +22,9 @@ type Props = {
   url: string;
   registration: UseFormRegisterReturn;
   error?: string;
+  /** Background upload state */
+  isUploading?: boolean;
+  isUploaded?: boolean;
 };
 
 /** Object url of the chosen file, revoked when it changes */
@@ -43,7 +46,20 @@ export function useFilePreview(file: File | null) {
  * Logo or banner of the community: a file to choose (sent when the community is created) or a
  * link to an image. A broken link only warns: the image may be on a host that refuses previews.
  */
-export function ImageField({ label, help, purpose, source, onSourceChange, file, onFileChange, url, registration, error }: Props) {
+export function ImageField({
+  label,
+  help,
+  purpose,
+  source,
+  onSourceChange,
+  file,
+  onFileChange,
+  url,
+  registration,
+  error,
+  isUploading,
+  isUploaded,
+}: Props) {
   const id = useId();
   const [fileError, setFileError] = useState<string | null>(null);
   // The url whose image failed to load (forgotten as soon as the url changes)
@@ -151,13 +167,25 @@ export function ImageField({ label, help, purpose, source, onSourceChange, file,
             className="sr-only"
           />
           {file ? (
-            <p className="flex max-w-full items-center gap-2 text-xs font-medium text-emerald-700">
-              <span className="truncate font-semibold">{file.name}</span>
-              <span className="shrink-0 text-xs text-slate-500">({(file.size / (1024 * 1024)).toFixed(2)} Mo)</span>
-              <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600">
-                <Trash2 className="size-3.5" /> Retirer
-              </button>
-            </p>
+            <div className="flex flex-col items-center gap-1.5">
+              <p className="flex max-w-full items-center gap-2 text-xs font-medium text-emerald-700">
+                <span className="truncate font-semibold">{file.name}</span>
+                <span className="shrink-0 text-xs text-slate-500">({(file.size / (1024 * 1024)).toFixed(2)} Mo)</span>
+                <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600">
+                  <Trash2 className="size-3.5" /> Retirer
+                </button>
+              </p>
+              {isUploading && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 animate-pulse">
+                  <LoaderCircle className="size-3 animate-spin" /> Optimisation & téléversement en cours…
+                </span>
+              )}
+              {isUploaded && !isUploading && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                  <CheckCircle2 className="size-3" /> Image optimisée & prête
+                </span>
+              )}
+            </div>
           ) : (
             <p className="text-xs text-slate-500">{help}</p>
           )}

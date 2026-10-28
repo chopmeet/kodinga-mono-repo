@@ -213,3 +213,60 @@ class TestRolePermissions:
             format="json"
         )
         assert response.status_code == 403
+
+    def test_can_start_live_permission_and_enforcement(self, test_community, owner_user, member_user):
+        from apps.events.models.event import EventFormat, EventStatus
+        from apps.events.services.event_service import EventService
+
+        # 1. Owner always has can_start_live permission
+        assert has_community_permission(owner_user, test_community, 'can_start_live') is True
+
+        # 2. Regular member does not have can_start_live by default
+        assert has_community_permission(member_user, test_community, 'can_start_live') is False
+
+        # 3. Attempting to create a live stream without permission raises PermissionDenied
+        with pytest.raises(PermissionDenied):
+            EventService.create_event(
+                actor_user=member_user,
+                community=test_community,
+                data={
+                    "title": "Live Interdit",
+                    "event_type": "live_stream",
+                    "format": EventFormat.LIVEKIT,
+                    "status": EventStatus.LIVE,
+                    "start_time": "2026-10-27T10:00:00Z",
+                    "end_time": "2026-10-27T12:00:00Z",
+                }
+            )
+
+        # 4. Owner grants can_start_live to member role
+        CommunityService.update_settings(
+            community=test_community,
+            user=owner_user,
+            data={
+                'role_permissions': {
+                    'member': {
+                        'can_start_live': True,
+                    }
+                }
+            }
+        )
+
+        test_community.settings.refresh_from_db()
+        assert has_community_permission(member_user, test_community, 'can_start_live') is True
+
+        # 5. Now member can create live stream
+        live_event = EventService.create_event(
+            actor_user=member_user,
+            community=test_community,
+            data={
+                "title": "Live Autorisé par Owner",
+                "event_type": "live_stream",
+                "format": EventFormat.LIVEKIT,
+                "status": EventStatus.LIVE,
+                "start_time": "2026-10-27T10:00:00Z",
+                "end_time": "2026-10-27T12:00:00Z",
+            }
+        )
+        assert live_event.status == EventStatus.LIVE
+        assert live_event.host == member_user

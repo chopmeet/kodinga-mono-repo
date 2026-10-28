@@ -1,4 +1,4 @@
-import { ArrowLeft, BadgeCheck, Bell, Check, ChevronDown, Copy, Link2, LogOut, Settings, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Bell, Check, ChevronDown, Copy, Link2, LogOut, Radio, Settings, ShieldCheck, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -118,6 +118,15 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
                 {community.name}
               </h1>
               {community.is_verified && <BadgeCheck className="size-6 shrink-0 text-brand" aria-label="Communauté vérifiée" />}
+              {community.active_live && (
+                <Link
+                  to={`/communities/${community.slug}/events/${community.active_live.id}/live`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-md shadow-red-600/30 hover:bg-red-500 transition-all hover:scale-105 animate-pulse"
+                >
+                  <Radio className="size-3.5" />
+                  En direct {community.active_live.is_public ? '' : '🔒 Membres'}
+                </Link>
+              )}
               {!isMember && <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${badge.className}`}>{badge.label}</span>}
             </div>
             {isMember ? (

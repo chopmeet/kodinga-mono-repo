@@ -41,8 +41,8 @@ class UploadThingService:
     }
 
     MAX_FILE_SIZES = {
-        'avatar': 5 * 1024 * 1024,          # 5 MB
-        'banner': 10 * 1024 * 1024,         # 10 MB
+        'avatar': 1 * 1024 * 1024,          # 1 MB (logo / avatar)
+        'banner': 5 * 1024 * 1024,          # 5 MB
         'post_attachment': 25 * 1024 * 1024,# 25 MB
         'lesson_attachment': 100 * 1024 * 1024, # 100 MB
         'document': 100 * 1024 * 1024,       # 100 MB
@@ -55,7 +55,9 @@ class UploadThingService:
         Parses UploadThing v7 UPLOADTHING_TOKEN (base64 JSON containing apiKey, appId, regions)
         or falls back to legacy UPLOADTHING_SECRET / UPLOADTHING_APP_ID.
         """
-        token = getattr(settings, 'UPLOADTHING_TOKEN', '').strip()
+        token = getattr(settings, 'UPLOADTHING_TOKEN', '')
+        if isinstance(token, str):
+            token = token.strip("'\" \t\r\n")
         if token:
             try:
                 import base64
@@ -111,8 +113,45 @@ class UploadThingService:
         credentials = cls.get_uploadthing_credentials()
         api_key = credentials.get('api_key')
         
-        # UploadThing v7 API URL or direct client presigned URL
-        upload_url = "https://api.uploadthing.com/v6/uploadFiles" if api_key else f"https://api.kodinga.com/upload-mock/{file_key}"
+        upload_url = None
+        method = "POST"
+        ut_key = None
+
+        if api_key:
+            try:
+                prep_res = requests.post(
+                    'https://api.uploadthing.com/v7/prepareUpload',
+                    headers={
+                        'x-uploadthing-api-key': api_key,
+                        'Content-Type': 'application/json',
+                        'x-uploadthing-fe-package': 'kodinga',
+                        'x-uploadthing-version': '7.7.4',
+                    },
+                    json={
+                        'fileName': file_name,
+                        'fileSize': file_size,
+                        'fileType': mime_type,
+                        'acl': 'public-read',
+                    },
+                    timeout=15,
+                )
+                if prep_res.status_code == 200:
+                    prep_data = prep_res.json()
+                    upload_url = prep_data.get('url')
+                    ut_key = prep_data.get('key')
+                    method = "PUT"
+                else:
+                    logger.warning(
+                        "UploadThing prepareUpload failed (%s): %s",
+                        prep_res.status_code,
+                        prep_res.text,
+                    )
+            except Exception as exc:
+                logger.error("Failed to connect to UploadThing prepareUpload: %s", exc)
+
+        if not upload_url:
+            upload_url = f"https://api.kodinga.com/upload-mock/{file_key}"
+            method = "POST"
 
         asset = MediaAsset.objects.create(
             user=user,
@@ -126,7 +165,8 @@ class UploadThingService:
             metadata={
                 'upload_initiated_by': str(user.id) if user else None,
                 'target_purpose': purpose,
-                'app_id': credentials.get('app_id')
+                'app_id': credentials.get('app_id'),
+                'uploadthing_key': ut_key,
             }
         )
 
@@ -134,6 +174,7 @@ class UploadThingService:
             'asset_id': str(asset.id),
             'file_key': file_key,
             'upload_url': upload_url,
+            'method': method,
             'fields': {
                 'key': file_key,
                 'Content-Type': mime_type,
@@ -153,10 +194,17 @@ class UploadThingService:
         """
         Confirms successful upload of the file, marks asset READY and records URL.
         """
-        try:
-            asset = MediaAsset.objects.get(file_key=file_key)
-        except MediaAsset.DoesNotExist as err:
-            raise NotFound("Fichier média introuvable.") from err
+        asset = (
+            MediaAsset.objects.filter(file_key=file_key).first()
+            or MediaAsset.objects.filter(metadata__uploadthing_key=file_key).first()
+        )
+        if not asset:
+            try:
+                asset = MediaAsset.objects.get(id=file_key)
+            except Exception:
+                pass
+        if not asset:
+            raise NotFound("Fichier média introuvable.")
 
         # If owned by user, verify permission
         if asset.user and user and asset.user_id != user.id and not (user.is_staff or is_superadmin_user(user)):
@@ -212,6 +260,11 @@ class UploadThingService:
             raise ValidationError("UploadThing API key non configurée.")
 
         file_size = len(file_bytes)
+        max_size = cls.MAX_FILE_SIZES.get(purpose, 50 * 1024 * 1024)
+        if file_size > max_size:
+            raise ValidationError(
+                f"Le fichier dépasse la taille maximale autorisée ({max_size // (1024 * 1024)} Mo)."
+            )
 
         # Step 1: Request presigned ingestion URL from UploadThing v7 API
         try:

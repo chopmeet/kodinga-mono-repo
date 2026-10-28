@@ -27,6 +27,7 @@ class EventSelector:
         status: Optional[str] = None,
         event_type: Optional[str] = None,
         upcoming: Optional[bool] = None,
+        has_replay: Optional[bool] = None,
     ) -> QuerySet[Event]:
         is_member_or_manager = False
         if user and user.is_authenticated:
@@ -55,6 +56,11 @@ class EventSelector:
 
         if event_type:
             qs = qs.filter(event_type=event_type)
+
+        if has_replay is True:
+            qs = qs.filter(replay_video_asset__isnull=False)
+        elif has_replay is False:
+            qs = qs.filter(replay_video_asset__isnull=True)
 
         now = timezone.now()
         if upcoming is True:

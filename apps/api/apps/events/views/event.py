@@ -55,6 +55,12 @@ class CommunityEventListView(APIView):
                 type=bool,
             ),
             OpenApiParameter(
+                name="has_replay",
+                description="Filtrer les événements avec replay vidéo (true/false)",
+                required=False,
+                type=bool,
+            ),
+            OpenApiParameter(
                 name="all",
                 description="Retourner sans pagination (défaut: false)",
                 required=False,
@@ -79,12 +85,18 @@ class CommunityEventListView(APIView):
         if upcoming_param is not None:
             upcoming = upcoming_param.lower() in ["true", "1"]
 
+        has_replay_param = request.query_params.get("has_replay")
+        has_replay = None
+        if has_replay_param is not None:
+            has_replay = has_replay_param.lower() in ["true", "1"]
+
         events = EventSelector.list_community_events(
             community=community,
             user=request.user if request.user.is_authenticated else None,
             status=status_param,
             event_type=event_type,
             upcoming=upcoming,
+            has_replay=has_replay,
         )
 
         if request.query_params.get("all", "").lower() in ["true", "1"]:

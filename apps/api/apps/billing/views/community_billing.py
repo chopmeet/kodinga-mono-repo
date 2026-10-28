@@ -1,0 +1,144 @@
+import logging
+from decimal import Decimal
+
+from django.db import transaction
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
+from apps.billing.models.wallet import CommunityPayout, CommunityWallet, PayoutStatus
+from apps.billing.selectors.billing_selector import BillingSelector
+from apps.billing.serializers.community_billing import (
+    CommunityPayoutSerializer,
+    CommunityRevenueOverviewSerializer,
+    CommunitySubscriberSerializer,
+    CommunityTransactionSerializer,
+    CreateCommunityPayoutRequestSerializer,
+)
+from common.utils.responses import error_response, success_response
+
+logger = logging.getLogger('kodinga.billing.community')
+
+
+class CommunitySubscribersView(APIView):
+    """
+    List subscriptions and members of a paid community for its owner.
+    Powers the 'Abonnés' tab in /c/:slug/payments.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Community Billing (Creator)'],
+        summary="Liste des abonnés d'une communauté",
+        responses={200: CommunitySubscriberSerializer(many=True)}
+    )
+    def get(self, request, community_slug):
+        community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        subscribers = BillingSelector.get_community_subscribers(community=community)
+        serializer = CommunitySubscriberSerializer(subscribers, many=True, context={'request': request})
+        return success_response(data=serializer.data)
+
+
+class CommunityTransactionsView(APIView):
+    """
+    List historical transactions and payments received for this community.
+    Powers the 'Paiements / Transactions' tab in /c/:slug/payments.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Community Billing (Creator)'],
+        summary="Historique des paiements reçus par une communauté",
+        responses={200: CommunityTransactionSerializer(many=True)}
+    )
+    def get(self, request, community_slug):
+        community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        payments = BillingSelector.get_community_payments(community=community)
+        serializer = CommunityTransactionSerializer(payments, many=True, context={'request': request})
+        return success_response(data=serializer.data)
+
+
+class CommunityRevenueView(APIView):
+    """
+    Financial summary & monthly breakdown (Gross, Platform Fees, Net Creator Revenue).
+    Powers the 'Courbe des encaissements' chart and KPI cards in /c/:slug/payments.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Community Billing (Creator)'],
+        summary="Indicateurs de revenus et courbe des encaissements mensuels",
+        responses={200: CommunityRevenueOverviewSerializer}
+    )
+    def get(self, request, community_slug):
+        community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        revenue_overview = BillingSelector.get_community_revenue_overview(community=community)
+        serializer = CommunityRevenueOverviewSerializer(revenue_overview)
+        return success_response(data=serializer.data)
+
+
+class CommunityPayoutsView(APIView):
+    """
+    Manage withdrawals of net earnings (Wave, Orange Money, Bank Transfer).
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Community Billing (Creator)'],
+        summary="Historique des demandes de reversement",
+        responses={200: CommunityPayoutSerializer(many=True)}
+    )
+    def get(self, request, community_slug):
+        community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        payouts = BillingSelector.get_community_payouts(community=community)
+        serializer = CommunityPayoutSerializer(payouts, many=True, context={'request': request})
+        return success_response(data=serializer.data)
+
+    @extend_schema(
+        tags=['Community Billing (Creator)'],
+        summary="Demander un reversement des gains disponibles",
+        request=CreateCommunityPayoutRequestSerializer,
+        responses={201: CommunityPayoutSerializer}
+    )
+    def post(self, request, community_slug):
+        community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        serializer = CreateCommunityPayoutRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        amount = serializer.validated_data['amount']
+        payment_method = serializer.validated_data['payment_method']
+        account_identifier = serializer.validated_data['account_identifier']
+        account_name = serializer.validated_data.get('account_name', '')
+
+        with transaction.atomic():
+            wallet, _ = CommunityWallet.objects.select_for_update().get_or_create(community=community)
+            if wallet.available_balance < amount:
+                return error_response(
+                    f"Solde disponible insuffisant ({int(wallet.available_balance)} {wallet.currency}) pour ce retrait de {int(amount)} {wallet.currency}.",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Deduct from available balance
+            wallet.available_balance -= amount
+            wallet.save(update_fields=['available_balance', 'updated_at'])
+
+            payout = CommunityPayout.objects.create(
+                community=community,
+                requested_by=request.user,
+                amount=amount,
+                currency=wallet.currency,
+                status=PayoutStatus.PENDING,
+                payment_method=payment_method,
+                account_identifier=account_identifier,
+                account_name=account_name
+            )
+
+            logger.info(f"[Billing Payout] Payout {payout.id} created for {community.name} - Amount: {amount} {wallet.currency}")
+
+        out_serializer = CommunityPayoutSerializer(payout, context={'request': request})
+        return success_response(
+            data=out_serializer.data,
+            message="Demande de reversement enregistrée avec succès. Elle sera traitée sous 24-48h.",
+            status_code=status.HTTP_201_CREATED
+        )

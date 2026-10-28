@@ -37,7 +37,12 @@ function CommunitySwitcher({ current, collapsed }: { current: MyCommunity; colla
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-slate-900">{current.community.name}</span>
+              <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-900">
+                <span className="truncate">{current.community.name}</span>
+                {current.community.active_live && (
+                  <span className="inline-flex size-2 shrink-0 rounded-full bg-red-600 animate-ping" title="En direct" />
+                )}
+              </span>
               <span className="block truncate text-xs text-slate-500">{roleLabel[current.role]}</span>
             </span>
             <ChevronsUpDown className="size-4 shrink-0 text-slate-400" />
@@ -50,7 +55,12 @@ function CommunitySwitcher({ current, collapsed }: { current: MyCommunity; colla
           <DropdownMenuItem key={m.community.id} onSelect={() => navigate(`/c/${m.community.slug}/${subPath}`)}>
             <CommunityAvatar community={m.community} className="size-7 rounded-lg font-mono text-xs" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm">{m.community.name}</span>
+              <span className="flex items-center gap-1.5 truncate text-sm">
+                <span className="truncate">{m.community.name}</span>
+                {m.community.active_live && (
+                  <span className="inline-flex size-2 shrink-0 rounded-full bg-red-600 animate-ping" title="En direct" />
+                )}
+              </span>
               <span className="block text-xs text-slate-500">{roleLabel[m.role]}</span>
             </span>
             {m.community.slug === current.community.slug && <Check className="size-4 text-primary" />}

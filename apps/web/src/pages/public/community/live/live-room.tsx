@@ -21,6 +21,8 @@ import {
   Check,
   CircleStop,
   Copy,
+  Globe,
+  Lock,
   MessageSquare,
   Mic,
   MicOff,
@@ -38,6 +40,8 @@ import { formatEventWhen } from '@/pages/community-space/events/event-labels';
 import { nameInitials } from '@/utils/Utils';
 import UseLiveRoom, { type LiveRoom } from './form/UseLiveRoom';
 import { useRoomConnection } from './form/useRoomConnection';
+import { useLiveRecording } from './form/useLiveRecording';
+import { LiveRecordingModal } from './components/live-recording-modal';
 
 /** The speakers (host and presenters): their screen first, else their camera */
 function Stage() {
@@ -228,6 +232,15 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
     }
   };
 
+  const recording = useLiveRecording();
+
+  const handleEndLive = async () => {
+    if (recording.isRecording) {
+      recording.stopRecording();
+    }
+    await live.end();
+  };
+
   if (!e) return null;
   const isLive = e.status === 'live';
 
@@ -301,9 +314,40 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
               <MessageSquare className="size-4" />
             </button>
 
+            {live.isHost && (
+              recording.isRecording ? (
+                <div className="flex items-center gap-1.5 bg-red-950/80 border border-red-500/40 rounded-lg p-1 pr-2 shadow-sm animate-pulse">
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold text-red-200">
+                    <span className="size-2 rounded-full bg-red-500 animate-ping" />
+                    REC {recording.formattedDuration}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={recording.stopRecording}
+                    className="flex items-center gap-1 rounded bg-red-600 hover:bg-red-500 px-2 py-1 text-xs font-medium text-white transition-colors cursor-pointer"
+                    title="Arrêter l'enregistrement"
+                  >
+                    <CircleStop className="size-3.5" />
+                    Arrêter
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={recording.startRecording}
+                  className="hidden sm:inline-flex border-red-500/40 bg-red-950/30 text-red-300 hover:bg-red-900/40 hover:text-white transition-colors"
+                  title="Enregistrer le live pour générer un replay"
+                >
+                  <span className="size-2 rounded-full bg-red-500" />
+                  Enregistrer
+                </Button>
+              )
+            )}
+
             {live.isHost &&
               (isLive ? (
-                <Button size="sm" variant="danger" isLoading={live.isUpdating} onClick={live.end}>
+                <Button size="sm" variant="danger" isLoading={live.isUpdating} onClick={handleEndLive}>
                   <CircleStop className="size-4" /> Terminer le live
                 </Button>
               ) : (
@@ -395,6 +439,17 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
 
         <ParticipantsDrawer open={participantsOpen} onClose={() => setParticipantsOpen(false)} />
         <RoomAudioRenderer />
+
+        <LiveRecordingModal
+          isOpen={recording.isModalOpen}
+          onClose={recording.resetRecording}
+          recordedBlob={recording.recordedBlob}
+          recordedUrl={recording.recordedUrl}
+          durationSeconds={recording.seconds}
+          slug={live.slug}
+          eventId={e.id}
+          eventTitle={e.title}
+        />
       </div>
     </RoomContext.Provider>
   );
@@ -408,11 +463,11 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    if (!isHost) return;
+    if (!isHost || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
     let cancelled = false;
 
     navigator.mediaDevices
-      ?.getUserMedia({ video: true, audio: true })
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
@@ -589,15 +644,27 @@ function Lobby({ live }: { live: LiveRoom }) {
         )}
       </div>
 
-      {isLive ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-red-600/40 animate-pulse">
-          <span className="size-2 rounded-full bg-white" /> En direct
-        </span>
-      ) : (
-        <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
-          Événement programmé
-        </span>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {isLive ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-red-600/40 animate-pulse">
+            <span className="size-2 rounded-full bg-white" /> En direct
+          </span>
+        ) : (
+          <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
+            Événement programmé
+          </span>
+        )}
+
+        {e.is_public ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300">
+            <Globe className="size-3.5" /> Direct public
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-300">
+            <Lock className="size-3.5" /> Réservé aux membres
+          </span>
+        )}
+      </div>
 
       <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">{e.title}</h1>
 
@@ -627,7 +694,7 @@ function Lobby({ live }: { live: LiveRoom }) {
 
       {/* Pre-join preview if logged in */}
       {live.signedIn && e.status !== 'completed' && e.status !== 'cancelled' && (
-        <DevicePreviewTester isHost={e.host_id === live.event?.host?.id} />
+        <DevicePreviewTester isHost={e.host?.id === live.event?.host?.id} />
       )}
 
       <div className="mt-2 flex w-full flex-col items-center gap-4">{action}</div>
@@ -648,6 +715,49 @@ function LiveRoomPage() {
   const live = UseLiveRoom();
 
   if (live.isLoading) return <Loader inline className="py-24" message="Chargement du live…" />;
+
+  if (live.isForbidden) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center px-4 py-24 text-center">
+        <div className="relative mx-auto flex size-20 items-center justify-center rounded-3xl bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/30 shadow-2xl">
+          <Lock className="size-10" />
+          <span className="absolute -top-1 -right-1 flex size-3">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex size-3 rounded-full bg-amber-500" />
+          </span>
+        </div>
+
+        <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-semibold text-amber-300 uppercase tracking-wider">
+          Direct privé • Réservé aux membres
+        </span>
+
+        <h1 className="mt-4 text-2xl font-bold tracking-tight text-white sm:text-3xl max-w-lg">
+          Ce direct est réservé aux membres de la communauté
+        </h1>
+
+        <p className="mt-3 max-w-md text-sm text-slate-400 leading-relaxed">
+          L’organisateur a configuré ce live en mode privé. Vous devez être un membre actif de la communauté pour accéder au salon et participer.
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          {!live.signedIn ? (
+            <Button asChild size="lg" className="bg-blue-600 font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500">
+              <Link to={live.loginUrl}>Se connecter pour rejoindre</Link>
+            </Button>
+          ) : (
+            <Button asChild size="lg" className="bg-brand font-semibold text-white shadow-lg shadow-brand/30 hover:bg-brand-hover">
+              <Link to={`/communities/${live.slug}`}>Rejoindre la communauté</Link>
+            </Button>
+          )}
+          <Button asChild variant="outline" size="lg" className="border-white/10 text-white hover:bg-white/10">
+            <Link to={live.back}>
+              <ArrowLeft className="size-4" /> Retour aux événements
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!live.event) {
     return (
