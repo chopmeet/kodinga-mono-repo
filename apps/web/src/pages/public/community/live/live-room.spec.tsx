@@ -123,4 +123,71 @@ describe('Live room of an event', () => {
     renderAppAt('/communities/abidjan-react/events/e1/live');
     expect((await screen.findByRole('link', { name: 'Se connecter pour rejoindre' }, SLOW)).getAttribute('href')).toContain('/auth/login');
   });
+
+  it('displays a dedicated forbidden screen when a private live is not accessible to non-members', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL((input as Request).url);
+      if (url.pathname.endsWith('/events/e1/')) {
+        return new Response(JSON.stringify({ success: false, message: 'Vous devez être membre actif de cette communauté.' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ success: true, data: [] }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    renderAppAt('/communities/abidjan-react/events/e1/live');
+    expect(await screen.findByText('Ce direct est réservé aux membres de la communauté', {}, SLOW)).toBeTruthy();
+    expect(screen.getByText(/L’organisateur a configuré ce live en mode privé/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Se connecter pour rejoindre' })).toBeTruthy();
+  });
+
+  it('displays privacy badge in lobby for private live sessions', async () => {
+    signIn();
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL((input as Request).url);
+      if (url.pathname.endsWith('/events/e1/')) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              id: 'e1',
+              community: { id: 'c1', name: 'Abidjan React', slug: 'abidjan-react', avatar_url: '' },
+              host: { id: 'h', username: 'awa', full_name: 'Awa Ndiaye' },
+              title: 'Live privé : Code review',
+              slug: 'live-prive',
+              description: '',
+              cover_image_url: '',
+              event_type: 'live_stream',
+              format: 'livekit',
+              status: 'live',
+              start_time: '2026-11-02T18:00:00Z',
+              end_time: '2026-11-02T19:00:00Z',
+              timezone: 'UTC',
+              attendees_count: 5,
+              max_attendees: null,
+              is_full: false,
+              is_upcoming: true,
+              is_in_progress: true,
+              is_recorded: false,
+              is_public: false,
+              duration_minutes: 60,
+              user_rsvp_status: 'attending',
+              replay_video_asset: null,
+              created_at: '',
+            },
+          }),
+          { headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response(JSON.stringify({ success: true, data: [] }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    renderAppAt('/communities/abidjan-react/events/e1/live');
+    expect(await screen.findByText(/Réservé aux membres/, {}, SLOW)).toBeTruthy();
+  });
 });

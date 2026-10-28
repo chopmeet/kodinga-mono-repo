@@ -47,6 +47,18 @@ dependencies = [
 [tool.hatch.build.targets.wheel]
 packages = ["api", "apps", "common"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "/api",
+  "/apps",
+  "/common",
+  "/config",
+  "/realtime",
+  "/templates",
+  "/manage.py",
+  "/pyproject.toml",
+]
+
 [tool.hatch.metadata]
 allow-direct-references = true
 

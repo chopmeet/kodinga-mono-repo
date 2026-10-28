@@ -1,8 +1,10 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 import jwt
 import pytest
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -335,6 +337,44 @@ def test_join_live_room_livekit_token(
 
 
 @pytest.mark.django_db
+def test_private_live_requires_active_membership(
+    api_client, user_owner, user_member, member_membership, scheduled_event
+):
+    comm_slug = scheduled_event.community.slug
+    scheduled_event.is_public = False
+    scheduled_event.save(update_fields=["is_public"])
+
+    non_member = User.objects.create_user(
+        email="outsider@kodinga.com",
+        username="outsider",
+        password="SecurePassword123!",
+    )
+    url = f"/api/v1/communities/{comm_slug}/events/{scheduled_event.id}/join-live/"
+
+    # 1. Non-member cannot join private live -> 403 Forbidden
+    api_client.force_authenticate(user=non_member)
+    res_non_member = api_client.post(url)
+    assert res_non_member.status_code == status.HTTP_403_FORBIDDEN
+    assert "membre actif" in res_non_member.data["message"]
+
+    # 2. Member can join private live -> 200 OK
+    api_client.force_authenticate(user=user_member)
+    res_member = api_client.post(url)
+    assert res_member.status_code == status.HTTP_200_OK
+
+    # 3. Community detail shows active_live with is_public: false
+    scheduled_event.status = EventStatus.LIVE
+    scheduled_event.save(update_fields=["status"])
+
+    detail_url = f"/api/v1/communities/{comm_slug}/"
+    res_detail = api_client.get(detail_url)
+    assert res_detail.status_code == status.HTTP_200_OK
+    assert res_detail.data["data"]["active_live"] is not None
+    assert res_detail.data["data"]["active_live"]["id"] == str(scheduled_event.id)
+    assert res_detail.data["data"]["active_live"]["is_public"] is False
+
+
+@pytest.mark.django_db
 def test_event_status_and_replay_attach(
     api_client, user_owner, scheduled_event, video_asset
 ):
@@ -357,6 +397,67 @@ def test_event_status_and_replay_attach(
     assert res_replay.status_code == status.HTTP_200_OK
     assert res_replay.data["data"]["status"] == EventStatus.COMPLETED
     assert res_replay.data["data"]["replay_video_asset"]["id"] == str(video_asset.id)
+
+
+@pytest.mark.django_db
+def test_event_replay_attach_uploadthing_url_and_file(
+    api_client, user_owner, scheduled_event
+):
+    api_client.force_authenticate(user=user_owner)
+    comm_slug = scheduled_event.community.slug
+    replay_url = f"/api/v1/communities/{comm_slug}/events/{scheduled_event.id}/replay/"
+
+    # 1. Attach via direct UploadThing URL
+    ut_url = "https://utfs.io/f/test-recording-123.webm"
+    res_url = api_client.post(replay_url, data={"video_url": ut_url}, format="json")
+    assert res_url.status_code == status.HTTP_200_OK
+    assert res_url.data["data"]["status"] == EventStatus.COMPLETED
+    assert res_url.data["data"]["replay_video_asset"]["hls_url"] == ut_url
+    assert res_url.data["data"]["replay_video_asset"]["provider"] == "uploadthing"
+
+    # 2. Attach via multipart video file upload (mocking uploadthing service)
+    mock_upload_res = {
+        "asset_id": "test-asset-uuid",
+        "file_url": "https://utfs.io/f/uploaded-live-recording.webm",
+        "file_key": "uploaded-live-recording.webm",
+        "file_size": 1024,
+        "mime_type": "video/webm",
+    }
+    dummy_file = SimpleUploadedFile("recorded-live.webm", b"mock-video-binary", content_type="video/webm")
+    with patch(
+        "apps.media.services.uploadthing_service.UploadThingService.upload_file_direct",
+        return_value=mock_upload_res,
+    ):
+        res_file = api_client.post(
+            replay_url, data={"video": dummy_file}, format="multipart"
+        )
+    assert res_file.status_code == status.HTTP_200_OK
+    assert res_file.data["data"]["replay_video_asset"]["hls_url"] == "https://utfs.io/f/uploaded-live-recording.webm"
+    assert res_file.data["data"]["replay_video_asset"]["provider"] == "uploadthing"
+
+
+@pytest.mark.django_db
+def test_event_list_filtering_has_replay(
+    api_client, user_owner, scheduled_event, video_asset
+):
+    api_client.force_authenticate(user=user_owner)
+    comm_slug = scheduled_event.community.slug
+    list_url = f"/api/v1/communities/{comm_slug}/events/"
+
+    # Without replay yet
+    res_no = api_client.get(f"{list_url}?all=true&has_replay=true")
+    assert res_no.status_code == status.HTTP_200_OK
+    assert len(res_no.data["data"]) == 0
+
+    # Attach replay
+    scheduled_event.replay_video_asset = video_asset
+    scheduled_event.save(update_fields=["replay_video_asset"])
+
+    # Query has_replay=true
+    res_yes = api_client.get(f"{list_url}?all=true&has_replay=true")
+    assert res_yes.status_code == status.HTTP_200_OK
+    assert len(res_yes.data["data"]) == 1
+    assert res_yes.data["data"][0]["id"] == str(scheduled_event.id)
 
 
 @pytest.mark.django_db

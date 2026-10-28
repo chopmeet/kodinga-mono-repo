@@ -38,6 +38,29 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const uploadToUploadThing = async (file: File | Blob) => {
+    if (!event) return;
+    if (file instanceof File) {
+      const invalid = checkReplay(file);
+      setError(invalid);
+      if (invalid) return;
+    }
+    setProgress(30);
+    try {
+      setProgress(60);
+      await attach({ slug, eventId: event.id, file }).unwrap();
+      setProgress(100);
+      customToast.success({ message: 'Replay vidéo stocké sur UploadThing et disponible !' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : parseApiError(err).message;
+      setError(message);
+      customToast.error({ message: `L’ajout du replay a échoué : ${message}` });
+      throw err;
+    } finally {
+      setProgress(null);
+    }
+  };
+
   const upload = async (file: File) => {
     if (!event) return;
     const invalid = checkReplay(file);
@@ -45,23 +68,15 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
     if (invalid) return;
     setProgress(0);
     try {
-      let target;
       try {
-        target = await createUpload({ title: `${event.title} (replay)`, cors_origin: window.location.origin }).unwrap();
-      } catch (err) {
-        throw new Error(parseApiError(err).message);
-      }
-      try {
+        const target = await createUpload({ title: `${event.title} (replay)`, cors_origin: window.location.origin }).unwrap();
         await putToMux(target.upload_url, file, setProgress);
-      } catch {
-        throw new Error('L’envoi de la vidéo vers Mux a échoué. Vérifiez votre connexion et réessayez.');
-      }
-      try {
         await attach({ slug, eventId: event.id, video_asset_id: target.video_asset_id }).unwrap();
-      } catch (err) {
-        throw new Error(parseApiError(err).message);
+        customToast.success({ message: 'Replay ajouté : il sera visible sous peu.' });
+      } catch {
+        // Fallback or default directly to UploadThing permanent storage
+        await uploadToUploadThing(file);
       }
-      customToast.success({ message: 'Replay ajouté : il sera visible dès que Mux aura fini de le préparer.' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'L’ajout du replay a échoué.';
       setError(message);
@@ -73,6 +88,7 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
 
   return { 
     upload, 
+    uploadToUploadThing,
     progress, 
     isUploading: progress !== null, 
     error 

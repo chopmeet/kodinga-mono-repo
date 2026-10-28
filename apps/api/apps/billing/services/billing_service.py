@@ -3,6 +3,7 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Optional
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
@@ -12,6 +13,7 @@ from apps.billing.gateways.paydunya import PayDunyaGateway
 from apps.billing.models.payment import Payment, PaymentStatus
 from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
+from apps.billing.models.wallet import CommunityWallet
 from apps.billing.services.affiliate_service import AffiliateService
 from apps.memberships.models.member import (
     CommunityMember,
@@ -68,7 +70,8 @@ class BillingService:
                 amount=plan.price,
                 currency=plan.currency,
                 status=PaymentStatus.PENDING,
-                provider='paydunya'
+                provider='paydunya',
+                referral_code=referral_code or ''
             )
 
             # Initialize PayDunya Checkout
@@ -80,6 +83,7 @@ class BillingService:
                 user_id=str(user.id),
                 user_email=user.email,
                 description=plan.description,
+                referral_code=referral_code,
                 return_url=return_url,
                 cancel_url=cancel_url,
                 callback_url=callback_url
@@ -97,51 +101,74 @@ class BillingService:
         """
         Idempotent verification of PayDunya IPN callback.
         Calls PayDunya servers directly to verify transaction status before modifying any DB state.
+        Guarantees thread safety and race condition prevention with select_for_update().
         """
         logger.info(f"[Billing] Processing IPN for Token={token}")
 
         # 1. Fetch official transaction status from PayDunya official API
         verified_data = PayDunyaGateway.confirm_invoice(token)
-        paydunya_status = verified_data.get('status', '').lower()
+        paydunya_status = str(verified_data.get('status', '')).lower()
 
-        # 2. Locate local Payment
-        payment = Payment.objects.select_related('plan', 'plan__community', 'user').filter(
-            provider_token=token
-        ).first()
+        # 2. Extract payment id or token to identify record
+        custom_data = verified_data.get('custom_data', {})
+        payment_id = custom_data.get('payment_id')
 
-        if not payment:
-            # Fallback check custom_data
-            custom_data = verified_data.get('custom_data', {})
-            payment_id = custom_data.get('payment_id')
+        # 3. Process DB state transition with pessimistic locking inside transaction
+        with transaction.atomic():
+            payment_qs = Payment.objects.select_for_update().select_related('plan', 'plan__community', 'user')
+            payment = None
             if payment_id:
-                payment = Payment.objects.select_related('plan', 'plan__community', 'user').filter(id=payment_id).first()
+                payment = payment_qs.filter(id=payment_id).first()
 
-        if not payment:
-            logger.error(f"[Billing] Payment not found for verified token {token}")
-            raise NotFound("Paiement local introuvable pour ce jeton PayDunya.")
+            if not payment:
+                payment = payment_qs.filter(provider_token=token).first()
 
-        # 3. Idempotency guard: If already paid, return early without re-executing
-        if payment.status == PaymentStatus.PAID:
-            logger.info(f"[Billing] Payment {payment.id} is already marked PAID. Idempotent skip.")
-            return payment
+            if not payment:
+                logger.error(f"[Billing] Payment not found for verified token {token} / id {payment_id}")
+                raise NotFound("Paiement local introuvable pour ce jeton PayDunya.")
 
-        # 4. Process payment confirmation
-        if paydunya_status == 'completed':
-            receipt_url = verified_data.get('receipt_url') or verified_data.get('invoice', {}).get('receipt_url', '')
+            # Idempotency guard: If already paid, return early without re-executing
+            if payment.status == PaymentStatus.PAID:
+                logger.info(f"[Billing] Payment {payment.id} is already marked PAID. Idempotent skip.")
+                return payment
 
-            with transaction.atomic():
+            # Handle transaction statuses
+            if paydunya_status == 'completed':
+                receipt_url = verified_data.get('receipt_url') or verified_data.get('invoice', {}).get('receipt_url', '')
                 now = timezone.now()
+                plan = payment.plan
+
+                # Calculate Kodinga Platform Commission & Creator Net
+                commission_rate = getattr(settings, 'KODINGA_COMMISSION_RATE', Decimal('0.10'))
+                if plan.community:
+                    platform_fee = (payment.amount * Decimal(str(commission_rate))).quantize(Decimal('0.01'))
+                    net_amount = payment.amount - platform_fee
+                    payment.platform_fee = platform_fee
+                    payment.net_amount = net_amount
+
+                    # Credit Community Wallet
+                    wallet, _ = CommunityWallet.objects.select_for_update().get_or_create(
+                        community=plan.community,
+                        defaults={'currency': payment.currency}
+                    )
+                    wallet.total_gross += payment.amount
+                    wallet.total_platform_fees += platform_fee
+                    wallet.total_net += net_amount
+                    wallet.available_balance += net_amount
+                    wallet.save()
+                else:
+                    payment.platform_fee = payment.amount
+                    payment.net_amount = Decimal('0.00')
+
                 payment.status = PaymentStatus.PAID
                 payment.paid_at = now
                 payment.provider_reference = receipt_url
                 payment.raw_callback_data = verified_data
 
                 # Create or extend active Subscription
-                plan = payment.plan
                 period_end = cls.calculate_period_end(now, plan.billing_interval, plan.interval_count)
 
-                # Check existing subscription for this plan/community
-                existing_sub = Subscription.objects.filter(
+                existing_sub = Subscription.objects.select_for_update().filter(
                     user=payment.user,
                     plan=plan,
                     status=SubscriptionStatus.ACTIVE
@@ -152,7 +179,8 @@ class BillingService:
                     new_period_end = cls.calculate_period_end(existing_sub.current_period_end, plan.billing_interval, plan.interval_count)
                     existing_sub.current_period_end = new_period_end
                     existing_sub.paydunya_token = token
-                    existing_sub.save(update_fields=['current_period_end', 'paydunya_token', 'updated_at'])
+                    existing_sub.cancel_at_period_end = False
+                    existing_sub.save(update_fields=['current_period_end', 'paydunya_token', 'cancel_at_period_end', 'updated_at'])
                     subscription = existing_sub
                 else:
                     subscription = Subscription.objects.create(
@@ -170,7 +198,7 @@ class BillingService:
 
                 # Unlock Community Membership if plan is community-specific
                 if plan.community:
-                    member, _ = CommunityMember.objects.get_or_create(
+                    member, _ = CommunityMember.objects.select_for_update().get_or_create(
                         community=plan.community,
                         user=payment.user,
                         defaults={
@@ -183,21 +211,28 @@ class BillingService:
                         member.save(update_fields=['status', 'updated_at'])
 
                 # Process 50% affiliate commission on first paid subscription
-                custom_data = verified_data.get('custom_data', {})
-                referral_code = custom_data.get('referral_code')
-                AffiliateService.process_first_subscription_commission(payment, referral_code=referral_code)
+                ref_code = payment.referral_code or custom_data.get('referral_code')
+                AffiliateService.process_first_subscription_commission(payment, referral_code=ref_code)
 
                 logger.info(f"[Billing] Payment {payment.id} confirmed and Subscription {subscription.id} activated successfully.")
                 return payment
 
-        elif paydunya_status == 'cancelled':
-            payment.status = PaymentStatus.CANCELLED
-            payment.raw_callback_data = verified_data
-            payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
-            return payment
+            elif paydunya_status in ['pending', 'in_progress', 'created', 'processing']:
+                # Feedback 2: Maintain PENDING if PayDunya returns pending
+                logger.info(f"[Billing] Payment {payment.id} is still {paydunya_status}. Maintaining PENDING status.")
+                payment.status = PaymentStatus.PENDING
+                payment.raw_callback_data = verified_data
+                payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
+                return payment
 
-        else:
-            payment.status = PaymentStatus.FAILED
-            payment.raw_callback_data = verified_data
-            payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
-            return payment
+            elif paydunya_status in ['cancelled', 'canceled']:
+                payment.status = PaymentStatus.CANCELLED
+                payment.raw_callback_data = verified_data
+                payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
+                return payment
+
+            else:
+                payment.status = PaymentStatus.FAILED
+                payment.raw_callback_data = verified_data
+                payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
+                return payment

@@ -15,7 +15,7 @@ export function ReplayPlayer({ video, title, className }: { video: ReplayVideo; 
   useEffect(() => {
     const element = ref.current;
     if (!ready || !element) return;
-    if (element.canPlayType('application/vnd.apple.mpegurl')) {
+    if (!video.hls_url.includes('.m3u8') || element.canPlayType('application/vnd.apple.mpegurl')) {
       element.src = video.hls_url;
       return;
     }

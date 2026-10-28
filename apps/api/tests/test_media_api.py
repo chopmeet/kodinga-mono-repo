@@ -40,6 +40,39 @@ class TestMediaAPI:
         assert "file_key" in data
         assert "avatar" in data["file_key"]
 
+    def test_avatar_size_limit_rejected_over_1mb(self, api_client, user):
+        api_client.force_authenticate(user=user)
+        payload = {
+            "file_name": "big_logo.png",
+            "file_size": int(1.5 * 1024 * 1024),  # 1.5 MB > 1 MB limit
+            "mime_type": "image/png",
+            "purpose": "avatar",
+        }
+        res = api_client.post("/api/v1/media/upload-url/", payload, format="json")
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_banner_size_limit_enforced_5mb(self, api_client, user):
+        api_client.force_authenticate(user=user)
+        # 4 MB banner should succeed
+        ok_payload = {
+            "file_name": "cover.webp",
+            "file_size": 4 * 1024 * 1024,
+            "mime_type": "image/webp",
+            "purpose": "banner",
+        }
+        res_ok = api_client.post("/api/v1/media/upload-url/", ok_payload, format="json")
+        assert res_ok.status_code == status.HTTP_201_CREATED
+
+        # 6 MB banner should fail
+        too_big_payload = {
+            "file_name": "cover_large.webp",
+            "file_size": 6 * 1024 * 1024,
+            "mime_type": "image/webp",
+            "purpose": "banner",
+        }
+        res_fail = api_client.post("/api/v1/media/upload-url/", too_big_payload, format="json")
+        assert res_fail.status_code == status.HTTP_400_BAD_REQUEST
+
     def test_confirm_upload_updates_profile_avatar(self, api_client, user):
         api_client.force_authenticate(user=user)
         # Create pending asset

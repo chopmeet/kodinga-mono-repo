@@ -2,6 +2,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -41,6 +43,9 @@ class EventJoinLiveView(APIView):
             event = EventSelector.get_event_by_id_or_slug(
                 community, event_id, user=request.user
             )
+        except PermissionDenied as e:
+            msg = getattr(e, "detail", str(e))
+            return error_response(str(msg), status_code=status.HTTP_403_FORBIDDEN)
         except Exception:
             return error_response(
                 "Événement introuvable.", status_code=status.HTTP_404_NOT_FOUND
@@ -118,6 +123,9 @@ class EventStatusUpdateView(APIView):
             event = EventSelector.get_event_by_id_or_slug(
                 community, event_id, user=request.user
             )
+        except PermissionDenied as e:
+            msg = getattr(e, "detail", str(e))
+            return error_response(str(msg), status_code=status.HTTP_403_FORBIDDEN)
         except Exception:
             return error_response(
                 "Événement introuvable.", status_code=status.HTTP_404_NOT_FOUND
@@ -147,10 +155,11 @@ class EventStatusUpdateView(APIView):
 
 class EventReplayAttachView(APIView):
     """
-    Attach an uploaded video asset as replay recording for a finished event.
+    Attach an uploaded video asset or directly upload a recorded video file to UploadThing as replay for a finished event.
     """
 
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
         tags=["Events"],
@@ -177,12 +186,16 @@ class EventReplayAttachView(APIView):
                 details=serializer.errors,
             )
 
-        video_asset_id = str(serializer.validated_data["video_asset_id"])
+        video_asset_id = serializer.validated_data.get("video_asset_id")
+        video_file = serializer.validated_data.get("video")
+        video_url = serializer.validated_data.get("video_url")
         try:
             updated = EventService.attach_replay(
                 actor_user=request.user,
                 event=event,
-                video_asset_id=video_asset_id,
+                video_asset_id=str(video_asset_id) if video_asset_id else None,
+                video_file=video_file,
+                video_url=video_url,
             )
         except Exception as e:
             msg = getattr(e, "detail", str(e))

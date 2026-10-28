@@ -37,13 +37,25 @@ class CommunityAdminForm(forms.ModelForm):
     avatar_file = forms.FileField(
         required=False,
         label="Uploader un Logo / Avatar (UploadThing)",
-        help_text="Sélectionnez un fichier image (JPG, PNG, WebP, GIF - max 5 Mo) pour l'héberger directement sur UploadThing.",
+        help_text="Sélectionnez un fichier image (JPG, PNG, WebP, GIF - max 1 Mo) pour l'héberger directement sur UploadThing.",
     )
     banner_file = forms.FileField(
         required=False,
         label="Uploader une Bannière (UploadThing)",
-        help_text="Sélectionnez une image de bannière (JPG, PNG, WebP - max 10 Mo) pour l'héberger directement sur UploadThing.",
+        help_text="Sélectionnez une image de bannière (JPG, PNG, WebP - max 5 Mo) pour l'héberger directement sur UploadThing.",
     )
+
+    def clean_avatar_file(self):
+        file = self.cleaned_data.get('avatar_file')
+        if file and file.size > 1 * 1024 * 1024:
+            raise forms.ValidationError("Le fichier du logo ne doit pas dépasser 1 Mo.")
+        return file
+
+    def clean_banner_file(self):
+        file = self.cleaned_data.get('banner_file')
+        if file and file.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("Le fichier de bannière ne doit pas dépasser 5 Mo.")
+        return file
 
     class Meta:
         model = Community

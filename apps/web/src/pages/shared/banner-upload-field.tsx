@@ -24,7 +24,7 @@ type Mode = 'file' | 'url';
 export function BannerUploadField({
   id: customId,
   label = 'Image de couverture',
-  help = 'Recommandé : 1200×630 px (JPG, PNG, WebP — max 10 Mo)',
+  help = 'Recommandé : 1200×630 px (JPG, PNG, WebP — max 5 Mo)',
   value = '',
   onChange,
   error,

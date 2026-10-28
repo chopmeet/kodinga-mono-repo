@@ -1,5 +1,11 @@
 from django.urls import path
 
+from apps.events.views.ai_transcript import (
+    EventChatTranscriptView,
+    EventSummaryGenerateView,
+    EventTranscribeView,
+    EventTranscriptionDetailView,
+)
 from apps.events.views.attendee import EventAttendeeListView, EventRSVPView
 from apps.events.views.event import (
     CommunityEventDetailView,
@@ -70,6 +76,27 @@ urlpatterns = [
         "communities/<slug:slug>/events/<str:event_id>/calendar.ics",
         EventCalendarDownloadView.as_view(),
         name="community-events-calendar",
+    ),
+    # AI Replay Transcription, Summary & Chat with Docs
+    path(
+        "communities/<slug:slug>/events/<str:event_id>/transcribe/",
+        EventTranscribeView.as_view(),
+        name="community-events-transcribe",
+    ),
+    path(
+        "communities/<slug:slug>/events/<str:event_id>/transcription/",
+        EventTranscriptionDetailView.as_view(),
+        name="community-events-transcription-detail",
+    ),
+    path(
+        "communities/<slug:slug>/events/<str:event_id>/summary/",
+        EventSummaryGenerateView.as_view(),
+        name="community-events-summary",
+    ),
+    path(
+        "communities/<slug:slug>/events/<str:event_id>/chat-transcript/",
+        EventChatTranscriptView.as_view(),
+        name="community-events-chat-transcript",
     ),
     # LiveKit real-time webhook
     path(

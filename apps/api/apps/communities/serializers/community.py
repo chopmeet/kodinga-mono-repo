@@ -21,6 +21,7 @@ class CommunityListSerializer(BaseModelSerializer):
     category = CommunityCategorySerializer(read_only=True)
     owner = UserSerializer(read_only=True)
     is_member = serializers.SerializerMethodField()
+    active_live = serializers.SerializerMethodField()
 
     class Meta:
         model = Community
@@ -43,9 +44,23 @@ class CommunityListSerializer(BaseModelSerializer):
             'courses_count',
             'events_count',
             'is_member',
+            'active_live',
             'created_at',
         ]
         read_only_fields = fields
+
+    def get_active_live(self, obj):
+        from apps.events.models.event import EventStatus
+        live = obj.events.filter(status=EventStatus.LIVE).only('id', 'title', 'slug', 'is_public', 'attendees_count').first()
+        if not live:
+            return None
+        return {
+            'id': str(live.id),
+            'title': live.title,
+            'slug': live.slug,
+            'is_public': live.is_public,
+            'attendees_count': live.attendees_count,
+        }
 
     def get_is_member(self, obj) -> bool:
         request = self.context.get('request')
@@ -72,6 +87,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
     settings = CommunitySettingsSerializer(read_only=True)
     rules = CommunityRuleSerializer(many=True, read_only=True)
     user_membership = serializers.SerializerMethodField()
+    active_live = serializers.SerializerMethodField()
 
     class Meta:
         model = Community
@@ -103,6 +119,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'settings',
             'rules',
             'user_membership',
+            'active_live',
             'created_at',
             'updated_at',
         ]
@@ -114,9 +131,23 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'courses_count',
             'events_count',
             'user_membership',
+            'active_live',
             'created_at',
             'updated_at',
         ]
+
+    def get_active_live(self, obj):
+        from apps.events.models.event import EventStatus
+        live = obj.events.filter(status=EventStatus.LIVE).only('id', 'title', 'slug', 'is_public', 'attendees_count').first()
+        if not live:
+            return None
+        return {
+            'id': str(live.id),
+            'title': live.title,
+            'slug': live.slug,
+            'is_public': live.is_public,
+            'attendees_count': live.attendees_count,
+        }
 
     def get_user_membership(self, obj) -> dict:
         request = self.context.get('request')
@@ -131,6 +162,24 @@ class CommunityDetailSerializer(BaseModelSerializer):
         if not membership:
             return {'is_member': False, 'role': None, 'status': None}
 
+        is_owner = obj.owner_id == request.user.id or getattr(request.user, 'is_superuser', False)
+        settings = getattr(obj, 'settings', None)
+        if not settings:
+            from apps.communities.models.settings import CommunitySettings
+            settings, _ = CommunitySettings.objects.get_or_create(community=obj)
+
+        if is_owner:
+            can_start_live = True
+            active_permissions = list(settings.get_role_permissions('owner').keys())
+        else:
+            from apps.memberships.permissions import has_community_permission
+            can_start_live = has_community_permission(request.user, obj, 'can_start_live')
+            role_perms = settings.get_role_permissions(membership.role)
+            user_overrides = (settings.role_permissions or {}).get('user_overrides', {}).get(str(request.user.id), {})
+            combined = dict(role_perms)
+            combined.update(user_overrides)
+            active_permissions = [k for k, v in combined.items() if v]
+
         return {
             'is_member': membership.status == MembershipStatus.ACTIVE,
             'role': membership.role,
@@ -138,6 +187,8 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'custom_title': membership.custom_title,
             'points': membership.reputation_score,
             'joined_at': membership.joined_at,
+            'can_start_live': can_start_live,
+            'permissions': active_permissions,
         }
 
 

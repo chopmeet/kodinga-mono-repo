@@ -1,9 +1,10 @@
-import { Radio, Video } from 'lucide-react';
+import { Globe, Lock, Radio, Video } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
   Button,
+  cn,
   customToast,
   Dialog,
   DialogContent,
@@ -14,7 +15,6 @@ import {
   Input,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
-import SettingSwitch from '@/pages/shared/setting-switch';
 import { useCreateEventMutation, useUpdateEventStatusMutation } from '@/utils/api/community/community.api';
 import type { EventWriteData } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -122,12 +122,46 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <SettingSwitch
-            label="Visible publiquement"
-            description="Si désactivé, seuls les membres approuvés pourront rejoindre."
-            checked={isPublic}
-            onCheckedChange={setIsPublic}
-          />
+          <div className="space-y-2">
+            <span className="text-xs font-semibold text-slate-700">Confidentialité du direct</span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsPublic(true)}
+                className={cn(
+                  'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all cursor-pointer',
+                  isPublic
+                    ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
+                    : 'border-slate-200 bg-white hover:border-slate-300',
+                )}
+              >
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                  <Globe className={cn('size-3.5', isPublic ? 'text-blue-600' : 'text-slate-400')} /> Public
+                </span>
+                <span className="text-[11px] leading-tight text-slate-500">
+                  Accessible à tous les membres et visiteurs.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPublic(false)}
+                className={cn(
+                  'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all cursor-pointer',
+                  !isPublic
+                    ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-600/20'
+                    : 'border-slate-200 bg-white hover:border-slate-300',
+                )}
+              >
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                  <Lock className={cn('size-3.5', !isPublic ? 'text-amber-600' : 'text-slate-400')} /> Privé (Membres)
+                </span>
+                <span className="text-[11px] leading-tight text-slate-500">
+                  Réservé uniquement aux membres de la communauté.
+                </span>
+              </button>
+            </div>
+          </div>
 
           <DialogFooter className="mt-6 pt-2">
             <Button variant="outline" type="button" onClick={onClose} disabled={isStarting}>
