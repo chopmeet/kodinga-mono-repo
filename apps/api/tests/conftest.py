@@ -27,6 +27,10 @@ def configure_test_settings(settings):
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         }
     }
+    settings.PAYDUNYA_MASTER_KEY = "test_paydunya_master_key_12345"
+    settings.PAYDUNYA_PRIVATE_KEY = "test_private_key"
+    settings.PAYDUNYA_PUBLIC_KEY = "test_public_key"
+    settings.PAYDUNYA_TOKEN = "test_token"
 
 
 @pytest.fixture(autouse=True)

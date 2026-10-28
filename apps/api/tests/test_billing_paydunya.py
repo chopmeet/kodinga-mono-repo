@@ -4,7 +4,6 @@ from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
-from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -420,6 +419,7 @@ class TestPayDunyaBilling:
         api_client,
         user_alice,
         pro_plan,
+        settings,
     ):
         mock_create_invoice.return_value = {
             "token": "token_form_urlencoded_123",
@@ -442,7 +442,8 @@ class TestPayDunyaBilling:
             "invoice": {"total_amount": float(pro_plan.price)},
         }
 
-        master_key = getattr(settings, "PAYDUNYA_MASTER_KEY", "test_master_key")
+        settings.PAYDUNYA_MASTER_KEY = "test_paydunya_master_key_12345"
+        master_key = settings.PAYDUNYA_MASTER_KEY
         correct_hash = hashlib.sha512(master_key.encode("utf-8")).hexdigest()
 
         ipn_client = APIClient()
