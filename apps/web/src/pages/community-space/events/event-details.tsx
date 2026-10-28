@@ -6,7 +6,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, ColgateWrapper, DataTable, DetailsPageSkeleton, EmptyAlert, Pagination, SearchInput } from '@kodinga-mono-repo/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
-import { ReplayPlayer } from '@/pages/shared/replay-player';
 import { EventAIReplayHub } from './components/event-ai-replay-hub';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import { useGetCommunityEventQuery } from '@/utils/api/community/community.api';

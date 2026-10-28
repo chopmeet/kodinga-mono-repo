@@ -14,7 +14,7 @@ const mockCommunity: CommunityListItem = {
   banner_url: '',
   brand_color: null,
   category: { id: 'cat1', name: 'Tech', slug: 'tech', description: '', icon_url: '', order: 1, created_at: '' },
-  owner: { id: 'u1', username: 'alex', full_name: 'Alex' } as any,
+  owner: { id: 'u1', username: 'alex', full_name: 'Alex' } as CommunityListItem['owner'],
   privacy_type: 'public',
   pricing_type: 'free',
   is_verified: true,

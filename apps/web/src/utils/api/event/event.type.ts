@@ -46,7 +46,7 @@ export type CommunityEvent = {
   location_url?: string;
   has_transcription?: boolean;
   has_summary?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 };
 

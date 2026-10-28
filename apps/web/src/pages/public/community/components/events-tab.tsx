@@ -1,4 +1,4 @@
-import { CalendarDays, CalendarPlus, CalendarX2, Clock, FileText, Film, MapPin, MessageSquare, PlayCircle, Radio, Sparkles, Users } from 'lucide-react';
+import { CalendarDays, CalendarPlus, CalendarX2, Clock, Film, MapPin, PlayCircle, Radio, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@kodinga-mono-repo/ui';

@@ -230,9 +230,10 @@ function UseCreateCommunity() {
       }
 
       // 2. If an early upload is currently in flight, await it
-      if (pendingUploads.current[kind]) {
+      const pending = pendingUploads.current[kind];
+      if (pending) {
         try {
-          const url = await pendingUploads.current[kind]!;
+          const url = await pending;
           return { kind, url };
         } catch {
           // Fall through to retry upload below

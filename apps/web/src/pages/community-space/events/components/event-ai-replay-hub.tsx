@@ -10,8 +10,10 @@ import {
   ListTodo,
   Loader2,
   MessageSquare,
+  Pin,
   PlayCircle,
   RefreshCw,
+  Scale,
   Search,
   Send,
   Sparkles,
@@ -503,7 +505,10 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
             <div className="space-y-5">
               {/* Overview Card */}
               <div className="rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-50/50 to-orange-50/30 p-4 sm:p-5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-amber-800">📌 Synthèse Globale</span>
+                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-800">
+                  <Pin className="size-3.5" aria-hidden />
+                  Synthèse Globale
+                </span>
                 <p className="mt-2 text-sm leading-relaxed text-slate-800 font-medium">{summary.overview}</p>
               </div>
 
@@ -546,7 +551,8 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
               {summary.decisions && summary.decisions.length > 0 && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                   <div className="flex items-center gap-2 mb-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
-                    <span>⚖️ Décisions & Recommandations de l'équipe</span>
+                    <Scale className="size-4" aria-hidden />
+                    <span>Décisions & Recommandations de l'équipe</span>
                   </div>
                   <ul className="space-y-1.5 text-xs text-slate-700">
                     {summary.decisions.map((dec, i) => (
