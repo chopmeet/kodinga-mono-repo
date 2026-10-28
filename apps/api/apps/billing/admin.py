@@ -4,6 +4,7 @@ from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
+from apps.billing.models.wallet import CommunityPayout, CommunityWallet
 
 
 @admin.register(Plan)
@@ -22,9 +23,22 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'plan', 'amount', 'currency', 'status', 'provider', 'provider_token', 'paid_at', 'created_at')
+    list_display = ('id', 'user', 'plan', 'amount', 'platform_fee', 'net_amount', 'currency', 'status', 'provider', 'referral_code', 'paid_at', 'created_at')
     list_filter = ('status', 'provider', 'currency', 'created_at')
-    search_fields = ('id', 'user__username', 'user__email', 'provider_token', 'provider_reference')
+    search_fields = ('id', 'user__username', 'user__email', 'provider_token', 'provider_reference', 'referral_code')
+
+
+@admin.register(CommunityWallet)
+class CommunityWalletAdmin(admin.ModelAdmin):
+    list_display = ('community', 'total_gross', 'total_platform_fees', 'total_net', 'available_balance', 'withdrawn_amount', 'currency')
+    search_fields = ('community__name', 'community__slug')
+
+
+@admin.register(CommunityPayout)
+class CommunityPayoutAdmin(admin.ModelAdmin):
+    list_display = ('id', 'community', 'requested_by', 'amount', 'currency', 'status', 'payment_method', 'account_identifier', 'created_at')
+    list_filter = ('status', 'payment_method', 'currency', 'created_at')
+    search_fields = ('community__name', 'requested_by__username', 'account_identifier', 'reference')
 
 
 @admin.register(Affiliate)
@@ -38,3 +52,4 @@ class AffiliateCommissionAdmin(admin.ModelAdmin):
     list_display = ('affiliate', 'referred_user', 'payment', 'amount', 'currency', 'status', 'created_at')
     list_filter = ('status', 'currency', 'created_at')
     search_fields = ('affiliate__user__username', 'referred_user__username', 'payment__id')
+

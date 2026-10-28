@@ -51,7 +51,7 @@ export function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className={itemClassName}>
-          <Link to="/c">
+          <Link to="/dashboard/communities">
             <LayoutGrid className="size-5" />
             {t('header.myCommunities')}
           </Link>
@@ -73,7 +73,7 @@ export function UserMenu() {
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild className={itemClassName}>
-          <Link to="/account/profile">
+          <Link to="/dashboard/profile">
             <Settings className="size-5" />
             {t('header.account')}
           </Link>

@@ -52,7 +52,7 @@ function DashboardHeader() {
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
-              <Link to="/account/profile">
+              <Link to="/dashboard/profile">
                 <Settings />
                 Paramètres du compte
               </Link>

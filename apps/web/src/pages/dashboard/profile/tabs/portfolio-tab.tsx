@@ -7,7 +7,7 @@ import type { PortfolioProject } from '@/utils/api/profile/profile.type';
 import UseProfileEntries from '../form/UseProfileEntries';
 import ProjectModal from '../modals/project-modal';
 
-/** /account/portfolio — the projects shown on the public profile, featured ones first */
+/** /dashboard/profile/portfolio — the projects shown on the public profile, featured ones first */
 function PortfolioTab() {
   const entries = UseProfileEntries();
   const [target, setTarget] = useState<{ project: PortfolioProject | null } | null>(null);

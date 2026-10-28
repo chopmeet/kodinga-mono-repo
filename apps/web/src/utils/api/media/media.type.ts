@@ -10,6 +10,7 @@ export type UploadTarget = {
   asset_id: string;
   file_key: string;
   upload_url: string;
+  method?: string;
   fields: Record<string, string>;
   max_file_size: number;
 };
@@ -28,6 +29,6 @@ export type MediaAsset = {
 
 /** Same limits as the api (UploadThingService.ALLOWED_MIME_TYPES / MAX_FILE_SIZES) */
 export const IMAGE_RULES: Record<'avatar' | 'banner', { types: string[]; maxBytes: number }> = {
-  avatar: { types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], maxBytes: 5 * 1024 * 1024 },
-  banner: { types: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 10 * 1024 * 1024 },
+  avatar: { types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], maxBytes: 1 * 1024 * 1024 },
+  banner: { types: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 5 * 1024 * 1024 },
 };

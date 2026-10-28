@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, Lock, Star, Users } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Lock, Radio, Star, Users } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
@@ -18,6 +18,7 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
   const href = `/communities/${community.slug}`;
   const isPrivate = community.privacy_type !== 'public';
   const tags = [community.category?.name, community.pricing_type === 'paid' ? 'Payante' : 'Gratuite'].filter(Boolean) as string[];
+  const activeLive = community.active_live;
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs transition-all hover:border-slate-300 hover:shadow-md">
@@ -34,10 +35,18 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
           <GlassBackdrop fade={false} />
         )}
         <div className="relative flex items-start justify-between gap-2 p-4">
-          <span className="flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-700 uppercase shadow-2xs">
-            {isPrivate ? <Lock className="size-3.5" /> : <Users className="size-3.5" />}
-            {isPrivate ? 'Privée' : 'Communauté'}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-700 uppercase shadow-2xs">
+              {isPrivate ? <Lock className="size-3.5" /> : <Users className="size-3.5" />}
+              {isPrivate ? 'Privée' : 'Communauté'}
+            </span>
+            {activeLive && (
+              <span className="flex items-center gap-1.5 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-md animate-pulse">
+                <span className="size-1.5 rounded-full bg-white animate-ping" />
+                Live {activeLive.is_public ? '' : '🔒'}
+              </span>
+            )}
+          </div>
           {community.is_featured && (
             <span className="flex shrink-0 items-center gap-1 rounded-md bg-amber-400/95 px-2 py-1 text-xs font-semibold text-amber-950">
               <Star className="size-3.5" />À la une
@@ -78,13 +87,23 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
             <Users className="size-4.5 text-slate-500" />
             {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
           </span>
-          <NavLink
-            to={href}
-            className="relative z-10 flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-slate-900 transition-colors hover:text-primary"
-          >
-            {community.is_member ? 'Ouvrir' : 'Découvrir'}
-            <ArrowUpRight className="size-4.5" />
-          </NavLink>
+          {activeLive ? (
+            <Link
+              to={`/communities/${community.slug}/events/${activeLive.id}/live`}
+              className="relative z-10 flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-red-600/30 hover:bg-red-500 transition-all hover:scale-102"
+            >
+              <Radio className="size-3.5 animate-pulse" />
+              Rejoindre le direct
+            </Link>
+          ) : (
+            <NavLink
+              to={href}
+              className="relative z-10 flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-slate-900 transition-colors hover:text-primary"
+            >
+              {community.is_member ? 'Ouvrir' : 'Découvrir'}
+              <ArrowUpRight className="size-4.5" />
+            </NavLink>
+          )}
         </div>
       </div>
     </article>

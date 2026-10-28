@@ -62,12 +62,6 @@ export function useRealtimeSync() {
   }, [token, dispatch]);
 }
 
-interface MessageEventData {
-  id: string;
-  conversation_id: string;
-  content?: string;
-}
-
 interface IdEventData {
   conversation_id: string;
   message_id?: string;

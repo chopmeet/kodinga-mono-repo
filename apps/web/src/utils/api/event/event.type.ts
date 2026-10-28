@@ -44,6 +44,9 @@ export type CommunityEvent = {
   user_rsvp_status: RsvpStatus | null;
   replay_video_asset: ReplayVideo | null;
   location_url?: string;
+  has_transcription?: boolean;
+  has_summary?: boolean;
+  metadata?: Record<string, unknown>;
   created_at: string;
 };
 
@@ -72,6 +75,7 @@ export type EventsQuery = {
   status?: EventStatus;
   event_type?: EventType;
   upcoming?: boolean;
+  has_replay?: boolean;
   page?: number;
   page_size?: number;
 };
@@ -102,3 +106,44 @@ export type ReplayVideo = {
 
 /** POST media/videos/upload-url/: a video waiting for its file, sent straight to Mux (PUT upload_url) */
 export type VideoUploadTarget = { video_asset_id: string; upload_id: string; upload_url: string; status: string };
+
+export type LiveTranscriptionSegment = {
+  start: string;
+  end: string;
+  speaker: string;
+  text: string;
+};
+
+export type LiveEventSummary = {
+  overview: string;
+  key_points: string[];
+  action_items: string[];
+  decisions: string[];
+};
+
+export type LiveTranscriptionResponse = {
+  status?: 'idle' | 'processing' | 'ready' | 'failed';
+  has_transcription: boolean;
+  transcription: string;
+  segments: LiveTranscriptionSegment[];
+  summary: LiveEventSummary | null;
+  transcribed_at: string | null;
+  error?: string;
+  message?: string;
+};
+
+export type ChatTranscriptRequest = {
+  slug: string;
+  eventId: string;
+  message: string;
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  language?: string;
+};
+
+export type ChatTranscriptResponse = {
+  reply: string;
+  referenced_segments: string[];
+  suggested_follow_ups: string[];
+  provider?: string;
+};
+

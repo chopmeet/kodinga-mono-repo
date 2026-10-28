@@ -42,12 +42,12 @@ describe('User menu of the header', () => {
     const menu = await openMenu();
     expect(within(menu).getByText('Ousmane Diallo')).toBeTruthy();
     expect(within(menu).getByText('@ousmane')).toBeTruthy();
-    expect(within(menu).getAllByRole('menuitem').map((item) => item.getAttribute('href'))).toEqual(['/c', '/profiles/ousmane', '/account/profile', null]);
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.getAttribute('href'))).toEqual(['/dashboard/communities', '/profiles/ousmane', '/dashboard/profile', null]);
     expect(within(menu).queryByText('Administration')).toBeNull();
 
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Log out' }));
     await waitFor(() => expect(store.getState().user.token).toBeNull(), SLOW);
-    expect(where()).not.toMatch(/^\/c/);
+    expect(where()).not.toMatch(/^\/dashboard/);
   });
 
   it('adds the administration for a superadmin', async () => {

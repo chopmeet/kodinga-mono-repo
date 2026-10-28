@@ -121,9 +121,8 @@ class RealtimeClient {
 
     try {
       const baseUrl = getWebSocketBaseUrl();
-      const authQuery = ticket
-        ? `ticket=${encodeURIComponent(ticket)}`
-        : `token=${encodeURIComponent(tokenFallback!)}`;
+      // One of the two is set (checked above)
+      const authQuery = ticket ? `ticket=${encodeURIComponent(ticket)}` : `token=${encodeURIComponent(tokenFallback ?? '')}`;
       const wsUrl = `${baseUrl}?${authQuery}`;
       this.socket = new WebSocket(wsUrl);
 

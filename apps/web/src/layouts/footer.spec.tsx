@@ -47,6 +47,6 @@ describe('Footer', () => {
     renderAppAt('/');
     const footer = await screen.findByRole('contentinfo', {}, SLOW);
     const space = within(footer).getByRole('navigation', { name: 'Mon espace' });
-    expect(within(space).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/c', '/messages', '/profiles/fatou']);
+    expect(within(space).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/dashboard/communities', '/messages', '/profiles/fatou']);
   });
 });

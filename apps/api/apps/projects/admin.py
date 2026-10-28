@@ -12,7 +12,7 @@ class ProjectAdminForm(forms.ModelForm):
     cover_image_file = forms.FileField(
         required=False,
         label="Uploader une Image de Couverture / Bannière (UploadThing)",
-        help_text="Sélectionnez une image (JPG, PNG, WebP - max 10 Mo) pour l'héberger sur UploadThing.",
+        help_text="Sélectionnez une image (JPG, PNG, WebP - max 5 Mo) pour l'héberger sur UploadThing.",
     )
 
     class Meta:

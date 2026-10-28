@@ -14,6 +14,7 @@ const KEYS = [
   'can_create_posts', 'can_pin_posts', 'can_delete_posts', 'can_moderate_comments', 'can_create_events', 'can_manage_events',
   'can_create_courses', 'can_manage_courses', 'can_create_hackathons', 'can_manage_hackathons', 'can_create_projects', 'can_feature_projects',
   'can_invite_members', 'can_review_requests', 'can_sanction_members', 'can_assign_roles', 'can_manage_settings', 'can_view_analytics',
+  'can_start_live',
 ];
 const all = (value: boolean, overrides: Perms = {}): Perms => ({ ...Object.fromEntries(KEYS.map((k) => [k, value])), ...overrides });
 
@@ -47,7 +48,7 @@ function stubSpaceApi(slug: string, matrix: { admin: Perms; moderator: Perms; me
 }
 
 const DEFAULTS = {
-  admin: all(true, { can_assign_roles: false }),
+  admin: all(true, { can_assign_roles: false, can_start_live: false }),
   moderator: all(false, { can_create_posts: true, can_delete_posts: true, can_moderate_comments: true }),
   member: all(false, { can_create_posts: true, can_create_projects: true }),
 };

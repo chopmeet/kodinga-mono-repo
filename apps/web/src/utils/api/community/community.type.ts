@@ -21,6 +21,14 @@ export type AdminCategoryItem = CommunityCategory & { is_active: boolean; commun
 /** CommunityCategoryCreateUpdateSerializer: the slug is built from the name when omitted */
 export type CategoryWriteData = Partial<Pick<AdminCategoryItem, 'name' | 'slug' | 'description' | 'icon_url' | 'is_active' | 'order'>>;
 
+export type ActiveLiveInfo = {
+  id: string;
+  title: string;
+  slug?: string;
+  is_public: boolean;
+  attendees_count: number;
+};
+
 /** CommunityListSerializer */
 export type CommunityListItem = {
   id: string;
@@ -43,6 +51,8 @@ export type CommunityListItem = {
   created_at: string;
   /** Active membership of the signed-in user (false for visitors) */
   is_member?: boolean;
+  /** Active live stream information if one is in progress */
+  active_live?: ActiveLiveInfo | null;
 };
 
 /** Query params of GET communities/ */
@@ -63,6 +73,8 @@ export type CommunityMembership = {
   is_member: boolean;
   role: CommunityRole | null;
   status: string | null;
+  can_start_live?: boolean;
+  permissions?: (RolePermissionKey | string)[];
 };
 
 export type RolePermissionKey =
@@ -72,6 +84,7 @@ export type RolePermissionKey =
   | 'can_moderate_comments'
   | 'can_create_events'
   | 'can_manage_events'
+  | 'can_start_live'
   | 'can_create_courses'
   | 'can_manage_courses'
   | 'can_create_hackathons'

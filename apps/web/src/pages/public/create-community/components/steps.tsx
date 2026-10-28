@@ -168,7 +168,7 @@ export function LookStep({ flow }: { flow: CreateCommunityFlow }) {
       <div className="mt-6 grid gap-x-6 border-t border-slate-100 pt-5 sm:grid-cols-[auto_1fr]">
         <ImageField
           label="Logo (facultatif)"
-          help="Image carrée, au moins 256 × 256 px (5 Mo max)."
+          help="Image carrée, au moins 256 × 256 px (1 Mo max)."
           purpose="avatar"
           source={flow.images.avatar.source}
           onSourceChange={(source) => flow.setImage('avatar', { source })}
@@ -177,10 +177,12 @@ export function LookStep({ flow }: { flow: CreateCommunityFlow }) {
           url={flow.values.avatar_url}
           registration={register('avatar_url')}
           error={formState.errors.avatar_url?.message}
+          isUploading={flow.uploading?.avatar}
+          isUploaded={!!flow.uploadedUrls?.avatar}
         />
         <ImageField
           label="Image de bannière (facultatif)"
-          help="Format paysage, idéalement 1600 × 900 px (10 Mo max)."
+          help="Format paysage, idéalement 1600 × 900 px (5 Mo max)."
           purpose="banner"
           source={flow.images.banner.source}
           onSourceChange={(source) => flow.setImage('banner', { source })}
@@ -189,6 +191,8 @@ export function LookStep({ flow }: { flow: CreateCommunityFlow }) {
           url={flow.values.banner_url}
           registration={register('banner_url')}
           error={formState.errors.banner_url?.message}
+          isUploading={flow.uploading?.banner}
+          isUploaded={!!flow.uploadedUrls?.banner}
         />
       </div>
     </fieldset>

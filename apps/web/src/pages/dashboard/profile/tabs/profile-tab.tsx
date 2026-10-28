@@ -21,7 +21,7 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-/** /account/profile — what others see on the public profile */
+/** /dashboard/profile/general — what others see on the public profile */
 function ProfileTab() {
   const settings = UseProfileSettings();
   const {

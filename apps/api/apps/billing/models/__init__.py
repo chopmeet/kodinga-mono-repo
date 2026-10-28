@@ -6,6 +6,7 @@ from apps.billing.models.affiliate import (
 from apps.billing.models.payment import Payment, PaymentStatus
 from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
+from apps.billing.models.wallet import CommunityPayout, CommunityWallet, PayoutStatus
 
 __all__ = [
     'Plan',
@@ -17,4 +18,7 @@ __all__ = [
     'Affiliate',
     'AffiliateCommission',
     'CommissionStatus',
+    'CommunityWallet',
+    'CommunityPayout',
+    'PayoutStatus',
 ]

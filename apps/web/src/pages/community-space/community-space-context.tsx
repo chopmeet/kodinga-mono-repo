@@ -44,6 +44,14 @@ export function hasSpacePermission(space: MyCommunity, permission: RolePermissio
 /** EventService.check_is_manager: the owner, and the roles allowed to manage the events */
 export const canManageEvents = (space: MyCommunity) => hasSpacePermission(space, 'can_manage_events');
 
+/** Only the community owner or a member with granted can_start_live permission can launch a live */
+export function canStartLive(space: MyCommunity): boolean {
+  if (space.role === 'owner') return true;
+  if (space.community.user_membership?.can_start_live) return true;
+  if (space.community.user_membership?.permissions?.includes('can_start_live')) return true;
+  return Boolean(space.community.settings?.all_role_permissions?.[space.role]?.['can_start_live']);
+}
+
 /** HackathonSelector.is_community_manager: owner and admins (not configurable on the api yet) */
 export const canManageHackathons = isCommunityManager;
 

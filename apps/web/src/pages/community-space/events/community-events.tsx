@@ -7,16 +7,17 @@ import { FilterChip } from '@/pages/shared/filter-chip';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventsQuery } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
-import { useCommunitySpace } from '../community-space-context';
+import { canStartLive, useCommunitySpace } from '../community-space-context';
 import { EventRow } from './components/event-row';
 import UseEventActions from './form/UseEventActions';
 import EventFormModal from './modals/event-form-modal';
 
-type Filter = 'upcoming' | 'live' | 'completed' | 'cancelled' | 'all';
+type Filter = 'upcoming' | 'live' | 'replays' | 'completed' | 'cancelled' | 'all';
 
 const FILTERS: { id: Filter; label: string; params: Partial<EventsQuery> }[] = [
   { id: 'upcoming', label: 'À venir', params: { upcoming: true } },
   { id: 'live', label: 'En direct', params: { status: 'live' } },
+  { id: 'replays', label: '📹 Replays vidéo', params: { has_replay: true } },
   { id: 'completed', label: 'Passés', params: { status: 'completed' } },
   { id: 'cancelled', label: 'Annulés', params: { status: 'cancelled' } },
   { id: 'all', label: 'Tous', params: {} },
@@ -24,7 +25,9 @@ const FILTERS: { id: Filter; label: string; params: Partial<EventsQuery> }[] = [
 
 /** /c/:slug/events — the events of the community (GET communities/<slug>/events/) */
 function CommunityEvents() {
-  const { community } = useCommunitySpace();
+  const space = useCommunitySpace();
+  const { community } = space;
+  const canLaunchLive = canStartLive(space);
   const [filter, setFilter] = useState<Filter>('upcoming');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
@@ -41,19 +44,23 @@ function CommunityEvents() {
     <div className="community__events">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <TopTitle title="Événements" paragraph={`Lives, ateliers et rencontres de ${community.name}`} />
-        {canManage && (
+        {(canLaunchLive || canManage) && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={() => setQuickLiveOpen(true)}
-              className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/25 hover:bg-red-500"
-            >
-              <Radio className="size-4 animate-pulse" />
-              Lancer un direct
-            </Button>
-            <Button onClick={() => setEditing('new')}>
-              <CalendarPlus />
-              Nouvel événement
-            </Button>
+            {canLaunchLive && (
+              <Button
+                onClick={() => setQuickLiveOpen(true)}
+                className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/25 hover:bg-red-500"
+              >
+                <Radio className="size-4 animate-pulse" />
+                Lancer un direct
+              </Button>
+            )}
+            {canManage && (
+              <Button onClick={() => setEditing('new')}>
+                <CalendarPlus />
+                Nouvel événement
+              </Button>
+            )}
           </div>
         )}
       </div>

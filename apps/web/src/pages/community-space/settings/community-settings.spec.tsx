@@ -164,7 +164,7 @@ describe('Community space: settings', () => {
     fireEvent.change(within(dialog).getByLabelText(/pour confirmer/), { target: { value: community.name } });
     expect(confirm.disabled).toBe(false);
     fireEvent.click(confirm);
-    await waitFor(() => expect(where()).toBe('/c'), SLOW);
+    await waitFor(() => expect(where()).toBe('/dashboard/communities'), SLOW);
     expect(api.calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/communities/lagos-ai-data/'))).toBe(true);
   });
 

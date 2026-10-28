@@ -39,11 +39,16 @@ function UseLiveRoom() {
     }
   };
 
+  const errStatus = (event.error as FetchBaseQueryError | undefined)?.status as number | undefined;
+  const isForbidden = errStatus === 403;
+  const notFound = errStatus === 404;
+
   return {
     slug,
     event: data,
     isLoading: event.isLoading,
-    notFound: [403, 404].includes((event.error as FetchBaseQueryError | undefined)?.status as number),
+    isForbidden,
+    notFound,
     signedIn,
     loginUrl: `/auth/login?next=${encodeURIComponent(pathname)}`,
     back: `/communities/${slug}?tab=events`,

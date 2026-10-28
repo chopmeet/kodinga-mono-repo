@@ -24,7 +24,7 @@ function UseKodingaPro() {
   const isPro = !!subscription || isAdmin(user);
 
   const subscribe = async (planId: string) => {
-    const back = `${window.location.origin}/c`;
+    const back = `${window.location.origin}/dashboard/billing`;
     try {
       const session = await createCheckout({ plan_id: planId, return_url: `${back}?payment=done`, cancel_url: `${back}?payment=cancelled` }).unwrap();
       rememberPayment(PRO_SCOPE.slug, session.payment_id);

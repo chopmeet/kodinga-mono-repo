@@ -8,8 +8,8 @@ import { useGetMyPaymentsQuery, useGetMySubscriptionsQuery } from '@/utils/api/c
 const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${Number(value).toLocaleString('fr-FR')} ${currency}`);
 
-/** /account/billing — the memberships paid by the user (PayDunya) and their payments */
-function BillingTab() {
+/** The memberships paid by the user (PayDunya) and their payments */
+function BillingHistory() {
   const subscriptions = useGetMySubscriptionsQuery();
   const payments = useGetMyPaymentsQuery();
 
@@ -114,4 +114,4 @@ function BillingTab() {
   );
 }
 
-export default BillingTab;
+export default BillingHistory;

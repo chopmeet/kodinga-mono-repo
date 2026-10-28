@@ -82,7 +82,7 @@ function Footer() {
   ];
   const account: FooterLink[] = signedIn
     ? [
-        { label: 'Mes communautés', to: '/c' },
+        { label: 'Mes communautés', to: '/dashboard/communities' },
         { label: 'Messages', to: '/messages' },
         ...(user?.username ? [{ label: 'Mon profil public', to: `/profiles/${user.username}` }] : []),
       ]
