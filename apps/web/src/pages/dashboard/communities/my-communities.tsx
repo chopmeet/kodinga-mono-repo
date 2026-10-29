@@ -1,16 +1,15 @@
-import { ArrowUpRight, Plus, RotateCw, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Plus, Radio, RotateCw, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
 import { FormAlert } from '@/pages/auth/components/form-alert';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
-import { memberRoleLabel } from '@/pages/shared/community-labels';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { isManaged, useGetMyCommunitiesQuery } from '@/utils/api/community/community.api';
 import type { CommunityRole } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { formatCompact } from '@/utils/Utils';
+import { formatCompact, memberRoleLabel } from '@/utils/Utils';
 
 const createLinkClassName =
   'inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover';
@@ -151,13 +150,31 @@ function MyCommunities() {
                     <li key={community.id} className="flex flex-wrap items-center gap-4 py-3">
                       <CommunityAvatar community={community} className="size-12 rounded-xl font-mono" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold text-slate-900">{community.name}</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-900">
+                          <span className="truncate">{community.name}</span>
+                          {community.active_live && (
+                            <span className="inline-flex shrink-0 animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                              <span className="size-1.5 animate-ping rounded-full bg-white" />
+                              Live
+                            </span>
+                          )}
+                        </span>
                         <span className="mt-0.5 block text-sm text-slate-500">
                           {memberRoleLabel[m.role]} · {community.privacy_type === 'public' ? 'Publique' : 'Privée'} ·{' '}
                           {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
                         </span>
                       </span>
                       <span className="flex shrink-0 gap-2">
+                        {community.active_live && (
+                          <Link
+                            to={`/communities/${community.slug}/events/${community.active_live.id}/live`}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white shadow-xs hover:bg-red-500"
+                            aria-label={`Rejoindre le direct de ${community.name}`}
+                          >
+                            <Radio className="size-4 animate-pulse" />
+                            Rejoindre
+                          </Link>
+                        )}
                         {isManaged(m) ? (
                           <>
                             <Link to={`/c/${community.slug}/dashboard`} className={actionClassName} aria-label={`Administrer ${community.name}`}>

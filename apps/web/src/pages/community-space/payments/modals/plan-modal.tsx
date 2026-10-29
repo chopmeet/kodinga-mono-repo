@@ -15,7 +15,7 @@ import {
   SelectInput,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
-import { intervalLabel, xof } from '@/pages/shared/community-labels';
+import { intervalLabel, xof } from '@/utils/Utils';
 import type { CommunityPlan } from '@/utils/api/billing/billing.type';
 import { MIN_PRICE, type PlanInput } from '../form/UseSpaceBilling';
 
@@ -93,43 +93,45 @@ function PlanModal({ open, plan, existingNames, onOpenChange, onSave }: Props) {
               : 'Les membres choisissent leur formule au moment de rejoindre la communauté.'}
           </DialogDescription>
         </DialogHeader>
-        <form id="plan-form" onSubmit={handleSubmit(onSubmit)} noValidate className="grid gap-x-3 sm:grid-cols-2">
-          <Input id="plan-name" label="Nom" required customClassContainer="sm:col-span-2" error={errors.name?.message} {...register('name')} />
-          <Input
-            id="plan-price"
-            type="number"
-            label="Prix (FCFA)"
-            required
-            min={MIN_PRICE}
-            step={500}
-            fieldHelp={`Minimum ${xof(MIN_PRICE)}`}
-            error={errors.price?.message}
-            {...register('price')}
-          />
-          <SelectInput
-            label="Facturation"
-            options={(Object.keys(intervalLabel) as (keyof typeof intervalLabel)[]).map((value) => ({
-              value,
-              label: intervalLabel[value].label,
-            }))}
-            {...register('billing_interval')}
-          />
-          <TextareaInput
-            id="plan-description"
-            label="Description"
-            rows={2}
-            customClassContainer="sm:col-span-2"
-            error={errors.description?.message}
-            {...register('description')}
-          />
-          <TextareaInput
-            id="plan-features"
-            label="Avantages inclus"
-            rows={3}
-            placeholder="Un avantage par ligne"
-            customClassContainer="sm:col-span-2"
-            {...register('features')}
-          />
+        <form id="plan-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <div className="grid gap-x-3 sm:grid-cols-2">
+            <Input id="plan-name" label="Nom" required customClassContainer="sm:col-span-2" error={errors.name?.message} {...register('name')} />
+            <Input
+              id="plan-price"
+              type="number"
+              label="Prix (FCFA)"
+              required
+              min={MIN_PRICE}
+              step={500}
+              fieldHelp={`Minimum ${xof(MIN_PRICE)}`}
+              error={errors.price?.message}
+              {...register('price')}
+            />
+            <SelectInput
+              label="Facturation"
+              options={(Object.keys(intervalLabel) as (keyof typeof intervalLabel)[]).map((value) => ({
+                value,
+                label: intervalLabel[value].label,
+              }))}
+              {...register('billing_interval')}
+            />
+            <TextareaInput
+              id="plan-description"
+              label="Description"
+              rows={2}
+              customClassContainer="sm:col-span-2"
+              error={errors.description?.message}
+              {...register('description')}
+            />
+            <TextareaInput
+              id="plan-features"
+              label="Avantages inclus"
+              rows={3}
+              placeholder="Un avantage par ligne"
+              customClassContainer="sm:col-span-2"
+              {...register('features')}
+            />
+          </div>
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>

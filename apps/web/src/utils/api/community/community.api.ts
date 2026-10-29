@@ -1,6 +1,18 @@
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 
-import type { CheckoutSession, CommunityPlan, MyPayment, MySubscription, PaymentCheck, PlanWriteData } from '../billing/billing.type';
+import type {
+  CheckoutSession,
+  CommunityPayout,
+  CommunityPlan,
+  CommunityRevenue,
+  CommunitySubscriber,
+  CommunityTransaction,
+  MyPayment,
+  MySubscription,
+  PaymentCheck,
+  PayoutRequest,
+  PlanWriteData,
+} from '../billing/billing.type';
 import type { MediaAsset, UploadTarget, UploadUrlRequest } from '../media/media.type';
 import type { ChatMessage, Conversation } from '../messaging/messaging.type';
 import type { AppNotification } from '../notification/notification.type';
@@ -157,6 +169,7 @@ export const CommunityApi = createApi({
     'messages',
     'notifications',
     'plans',
+    'community-billing',
   ],
   baseQuery: authBaseQuery,
   endpoints: (builder) => ({
@@ -292,8 +305,54 @@ export const CommunityApi = createApi({
       query: (paymentId) => `billing/payments/${paymentId}/status/`,
       transformResponse: unwrap<PaymentCheck>,
     }),
+    // Ends the subscription at the end of the paid period (no renewal): access stays until then
+    cancelSubscription: builder.mutation<MySubscription, string>({
+      query: (subscriptionId) => ({ url: `billing/subscriptions/${subscriptionId}/cancel/`, method: 'POST' }),
+      transformResponse: unwrap<MySubscription>,
+      invalidatesTags: [{ type: 'communities', id: 'my-billing' }],
+    }),
+    // Billing of a community for its owner (403 for anyone else): subscribers, payments, revenue, payouts
+    getCommunitySubscribers: builder.query<CommunitySubscriber[], string>({
+      query: (slug) => `billing/communities/${slug}/subscribers/`,
+      transformResponse: unwrap<CommunitySubscriber[]>,
+      providesTags: (_r, _e, slug) => [{ type: 'community-billing', id: slug }],
+    }),
+    getCommunityTransactions: builder.query<CommunityTransaction[], string>({
+      query: (slug) => `billing/communities/${slug}/transactions/`,
+      transformResponse: unwrap<CommunityTransaction[]>,
+      providesTags: (_r, _e, slug) => [{ type: 'community-billing', id: slug }],
+    }),
+    getCommunityRevenue: builder.query<CommunityRevenue, string>({
+      query: (slug) => `billing/communities/${slug}/revenue/`,
+      transformResponse: unwrap<CommunityRevenue>,
+      providesTags: (_r, _e, slug) => [{ type: 'community-billing', id: slug }],
+    }),
+    getCommunityPayouts: builder.query<CommunityPayout[], string>({
+      query: (slug) => `billing/communities/${slug}/payouts/`,
+      transformResponse: unwrap<CommunityPayout[]>,
+      providesTags: (_r, _e, slug) => [{ type: 'community-billing', id: slug }],
+    }),
+    /**
+     * Revenue of several communities of the owner (one revenue/ call each): for the overview of
+     * /dashboard, until the api serves a total across communities
+     */
+    getOwnedRevenues: builder.query<CommunityRevenue[], string[]>({
+      async queryFn(slugs, _api, _extra, baseQuery) {
+        const answers = await Promise.all(slugs.map((slug) => baseQuery(`billing/communities/${slug}/revenue/`)));
+        const failed = answers.find((a) => a.error);
+        if (failed?.error) return { error: failed.error as FetchBaseQueryError };
+        return { data: answers.map((a) => (a.data as ApiSuccess<CommunityRevenue>).data) };
+      },
+      providesTags: (_r, _e, slugs) => slugs.map((slug) => ({ type: 'community-billing' as const, id: slug })),
+    }),
+    // The amount leaves the available balance at once (the request is then handled by Kodinga)
+    requestPayout: builder.mutation<CommunityPayout, { slug: string } & PayoutRequest>({
+      query: ({ slug, ...body }) => ({ url: `billing/communities/${slug}/payouts/`, method: 'POST', body }),
+      transformResponse: unwrap<CommunityPayout>,
+      invalidatesTags: (_r, _e, { slug }) => [{ type: 'community-billing', id: slug }],
+    }),
     // PayDunya session: the browser goes to checkout_url, then comes back to return_url
-    createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string }>({
+    createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string; referral_code?: string }>({
       query: (body) => ({ url: 'billing/checkout/', method: 'POST', body }),
       transformResponse: unwrap<CheckoutSession>,
     }),
@@ -1545,6 +1604,13 @@ export const {
   useGetCommunityPlansQuery,
   useGetProPlansQuery,
   useCreateCheckoutMutation,
+  useCancelSubscriptionMutation,
+  useGetCommunitySubscribersQuery,
+  useGetCommunityTransactionsQuery,
+  useGetCommunityRevenueQuery,
+  useGetOwnedRevenuesQuery,
+  useGetCommunityPayoutsQuery,
+  useRequestPayoutMutation,
   useCreatePlanMutation,
   useUpdatePlanMutation,
   useDeactivatePlanMutation,

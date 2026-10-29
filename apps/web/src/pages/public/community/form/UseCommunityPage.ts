@@ -11,6 +11,7 @@ import {
 } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
+import { referralCode } from '@/utils/referral';
 import { communityTabs, type CommunityTabId } from '../components/community-tabs';
 import { rememberPayment } from './UsePaymentReturn';
 
@@ -80,7 +81,7 @@ function UseCommunityPage() {
   const subscribe = async (planId: string) => {
     const back = `${window.location.origin}${pathname}`;
     try {
-      const session = await createCheckout({ plan_id: planId, return_url: `${back}?payment=done`, cancel_url: `${back}?payment=cancelled` }).unwrap();
+      const session = await createCheckout({ plan_id: planId, return_url: `${back}?payment=done`, cancel_url: `${back}?payment=cancelled`, referral_code: referralCode() }).unwrap();
       // Its status is checked on the way back
       rememberPayment(slug, session.payment_id);
       window.location.assign(session.checkout_url);

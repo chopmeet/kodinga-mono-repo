@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import { Badge, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
 import DeletePostModal from '@/pages/community-space/posts/modals/delete-post-modal';
-import { postTypeLabel as typeLabel } from '@/pages/shared/community-labels';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import {
   useDeletePostMutation,
@@ -14,7 +13,7 @@ import {
 } from '@/utils/api/community/community.api';
 import type { CommunityPostItem } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { getName } from '@/utils/Utils';
+import { getName, postTypeLabel as typeLabel } from '@/utils/Utils';
 import { useDetailsCommunity } from '../form/UseCommunityFromParams';
 
 type Row = CommunityPostItem & { author_name: string };

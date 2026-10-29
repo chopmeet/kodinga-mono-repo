@@ -1,5 +1,4 @@
 import { customToast } from '@kodinga-mono-repo/ui';
-import { memberRoleLabel } from '@/pages/shared/community-labels';
 import {
   useChangeMemberRoleMutation,
   useDecideMemberMutation,
@@ -9,7 +8,7 @@ import {
 import type { CommunityMemberItem, CommunityRole, MembershipStatus } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
-import { getName } from '@/utils/Utils';
+import { getName, memberRoleLabel } from '@/utils/Utils';
 
 export type MemberStatusFilter = Extract<MembershipStatus, 'active' | 'pending' | 'suspended' | 'banned'> | 'all';
 export type MemberRoleFilter = CommunityRole | 'all';

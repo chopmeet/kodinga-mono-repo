@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 
 import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
-import { useGetMyCommunitiesQuery, useGetMySubscriptionsQuery } from '@/utils/api/community/community.api';
+import { useGetMyCommunitiesQuery, useGetMySubscriptionsQuery, useGetOwnedRevenuesQuery } from '@/utils/api/community/community.api';
 import { useGetMyProfileQuery } from '@/utils/api/user/user.api';
-import { formatCompact, getName, useUser } from '@/utils/Utils';
+import { formatCompact, getName, useUser, xof } from '@/utils/Utils';
 
 function Stat({ value, label, to }: { value: ReactNode; label: string; to: string }) {
   return (
@@ -17,18 +17,11 @@ function Stat({ value, label, to }: { value: ReactNode; label: string; to: strin
   );
 }
 
-/** A figure the api does not serve yet: said plainly, without a made-up amount (see SoonPanel) */
-function SoonStat({ label }: { label: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5">
-      <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-500 uppercase">Bientôt</span>
-      <p className="mt-2 text-sm text-slate-500">{label}</p>
-    </div>
-  );
-}
-
 /** A figure still loading (or missing): a dash, not a made-up zero */
 const figure = (n: number | undefined) => (n === undefined ? '—' : formatCompact(n));
+
+/** YYYY-MM of today, the key of monthly_revenue */
+const thisMonth = () => new Date().toISOString().slice(0, 7);
 
 
 function Overview() {
@@ -38,7 +31,14 @@ function Overview() {
   const subscriptions = useGetMySubscriptionsQuery().data;
   const profile = useGetMyProfileQuery().data;
 
-  const owned = memberships?.filter((m) => m.role === 'owner').length;
+  const ownedList = memberships?.filter((m) => m.role === 'owner');
+  const owned = ownedList?.length;
+  // Only a paid community receives payments
+  const paidSlugs = (ownedList ?? []).filter((m) => m.community.pricing_type === 'paid').map((m) => m.community.slug);
+  const revenues = useGetOwnedRevenuesQuery(paidSlugs, { skip: paidSlugs.length === 0 }).data;
+  const month = thisMonth();
+  const netThisMonth =
+    paidSlugs.length === 0 ? 0 : revenues?.reduce((sum, r) => sum + Number(r.monthly_revenue.find((m) => m.month === month)?.net ?? 0), 0);
   const activeSubscriptions = subscriptions?.filter((s) => s.is_active).length;
 
   return (
@@ -46,8 +46,14 @@ function Overview() {
       <TopTitle title={`Bonjour${user?.first_name ? `, ${user.first_name}` : ''}`} paragraph="Voici votre activité." />
 
       <section aria-label="Mes chiffres" className={`grid gap-4 sm:grid-cols-2 ${owned ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
-        {/* Owners only: the payments of their members, until the api serves them */}
-        {!!owned && <SoonStat label="Total reçu en tant que propriétaire (30 j)" />}
+        {/* Owners only: net of the Kodinga commission, over the paid communities they own */}
+        {!!owned && (
+          <Stat
+            value={netThisMonth === undefined ? '—' : xof(netThisMonth)}
+            label="Reçu ce mois-ci en tant que propriétaire"
+            to={paidSlugs.length === 1 ? `/c/${paidSlugs[0]}/payments/transactions` : '/dashboard/communities'}
+          />
+        )}
         <Stat value={figure(memberships?.length)} label="Communautés rejointes" to="/dashboard/communities" />
         <Stat value={figure(owned)} label={owned === 1 ? 'Communauté créée' : 'Communautés créées'} to="/dashboard/communities" />
         <Stat value={figure(activeSubscriptions)} label={activeSubscriptions === 1 ? 'Abonnement actif' : 'Abonnements actifs'} to="/dashboard/billing" />

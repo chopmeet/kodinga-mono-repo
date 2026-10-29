@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { Badge, Button, DataTable } from '@kodinga-mono-repo/ui';
 import type { SpaceRole } from '@/data/community-space.data';
 import type { CommunityRole } from '@/utils/api/community/community.type';
-import { memberRoleLabel, memberStatusStyle } from '@/pages/shared/community-labels';
+import { memberRoleLabel, memberStatusStyle } from '@/utils/Utils';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import { assignableRoles, canReviewRequest, canSanction } from '../form/member-permissions';
 import type { SpaceMember } from '../form/UseSpaceMembers';

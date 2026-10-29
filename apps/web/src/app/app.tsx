@@ -9,6 +9,7 @@ import { onSetUser } from '@/redux/slice/User.slice';
 import { AppRoutes } from '@/routes/router';
 import { useMeAccountQuery } from '@/utils/api/user/user.api';
 import { useRealtimeSync } from '@/utils/realtime/use-realtime';
+import { rememberReferral } from '@/utils/referral';
 import { isTokenExpired } from '@/utils/secure';
 
 function ScrollToTop() {
@@ -16,6 +17,13 @@ function ScrollToTop() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+  return null;
+}
+
+/** Affiliate link (?ref=CODE): the code is kept for the next checkout */
+function ReferralCapture() {
+  const { search } = useLocation();
+  useEffect(() => rememberReferral(search), [search]);
   return null;
 }
 
@@ -58,6 +66,7 @@ export function App() {
   return (
     <>
       <ScrollToTop />
+      <ReferralCapture />
       {token && (expired ? <ExpiredSession /> : <FetchUser />)}
       {token && !expired && <RealtimeSync />}
       {routes}

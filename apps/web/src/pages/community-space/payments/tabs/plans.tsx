@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { Button, Loader } from '@kodinga-mono-repo/ui';
 import type { CommunityPlan } from '@/utils/api/billing/billing.type';
-import { intervalLabel, xof } from '@/pages/shared/community-labels';
+import { intervalLabel, xof } from '@/utils/Utils';
 import { useSpaceBilling } from '../form/UseSpaceBilling';
 import PlanModal from '../modals/plan-modal';
 

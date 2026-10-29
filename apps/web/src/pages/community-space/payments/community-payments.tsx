@@ -1,18 +1,17 @@
 import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import { TrendingUp } from 'lucide-react';
-
 import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga-mono-repo/ui';
 import { useCommunitySpace } from '../community-space-context';
 import BillingOverview from './components/billing-overview';
-import SoonPanel from './components/soon-panel';
+import RevenueChart from './components/revenue-chart';
 import UseSpaceBilling from './form/UseSpaceBilling';
 
 const tabs: Tab[] = [
   { id: 'plans', title: 'Formules', link: 'plans' },
   { id: 'subscribers', title: 'Abonnés', link: 'subscribers' },
   { id: 'transactions', title: 'Paiements', link: 'transactions' },
+  { id: 'payouts', title: 'Reversements', link: 'payouts' },
 ];
 
 function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
@@ -37,14 +36,12 @@ function CommunityPayments() {
       <TopTitle title="Abonnements & paiements" paragraph={`Formules, abonnés et encaissements de ${community.name}`} />
 
       <section aria-label="Indicateurs de facturation" className="mb-6">
-        <BillingOverview plans={billing.plans} />
+        <BillingOverview plans={billing.plans} revenue={billing.revenue.data} />
       </section>
 
       <div className="mb-6">
-        <Panel title="Encaissements" description="Montant payé par les membres, par mois">
-          <SoonPanel icon={<TrendingUp className="size-6" />} title="Courbe des encaissements">
-            Vos revenus mois par mois, brut et net de la commission Kodinga, s’afficheront ici.
-          </SoonPanel>
+        <Panel title="Encaissements" description="Ce qui vous revient chaque mois, net de la commission Kodinga">
+          <RevenueChart monthly={billing.revenue.data?.monthly_revenue ?? []} />
         </Panel>
       </div>
 

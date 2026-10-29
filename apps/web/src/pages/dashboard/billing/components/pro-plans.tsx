@@ -1,7 +1,7 @@
 import { Check, CircleCheck, CircleX, Clock, Crown, LoaderCircle } from 'lucide-react';
 
 import { Badge, Button, cn } from '@kodinga-mono-repo/ui';
-import { intervalLabel, xof } from '@/pages/shared/community-labels';
+import { intervalLabel, xof } from '@/utils/Utils';
 import { parseApiError } from '@/utils/api/errors';
 import type { KodingaPro } from '../form/UseKodingaPro';
 

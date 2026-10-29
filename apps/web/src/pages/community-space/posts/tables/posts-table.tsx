@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Lock, LockOpen, MessageCircle, Pencil, Pin, PinOff, ThumbsUp, Trash2 } from 'lucide-react';
 
 import { Badge, DataTable } from '@kodinga-mono-repo/ui';
-import { postTypeLabel } from '@/pages/shared/community-labels';
+import { postTypeLabel } from '@/utils/Utils';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import type { SpacePost } from '../form/UseSpacePosts';
 

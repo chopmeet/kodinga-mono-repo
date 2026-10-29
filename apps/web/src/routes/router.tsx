@@ -59,6 +59,7 @@ import CommunityPayments from '@/pages/community-space/payments/community-paymen
 import PlansTab from '@/pages/community-space/payments/tabs/plans';
 import SubscribersTab from '@/pages/community-space/payments/tabs/subscribers';
 import TransactionsTab from '@/pages/community-space/payments/tabs/transactions';
+import PayoutsTab from '@/pages/community-space/payments/tabs/payouts';
 import CommunitySettings from '@/pages/community-space/settings/community-settings';
 import SpaceAccessTab from '@/pages/community-space/settings/tabs/access';
 import SpaceDangerTab from '@/pages/community-space/settings/tabs/danger';
@@ -259,6 +260,7 @@ export const AppRoutes: RouteObject[] = [
           { path: 'plans', element: <PlansTab /> },
           { path: 'subscribers', element: <SubscribersTab /> },
           { path: 'transactions', element: <TransactionsTab /> },
+          { path: 'payouts', element: <PayoutsTab /> },
         ],
       },
       {

@@ -3,11 +3,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { customToast, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
-import { memberRoleLabel } from '@/pages/shared/community-labels';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
-import { formatCompact } from '@/utils/Utils';
+import { formatCompact, memberRoleLabel } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { LeaveDialog, MembershipActions } from './community-sidebar';
 
