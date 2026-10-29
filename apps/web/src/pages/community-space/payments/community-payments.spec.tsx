@@ -37,10 +37,41 @@ function stubPlansApi() {
       plans = plans.map((p) => (p.id === id ? { ...p, is_active: false } : p));
       return json({ success: true, data: null });
     }
+    if (path.endsWith('/billing/communities/lagos-ai-data/revenue/')) return json({ success: true, data: { ...revenue, available_balance: balance } });
+    if (path.endsWith('/billing/communities/lagos-ai-data/subscribers/')) return json({ success: true, data: [subscriber] });
+    if (path.endsWith('/billing/communities/lagos-ai-data/transactions/')) return json({ success: true, data: [transaction] });
+    if (path.endsWith('/billing/communities/lagos-ai-data/payouts/') && request.method === 'GET') return json({ success: true, data: payouts });
+    if (path.endsWith('/billing/communities/lagos-ai-data/payouts/') && request.method === 'POST') {
+      const created = { id: `po${payouts.length + 1}`, amount: `${body?.amount}.00`, currency: 'XOF', status: 'pending', payment_method: body?.payment_method, account_identifier: body?.account_identifier, account_name: body?.account_name ?? '', reference: '', processed_at: null, rejection_reason: '', created_at: '2026-10-29T10:00:00Z' };
+      payouts = [created, ...payouts];
+      balance = (Number(balance) - Number(body?.amount)).toFixed(2);
+      return json({ success: true, data: created }, 201);
+    }
     return json({ success: true, data: [], pagination: { count: 0 }, results: [] });
   });
   return calls;
 }
+
+const member = { id: 'u9', username: 'kofi', email: 'kofi@example.com', first_name: 'Kofi', last_name: 'Mensah', full_name: 'Kofi Mensah', avatar_url: null };
+const subscriber = {
+  id: 'sub1', user: member, plan: { id: 'p-month', name: 'Mensuel', price: '15000.00', currency: 'XOF', billing_interval: 'month' },
+  status: 'active', is_active: true, current_period_start: '2026-10-19T00:00:00Z', current_period_end: '2026-11-18T00:00:00Z',
+  cancel_at_period_end: true, canceled_at: '2026-10-20T00:00:00Z', created_at: '2026-10-19T00:00:00Z',
+};
+const transaction = {
+  id: 'pay1', user: member, plan_name: 'Mensuel', plan_interval: 'month', amount: '15000.00', platform_fee: '1500.00', net_amount: '13500.00',
+  currency: 'XOF', status: 'PAID', provider: 'paydunya', provider_reference: '', paid_at: '2026-10-19T10:00:00Z', created_at: '2026-10-19T09:58:00Z',
+};
+const revenue = {
+  total_gross: '15000.00', total_platform_fees: '1500.00', total_net: '13500.00', available_balance: '13500.00', withdrawn_amount: '0.00', currency: 'XOF',
+  active_subscribers_count: 1, monthly_revenue: [{ month: '2026-10', gross: '15000.00', fees: '1500.00', net: '13500.00', payments_count: 1 }],
+};
+let payouts: Record<string, unknown>[] = [];
+let balance = revenue.available_balance;
+beforeEach(() => {
+  payouts = [];
+  balance = revenue.available_balance;
+});
 
 afterEach(() => {
   cleanup();
@@ -103,12 +134,47 @@ describe('Community space: subscriptions & payments', () => {
     expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
   });
 
-  it('says that subscribers and payments are coming soon', async () => {
+  it('shows the subscribers, the net revenue and the monthly chart of the api', async () => {
     stubPlansApi();
     renderAppAt('/c/lagos-ai-data/payments/subscribers');
-    expect(await screen.findByText(/La liste de vos abonnés/, {}, SLOW)).toBeTruthy();
-    cleanup();
+    const table = await screen.findByRole('table', { name: 'Abonnés de la communauté' }, SLOW);
+    expect(within(table).getByText('Kofi Mensah')).toBeTruthy();
+    expect(within(table).getByText('Ne sera pas renouvelé')).toBeTruthy();
+    const figures = screen.getByRole('region', { name: 'Indicateurs de facturation' });
+    await waitFor(() => expect(figures.textContent).toMatch(/13\s500 FCFARevenus nets/), SLOW);
+    // The chart has a table for screen readers: one row per month, the latest one with the payment
+    const months = screen.getByRole('table', { name: 'Revenus par mois' });
+    expect(within(months).getAllByRole('row')).toHaveLength(13);
+    expect(within(months).getAllByRole('row')[12].textContent).toMatch(/15\s000 FCFA1\s500 FCFA13\s500 FCFA1/);
+  });
+
+  it('lists the payments with the Kodinga commission and the net', async () => {
+    stubPlansApi();
     renderAppAt('/c/lagos-ai-data/payments/transactions');
-    expect(await screen.findByText(/L’historique des paiements reçus/, {}, SLOW)).toBeTruthy();
+    const table = await screen.findByRole('table', { name: 'Paiements reçus' }, SLOW);
+    const row = within(table).getAllByRole('row')[1];
+    expect(row.textContent).toMatch(/Kofi Mensah/);
+    expect(row.textContent).toMatch(/− 1\s500 FCFA/);
+    expect(row.textContent).toMatch(/13\s500 FCFA/);
+  });
+
+  it('asks a payout within the available balance', async () => {
+    const calls = stubPlansApi();
+    renderAppAt('/c/lagos-ai-data/payments/payouts');
+    const solde = await screen.findByRole('region', { name: 'Solde' }, SLOW);
+    await waitFor(() => expect(solde.textContent).toMatch(/13\s500 FCFA/), SLOW);
+    fireEvent.click(within(solde).getByRole('button', { name: 'Demander un reversement' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/Montant/), { target: { value: '20000' } });
+    fireEvent.change(within(dialog).getByLabelText(/Numéro de téléphone/), { target: { value: '+221770000000' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Demander le reversement' }));
+    expect(await within(dialog).findByText(/Au plus votre solde disponible/, {}, SLOW)).toBeTruthy();
+
+    fireEvent.change(within(dialog).getByLabelText(/Montant/), { target: { value: '10000' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Demander le reversement' }));
+    await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/payouts/'))?.body).toEqual({ amount: 10000, payment_method: 'wave', account_identifier: '+221770000000', account_name: '' }), SLOW);
+    const table = await screen.findByRole('table', { name: 'Demandes de reversement' }, SLOW);
+    expect(within(table).getByText('En attente')).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Solde' }).textContent).toMatch(/3\s500 FCFA/), SLOW);
   });
 });

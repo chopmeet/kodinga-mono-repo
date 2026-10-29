@@ -3,12 +3,11 @@ import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage, Badge, Button, ColgateWrapper, customToast, EmptyAlert } from '@kodinga-mono-repo/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
-import { personName } from '@/pages/shared/person';
 import { dateFormat } from '@/pages/shared/row-actions';
 import { useGetOpportunityApplicationsQuery, useUpdateOpportunityApplicationStatusMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { OpportunityApplication, OpportunityApplicationStatus } from '@/utils/api/opportunity/opportunity.type';
-import { nameInitials } from '@/utils/Utils';
+import { getName, nameInitials } from '@/utils/Utils';
 import { applicationStatusLabel, applicationStatusStyle } from '../opportunity-labels';
 
 const STATUSES = Object.keys(applicationStatusLabel) as OpportunityApplicationStatus[];
@@ -16,7 +15,7 @@ const STATUSES = Object.keys(applicationStatusLabel) as OpportunityApplicationSt
 function ApplicationItem({ application: a, opportunitySlug }: { application: OpportunityApplication; opportunitySlug: string }) {
   const [updateStatus, { isLoading }] = useUpdateOpportunityApplicationStatusMutation();
   const [expanded, setExpanded] = useState(false);
-  const name = personName(a.applicant);
+  const name = getName(a.applicant);
   const longLetter = a.cover_letter.length > 220;
 
   const change = async (status: OpportunityApplicationStatus) => {

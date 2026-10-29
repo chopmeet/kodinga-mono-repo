@@ -4,12 +4,11 @@ import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
-import { postTypeLabel } from '@/pages/shared/community-labels';
 import { useGetCommunityFeedQuery, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
-import { ago, getName, nameInitials, plain, postHref, useUser } from '@/utils/Utils';
+import { ago, getName, nameInitials, plain, postHref, postTypeLabel, useUser } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';

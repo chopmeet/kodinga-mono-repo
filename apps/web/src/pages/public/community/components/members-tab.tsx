@@ -3,11 +3,10 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, cn, SearchInput } from '@kodinga-mono-repo/ui';
-import { memberRoleLabel } from '@/pages/shared/community-labels';
 import { SoonBadge } from '@/pages/shared/row-actions';
 import { useGetCommunityLeaderboardQuery, useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
-import { formatCompact, getName, nameInitials } from '@/utils/Utils';
+import { formatCompact, getName, memberRoleLabel, nameInitials } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { Pill, SectionHeader } from './section-header';
 

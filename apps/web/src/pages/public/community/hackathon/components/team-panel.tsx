@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { Button } from '@kodinga-mono-repo/ui';
 import type { HackathonPage } from '../form/UseHackathonPage';
-import { personName } from './teams-tab';
+import { getName } from '@/utils/Utils';
 
 /** Team of the participant: answer an invitation, create a team, invite teammates, leave */
 function TeamPanel({ page }: { page: HackathonPage }) {
@@ -27,7 +27,7 @@ function TeamPanel({ page }: { page: HackathonPage }) {
               <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
                 <p className="text-sm text-slate-700">
                   <Mail className="mr-1.5 inline size-4 text-blue-900" />
-                  <strong className="text-slate-900">{personName(t.leader)}</strong> vous invite dans l’équipe <strong className="text-slate-900">{t.name}</strong>
+                  <strong className="text-slate-900">{getName(t.leader)}</strong> vous invite dans l’équipe <strong className="text-slate-900">{t.name}</strong>
                 </p>
                 <div className="flex gap-2">
                   <Button size="sm" isLoading={page.isResponding} onClick={() => page.respond(t.id, true)}>
@@ -96,7 +96,7 @@ function TeamPanel({ page }: { page: HackathonPage }) {
           <li key={m.id} className="flex items-center justify-between gap-3 py-2.5">
             <span className="flex items-center gap-2 text-slate-800">
               {m.role === 'leader' && <Crown className="size-4 text-amber-500" aria-label="Capitaine" />}
-              {personName(m.user)}
+              {getName(m.user)}
               <span className="text-sm text-slate-400">@{m.user.username}</span>
             </span>
             {m.status === 'invited' && <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Invitation envoyée</span>}

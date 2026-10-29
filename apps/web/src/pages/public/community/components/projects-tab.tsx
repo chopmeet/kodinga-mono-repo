@@ -11,8 +11,7 @@ import type { ProjectListItem, ProjectOrder } from '@/utils/api/project/project.
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { LockedPanel } from './locked-panel';
 import { Pill, SectionHeader } from './section-header';
-
-const personName = (p: ProjectListItem['owner']) => [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username;
+import { getName } from '@/utils/Utils';
 
 /** Vote of a project; visitors are sent to the login page */
 export function UpvoteButton({ project, page }: { project: Pick<ProjectListItem, 'slug' | 'title' | 'is_upvoted' | 'upvotes_count'>; page: Pick<CommunityPage, 'membership' | 'loginUrl'> }) {
@@ -125,7 +124,7 @@ export function ProjectsTab({ page }: { page: CommunityPage }) {
                 </h3>
                 {p.tagline && <p className="mt-0.5 text-sm text-slate-600">{p.tagline}</p>}
                 <p className="mt-2 text-xs text-slate-500">
-                  par {personName(p.owner)}
+                  par {getName(p.owner)}
                   {p.technologies.length > 0 && ` · ${p.technologies.map((t) => t.name).join(' · ')}`}
                 </p>
                 <Link to={`/projects/${p.slug}?from=${slug}#commentaires`} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-900">

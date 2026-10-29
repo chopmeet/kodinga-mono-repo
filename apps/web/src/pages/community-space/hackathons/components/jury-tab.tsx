@@ -11,7 +11,6 @@ import { parseApiError } from '@/utils/api/errors';
 import type { Hackathon } from '@/utils/api/hackathon/hackathon.type';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 import { getName } from '@/utils/Utils';
-import { personName } from '@/pages/shared/person';
 
 /** Judges of a hackathon: the organizers pick them among the active members of the community */
 export function JuryTab({ slug, hackathon, canManage }: { slug: string; hackathon: Hackathon; canManage: boolean }) {
@@ -56,11 +55,11 @@ export function JuryTab({ slug, hackathon, canManage }: { slug: string; hackatho
               <li key={j.id} className="flex items-center gap-3 px-4 py-3">
                 <ShieldCheck className="size-4 shrink-0 text-violet-600" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-slate-900">{personName(j.user)}</span>
+                  <span className="block truncate text-sm font-medium text-slate-900">{getName(j.user)}</span>
                   <span className="block truncate text-xs text-slate-500">{j.user.email}</span>
                 </span>
                 {canManage && (
-                  <Button variant="ghost" size="icon-sm" aria-label={`Retirer ${personName(j.user)} du jury`} onClick={() => drop(j.user.id, personName(j.user))}>
+                  <Button variant="ghost" size="icon-sm" aria-label={`Retirer ${getName(j.user)} du jury`} onClick={() => drop(j.user.id, getName(j.user))}>
                     <UserMinus />
                   </Button>
                 )}

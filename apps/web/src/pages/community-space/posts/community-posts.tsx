@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, SelectInput, TopTitle } from '@kodinga-mono-repo/ui';
-import { postTypeLabel } from '@/pages/shared/community-labels';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { SoonBadge } from '@/pages/shared/row-actions';
 import type { PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { useUser } from '@/utils/Utils';
+import { postTypeLabel, useUser } from '@/utils/Utils';
 import { useCommunitySpace } from '../community-space-context';
 import UseSpacePosts, { type PostStateFilter, type PostTypeFilter, type SpacePost } from './form/UseSpacePosts';
 import DeletePostModal from './modals/delete-post-modal';

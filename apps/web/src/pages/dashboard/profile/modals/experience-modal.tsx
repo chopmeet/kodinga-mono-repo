@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { employmentLabel } from '@/pages/shared/profile-labels';
+import { employmentLabel } from '@/utils/Utils';
 import { TechnologyPicker } from '@/pages/shared/technology-picker';
 import type { EmploymentType, ProfileExperience } from '@/utils/api/profile/profile.type';
 import { fromMonth, type ProfileEntries, toMonth } from '../form/UseProfileEntries';

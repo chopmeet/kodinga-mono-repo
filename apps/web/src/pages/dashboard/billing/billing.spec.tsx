@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
@@ -10,16 +10,17 @@ vi.setConfig({ testTimeout: 15_000 });
 
 const plan = { id: 'p1', name: 'Mensuel', slug: 'p1', description: '', price: '15000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Lagos AI', features: [], is_active: true, order: 0 };
 
-type Call = { url: URL };
+type Call = { url: URL; method: string };
 
 /** Lagos AI (paid): a payment checked with the api until PayDunya confirms it */
 function stubBillingApi({ confirmAfter = 1, finalStatus = 'PAID' } = {}) {
   const calls: Call[] = [];
   let checks = 0;
+  let canceled = false;
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
     const url = new URL(request.url);
-    calls.push({ url });
+    calls.push({ url, method: request.method });
     const json = (data: unknown) => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
     const path = url.pathname;
     const paid = checks > confirmAfter && finalStatus === 'PAID';
@@ -41,7 +42,11 @@ function stubBillingApi({ confirmAfter = 1, finalStatus = 'PAID' } = {}) {
       return json({ success: true, data: [{ id: 'pay-1', plan, amount: '15000.00', currency: 'XOF', status: paid ? 'PAID' : 'PENDING', provider: 'paydunya', provider_reference: '', checkout_url: 'https://paydunya.com/checkout/x', paid_at: null, created_at: '2026-10-19T10:00:00Z' }] });
     }
     if (path.endsWith('/billing/subscriptions/me/')) {
-      return json({ success: true, data: [{ id: 's1', plan, community_id: 'c1', status: 'active', is_active: true, current_period_start: '2026-10-19T10:00:00Z', current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: false, canceled_at: null, created_at: '2026-10-19T10:00:00Z' }] });
+      return json({ success: true, data: [{ id: 's1', plan, community_id: 'c1', status: 'active', is_active: true, current_period_start: '2026-10-19T10:00:00Z', current_period_end: '2026-11-19T10:00:00Z', cancel_at_period_end: canceled, canceled_at: null, created_at: '2026-10-19T10:00:00Z' }] });
+    }
+    if (path.endsWith('/billing/subscriptions/s1/cancel/')) {
+      canceled = true;
+      return json({ success: true, data: null });
     }
     if (path.endsWith('/billing/plans/')) return json({ success: true, data: [plan] });
     return json({ success: true, data: [], pagination: { count: 0 }, results: [] });
@@ -103,5 +108,19 @@ describe('Dashboard: billing', () => {
     await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(2));
     expect(within(table).getByText('En attente')).toBeTruthy();
     expect(within(table).getByRole('link', { name: 'Finaliser' }).getAttribute('href')).toBe('https://paydunya.com/checkout/x');
+  });
+
+  it('ends a subscription at the end of the period, after a confirmation', async () => {
+    signIn();
+    const calls = stubBillingApi();
+    renderAppAt('/dashboard/billing');
+    const subs = await screen.findByRole('list', { name: 'Mes abonnements' }, SLOW);
+    fireEvent.click(within(subs).getByRole('button', { name: 'Se désabonner de Lagos AI' }));
+    expect(calls.some((c) => c.url.pathname.endsWith('/cancel/'))).toBe(false);
+    fireEvent.click(within(subs).getByRole('button', { name: 'Confirmer' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/billing/subscriptions/s1/cancel/'))).toBe(true), SLOW);
+    // Read again: access until the end of the period, no more button
+    await waitFor(() => expect(screen.getByRole('list', { name: 'Mes abonnements' }).textContent).toMatch(/Accès jusqu’au 19 novembre 2026/), SLOW);
+    expect(within(screen.getByRole('list', { name: 'Mes abonnements' })).queryByRole('button', { name: /Se désabonner/ })).toBeNull();
   });
 });

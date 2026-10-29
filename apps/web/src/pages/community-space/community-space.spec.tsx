@@ -7,6 +7,7 @@ import { must, renderAppAt, SLOW, stubApi } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { CommunityRole } from '@/utils/api/community/community.type';
 import type { User } from '@/utils/api/user/user.type';
+import { rememberReferral } from '@/utils/referral';
 
 // Full app tree + network stubs: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
@@ -131,6 +132,13 @@ describe('Dashboard: Kodinga Pro', () => {
     const assign = vi.fn();
     const original = window.location;
     Object.defineProperty(window, 'location', { configurable: true, value: { ...original, origin: 'http://localhost:4200', assign } });
+    // Node's own localStorage has no backing file in the tests: one in memory, for the affiliate code
+    const storage = new Map<string, string>();
+    vi.spyOn(window, 'localStorage', 'get').mockReturnValue({
+      getItem: (k: string) => storage.get(k) ?? null,
+      setItem: (k: string, v: string) => void storage.set(k, v),
+      removeItem: (k: string) => void storage.delete(k),
+    } as Storage);
     try {
       const calls = stubMyCommunities([], {
         'billing/plans/': ok([proPlan]),
@@ -138,6 +146,8 @@ describe('Dashboard: Kodinga Pro', () => {
         'billing/payments/my/': ok([]),
         'billing/checkout/': ok({ payment_id: 'pay1', token: 't', checkout_url: 'https://paydunya.com/checkout/t', amount: '5000', currency: 'XOF', plan_name: 'Pro mensuel' }),
       });
+      // Arrived from an affiliate link (kept by App on any page): the code goes with the checkout
+      rememberReferral('?ref=AMI2026');
       renderAppAt('/dashboard/billing');
       const plans = await screen.findByRole('list', { name: 'Formules Pro' }, SLOW);
       expect(within(plans).getByText('5 000 FCFA')).toBeTruthy();
@@ -147,6 +157,7 @@ describe('Dashboard: Kodinga Pro', () => {
         plan_id: proPlan.id,
         return_url: 'http://localhost:4200/dashboard/billing?payment=done',
         cancel_url: 'http://localhost:4200/dashboard/billing?payment=cancelled',
+        referral_code: 'AMI2026',
       });
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: original });
@@ -183,7 +194,11 @@ describe('Dashboard: overview', () => {
         ['lagos-ai-data', 'owner'],
         ['dakar-devops', 'member'],
       ],
-      { 'billing/subscriptions/me/': ok([]), 'profiles/me/': ok({ reputation_points: 340 }) }
+      {
+        'billing/subscriptions/me/': ok([]),
+        'profiles/me/': ok({ reputation_points: 340 }),
+        'billing/communities/lagos-ai-data/revenue/': ok({ monthly_revenue: [{ month: new Date().toISOString().slice(0, 7), gross: '20000.00', fees: '2000.00', net: '18000.00', payments_count: 2 }] }),
+      }
     );
     const { where } = renderAppAt('/dashboard');
     expect(await screen.findByRole('heading', { name: 'Bonjour, Awa' }, SLOW)).toBeTruthy();
@@ -191,8 +206,10 @@ describe('Dashboard: overview', () => {
     await waitFor(() => expect(within(figures).getByRole('link', { name: /Communautés rejointes/ }).textContent).toContain('2'), SLOW);
     expect(within(figures).getByRole('link', { name: /Communauté créée/ }).textContent).toContain('1');
     await waitFor(() => expect(within(figures).getByRole('link', { name: /Points de réputation/ }).textContent).toContain('340'), SLOW);
-    // Not served by the api yet: no amount
-    expect(within(figures).getByText('Total reçu en tant que propriétaire (30 j)').parentElement?.textContent).toMatch(/^Bientôt/);
+    // Net of this month over the paid communities owned (here one: its payments)
+    const received = await within(figures).findByRole('link', { name: /Reçu ce mois-ci/ }, SLOW);
+    await waitFor(() => expect(received.textContent).toMatch(/18\s000 FCFA/), SLOW);
+    expect(received.getAttribute('href')).toBe('/c/lagos-ai-data/payments/transactions');
     expect(screen.getByRole('link', { name: 'Facturation' }).getAttribute('href')).toBe('/dashboard/billing');
     fireEvent.click(within(screen.getByRole('region', { name: 'Session' })).getByRole('button', { name: 'Se déconnecter' }));
     await waitFor(() => expect(store.getState().user.token).toBeNull(), SLOW);

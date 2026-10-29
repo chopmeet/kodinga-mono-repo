@@ -13,11 +13,10 @@ import {
   SelectInput,
 } from '@kodinga-mono-repo/ui';
 import type { SpaceRole } from '@/data/community-space.data';
-import { memberRoleLabel } from '@/pages/shared/community-labels';
 import { dateFormat, SoonBadge } from '@/pages/shared/row-actions';
 import { useGetCommunityInvitationsQuery } from '@/utils/api/community/community.api';
 import type { CommunityInvitation } from '@/utils/api/community/community.type';
-import { getName } from '@/utils/Utils';
+import { getName, memberRoleLabel } from '@/utils/Utils';
 import { invitableRoles } from '../form/member-permissions';
 import UseInvitationForm, { copyText, invitationLink } from '../form/UseInvitationForm';
 

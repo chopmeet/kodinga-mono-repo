@@ -17,10 +17,9 @@ import {
   Loader,
 } from '@kodinga-mono-repo/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
-import { postTypeLabel } from '@/pages/shared/community-labels';
 import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { ago, getName, nameInitials, plain } from '@/utils/Utils';
+import { ago, getName, nameInitials, plain, postTypeLabel } from '@/utils/Utils';
 import { PollCard } from '../components/poll-card';
 import UsePostDetails, { type PostDetailsPage } from '../form/UsePostDetails';
 import { CommentForm } from './comment-form';

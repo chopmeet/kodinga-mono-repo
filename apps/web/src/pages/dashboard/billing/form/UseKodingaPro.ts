@@ -4,6 +4,7 @@ import { customToast } from '@kodinga-mono-repo/ui';
 import UsePaymentReturn, { PRO_SCOPE, rememberPayment } from '@/pages/public/community/form/UsePaymentReturn';
 import { useCreateCheckoutMutation, useGetMySubscriptionsQuery, useGetProPlansQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
+import { referralCode } from '@/utils/referral';
 import { isAdmin, useUser } from '@/utils/Utils';
 
 /**
@@ -26,7 +27,7 @@ function UseKodingaPro() {
   const subscribe = async (planId: string) => {
     const back = `${window.location.origin}/dashboard/billing`;
     try {
-      const session = await createCheckout({ plan_id: planId, return_url: `${back}?payment=done`, cancel_url: `${back}?payment=cancelled` }).unwrap();
+      const session = await createCheckout({ plan_id: planId, return_url: `${back}?payment=done`, cancel_url: `${back}?payment=cancelled`, referral_code: referralCode() }).unwrap();
       rememberPayment(PRO_SCOPE.slug, session.payment_id);
       window.location.assign(session.checkout_url);
     } catch (err) {

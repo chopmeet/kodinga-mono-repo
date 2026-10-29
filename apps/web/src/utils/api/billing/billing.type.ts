@@ -73,3 +73,83 @@ export type PlanWriteData = {
   billing_interval: BillingInterval;
   features: string[];
 };
+
+/** CommunityMemberUserSerializer: who paid (creator views) */
+export type BillingUser = {
+  id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  avatar_url: string | null;
+};
+
+/** CommunitySubscriberSerializer (GET billing/communities/<slug>/subscribers/, owner only) */
+export type CommunitySubscriber = {
+  id: string;
+  user: BillingUser;
+  plan: Pick<CommunityPlan, 'id' | 'name' | 'price' | 'currency' | 'billing_interval'>;
+  status: SubscriptionStatus;
+  /** Valid now (paid period not over) */
+  is_active: boolean;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  canceled_at: string | null;
+  created_at: string;
+};
+
+/** CommunityTransactionSerializer (GET billing/communities/<slug>/transactions/, owner only) */
+export type CommunityTransaction = {
+  id: string;
+  user: BillingUser;
+  plan_name: string;
+  plan_interval: BillingInterval;
+  /** Decimals, as strings: paid by the member, Kodinga commission, net for the creator */
+  amount: string;
+  platform_fee: string;
+  net_amount: string;
+  currency: string;
+  status: PaymentStatus;
+  provider: string;
+  provider_reference: string;
+  paid_at: string | null;
+  created_at: string;
+};
+
+/** MonthlyRevenuePointSerializer: paid payments of one month (YYYY-MM) */
+export type MonthlyRevenue = { month: string; gross: string; fees: string; net: string; payments_count: number };
+
+/** CommunityRevenueOverviewSerializer (GET billing/communities/<slug>/revenue/, owner only) */
+export type CommunityRevenue = {
+  total_gross: string;
+  total_platform_fees: string;
+  total_net: string;
+  available_balance: string;
+  withdrawn_amount: string;
+  currency: string;
+  active_subscribers_count: number;
+  monthly_revenue: MonthlyRevenue[];
+};
+
+export type PayoutStatus = 'pending' | 'approved' | 'processed' | 'rejected';
+export type PayoutMethod = 'wave' | 'orange_money' | 'bank_transfer';
+
+/** CommunityPayoutSerializer (GET / POST billing/communities/<slug>/payouts/, owner only) */
+export type CommunityPayout = {
+  id: string;
+  amount: string;
+  currency: string;
+  status: PayoutStatus;
+  payment_method: PayoutMethod;
+  account_identifier: string;
+  account_name: string;
+  reference: string;
+  processed_at: string | null;
+  rejection_reason: string;
+  created_at: string;
+};
+
+/** CreateCommunityPayoutRequestSerializer: at least 1 000 FCFA, within the available balance */
+export type PayoutRequest = { amount: number; payment_method: PayoutMethod; account_identifier: string; account_name?: string };

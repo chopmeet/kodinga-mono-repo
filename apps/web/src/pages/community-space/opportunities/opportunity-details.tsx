@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Badge, Button, ColgateWrapper, DetailsPageSkeleton, EmptyAlert } from '@kodinga-mono-repo/ui';
-import { personName } from '@/pages/shared/person';
+import { getName } from '@/utils/Utils';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import { useGetOpportunityQuery } from '@/utils/api/community/community.api';
 import { useCommunitySpace } from '../community-space-context';
@@ -65,7 +65,7 @@ function OpportunityDetails() {
     { icon: Eye, label: 'Vues', value: String(o.views_count) },
     { icon: CalendarClock, label: 'Publiée le', value: dateFormat.format(new Date(o.created_at)) },
     ...(o.expires_at ? [{ icon: CalendarClock, label: isExpired(o) ? 'Expirée le' : 'Expire le', value: dateFormat.format(new Date(o.expires_at)) }] : []),
-    { icon: UserRound, label: 'Publiée par', value: personName(o.poster) },
+    { icon: UserRound, label: 'Publiée par', value: getName(o.poster) },
   ];
 
   return (
@@ -169,7 +169,7 @@ function OpportunityDetails() {
           <ApplicationsSection opportunitySlug={o.slug} />
         ) : (
           <ColgateWrapper className="border border-neutral-200 p-4 text-sm text-slate-600">
-            Les candidatures sont visibles par {personName(o.poster)}, qui a publié l'offre.
+            Les candidatures sont visibles par {getName(o.poster)}, qui a publié l'offre.
           </ColgateWrapper>
         )}
       </div>

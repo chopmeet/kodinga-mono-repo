@@ -3,7 +3,7 @@ import { type ReactNode, useState } from 'react';
 
 import { Button, Loader } from '@kodinga-mono-repo/ui';
 import type { ProfileEducation, ProfileExperience } from '@/utils/api/profile/profile.type';
-import { employmentLabel, period } from '@/pages/shared/profile-labels';
+import { employmentLabel, period } from '@/utils/Utils';
 import UseProfileEntries from '../form/UseProfileEntries';
 import EducationModal from '../modals/education-modal';
 import ExperienceModal from '../modals/experience-modal';

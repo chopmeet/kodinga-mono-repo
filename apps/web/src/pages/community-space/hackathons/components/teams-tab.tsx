@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Badge, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
 import { useGetHackathonTeamsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
-import { personName } from '@/pages/shared/person';
+import { getName } from '@/utils/Utils';
 
 const memberStatus: Record<string, string> = { accepted: 'Membre', invited: 'Invité', declined: 'A refusé', left: 'A quitté' };
 
@@ -40,7 +40,7 @@ export function TeamsTab({ slug, hackathonSlug }: { slug: string; hackathonSlug:
                 <li key={m.id} className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 text-slate-800">
                     {m.user.id === team.leader.id && <Crown className="size-3.5 text-amber-500" aria-label="Chef d'équipe" />}
-                    {personName(m.user)}
+                    {getName(m.user)}
                   </span>
                   {m.status !== 'accepted' && (
                     <Badge variant="outline" className="text-slate-500">

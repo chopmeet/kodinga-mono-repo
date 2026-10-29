@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Button, ColgateWrapper, customToast, DetailsPageSkeleton, EmptyAlert } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
-import { personName } from '@/pages/shared/person';
+import { getName } from '@/utils/Utils';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import { ImageGallery } from '@/pages/shared/image-gallery';
 import { useGetProjectQuery, useToggleProjectUpvoteMutation } from '@/utils/api/community/community.api';
@@ -58,7 +58,7 @@ function ProjectDetails() {
   };
 
   const facts = [
-    { icon: UserRound, label: 'Par', value: `${personName(p.owner)}${p.owner.headline ? ` · ${p.owner.headline}` : ''}` },
+    { icon: UserRound, label: 'Par', value: `${getName(p.owner)}${p.owner.headline ? ` · ${p.owner.headline}` : ''}` },
     { icon: ArrowBigUp, label: 'Votes', value: String(p.upvotes_count) },
     { icon: Eye, label: 'Vues', value: String(p.views_count) },
     { icon: CalendarClock, label: 'Partagé le', value: dateFormat.format(new Date(p.created_at)) },

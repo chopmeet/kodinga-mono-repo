@@ -2,16 +2,15 @@ import { CornerDownRight, Send } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, ColgateWrapper, customToast, EmptyAlert, TextareaInput } from '@kodinga-mono-repo/ui';
-import { personName } from '@/pages/shared/person';
 import { useAddProjectCommentMutation, useGetProjectCommentsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { ProjectPerson } from '@/utils/api/project/project.type';
-import { nameInitials } from '@/utils/Utils';
+import { getName, nameInitials } from '@/utils/Utils';
 
 const when = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 function Author({ person, at }: { person: ProjectPerson; at: string }) {
-  const name = personName(person);
+  const name = getName(person);
   return (
     <div className="flex items-center gap-2">
       <Avatar className="size-8">
@@ -93,7 +92,7 @@ export function ProjectComments({ projectSlug }: { projectSlug: string }) {
                 Répondre
               </button>
               {(c.replies.length > 0 || replyTo === c.id) && (
-                <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4" aria-label={`Réponses à ${personName(c.author)}`}>
+                <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4" aria-label={`Réponses à ${getName(c.author)}`}>
                   {c.replies.map((r) => (
                     <li key={r.id}>
                       <Author person={r.author} at={r.created_at} />
@@ -104,7 +103,7 @@ export function ProjectComments({ projectSlug }: { projectSlug: string }) {
                     <li className="flex gap-2">
                       <CornerDownRight className="mt-2 size-4 shrink-0 text-slate-400" aria-hidden />
                       <div className="flex-1">
-                        <CommentForm projectSlug={projectSlug} parentId={c.id} label={`Répondre à ${personName(c.author)}`} onSent={() => setReplyTo(null)} />
+                        <CommentForm projectSlug={projectSlug} parentId={c.id} label={`Répondre à ${getName(c.author)}`} onSent={() => setReplyTo(null)} />
                       </div>
                     </li>
                   )}

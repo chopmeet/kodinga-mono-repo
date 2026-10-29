@@ -1,9 +1,12 @@
 import { CreditCard, Receipt } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn, Loader } from '@kodinga-mono-repo/ui';
-import { intervalLabel, paymentStatusStyle, subscriptionStatusStyle, xof } from '@/pages/shared/community-labels';
-import { useGetMyPaymentsQuery, useGetMySubscriptionsQuery } from '@/utils/api/community/community.api';
+import { Button, cn, customToast, Loader } from '@kodinga-mono-repo/ui';
+import { intervalLabel, paymentStatusStyle, subscriptionStatusStyle, xof } from '@/utils/Utils';
+import { useCancelSubscriptionMutation, useGetMyPaymentsQuery, useGetMySubscriptionsQuery } from '@/utils/api/community/community.api';
+import type { MySubscription } from '@/utils/api/billing/billing.type';
+import { parseApiError } from '@/utils/api/errors';
 
 const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${Number(value).toLocaleString('fr-FR')} ${currency}`);
@@ -12,6 +15,20 @@ const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(
 function BillingHistory() {
   const subscriptions = useGetMySubscriptionsQuery();
   const payments = useGetMyPaymentsQuery();
+  const [cancelSubscription, { isLoading: isCanceling }] = useCancelSubscriptionMutation();
+  // Two steps: the first click asks to confirm, on the card itself
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  const cancel = async (s: MySubscription) => {
+    try {
+      await cancelSubscription(s.id).unwrap();
+      customToast.success({ message: `Abonnement résilié : vous gardez l’accès jusqu’au ${day.format(new Date(s.current_period_end))}.` });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    } finally {
+      setConfirming(null);
+    }
+  };
 
   if (subscriptions.isLoading || payments.isLoading) return <Loader inline size="sm" message="Chargement de vos abonnements…" />;
 
@@ -57,6 +74,26 @@ function BillingHistory() {
                           ? `Renouvellement le ${day.format(new Date(s.current_period_end))}`
                           : `Terminé le ${day.format(new Date(s.current_period_end))}`}
                   </p>
+                  {/* Renewable and not already stopped: the member can end it at the end of the period */}
+                  {s.status === 'active' && s.is_active && !oneTime && !s.cancel_at_period_end && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {confirming === s.id ? (
+                        <>
+                          <span className="text-sm text-slate-600">Résilier ? L’accès reste ouvert jusqu’à l’échéance.</span>
+                          <Button size="sm" variant="danger" isLoading={isCanceling} onClick={() => cancel(s)}>
+                            Confirmer
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={isCanceling} onClick={() => setConfirming(null)}>
+                            Garder
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => setConfirming(s.id)} aria-label={`Se désabonner de ${s.plan?.community_name ?? s.plan?.name ?? 'cet abonnement'}`}>
+                          Se désabonner
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}

@@ -9,10 +9,9 @@ import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { ImageGallery } from '@/pages/shared/image-gallery';
 import { Markdown } from '@/pages/shared/markdown';
 import type { ProjectPerson } from '@/utils/api/project/project.type';
-import { ago, nameInitials } from '@/utils/Utils';
+import { ago, getName, nameInitials } from '@/utils/Utils';
 import UseProjectPage, { type ProjectPage } from './form/UseProjectPage';
 
-const personName = (p: ProjectPerson) => [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username;
 const safeUrl = (url: string) => (/^https?:\/\/\S+\.\S+/.test(url) ? url : null);
 
 function Person({ person, size = 'size-9' }: { person: ProjectPerson; size?: string }) {
@@ -20,7 +19,7 @@ function Person({ person, size = 'size-9' }: { person: ProjectPerson; size?: str
     <img src={person.avatar_url} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
   ) : (
     <span className={`${size} flex shrink-0 items-center justify-center rounded-full bg-blue-900 text-xs font-semibold text-white`} aria-hidden>
-      {nameInitials(personName(person))}
+      {nameInitials(getName(person))}
     </span>
   );
 }
@@ -76,7 +75,7 @@ function Comments({ page }: { page: ProjectPage }) {
               <Person person={c.author} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm">
-                  <span className="font-semibold text-slate-900">{personName(c.author)}</span> <span className="text-slate-400">· {ago(c.created_at)}</span>
+                  <span className="font-semibold text-slate-900">{getName(c.author)}</span> <span className="text-slate-400">· {ago(c.created_at)}</span>
                 </p>
                 <p className="mt-1 text-sm whitespace-pre-line text-slate-700">{c.content}</p>
                 {page.signedIn && (
@@ -85,13 +84,13 @@ function Comments({ page }: { page: ProjectPage }) {
                   </button>
                 )}
                 {c.replies.length > 0 && (
-                  <ul className="mt-3 flex flex-col gap-3 border-l border-slate-200 pl-4" aria-label={`Réponses à ${personName(c.author)}`}>
+                  <ul className="mt-3 flex flex-col gap-3 border-l border-slate-200 pl-4" aria-label={`Réponses à ${getName(c.author)}`}>
                     {c.replies.map((r) => (
                       <li key={r.id} className="flex gap-2.5">
                         <Person person={r.author} size="size-7" />
                         <div className="min-w-0">
                           <p className="text-sm">
-                            <span className="font-semibold text-slate-900">{personName(r.author)}</span> <span className="text-slate-400">· {ago(r.created_at)}</span>
+                            <span className="font-semibold text-slate-900">{getName(r.author)}</span> <span className="text-slate-400">· {ago(r.created_at)}</span>
                           </p>
                           <p className="mt-0.5 text-sm whitespace-pre-line text-slate-700">{r.content}</p>
                         </div>
@@ -101,7 +100,7 @@ function Comments({ page }: { page: ProjectPage }) {
                 )}
                 {replyTo === c.id && (
                   <div className="mt-3">
-                    <CommentForm page={page} parentId={c.id} placeholder={`Répondre à ${personName(c.author)}…`} onDone={() => setReplyTo(null)} />
+                    <CommentForm page={page} parentId={c.id} placeholder={`Répondre à ${getName(c.author)}…`} onDone={() => setReplyTo(null)} />
                   </div>
                 )}
               </div>
@@ -145,7 +144,7 @@ function ProjectPageView() {
               {p.tagline && <p className="mt-1 text-lg text-slate-600">{p.tagline}</p>}
               <Link to={`/profiles/${p.owner.username}`} className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-900">
                 <Person person={p.owner} size="size-7" />
-                {personName(p.owner)}
+                {getName(p.owner)}
               </Link>
             </div>
             <UpvoteButton project={p} page={page.voter} />

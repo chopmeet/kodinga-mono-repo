@@ -15,7 +15,7 @@ import {
   SelectInput,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
-import { postTypeLabel } from '@/pages/shared/community-labels';
+import { postTypeLabel } from '@/utils/Utils';
 import { SoonBadge } from '@/pages/shared/row-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { PostType } from '@/utils/api/community/community.type';

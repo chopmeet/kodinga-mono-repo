@@ -1,8 +1,7 @@
 import { Crown, Users } from 'lucide-react';
 
-import type { HackathonPerson, HackathonTeam } from '@/utils/api/hackathon/hackathon.type';
-
-export const personName = (p: HackathonPerson) => [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username;
+import type { HackathonTeam } from '@/utils/api/hackathon/hackathon.type';
+import { getName } from '@/utils/Utils';
 
 /** Teams of the hackathon (their active members), to find teammates or follow the competition */
 function TeamsTab({ teams, maxSize }: { teams: HackathonTeam[]; maxSize: number }) {
@@ -34,7 +33,7 @@ function TeamsTab({ teams, maxSize }: { teams: HackathonTeam[]; maxSize: number 
               {members.map((m) => (
                 <li key={m.id} className="flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-sm text-slate-700">
                   {m.role === 'leader' && <Crown className="size-3.5 text-amber-500" aria-label="Capitaine" />}
-                  {personName(m.user)}
+                  {getName(m.user)}
                 </li>
               ))}
             </ul>
