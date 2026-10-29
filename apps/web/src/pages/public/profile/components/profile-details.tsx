@@ -2,7 +2,7 @@ import { Briefcase, Code2, ExternalLink, FolderKanban, Globe, GraduationCap, Lin
 
 import { cn } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
-import { availabilityLabel, employmentLabel, period, skillLevelLabel } from '@/pages/shared/profile-labels';
+import { availabilityLabel, employmentLabel, period, skillLevelLabel } from '@/utils/Utils';
 import type { AvailabilityStatus, PublicProfile } from '@/utils/api/profile/profile.type';
 
 const safeUrl = (url?: string) => (url && /^https?:\/\/\S+\.\S+/.test(url) ? url : null);

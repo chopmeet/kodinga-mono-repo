@@ -5,13 +5,18 @@ import { parseApiError } from './api/errors';
 import { IMAGE_RULES } from './api/media/media.type';
 import type { MemberRole, MemberStatus, PostType } from '@/data/admin-community-details.data';
 import type { BillingInterval, PaymentStatus, PayoutMethod, PayoutStatus, SubscriptionStatus } from './api/billing/billing.type';
+import type { AvailabilityStatus, EmploymentType, SkillLevel } from './api/profile/profile.type';
 
 /** The api does not expose roles yet (see User.is_staff) */
 export const isAdmin = (user?: User | null) => !!user?.is_superadmin || !!user?.is_superuser;
 
 export const useUser = () => useAppSelector((s) => s.user.user);
 
-export const getName = (user?: User | null) =>
+/** Anyone the api names: a user, an author, an applicant, a team member... */
+type Named = { full_name?: string | null; first_name?: string | null; last_name?: string | null; username?: string | null };
+
+/** "Awa Ndiaye": the full name, else first and last name, else the username */
+export const getName = (user?: Named | null) =>
   user?.full_name?.trim() ||
   [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
   user?.username ||
@@ -329,3 +334,35 @@ export const intervalLabel: Record<BillingInterval, { label: string; suffix: str
 };
 
 export const xof = (value: number) => `${value.toLocaleString('fr-FR')} FCFA`;
+
+// Labels of the developer profile, shared by /dashboard/profile and the public profile
+export const availabilityLabel: Record<AvailabilityStatus, string> = {
+  available: 'Disponible',
+  open_to_offers: 'À l’écoute des offres',
+  busy: 'Occupé',
+  unavailable: 'Non disponible',
+};
+
+export const skillLevelLabel: Record<SkillLevel, string> = {
+  beginner: 'Débutant',
+  intermediate: 'Intermédiaire',
+  advanced: 'Avancé',
+  expert: 'Expert',
+};
+
+export const employmentLabel: Record<EmploymentType, string> = {
+  full_time: 'Temps plein',
+  part_time: 'Temps partiel',
+  freelance: 'Freelance',
+  contract: 'CDD / Prestation',
+  internship: 'Stage / Alternance',
+  apprenticeship: 'Apprentissage',
+};
+
+const monthYear = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric' });
+
+/** "mars 2022 – aujourd’hui" */
+export function period(start: string, end: string | null, current: boolean) {
+  const from = monthYear.format(new Date(start));
+  return `${from} – ${current || !end ? 'aujourd’hui' : monthYear.format(new Date(end))}`;
+}

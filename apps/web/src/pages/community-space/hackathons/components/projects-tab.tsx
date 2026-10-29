@@ -8,7 +8,7 @@ import { parseApiError } from '@/utils/api/errors';
 import type { Hackathon, HackathonSubmission } from '@/utils/api/hackathon/hackathon.type';
 import { formatDateTime } from '../hackathon-labels';
 import { EvaluationModal } from './evaluation-modal';
-import { personName } from '@/pages/shared/person';
+import { getName } from '@/utils/Utils';
 
 function Links({ s }: { s: HackathonSubmission }) {
   const links = [
@@ -40,7 +40,7 @@ function SubmissionSheet({ slug, hackathonSlug, submission, onClose }: { slug: s
           <>
             <SheetHeader>
               <SheetTitle>{s.title}</SheetTitle>
-              <SheetDescription>{s.team_name ? `Équipe ${s.team_name}` : personName(s.applicant)}</SheetDescription>
+              <SheetDescription>{s.team_name ? `Équipe ${s.team_name}` : getName(s.applicant)}</SheetDescription>
             </SheetHeader>
             <div className="space-y-5 px-4 pb-6">
               {s.tagline && <p className="text-slate-700">{s.tagline}</p>}
@@ -123,7 +123,7 @@ export function ProjectsTab({ slug, hackathon, isJudge }: { slug: string; hackat
                     </button>
                     {!s.is_final && <Badge variant="outline" className="text-slate-500">Brouillon</Badge>}
                   </div>
-                  <p className="text-sm text-slate-600">{s.team_name ? `Équipe ${s.team_name}` : personName(s.applicant)}</p>
+                  <p className="text-sm text-slate-600">{s.team_name ? `Équipe ${s.team_name}` : getName(s.applicant)}</p>
                   <div className="mt-1.5">
                     <Links s={s} />
                   </div>

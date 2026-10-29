@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
-import { personName } from '@/pages/shared/person';
+import { getName } from '@/utils/Utils';
 import { type RowAction, RowActions } from '@/pages/shared/row-actions';
 import type { ProjectListItem } from '@/utils/api/project/project.type';
 
@@ -37,7 +37,7 @@ export function ProjectCard({ project: p, href, actions, mine }: { project: Proj
         </Link>
         {p.tagline && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{p.tagline}</p>}
         <p className="mt-2 text-xs text-slate-500">
-          par {personName(p.owner)}
+          par {getName(p.owner)}
           {mine && <span className="ml-1 font-semibold text-brand">(vous)</span>}
         </p>
         {p.technologies.length > 0 && (
