@@ -1,11 +1,25 @@
 import logging
 from typing import Any, Optional
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import requests
 from django.conf import settings
 from rest_framework.exceptions import APIException
 
 logger = logging.getLogger('kodinga.billing.paydunya')
+
+
+def _append_query_params(url: str, params: dict[str, str]) -> str:
+    """Safely appends query parameters (like payment_id) to a return/cancel URL if not already present."""
+    if not url:
+        return url
+    parsed = urlparse(url)
+    query_dict = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    for k, v in params.items():
+        if v and k not in query_dict:
+            query_dict[k] = v
+    new_query = urlencode(query_dict)
+    return urlunparse(parsed._replace(query=new_query))
 
 
 class PayDunyaAPIException(APIException):
@@ -68,12 +82,26 @@ class PayDunyaGateway:
         Returns {'token': '...', 'checkout_url': '...'}
         """
         app_name = getattr(settings, 'APP_NAME', 'Kodinga')
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:4200')
         backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
 
-        resolved_return_url = return_url or getattr(settings, 'PAYDUNYA_SUCCESS_URL', f"{frontend_url}/payment/success")
-        resolved_cancel_url = cancel_url or getattr(settings, 'PAYDUNYA_CANCEL_URL', f"{frontend_url}/payment/cancel")
-        resolved_callback_url = callback_url or getattr(settings, 'PAYDUNYA_CALLBACK_URL', f"{backend_url}/api/v1/billing/paydunya/ipn/")
+        base_return_url = (
+            return_url
+            or getattr(settings, 'PAYDUNYA_SUCCESS_URL', '')
+            or f"{frontend_url}/payment/success"
+        )
+        base_cancel_url = (
+            cancel_url
+            or getattr(settings, 'PAYDUNYA_CANCEL_URL', '')
+            or f"{frontend_url}/payment/cancel"
+        )
+        resolved_return_url = _append_query_params(base_return_url, {'payment_id': str(payment_id)})
+        resolved_cancel_url = _append_query_params(base_cancel_url, {'payment_id': str(payment_id)})
+        resolved_callback_url = (
+            callback_url
+            or getattr(settings, 'PAYDUNYA_CALLBACK_URL', '')
+            or f"{backend_url}/api/v1/billing/paydunya/ipn/"
+        )
 
         payload = {
             "invoice": {

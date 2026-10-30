@@ -26,7 +26,11 @@ class BillingSelector:
     def get_active_plans(cls, community_slug: Optional[str] = None) -> QuerySet[Plan]:
         qs = Plan.objects.filter(is_active=True).select_related('community')
         if community_slug:
-            qs = qs.filter(community__slug=community_slug)
+            import uuid
+            try:
+                qs = qs.filter(community_id=uuid.UUID(str(community_slug)))
+            except (ValueError, TypeError):
+                qs = qs.filter(community__slug=community_slug)
         else:
             # Platform Pro plans
             qs = qs.filter(community__isnull=True)
@@ -43,7 +47,7 @@ class BillingSelector:
     @classmethod
     def get_payment_for_user(cls, payment_id: str, user: User) -> Payment:
         try:
-            payment = Payment.objects.select_related('plan', 'subscription').get(id=payment_id)
+            payment = Payment.objects.select_related('plan', 'plan__community', 'subscription').get(id=payment_id)
         except Payment.DoesNotExist as err:
             raise NotFound("Paiement introuvable.") from err
 

@@ -1,9 +1,10 @@
 from decimal import Decimal
+
 from rest_framework import serializers
 
 from apps.billing.models.payment import Payment
 from apps.billing.models.subscription import Subscription
-from apps.billing.models.wallet import CommunityPayout, CommunityWallet, PayoutStatus
+from apps.billing.models.wallet import CommunityPayout
 from common.serializers.base import BaseModelSerializer
 
 

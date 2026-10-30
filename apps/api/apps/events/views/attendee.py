@@ -132,3 +132,57 @@ class EventAttendeeListView(APIView):
         paginated_attendees = paginator.paginate_queryset(attendees, request)
         serializer = EventAttendeeSerializer(paginated_attendees, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
+class EventCheckInView(APIView):
+    """
+    Confirm effective attendance (check-in) at an event and trigger
+    gamification point attribution (`event_attended`).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=["Events"],
+        summary="Confirmer la présence (check-in) d'un participant à un événement",
+        responses={200: EventAttendeeSerializer},
+    )
+    def post(self, request, slug, event_id):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+            event = EventSelector.get_event_by_id_or_slug(
+                community, event_id, user=request.user
+            )
+        except Exception:
+            return error_response(
+                "Événement introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        target_user_id = request.data.get("user_id")
+        if target_user_id:
+            from apps.accounts.models.user import User
+
+            target_user = User.objects.filter(id=target_user_id).first()
+            if not target_user:
+                return error_response(
+                    "Utilisateur introuvable.", status_code=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            target_user = request.user
+
+        try:
+            attendee = EventService.confirm_attendance(
+                user=target_user,
+                event=event,
+                actor_user=request.user,
+            )
+        except Exception as e:
+            msg = getattr(e, "detail", str(e))
+            status_code = getattr(e, "status_code", status.HTTP_400_BAD_REQUEST)
+            return error_response(str(msg), status_code=status_code)
+
+        return success_response(
+            data=EventAttendeeSerializer(attendee).data,
+            message="Participation effective confirmée.",
+            status_code=status.HTTP_200_OK,
+        )

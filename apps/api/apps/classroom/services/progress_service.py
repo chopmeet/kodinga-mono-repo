@@ -153,6 +153,19 @@ class ProgressService:
 
             enrollment.save(update_fields=['progress_percent', 'completed_at', 'updated_at'])
 
+            if total_lessons > 0 and progress_pct >= 100.0:
+                from apps.gamification.services.gamification_service import (
+                    GamificationService,
+                )
+
+                GamificationService.award_course_completed(user=user, course=course)
+            if is_completed:
+                from apps.gamification.services.gamification_service import (
+                    GamificationService,
+                )
+
+                GamificationService.award_lesson_completed(user=user, lesson=lesson)
+
             return progress
 
     @classmethod

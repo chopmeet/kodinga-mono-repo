@@ -6,7 +6,11 @@ from apps.events.views.ai_transcript import (
     EventTranscribeView,
     EventTranscriptionDetailView,
 )
-from apps.events.views.attendee import EventAttendeeListView, EventRSVPView
+from apps.events.views.attendee import (
+    EventAttendeeListView,
+    EventCheckInView,
+    EventRSVPView,
+)
 from apps.events.views.event import (
     CommunityEventDetailView,
     CommunityEventListView,
@@ -51,6 +55,11 @@ urlpatterns = [
         "communities/<slug:slug>/events/<str:event_id>/rsvp/",
         EventRSVPView.as_view(),
         name="community-events-rsvp",
+    ),
+    path(
+        "communities/<slug:slug>/events/<str:event_id>/check-in/",
+        EventCheckInView.as_view(),
+        name="community-events-check-in",
     ),
     path(
         "communities/<slug:slug>/events/<str:event_id>/attendees/",

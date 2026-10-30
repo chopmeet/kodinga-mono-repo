@@ -1,5 +1,4 @@
 import logging
-from decimal import Decimal
 
 from django.db import transaction
 from drf_spectacular.utils import extend_schema

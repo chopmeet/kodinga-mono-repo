@@ -64,6 +64,12 @@ def check_and_expire_subscriptions(self) -> dict:
                     status=MembershipStatus.ACTIVE
                 ).update(status=MembershipStatus.SUSPENDED)
                 if updated:
+                    from django.db.models import F
+
+                    from apps.communities.models.community import Community
+                    Community.objects.filter(id=community.id, members_count__gt=0).update(
+                        members_count=F('members_count') - 1
+                    )
                     suspended_members_count += updated
                     logger.info(f"[Billing Tasks] Suspended membership of User {user.username} in Community {community.name} due to subscription expiration.")
 

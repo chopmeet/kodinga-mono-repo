@@ -23,6 +23,8 @@ class CheckoutResponseSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2)
     currency = serializers.CharField()
     plan_name = serializers.CharField()
+    billing_interval = serializers.CharField(required=False)
+    community_slug = serializers.CharField(required=False, allow_null=True)
 
 
 class PaymentDetailSerializer(BaseModelSerializer):
@@ -48,10 +50,23 @@ class PaymentDetailSerializer(BaseModelSerializer):
 
 class PaymentStatusSerializer(serializers.Serializer):
     payment_id = serializers.UUIDField(source='id')
+    token = serializers.CharField(source='provider_token', allow_null=True, allow_blank=True)
     status = serializers.CharField()
     is_paid = serializers.SerializerMethodField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    currency = serializers.CharField()
+    plan_id = serializers.UUIDField(source='plan.id')
+    plan_name = serializers.CharField(source='plan.name')
+    billing_interval = serializers.CharField(source='plan.billing_interval')
+    community_slug = serializers.SerializerMethodField()
+    subscription_id = serializers.UUIDField(allow_null=True)
     receipt_url = serializers.CharField(source='provider_reference', allow_blank=True)
     paid_at = serializers.DateTimeField(allow_null=True)
 
     def get_is_paid(self, obj) -> bool:
         return obj.status == 'PAID'
+
+    def get_community_slug(self, obj) -> str | None:
+        if obj.plan and obj.plan.community_id and obj.plan.community:
+            return obj.plan.community.slug
+        return None

@@ -31,18 +31,20 @@ class CommunityService:
     ) -> Community:
         # 1. Check platform setting: is community creation open to Hobby or restricted to Pro only?
         from apps.administration.services.admin_service import AdministrationService
+        from apps.billing.services.billing_service import BillingService
+
         raw_setting = AdministrationService.get_setting('community_creation_allowed_for', 'all')
         tier = raw_setting.get('tier') if isinstance(raw_setting, dict) else str(raw_setting).lower()
         if tier == 'pro_only' and not owner.is_pro:
             raise PermissionDenied(
-                "La création de communauté est actuellement réservée aux abonnés Pro (5 000 FCFA/mois). Veuillez passer au forfait Pro pour créer un espace."
+                f"La création de communauté est actuellement réservée aux abonnés Pro ({BillingService.get_pro_monthly_price_label()}). Veuillez passer au forfait Pro pour créer un espace."
             )
 
         # 2. Check monetization: Only Pro users can create paid communities
         pricing_type = data.get('pricing_type', 'free')
         if pricing_type == 'paid' and not owner.is_pro:
             raise PermissionDenied(
-                "Seuls les utilisateurs avec un abonnement Pro actif (5 000 FCFA/mois) peuvent créer ou configurer une communauté payante."
+                f"Seuls les utilisateurs avec un abonnement Pro actif ({BillingService.get_pro_monthly_price_label()}) peuvent créer ou configurer une communauté payante."
             )
 
         # Extract optional membership plan info before creating Community
@@ -110,10 +112,16 @@ class CommunityService:
                     else (BillingInterval.YEAR if membership_interval == 'year' else BillingInterval.MONTH)
                 )
                 label = 'Définitif' if interval_choice == BillingInterval.ONE_TIME else ('Annuel' if interval_choice == BillingInterval.YEAR else 'Mensuel')
+                base_slug = f"{community.slug}-{membership_interval}"
+                plan_slug = base_slug
+                idx = 1
+                while Plan.objects.filter(slug=plan_slug).exists():
+                    plan_slug = f"{base_slug}-{idx}"
+                    idx += 1
                 Plan.objects.create(
                     community=community,
                     name=membership_plan_name or f"Pass {community.name} ({label})",
-                    slug=f"{community.slug}-{membership_interval}",
+                    slug=plan_slug,
                     description=f"Accès complet à la communauté {community.name}",
                     price=membership_price,
                     currency='XOF',
@@ -181,19 +189,33 @@ class CommunityService:
                     else (BillingInterval.YEAR if membership_interval == 'year' else BillingInterval.MONTH)
                 )
                 label = 'Définitif' if interval_choice == BillingInterval.ONE_TIME else ('Annuel' if interval_choice == BillingInterval.YEAR else 'Mensuel')
-                Plan.objects.update_or_create(
+                existing_plan = Plan.objects.filter(
                     community=community,
                     billing_interval=interval_choice,
-                    defaults={
-                        'name': membership_plan_name or f"Pass {community.name} ({label})",
-                        'slug': f"{community.slug}-{membership_interval}",
-                        'description': f"Accès complet à la communauté {community.name}",
-                        'price': membership_price,
-                        'currency': 'XOF',
-                        'interval_count': 1,
-                        'is_active': True
-                    }
-                )
+                ).order_by('order', 'created_at').first()
+                if existing_plan:
+                    existing_plan.name = membership_plan_name or f"Pass {community.name} ({label})"
+                    existing_plan.price = membership_price
+                    existing_plan.is_active = True
+                    existing_plan.save(update_fields=['name', 'price', 'is_active', 'updated_at'])
+                else:
+                    base_slug = f"{community.slug}-{membership_interval}"
+                    plan_slug = base_slug
+                    idx = 1
+                    while Plan.objects.filter(slug=plan_slug).exists():
+                        plan_slug = f"{base_slug}-{idx}"
+                        idx += 1
+                    Plan.objects.create(
+                        community=community,
+                        billing_interval=interval_choice,
+                        name=membership_plan_name or f"Pass {community.name} ({label})",
+                        slug=plan_slug,
+                        description=f"Accès complet à la communauté {community.name}",
+                        price=membership_price,
+                        currency='XOF',
+                        interval_count=1,
+                        is_active=True
+                    )
 
         return community
 

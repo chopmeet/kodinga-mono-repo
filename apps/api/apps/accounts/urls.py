@@ -20,6 +20,13 @@ from apps.accounts.views.user import (
     UserListView,
     UserProfileMeView,
 )
+from apps.analytics.views.member_activity import (
+    MemberActivityDashboardView,
+    MemberCoursesView,
+    MemberEventsView,
+    MemberHackathonsView,
+    MemberOpportunitiesView,
+)
 from realtime.views import WebSocketTicketView
 
 app_name = 'accounts'
@@ -50,5 +57,10 @@ urlpatterns = [
     path('users/', UserListView.as_view(), name='user_list'),
     path('users/me/', UserProfileMeView.as_view(), name='user_me'),
     path('users/me/consents/', UserConsentView.as_view(), name='user_consents'),
+    path('users/me/dashboard/', MemberActivityDashboardView.as_view(), name='user_me_dashboard'),
+    path('users/me/hackathons/', MemberHackathonsView.as_view(), name='user_me_hackathons'),
+    path('users/me/events/', MemberEventsView.as_view(), name='user_me_events'),
+    path('users/me/opportunities/', MemberOpportunitiesView.as_view(), name='user_me_opportunities'),
+    path('users/me/courses/', MemberCoursesView.as_view(), name='user_me_courses'),
     path('users/<uuid:user_id>/', UserDetailAdminView.as_view(), name='user_detail_admin'),
 ]

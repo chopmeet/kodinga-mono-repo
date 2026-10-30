@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from django.conf import settings
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts.models.user import User
 from apps.events.models.event import Event
@@ -334,7 +334,6 @@ class EventTranscriptionService:
             cls.process_transcription(event, language=language)
             meta = event.metadata or {}
 
-        transcription_text = meta.get("transcription", "")
         segments = meta.get("transcription_segments", [])
         summary = meta.get("summary", {})
         history = history or []

@@ -218,6 +218,8 @@ class HackathonSubmissionService:
         submission.is_final = True
         submission.submitted_at = now
         submission.save(update_fields=["status", "is_final", "submitted_at", "updated_at"])
+        from apps.gamification.services.gamification_service import GamificationService
+        GamificationService.award_hackathon_submitted(user=user, submission=submission)
 
         # Send confirmation to user
         NotificationService.create_notification(

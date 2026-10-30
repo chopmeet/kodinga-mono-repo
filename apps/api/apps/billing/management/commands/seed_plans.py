@@ -3,6 +3,11 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from apps.billing.models.plan import BillingInterval, Plan
+from apps.billing.services.billing_service import (
+    PRO_MONTHLY_PLAN_SLUG,
+    PRO_MONTHLY_PRICE_SETTING_KEY,
+    BillingService,
+)
 
 PLANS_DATA = [
     {
@@ -24,9 +29,9 @@ PLANS_DATA = [
     },
     {
         "name": "Kodinga Pro Mensuel",
-        "slug": "kodinga-pro-monthly",
+        "slug": PRO_MONTHLY_PLAN_SLUG,
         "description": "Formule Pro officielle : monétisation de vos communautés et accès illimité.",
-        "price": Decimal("5000.00"),  # 5 000 FCFA / mois
+        "price": Decimal("5000.00"),  # Par défaut 5 000 FCFA / mois (modifiable par le superadmin via pro_monthly_price)
         "currency": "XOF",
         "billing_interval": BillingInterval.MONTH,
         "interval_count": 1,
@@ -77,17 +82,44 @@ PLANS_DATA = [
 
 
 class Command(BaseCommand):
-    help = "Seed standard subscription plans (Hobby gratuit, Pro 5000 FCFA/mois, Annuel, Lifetime)."
+    help = "Seed standard subscription plans (Hobby gratuit, Pro mensuel dynamique, Annuel, Lifetime)."
 
     def handle(self, *args, **options):
+        from apps.administration.models.setting import SystemSetting
+
         self.stdout.write("Seeding billing plans (Hobby & Pro)...")
         created_count = 0
         updated_count = 0
 
+        # 1. Ensure dynamic SystemSetting 'pro_monthly_price' exists without overwriting custom superadmin value
+        resolved_monthly_price = BillingService.get_pro_monthly_price()
+        price_setting, p_created = SystemSetting.objects.get_or_create(
+            key=PRO_MONTHLY_PRICE_SETTING_KEY,
+            defaults={
+                "value": float(resolved_monthly_price),
+                "description": "Montant mensuel de l'abonnement Kodinga Pro (en XOF / FCFA), modifiable par le superadmin.",
+                "is_public": True,
+            },
+        )
+        if p_created:
+            self.stdout.write(
+                self.style.SUCCESS(f"  + Created SystemSetting: {PRO_MONTHLY_PRICE_SETTING_KEY} = {price_setting.value} XOF")
+            )
+        else:
+            resolved_monthly_price = BillingService.get_pro_monthly_price()
+            self.stdout.write(
+                f"  * Existing SystemSetting: {PRO_MONTHLY_PRICE_SETTING_KEY} = {resolved_monthly_price} XOF"
+            )
+
+        # 2. Seed plans while respecting the superadmin-configured monthly price
         for plan_dict in PLANS_DATA:
+            defaults = dict(plan_dict)
+            if defaults["slug"] == PRO_MONTHLY_PLAN_SLUG:
+                defaults["price"] = resolved_monthly_price
+
             plan, created = Plan.objects.update_or_create(
-                slug=plan_dict["slug"],
-                defaults=plan_dict,
+                slug=defaults["slug"],
+                defaults=defaults,
             )
             if created:
                 created_count += 1
@@ -102,7 +134,6 @@ class Command(BaseCommand):
             )
         )
 
-        from apps.administration.models.setting import SystemSetting
         setting, s_created = SystemSetting.objects.get_or_create(
             key="community_creation_allowed_for",
             defaults={

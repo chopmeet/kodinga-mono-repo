@@ -5,13 +5,40 @@ from apps.billing.models.payment import Payment
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
 from apps.billing.models.wallet import CommunityPayout, CommunityWallet
+from common.permissions.base import is_superadmin_user
 
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'price', 'currency', 'billing_interval', 'community', 'is_active', 'order')
+    """
+    Interface Django Admin permettant au Superadmin de modifier directement
+    le montant de l'abonnement mensuel (5 000 FCFA par défaut) en ligne ou dans la fiche.
+    """
+    list_display = (
+        'name',
+        'slug',
+        'price',
+        'currency',
+        'billing_interval',
+        'community',
+        'is_active',
+        'order',
+        'updated_at',
+    )
+    list_editable = ('price', 'is_active', 'order')
     list_filter = ('billing_interval', 'is_active', 'currency')
     search_fields = ('name', 'slug', 'description')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.community_id is None:
+            return bool(request.user and request.user.is_authenticated and (request.user.is_superuser or is_superadmin_user(request.user)))
+        return super().has_change_permission(request, obj=obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.community_id is None:
+            return bool(request.user and request.user.is_authenticated and (request.user.is_superuser or is_superadmin_user(request.user)))
+        return super().has_delete_permission(request, obj=obj)
 
 
 @admin.register(Subscription)
@@ -52,4 +79,3 @@ class AffiliateCommissionAdmin(admin.ModelAdmin):
     list_display = ('affiliate', 'referred_user', 'payment', 'amount', 'currency', 'status', 'created_at')
     list_filter = ('status', 'currency', 'created_at')
     search_fields = ('affiliate__user__username', 'referred_user__username', 'payment__id')
-

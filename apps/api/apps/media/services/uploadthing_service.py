@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import uuid
 from typing import Any
@@ -199,10 +200,8 @@ class UploadThingService:
             or MediaAsset.objects.filter(metadata__uploadthing_key=file_key).first()
         )
         if not asset:
-            try:
+            with contextlib.suppress(Exception):
                 asset = MediaAsset.objects.get(id=file_key)
-            except Exception:
-                pass
         if not asset:
             raise NotFound("Fichier média introuvable.")
 

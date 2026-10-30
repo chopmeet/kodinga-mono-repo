@@ -13,10 +13,17 @@ app.conf.beat_schedule = {
         'task': 'apps.memberships.tasks.expire_outdated_invitations_task',
         'schedule': 86400.0,  # Run daily
     },
+    'check-and-expire-subscriptions-hourly': {
+        'task': 'apps.billing.tasks.check_and_expire_subscriptions',
+        'schedule': 3600.0,  # Run hourly to expire ended subscriptions
+    },
+    'send-subscription-expiry-reminders-daily': {
+        'task': 'apps.billing.tasks.send_subscription_expiry_reminders',
+        'schedule': 86400.0,  # Run daily for 72h renewal reminders
+    },
 }
 
 
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
-
