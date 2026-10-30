@@ -13,6 +13,13 @@ Plateforme de communautés tech pour l'Afrique francophone. Monorepo Nx :
 
 ```sh
 npm install
+```
+Lorsqu'une erreur de conflit de dépendances entre pairs bloque l'installation d'un(plusieurs) paquet(s)
+```sh
+npm install --legacy-peer-deps
+```
+
+```sh
 cd apps/api && uv sync
 ```
 
@@ -25,7 +32,7 @@ cp apps/web/.env.example apps/web/.env.local
 
 ## API
 
-Démarrer la base et Redis
+Démarrer la base de données et Redis
 
 ```sh
 docker compose -p kodinga up -d kodingadb redis
