@@ -260,7 +260,9 @@ class EventService:
         event.status = new_status
         event.save(update_fields=["status", "updated_at"])
         if new_status == EventStatus.COMPLETED:
-            from apps.gamification.services.gamification_service import GamificationService
+            from apps.gamification.services.gamification_service import (
+                GamificationService,
+            )
 
             for att in EventAttendee.objects.filter(
                 event=event, checked_in_at__isnull=False
@@ -281,9 +283,12 @@ class EventService:
         """
         from django.utils import timezone
 
-        if actor_user is not None and actor_user.id != user.id:
-            if event.host_id != actor_user.id:
-                cls.check_is_manager(actor_user, event.community)
+        if (
+            actor_user is not None
+            and actor_user.id != user.id
+            and event.host_id != actor_user.id
+        ):
+            cls.check_is_manager(actor_user, event.community)
 
         if event.status == EventStatus.CANCELLED:
             raise ValidationError("Impossible de confirmer la présence sur un événement annulé.")

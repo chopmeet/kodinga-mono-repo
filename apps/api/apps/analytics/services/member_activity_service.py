@@ -73,14 +73,14 @@ class MemberActivityService:
         # 1. Direct applications
         applications_qs = HackathonApplication.objects.filter(
             applicant=user
-        ).select_related("hackathon", "hackathon__community", "team")
+        ).select_related("hackathon", "hackathon__community")
         if community:
             applications_qs = applications_qs.filter(
                 MemberActivityService._build_community_q(
                     "hackathon__community", community
                 )
             )
-        applications_by_hackathon: dict[ Any, HackathonApplication] = {
+        applications_by_hackathon: dict[Any, HackathonApplication] = {
             app.hackathon_id: app for app in applications_qs
         }
 
@@ -164,7 +164,7 @@ class MemberActivityService:
             sub = submissions_by_hackathon.get(h_id)
 
             # Determine participation mode
-            if tm is not None or (app and app.team_id is not None):
+            if tm is not None or (sub is not None and sub.team_id is not None):
                 participation_mode = "team"
             elif app is not None:
                 participation_mode = app.participation_mode
@@ -180,6 +180,8 @@ class MemberActivityService:
                     "status_display": app.get_status_display(),
                     "participation_mode": app.participation_mode,
                     "applied_at": app.created_at,
+                    "created_at": app.created_at,
+                    "reviewed_at": app.reviewed_at,
                 }
 
             # Serialize team info
@@ -188,15 +190,19 @@ class MemberActivityService:
                 team_data = {
                     "id": str(tm.team.id),
                     "name": tm.team.name,
+                    "slug": getattr(tm.team, "slug", ""),
                     "role": tm.role,
                     "is_leader": tm.team.leader_id == user.id,
+                    "avatar_url": getattr(tm.team, "avatar_url", ""),
                 }
-            elif app is not None and app.team is not None:
+            elif sub is not None and sub.team is not None:
                 team_data = {
-                    "id": str(app.team.id),
-                    "name": app.team.name,
-                    "role": "leader" if app.team.leader_id == user.id else "member",
-                    "is_leader": app.team.leader_id == user.id,
+                    "id": str(sub.team.id),
+                    "name": sub.team.name,
+                    "slug": getattr(sub.team, "slug", ""),
+                    "role": "leader" if sub.team.leader_id == user.id else "member",
+                    "is_leader": sub.team.leader_id == user.id,
+                    "avatar_url": getattr(sub.team, "avatar_url", ""),
                 }
 
             # Serialize submission & prizes info
@@ -206,11 +212,7 @@ class MemberActivityService:
             is_podium = False
 
             if sub is not None:
-                if sub.is_final or sub.status in {
-                    SubmissionStatus.SUBMITTED,
-                    SubmissionStatus.UNDER_REVIEW,
-                    SubmissionStatus.ACCEPTED,
-                }:
+                if sub.is_final or sub.status == SubmissionStatus.SUBMITTED:
                     submissions_count += 1
 
                 for prize in sub.won_prizes.all():
@@ -222,7 +224,8 @@ class MemberActivityService:
                             "rank": prize.rank,
                             "reward_amount": prize.reward_amount,
                             "reward_currency": prize.reward_currency,
-                            "non_cash_reward": prize.non_cash_reward,
+                            "reward_description": prize.reward_description,
+                            "non_cash_reward": prize.reward_description,
                         }
                     )
 
@@ -242,6 +245,8 @@ class MemberActivityService:
                     "submitted_at": sub.submitted_at,
                     "total_score": sub.total_score,
                     "rank": sub.rank,
+                    "demo_url": sub.demo_url,
+                    "repository_url": sub.repository_url,
                     "prizes_won": won_prizes_list,
                 }
 
@@ -252,24 +257,13 @@ class MemberActivityService:
             elif app and app.status == HackathonApplicationStatus.WITHDRAWN:
                 member_result = "withdrawn"
                 failed_count += 1
-            elif sub and sub.status == SubmissionStatus.DISQUALIFIED:
-                member_result = "failed"
-                failed_count += 1
             elif is_winner:
                 member_result = "won"
                 successful_count += 1
             elif is_podium:
                 member_result = "podium"
                 successful_count += 1
-            elif sub and (
-                sub.is_final
-                or sub.status
-                in {
-                    SubmissionStatus.SUBMITTED,
-                    SubmissionStatus.UNDER_REVIEW,
-                    SubmissionStatus.ACCEPTED,
-                }
-            ):
+            elif sub and (sub.is_final or sub.status == SubmissionStatus.SUBMITTED):
                 member_result = "submitted"
                 successful_count += 1
             elif hackathon.status in active_hackathon_statuses:
@@ -292,7 +286,8 @@ class MemberActivityService:
                     "id": str(hackathon.community.id),
                     "name": hackathon.community.name,
                     "slug": hackathon.community.slug,
-                    "logo_url": hackathon.community.logo_url,
+                    "logo_url": hackathon.community.avatar_url,
+                    "avatar_url": hackathon.community.avatar_url,
                 }
 
             items.append(
@@ -300,12 +295,15 @@ class MemberActivityService:
                     "id": str(hackathon.id),
                     "title": hackathon.title,
                     "slug": hackathon.slug,
-                    "short_description": hackathon.short_description,
+                    "tagline": hackathon.tagline,
+                    "short_description": hackathon.tagline,
                     "cover_image_url": hackathon.cover_image_url,
+                    "banner_url": hackathon.cover_image_url,
                     "status": hackathon.status,
                     "status_display": hackathon.get_status_display(),
                     "format": hackathon.format,
                     "start_time": hackathon.start_time,
+                    "end_time": hackathon.judging_end,
                     "submission_deadline": hackathon.submission_deadline,
                     "community": community_summary,
                     "participation_mode": participation_mode,
@@ -390,12 +388,8 @@ class MemberActivityService:
                 and event.status != EventStatus.CANCELLED
             )
 
-            # Count registrations (attending or interested or checked-in)
-            if att.status in {AttendeeStatus.ATTENDING, AttendeeStatus.INTERESTED}:
-                total_registered += 1
-            elif is_checked_in:
-                total_registered += 1
-            elif att.status == AttendeeStatus.DECLINED:
+            # Count registrations (attending or maybe or checked-in or declined)
+            if att.status in {AttendeeStatus.ATTENDING, AttendeeStatus.MAYBE} or is_checked_in or att.status == AttendeeStatus.DECLINED:
                 total_registered += 1
 
             if is_upcoming or is_in_progress:
@@ -404,11 +398,9 @@ class MemberActivityService:
             elif is_completed and event.status != EventStatus.CANCELLED:
                 completed_count += 1
                 if is_checked_in or att.status == AttendeeStatus.ATTENDING:
-                    # If checked_in_at is tracked, prioritize it; otherwise ATTENDING on completed event
                     if is_checked_in:
                         attended_count += 1
                     else:
-                        # Registered as attending on a past event without explicit check-in
                         attended_count += 1
                 else:
                     missed_count += 1
@@ -419,7 +411,8 @@ class MemberActivityService:
                     "id": str(event.community.id),
                     "name": event.community.name,
                     "slug": event.community.slug,
-                    "logo_url": event.community.logo_url,
+                    "logo_url": event.community.avatar_url,
+                    "avatar_url": event.community.avatar_url,
                 }
 
             items.append(
@@ -438,12 +431,17 @@ class MemberActivityService:
                     "start_time": event.start_time,
                     "end_time": event.end_time,
                     "timezone": event.timezone,
-                    "is_free": event.is_free,
-                    "price": event.price,
+                    "venue_name": event.venue_name,
+                    "location_address": event.location_address,
+                    "location_city": event.location_city,
+                    "location_country": event.location_country,
+                    "location_url": event.location_url,
+                    "live_room_name": event.live_room_name,
+                    "is_public": event.is_public,
                     "community": community_summary,
                     "rsvp_status": att.status,
                     "rsvp_status_display": att.get_status_display(),
-                    "registered_at": att.registered_at,
+                    "registered_at": att.created_at,
                     "checked_in_at": att.checked_in_at,
                     "is_checked_in": is_checked_in,
                     "is_upcoming": is_upcoming,
@@ -522,7 +520,8 @@ class MemberActivityService:
                     "id": str(opp.community.id),
                     "name": opp.community.name,
                     "slug": opp.community.slug,
-                    "logo_url": opp.community.logo_url,
+                    "logo_url": opp.community.avatar_url,
+                    "avatar_url": opp.community.avatar_url,
                 }
 
             items.append(
@@ -535,8 +534,10 @@ class MemberActivityService:
                     "is_in_review": is_in_review,
                     "applied_at": app.created_at,
                     "updated_at": app.updated_at,
-                    "cv_url": app.cv_url,
+                    "resume_url": app.resume_url,
+                    "cv_url": app.resume_url,
                     "portfolio_url": app.portfolio_url,
+                    "cover_letter": app.cover_letter,
                     "opportunity": {
                         "id": str(opp.id),
                         "title": opp.title,
@@ -553,9 +554,9 @@ class MemberActivityService:
                         "salary_min": opp.salary_min,
                         "salary_max": opp.salary_max,
                         "currency": opp.currency,
-                        "is_salary_visible": opp.is_salary_visible,
                         "status": opp.status,
-                        "deadline": opp.deadline,
+                        "expires_at": opp.expires_at,
+                        "deadline": opp.expires_at,
                         "community": community_summary,
                     },
                 }
@@ -605,7 +606,7 @@ class MemberActivityService:
                     ),
                 )
             )
-            .order_by("-last_accessed_at", "-enrolled_at")
+            .order_by("-enrolled_at")
         )
         if community:
             enrollments = enrollments.filter(
@@ -699,25 +700,26 @@ class MemberActivityService:
                     "id": str(course.community.id),
                     "name": course.community.name,
                     "slug": course.community.slug,
-                    "logo_url": course.community.logo_url,
+                    "logo_url": course.community.avatar_url,
+                    "avatar_url": course.community.avatar_url,
                 }
 
             items.append(
                 {
                     "id": str(course.id),
+                    "course_id": str(course.id),
                     "title": course.title,
                     "slug": course.slug,
                     "description": course.description,
                     "thumbnail_url": course.thumbnail_url,
                     "level": course.level,
                     "level_display": course.get_level_display(),
-                    "is_free_for_members": course.is_free_for_members,
-                    "price": course.price,
                     "duration_seconds": course.duration_seconds,
+                    "duration_minutes": course.duration_minutes,
                     "community": community_summary,
                     "enrolled_at": enrollment.enrolled_at,
                     "completed_at": enrollment.completed_at,
-                    "last_accessed_at": enrollment.last_accessed_at,
+                    "last_accessed_at": enrollment.updated_at,
                     "is_completed": is_course_completed,
                     "overall_progress_percent": overall_progress_percent,
                     "total_lessons": course_total_lessons,
@@ -777,8 +779,11 @@ class MemberActivityService:
             },
             "highlights": {
                 "recent_hackathons": hackathons_data["hackathons"][:3],
+                "recent_events": events_data["events"][:3],
                 "upcoming_or_recent_events": events_data["events"][:3],
+                "recent_opportunities": opportunities_data["applications"][:3],
                 "recent_opportunity_applications": opportunities_data["applications"][:3],
+                "recent_courses": courses_data["courses"][:3],
                 "active_courses": courses_data["courses"][:3],
             },
         }

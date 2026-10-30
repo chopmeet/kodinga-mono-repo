@@ -298,6 +298,7 @@ class BillingService:
                 # Unlock Community Membership if plan is community-specific
                 if plan.community:
                     from django.db.models import F
+
                     from apps.communities.models.community import Community
 
                     member, created = CommunityMember.objects.select_for_update().get_or_create(

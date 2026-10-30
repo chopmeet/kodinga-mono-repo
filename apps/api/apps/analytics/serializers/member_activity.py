@@ -379,6 +379,7 @@ class MemberCourseItemSerializer(serializers.Serializer):
     """
     Course followed by the member, including level, overall progress, and module breakdown.
     """
+    id = serializers.CharField(required=False, help_text="Identifiant unique de la formation")
     course_id = serializers.CharField(help_text="Identifiant unique de la formation")
     title = serializers.CharField(help_text="Titre de la formation")
     slug = serializers.CharField(help_text="Slug URL de la formation")
@@ -464,12 +465,27 @@ class MemberDashboardHighlightsSerializer(serializers.Serializer):
         child=MemberEventItemSerializer(),
         help_text="Prochains événements ou récents (jusqu'à 3)",
     )
+    upcoming_or_recent_events = serializers.ListField(
+        child=MemberEventItemSerializer(),
+        required=False,
+        help_text="Prochains événements ou récents (jusqu'à 3)",
+    )
     recent_opportunities = serializers.ListField(
         child=MemberOpportunityItemSerializer(),
         help_text="Dernières candidatures d'opportunités (jusqu'à 3)",
     )
+    recent_opportunity_applications = serializers.ListField(
+        child=MemberOpportunityItemSerializer(),
+        required=False,
+        help_text="Dernières candidatures d'opportunités (jusqu'à 3)",
+    )
     recent_courses = serializers.ListField(
         child=MemberCourseItemSerializer(),
+        help_text="Dernières formations suivies (jusqu'à 3)",
+    )
+    active_courses = serializers.ListField(
+        child=MemberCourseItemSerializer(),
+        required=False,
         help_text="Dernières formations suivies (jusqu'à 3)",
     )
 

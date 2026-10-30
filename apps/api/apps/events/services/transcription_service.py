@@ -334,7 +334,6 @@ class EventTranscriptionService:
             cls.process_transcription(event, language=language)
             meta = event.metadata or {}
 
-        transcription_text = meta.get("transcription", "")
         segments = meta.get("transcription_segments", [])
         summary = meta.get("summary", {})
         history = history or []

@@ -350,7 +350,7 @@ USE_REDIS_CHANNEL_LAYER = env.bool(
     default=(not DEBUG and not IS_TESTING),
 )
 
-if USE_REDIS_CHANNEL_LAYER:
+if USE_REDIS_CHANNEL_LAYER and not IS_TESTING:
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
