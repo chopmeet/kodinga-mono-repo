@@ -86,6 +86,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
     owner = UserSerializer(read_only=True)
     settings = CommunitySettingsSerializer(read_only=True)
     rules = CommunityRuleSerializer(many=True, read_only=True)
+    subscription_plans = serializers.SerializerMethodField()
     user_membership = serializers.SerializerMethodField()
     active_live = serializers.SerializerMethodField()
 
@@ -119,6 +120,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'settings',
             'rules',
             'user_membership',
+            'subscription_plans',
             'active_live',
             'created_at',
             'updated_at',
@@ -131,6 +133,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'courses_count',
             'events_count',
             'user_membership',
+            'subscription_plans',
             'active_live',
             'created_at',
             'updated_at',
@@ -148,6 +151,11 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'is_public': live.is_public,
             'attendees_count': live.attendees_count,
         }
+
+    def get_subscription_plans(self, obj) -> list[dict]:
+        from apps.billing.serializers.plan import PlanSerializer
+        plans = obj.subscription_plans.filter(is_active=True).order_by('order', 'price')
+        return PlanSerializer(plans, many=True, context=self.context).data
 
     def get_user_membership(self, obj) -> dict:
         request = self.context.get('request')
@@ -301,7 +309,7 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
             tier = raw_setting.get('tier') if isinstance(raw_setting, dict) else str(raw_setting).lower()
             if tier == 'pro_only' and not user.is_pro:
                 raise serializers.ValidationError(
-                    "La création de communauté est actuellement réservée aux abonnés Pro (5 000 FCFA/mois). Veuillez passer au forfait Pro pour créer un espace."
+                    f"La création de communauté est actuellement réservée aux abonnés Pro ({ __import__('apps.billing.services.billing_service', fromlist=['BillingService']).BillingService.get_pro_monthly_price_label() }). Veuillez passer au forfait Pro pour créer un espace."
                 )
 
         # 2. Check monetization: Only Pro users can create or configure paid communities
@@ -309,7 +317,7 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
         if pricing_type == CommunityPricing.PAID:
             if user and user.is_authenticated and not user.is_pro:
                 raise serializers.ValidationError({
-                    'pricing_type': "Seuls les utilisateurs avec un abonnement Pro actif (5 000 FCFA/mois) peuvent créer ou configurer une communauté payante."
+                    'pricing_type': f"Seuls les utilisateurs avec un abonnement Pro actif ({ __import__('apps.billing.services.billing_service', fromlist=['BillingService']).BillingService.get_pro_monthly_price_label() }) peuvent créer ou configurer une communauté payante."
                 })
             price = attrs.get('membership_price')
             if price is not None and price < 500:

@@ -4,10 +4,22 @@ from apps.analytics.views.analytics import (
     AnalyticsMetricsListView,
     AnalyticsOverviewView,
 )
+from apps.analytics.views.member_activity import (
+    MemberActivityDashboardView,
+    MemberCoursesView,
+    MemberEventsView,
+    MemberHackathonsView,
+    MemberOpportunitiesView,
+)
 
 __all__ = [
     'AnalyticsOverviewView',
     'AnalyticsFinancialView',
     'AnalyticsEngagementView',
     'AnalyticsMetricsListView',
+    'MemberActivityDashboardView',
+    'MemberHackathonsView',
+    'MemberEventsView',
+    'MemberOpportunitiesView',
+    'MemberCoursesView',
 ]

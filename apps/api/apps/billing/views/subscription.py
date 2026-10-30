@@ -91,6 +91,7 @@ class CancelSubscriptionView(APIView):
     )
     def post(self, request, subscription_id):
         from django.utils import timezone
+
         from apps.billing.models.subscription import Subscription, SubscriptionStatus
 
         try:

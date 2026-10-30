@@ -80,6 +80,7 @@ class EventJoinLiveView(APIView):
         if not attendee.checked_in_at:
             attendee.checked_in_at = timezone.now()
             attendee.save(update_fields=["checked_in_at", "updated_at"])
+        EventService.confirm_attendance(user=request.user, event=event)
 
         from common.permissions.base import is_superadmin_user
         # Determine host privileges
@@ -286,6 +287,10 @@ class EventLiveKitWebhookView(APIView):
                         user_id=user_id,
                         checked_in_at__isnull=True,
                     ).update(checked_in_at=timezone.now(), updated_at=timezone.now())
+                    from apps.accounts.models.user import User
+                    participant_user = User.objects.filter(id=user_id).first()
+                    if participant_user:
+                        EventService.confirm_attendance(user=participant_user, event=event)
 
         return success_response(
             data={"received": True, "event": event_name},

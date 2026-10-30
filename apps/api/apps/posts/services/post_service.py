@@ -129,6 +129,8 @@ class PostService:
                 post.save(update_fields=['post_type', 'updated_at'])
 
             Community.objects.filter(id=community.id).update(posts_count=F('posts_count') + 1)
+            from apps.gamification.services.gamification_service import GamificationService
+            GamificationService.award_post_created(user=author, post=post)
             from realtime.broadcast import broadcast_post_created
 
             broadcast_post_created(post)
@@ -278,6 +280,8 @@ class PostService:
             Post.objects.filter(id=post.id).update(comments_count=F('comments_count') + 1)
             post.refresh_from_db(fields=['comments_count'])
             comment.post = post
+            from apps.gamification.services.gamification_service import GamificationService
+            GamificationService.award_comment_created(user=author, comment=comment)
 
             from realtime.broadcast import broadcast_comment_created
 
@@ -338,6 +342,8 @@ class PostService:
                 user=comment.author
             ).update(reputation_score=F('reputation_score') + 15)
 
+            from apps.gamification.services.gamification_service import GamificationService
+            GamificationService.award_accepted_answer(user=comment.author, comment=comment)
             from realtime.broadcast import broadcast_comment_accepted
 
             broadcast_comment_accepted(post.id, comment.id, True)

@@ -259,6 +259,65 @@ class EventService:
 
         event.status = new_status
         event.save(update_fields=["status", "updated_at"])
+        if new_status == EventStatus.COMPLETED:
+            from apps.gamification.services.gamification_service import GamificationService
+
+            for att in EventAttendee.objects.filter(
+                event=event, checked_in_at__isnull=False
+            ).select_related("user"):
+                GamificationService.award_event_attended(user=att.user, event=event)
+        return event
+
+    @classmethod
+    def confirm_attendance(
+        cls,
+        user: User,
+        event: Event,
+        actor_user: Optional[User] = None,
+    ) -> EventAttendee:
+        """
+        Confirms effective participation (check-in) of `user` at `event`
+        and automatically awards `event_attended` gamification points (idempotent).
+        """
+        from django.utils import timezone
+
+        if actor_user is not None and actor_user.id != user.id:
+            if event.host_id != actor_user.id:
+                cls.check_is_manager(actor_user, event.community)
+
+        if event.status == EventStatus.CANCELLED:
+            raise ValidationError("Impossible de confirmer la présence sur un événement annulé.")
+
+        with transaction.atomic():
+            attendee, _ = EventAttendee.objects.get_or_create(
+                event=event,
+                user=user,
+                defaults={"status": AttendeeStatus.ATTENDING},
+            )
+            update_fields = ["updated_at"]
+            if attendee.status != AttendeeStatus.ATTENDING:
+                attendee.status = AttendeeStatus.ATTENDING
+                update_fields.append("status")
+            if not attendee.checked_in_at:
+                attendee.checked_in_at = timezone.now()
+                update_fields.append("checked_in_at")
+            attendee.save(update_fields=update_fields)
+
+            count = EventAttendee.objects.filter(
+                event=event, status=AttendeeStatus.ATTENDING
+            ).count()
+            if event.attendees_count != count:
+                event.attendees_count = count
+                event.save(update_fields=["attendees_count"])
+
+            from apps.gamification.services.gamification_service import (
+                GamificationService,
+            )
+
+            GamificationService.award_event_attended(user=user, event=event)
+            return attendee
+
+    def _return_event_unused(cls, event):  # pragma: no cover
         return event
 
     @classmethod

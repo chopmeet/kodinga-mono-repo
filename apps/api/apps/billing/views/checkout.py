@@ -48,6 +48,8 @@ class CreateCheckoutView(APIView):
             'amount': payment.amount,
             'currency': payment.currency,
             'plan_name': payment.plan.name,
+            'billing_interval': payment.plan.billing_interval,
+            'community_slug': payment.plan.community.slug if payment.plan.community else None,
         }
 
         return success_response(

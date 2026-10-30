@@ -316,3 +316,49 @@ class TestProCommunityPermissions:
         assert update_res.status_code == status.HTTP_200_OK
         plan = Plan.objects.get(id=plan_id)
         assert plan.price == Decimal("30000.00")
+
+    def test_superadmin_can_change_pro_monthly_price_via_variable_and_admin(
+        self, api_client, user_superadmin, user_hobby
+    ):
+        from apps.billing.services.billing_service import (
+            PRO_MONTHLY_PLAN_SLUG,
+            PRO_MONTHLY_PRICE_SETTING_KEY,
+            BillingService,
+        )
+
+        # 1. Initial global Pro Monthly plan at 5000 FCFA
+        plan = Plan.objects.create(
+            name="Kodinga Pro Mensuel",
+            slug=PRO_MONTHLY_PLAN_SLUG,
+            price=Decimal("5000.00"),
+            currency="XOF",
+            billing_interval=BillingInterval.MONTH,
+            interval_count=1,
+        )
+        assert BillingService.get_pro_monthly_price() == Decimal("5000.00")
+
+        # 2. Superadmin updates the variable 'pro_monthly_price' via Admin Settings API
+        api_client.force_authenticate(user=user_superadmin)
+        res = api_client.patch(
+            "/api/v1/admin/settings/",
+            {
+                "key": PRO_MONTHLY_PRICE_SETTING_KEY,
+                "value": 7500,
+                "is_public": True,
+            },
+            format="json",
+        )
+        assert res.status_code == status.HTTP_200_OK
+
+        # Verify both the variable and the Plan price are updated to 7500.00 FCFA
+        assert BillingService.get_pro_monthly_price() == Decimal("7500.00")
+        plan.refresh_from_db()
+        assert plan.price == Decimal("7500.00")
+
+        # 3. Superadmin updates the Plan price directly (e.g. via Django Admin or Plan API) to 6000 FCFA
+        plan.price = Decimal("6000.00")
+        plan.save()
+
+        setting = SystemSetting.objects.get(key=PRO_MONTHLY_PRICE_SETTING_KEY)
+        assert Decimal(str(setting.value)) == Decimal("6000.00")
+        assert BillingService.get_pro_monthly_price() == Decimal("6000.00")

@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from django.conf import settings
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts.models.user import User
 from apps.events.models.event import Event

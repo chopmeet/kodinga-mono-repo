@@ -393,6 +393,7 @@ PAYDUNYA_TOKEN = env('PAYDUNYA_TOKEN', default='')
 PAYDUNYA_CALLBACK_URL = env('PAYDUNYA_CALLBACK_URL', default='')
 PAYDUNYA_SUCCESS_URL = env('PAYDUNYA_SUCCESS_URL', default='')
 PAYDUNYA_CANCEL_URL = env('PAYDUNYA_CANCEL_URL', default='')
+KODINGA_PRO_MONTHLY_PRICE = env('KODINGA_PRO_MONTHLY_PRICE', default='5000.00')
 
 # LiveKit Real-Time Video & Streaming Configuration
 LIVEKIT_URL = env('LIVEKIT_URL', default='wss://live.kodinga.com')
