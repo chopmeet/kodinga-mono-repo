@@ -19,7 +19,7 @@ from apps.hackathons.models.application import (
 from apps.hackathons.models.hackathon import Hackathon, HackathonStatus
 from apps.hackathons.models.prize import HackathonPrize
 from apps.hackathons.models.submission import HackathonSubmission, SubmissionStatus
-from apps.hackathons.models.team import HackathonTeamMember, TeamMemberStatus
+from apps.hackathons.models.team import HackathonTeamMember, TeamInvitationStatus
 from apps.opportunities.models.application import (
     ApplicationStatus as OpportunityApplicationStatus,
 )
@@ -87,7 +87,7 @@ class MemberActivityService:
         # 2. Active team memberships
         team_memberships_qs = (
             HackathonTeamMember.objects.filter(
-                user=user, status=TeamMemberStatus.ACTIVE
+                user=user, status=TeamInvitationStatus.ACCEPTED
             )
             .select_related(
                 "team",

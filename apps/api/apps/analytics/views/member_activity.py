@@ -11,7 +11,7 @@ from apps.analytics.serializers.member_activity import (
     MemberOpportunitiesResponseSerializer,
 )
 from apps.analytics.services.member_activity_service import MemberActivityService
-from core.responses.envelope import success_response
+from common.utils.responses import success_response
 
 COMMUNITY_FILTER_PARAMETER = OpenApiParameter(
     name="community",
