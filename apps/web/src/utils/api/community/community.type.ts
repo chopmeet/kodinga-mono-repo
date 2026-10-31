@@ -1,4 +1,5 @@
 import type { User } from '../user/user.type';
+import type { BillingInterval, CommunityPlan } from '../billing/billing.type';
 
 // Mirrors apps/communities (models/community.py, serializers/community.py, serializers/category.py)
 
@@ -138,6 +139,8 @@ export type CommunityDetail = CommunityListItem &
   user_membership: CommunityMembership;
   settings?: CommunitySettings | null;
   rules?: CommunityRuleItem[];
+  /** Active plans of a paid community (PlanSerializer), cheapest first */
+  subscription_plans?: CommunityPlan[];
 };
 
 /** CommunityCreateUpdateSerializer: the slug is generated from the name when omitted */
@@ -152,6 +155,10 @@ export type CommunityCreateData = {
   avatar_url?: string;
   banner_url?: string;
   settings?: { require_approval_to_join?: boolean };
+  /** Paid community: its first plan, created by the api (at least 500 FCFA) */
+  membership_price?: number;
+  membership_interval?: BillingInterval;
+  membership_plan_name?: string;
 };
 
 /** PATCH communities/<slug>/ (CommunityCreateUpdateSerializer, partial) */
@@ -161,6 +168,11 @@ export type CommunityUpdateData = Partial<{
   description: string;
   category_id: string | null;
   privacy_type: CommunityPrivacy;
+  /** "paid" (Kodinga Pro only) with membership_price: the api creates or updates the first plan */
+  pricing_type: CommunityPricing;
+  membership_price: number;
+  membership_interval: BillingInterval;
+  membership_plan_name: string;
   brand_color: string;
   website_url: string;
   github_url: string;

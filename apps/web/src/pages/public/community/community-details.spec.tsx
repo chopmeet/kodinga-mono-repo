@@ -9,7 +9,9 @@ import type { User } from '@/utils/api/user/user.type';
 vi.setConfig({ testTimeout: 15_000 });
 
 type Membership = { is_member: boolean; role: string | null; status: string | null };
-type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number };
+type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean };
+
+const monthlyPlan = { id: 'plan-m', name: 'Mensuel', slug: 'mensuel', description: '', price: '5000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Abidjan React', features: ['Lives mensuels'], is_active: true, order: 1 };
 
 const NONE: Membership = { is_member: false, role: null, status: null };
 
@@ -62,7 +64,9 @@ function stubCommunityApi(o: Options = {}) {
       membership = { is_member: false, role: 'member', status: 'left' };
       return json({ success: true });
     }
-    if (path.endsWith('/communities/abidjan-react/')) return json({ success: true, data: community(o, membership) });
+    if (path.endsWith('/communities/abidjan-react/')) {
+      return json({ success: true, data: { ...community(o, membership), ...(o.plansInDetail ? { subscription_plans: [monthlyPlan] } : {}) } });
+    }
     if (path.endsWith('/posts/p1/react/')) return json({ success: true, data: { reacted: true } });
     if (path.endsWith('/communities/abidjan-react/feed/')) {
       const post = { id: 'p1', community_id: 'c1', author: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye' }, title: 'Retour sur React Conf', content: 'Les **Server Components** en prod.', post_type: 'discussion', is_pinned: true, is_locked: false, is_resolved: false, views_count: 1, reactions_count: 12, comments_count: 3, created_at: '2026-10-10T10:00:00Z' };
@@ -76,7 +80,7 @@ function stubCommunityApi(o: Options = {}) {
       return json({ success: true, pagination: { count: 2 }, results: [h('agri', 'Hackathon AgriTech', 'registration_open'), h('brouillon', 'Brouillon secret', 'draft')] });
     }
     if (path.endsWith('/billing/plans/')) {
-      return json({ success: true, data: [{ id: 'plan-m', name: 'Mensuel', slug: 'mensuel', description: '', price: '5000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Abidjan React', features: ['Lives mensuels'], is_active: true, order: 1 }] });
+      return json({ success: true, data: [monthlyPlan] });
     }
     if (path.endsWith('/billing/checkout/')) {
       return json({ success: true, data: { payment_id: 'pay1', token: 't', checkout_url: 'https://paydunya.com/checkout/t', amount: '5000.00', currency: 'XOF', plan_name: 'Mensuel' } }, 201);
@@ -177,6 +181,15 @@ describe('Public community page', () => {
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: original });
     }
+  });
+
+  it('reads the plans from the detail of the community when it carries them', async () => {
+    signIn();
+    const calls = stubCommunityApi({ pricing: 'paid', plansInDetail: true });
+    renderAppAt('/communities/abidjan-react');
+    const plans = await screen.findByRole('list', { name: "Formules d'adhésion" }, SLOW);
+    expect(within(plans).getByText('5 000 FCFA')).toBeTruthy();
+    expect(calls.some((c) => c.url.pathname.endsWith('/billing/plans/'))).toBe(false);
   });
 
   it('says when the community does not exist', async () => {

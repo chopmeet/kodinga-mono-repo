@@ -278,17 +278,20 @@ export const CommunityApi = createApi({
     createPlan: builder.mutation<CommunityPlan, { community_id: string } & PlanWriteData>({
       query: (body) => ({ url: 'billing/plans/', method: 'POST', body }),
       transformResponse: unwrap<CommunityPlan>,
-      invalidatesTags: ['plans'],
+      // The detail of the community carries its plans (subscription_plans)
+      invalidatesTags: ['plans', 'communities'],
     }),
     updatePlan: builder.mutation<CommunityPlan, { planId: string } & Partial<PlanWriteData>>({
       query: ({ planId, ...body }) => ({ url: `billing/plans/${planId}/`, method: 'PATCH', body }),
       transformResponse: unwrap<CommunityPlan>,
-      invalidatesTags: ['plans'],
+      // The detail of the community carries its plans (subscription_plans)
+      invalidatesTags: ['plans', 'communities'],
     }),
     // No delete: the plan is no longer offered (subscribers keep it until the end of their period)
     deactivatePlan: builder.mutation<unknown, string>({
       query: (planId) => ({ url: `billing/plans/${planId}/`, method: 'DELETE' }),
-      invalidatesTags: ['plans'],
+      // The detail of the community carries its plans (subscription_plans)
+      invalidatesTags: ['plans', 'communities'],
     }),
     // The signed-in member: subscriptions, payments, and the status of one payment
     getMySubscriptions: builder.query<MySubscription[], void>({

@@ -24,4 +24,7 @@ export const AdminApi = createApi({
   }),
 });
 
-export const { useGetSystemSettingsQuery, useUpdateSystemSettingMutation } = AdminApi;
+export const { 
+  useGetSystemSettingsQuery, 
+  useUpdateSystemSettingMutation 
+} = AdminApi;

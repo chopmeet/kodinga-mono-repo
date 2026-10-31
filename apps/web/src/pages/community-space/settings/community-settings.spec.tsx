@@ -12,8 +12,8 @@ vi.setConfig({ testTimeout: 30_000 });
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** The api of lagos-ai-data: detail (with settings and rules), PATCH, settings, rules, members */
-function stubSettingsApi() {
-  const { community } = must(getMyCommunity('lagos-ai-data'));
+function stubSettingsApi(slug = 'lagos-ai-data') {
+  const { community } = must(getMyCommunity(slug));
   const calls: Call[] = [];
   let detail = {
     ...community,
@@ -37,7 +37,7 @@ function stubSettingsApi() {
     calls.push({ method: request.method, url, body });
     const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
     const path = url.pathname;
-    const base = '/communities/lagos-ai-data/';
+    const base = `/communities/${slug}/`;
     if (path.endsWith(base)) {
       if (request.method === 'PATCH') detail = { ...detail, ...body };
       if (request.method === 'DELETE') return json({ success: true, data: null });
@@ -127,6 +127,29 @@ describe('Community space: settings', () => {
     expect(await screen.findByText('Règles d’accès enregistrées.', {}, SLOW)).toBeTruthy();
     expect(api.calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/communities/lagos-ai-data/'))?.body).toEqual({ privacy_type: 'private' });
     expect(api.calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/settings/'))?.body).toMatchObject({ require_approval_to_join: true, default_post_permission: 'all_members' });
+  });
+
+  it('makes a free community paid with its first plan (owner)', async () => {
+    const { calls } = stubSettingsApi('dakar-devops');
+    renderAppAt('/c/dakar-devops/settings/access');
+    const card = await screen.findByRole('region', { name: 'Rendre la communauté payante' }, SLOW);
+    fireEvent.click(within(card).getByRole('button', { name: "Fixer un prix d'adhésion" }));
+    fireEvent.change(within(card).getByLabelText(/^Prix/), { target: { value: '300' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Rendre payante' }));
+    expect(await within(card).findByText(/Prix minimum/, {}, SLOW)).toBeTruthy();
+    fireEvent.change(within(card).getByLabelText(/^Prix/), { target: { value: '10000' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Rendre payante' }));
+    await waitFor(() => expect(calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/communities/dakar-devops/'))?.body).toEqual({ pricing_type: 'paid', membership_price: 10000, membership_interval: 'month' }), SLOW);
+    // Read again: now paid, the card sends to the plans
+    expect((await screen.findByRole('link', { name: 'Gérer les formules' }, SLOW)).getAttribute('href')).toBe('/c/dakar-devops/payments/plans');
+  });
+
+  it('shows the paid offer to the owner only', async () => {
+    stubSettingsApi('frontend-francophone');
+    renderAppAt('/c/frontend-francophone/settings/access');
+    await screen.findByRole('heading', { name: 'Accès & publication' }, SLOW);
+    expect(screen.queryByRole('region', { name: 'Rendre la communauté payante' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Gérer les formules' })).toBeNull();
   });
 
   it('adds, edits and deletes rules', async () => {

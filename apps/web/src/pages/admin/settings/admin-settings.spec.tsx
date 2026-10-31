@@ -177,6 +177,25 @@ describe('AdminSettings', () => {
     expect((await findByRole('alert')).textContent).toBe('Gardez au moins un moyen de paiement actif.');
   });
 
+  it('reads and saves the Kodinga Pro monthly price through the api', async () => {
+    const calls: { method: string; body: unknown }[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const request = input as Request;
+      const text = request.method === 'GET' ? '' : await request.text();
+      calls.push({ method: request.method, body: text ? JSON.parse(text) : null });
+      const data = request.method === 'PATCH' ? JSON.parse(text) : [{ key: 'pro_monthly_price', value: 6500, description: '', is_public: true }];
+      return new Response(JSON.stringify({ success: true, data }), { headers: { 'Content-Type': 'application/json' } });
+    });
+    const { findByLabelText, getByRole } = renderAt('monetization');
+    const price = (await findByLabelText(/Kodinga Pro, prix mensuel/)) as HTMLInputElement;
+    await waitFor(() => expect(price.value).toBe('6500'), SLOW);
+
+    fireEvent.change(price, { target: { value: '7500' } });
+    fireEvent.click(getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'PATCH')).toBe(true), SLOW);
+    expect(calls.find((c) => c.method === 'PATCH')?.body).toMatchObject({ key: 'pro_monthly_price', value: 7500, is_public: true });
+  });
+
   it('reads and saves who may create a community through the api', async () => {
     const calls: { method: string; body: unknown }[] = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {

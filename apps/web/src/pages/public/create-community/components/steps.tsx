@@ -1,9 +1,11 @@
 import { Check, EyeOff, Gift, Globe, Lock, Mail, Wallet } from 'lucide-react';
 
-import { cn, Input, InputPassword } from '@kodinga-mono-repo/ui';
+import { cn, Input, InputPassword, SelectInput } from '@kodinga-mono-repo/ui';
 import { PasswordCheck } from '@/pages/auth/components/password-check';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
-import { BRAND_COLORS, type CreateCommunityFlow } from '../form/UseCreateCommunity';
+import { useGetProPlansQuery } from '@/utils/api/community/community.api';
+import { intervalLabel, xof } from '@/utils/Utils';
+import { BRAND_COLORS, type CreateCommunityFlow, MIN_MEMBERSHIP_PRICE } from '../form/UseCreateCommunity';
 import { ImageField } from './image-field';
 import { OptionCard } from './option-card';
 
@@ -103,8 +105,18 @@ export function TopicStep({ flow, categories, isLoading }: { flow: CreateCommuni
   );
 }
 
+/** "5 000 FCFA / mois": the monthly Kodinga Pro plan of the api (its price is set by the superadmin) */
+function useProPrice() {
+  const { data } = useGetProPlansQuery();
+  // Not a list (api error page, older api): no price shown, the page still works
+  const monthly = (Array.isArray(data) ? data : []).find((p) => p.billing_interval === 'month' && Number(p.price) > 0);
+  return monthly ? `${xof(Number(monthly.price))} ${intervalLabel.month.suffix}` : null;
+}
+
 export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
-  const { register } = flow.form;
+  const { register, formState } = flow.form;
+  const proPrice = useProPrice();
+  const paid = flow.values.pricing_type === 'paid';
   return (
     <div className="flex flex-col gap-6">
       <fieldset>
@@ -119,12 +131,48 @@ export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
         <legend className="custom-form-label mb-2 block">Accès</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           <OptionCard icon={Gift} title="Gratuite" description="Idéal pour lancer et fédérer librement." value="free" {...register('pricing_type')} />
-          <OptionCard icon={Wallet} title="Payante" description="Réservé aux membres Pro (5 000 FCFA/m)." value="paid" {...register('pricing_type')} />
+          <OptionCard
+            icon={Wallet}
+            title="Payante"
+            description={proPrice ? `Réservé aux membres Kodinga Pro (${proPrice}).` : 'Réservé aux membres Kodinga Pro.'}
+            value="paid"
+            {...register('pricing_type')}
+          />
         </div>
-        {flow.values.pricing_type === 'paid' && (
-          <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>Réservé aux membres Pro :</strong> Vous fixerez vos tarifs d'adhésion (formule mensuelle ou prix définitif à vie réglé par Mobile Money ou carte via PayDunya) dans « Abonnements & paiements ».
-          </p>
+        {paid && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Prix d'adhésion</p>
+            <p className="mb-3 text-sm text-slate-500">
+              Payé par Mobile Money ou carte via PayDunya. Vous pourrez ajouter d'autres formules dans « Abonnements & paiements ».
+            </p>
+            <div className="grid gap-x-3 sm:grid-cols-2">
+              <Input
+                id="membership-price"
+                type="number"
+                label="Prix (FCFA)"
+                required
+                min={MIN_MEMBERSHIP_PRICE}
+                step={500}
+                fieldHelp={`Minimum ${xof(MIN_MEMBERSHIP_PRICE)}`}
+                error={formState.errors.membership_price?.message}
+                {...register('membership_price')}
+              />
+              <SelectInput
+                label="Facturation"
+                options={(Object.keys(intervalLabel) as (keyof typeof intervalLabel)[]).map((value) => ({ value, label: intervalLabel[value].label }))}
+                {...register('membership_interval')}
+              />
+              <Input
+                id="membership-plan-name"
+                label="Nom de la formule"
+                placeholder="Ex. Pass mensuel"
+                fieldHelp="Facultatif : « Pass <nom de la communauté> » sinon"
+                customClassContainer="sm:col-span-2"
+                error={formState.errors.membership_plan_name?.message}
+                {...register('membership_plan_name')}
+              />
+            </div>
+          </div>
         )}
       </fieldset>
     </div>

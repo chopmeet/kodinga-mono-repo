@@ -8,6 +8,7 @@ import {
   useUpdateCommunityMutation,
   useUpdateCommunitySettingsMutation,
 } from '@/utils/api/community/community.api';
+import type { BillingInterval } from '@/utils/api/billing/billing.type';
 import type { CommunityDetail, CommunityListItem, CommunityPrivacy, CommunityRuleItem, CommunitySettings } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 
@@ -37,6 +38,9 @@ export type CommunityAccess = {
 };
 
 export type CommunityRule = CommunityRuleItem;
+
+/** First plan of a community that becomes paid (PATCH communities/<slug>/, Kodinga Pro only) */
+export type MembershipInput = { membership_price: number; membership_interval: BillingInterval; membership_plan_name?: string };
 
 const profileOf = (c: CommunityDetail): CommunityProfile => ({
   name: c.name,
@@ -92,6 +96,10 @@ function UseSpaceSettings(community: CommunityListItem) {
     profile: detail ? profileOf(detail) : null,
     access: detail ? accessOf(detail) : null,
     rules,
+    pricingType: detail?.pricing_type ?? community.pricing_type,
+    /** The api creates the plan; the space then shows "Abonnements & paiements" */
+    makePaid: (input: MembershipInput) =>
+      run(() => updateCommunity({ slug, pricing_type: 'paid', ...input }).unwrap(), 'La communauté est maintenant payante.'),
     saveProfile: (values: CommunityProfile) =>
       run(() => updateCommunity({ slug, ...values, category_id: values.category_id || null }).unwrap(), 'Informations de la communauté enregistrées.'),
     saveAccess: ({ privacy_type, ...settings }: CommunityAccess) =>
