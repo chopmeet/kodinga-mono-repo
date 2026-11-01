@@ -50,15 +50,40 @@ function LanguageSwitcher() {
   );
 }
 
-export function Logo({ compact = false, variant = 'responsive', className }: { compact?: boolean; variant?: 'responsive' | 'full' | 'mark'; className?: string }) {
-  return (
-    <NavLink to="/" title="Kodinga" className={cn('flex items-center gap-2.5', className)}>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white shadow-sm">K</span>
+type LogoProps = {
+  compact?: boolean;
+  variant?: 'responsive' | 'full' | 'mark';
+  className?: string;
+  /** false: the logo alone, not a link to the home page (a dialog, a screen to stay on) */
+  link?: boolean;
+};
+
+export function Logo({ compact = false, variant = 'responsive', className, link = true }: LogoProps) {
+  const content = (
+    <>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white shadow-sm" aria-hidden={!link || undefined}>
+        K
+      </span>
       {variant !== 'mark' && (
-        <span className={cn('text-2xl font-bold tracking-tight text-slate-900', variant === 'responsive' && 'hidden sm:inline', compact && 'md:hidden lg:inline')}>
+        <span
+          className={cn('text-2xl font-bold tracking-tight text-slate-900', variant === 'responsive' && 'hidden sm:inline', compact && 'md:hidden lg:inline')}
+          aria-hidden={!link || undefined}
+        >
           kodinga<span className="text-primary">.</span>
         </span>
       )}
+    </>
+  );
+  if (!link) {
+    return (
+      <span role="img" aria-label="Kodinga" className={cn('flex items-center gap-2.5', className)}>
+        {content}
+      </span>
+    );
+  }
+  return (
+    <NavLink to="/" title="Kodinga" className={cn('flex items-center gap-2.5', className)}>
+      {content}
     </NavLink>
   );
 }

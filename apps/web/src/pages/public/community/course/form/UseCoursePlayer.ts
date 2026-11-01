@@ -1,4 +1,5 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga-mono-repo/ui';
@@ -46,6 +47,8 @@ function UseCoursePlayer() {
 
   const [enroll, { isLoading: isEnrolling }] = useEnrollCourseMutation();
   const [updateProgress, { isLoading: isSaving }] = useUpdateLessonProgressMutation();
+  /** The congratulations: only when the api has just confirmed the course done (100 %) */
+  const [justFinished, setJustFinished] = useState(false);
 
   const open = (lessonId: string) => setParams({ lesson: lessonId }, { replace: false });
   const previous = index > 0 ? lessons[index - 1] : null;
@@ -93,16 +96,24 @@ function UseCoursePlayer() {
         if (first) open(first.id);
       }
     },
-    /** Marks the open lesson done (or not), then goes on to the next one */
+    justFinished,
+    closeCongratulations: () => setJustFinished(false),
+    /**
+     * Marks the open lesson done (or not), then goes on to the next one. The course is read again:
+     * it unlocks the next lesson, and says whether the course is now done (the api recomputes it)
+     */
     toggleDone: async () => {
       if (!outline) return;
       const done = !outline.is_completed;
+      const wasFinished = (course.data?.user_progress_percent ?? 0) >= 100;
       const ok = await run(updateProgress({ slug, courseSlug, lessonId: outline.id, is_completed: done }).unwrap());
-      if (!ok || !done || !next) return;
-      // The next lesson is unlocked by this progress: wait for the fresh course, or it would
-      // show as locked for a moment
-      await course.refetch();
-      open(next.id);
+      if (!ok || !done) return;
+      const fresh = await course.refetch();
+      if (!wasFinished && (fresh.data?.user_progress_percent ?? 0) >= 100) {
+        setJustFinished(true);
+        return;
+      }
+      if (next) open(next.id);
     },
   };
 }

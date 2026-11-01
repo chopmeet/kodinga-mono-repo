@@ -5,6 +5,7 @@ import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
 import { courseLevelLabel, formatDuration, lessonTypeLabel } from '@/pages/community-space/courses/course-labels';
 import { htmlToText, Markdown } from '@/pages/shared/markdown';
 import type { CourseLesson } from '@/utils/api/course/course.type';
+import { CourseCompletedDialog } from './course-completed-dialog';
 import UseCoursePlayer, { type CoursePlayer } from './form/UseCoursePlayer';
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -305,6 +306,7 @@ function CoursePlayerPage() {
           )}
         </div>
       </div>
+      <CourseCompletedDialog player={player} />
     </div>
   );
 }
