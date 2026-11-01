@@ -218,6 +218,21 @@ async function storedUrl(response: Response) {
   return typeof url === 'string' ? url : null;
 }
 
+/** Upload with progress (fetch does not report the upload): an XMLHttpRequest, answered as a Response */
+function sendWithProgress(url: string, method: string, body: FormData, onProgress: (percent: number) => void): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    // No body for the statuses that cannot have one
+    xhr.onload = () => resolve(new Response([204, 205, 304].includes(xhr.status) ? null : xhr.responseText, { status: xhr.status }));
+    xhr.onerror = () => reject(new Error('network'));
+    xhr.send(body);
+  });
+}
+
 /**
  * Sends an image the api way: media/upload-url/ (signed-in users) → the file to upload_url with
  * the given fields → media/confirm-upload/. Resolves with the public url of the image.
@@ -228,7 +243,8 @@ export function useImageUpload() {
   const [requestUploadUrl] = useRequestUploadUrlMutation();
   const [confirmUpload] = useConfirmUploadMutation();
 
-  return async (file: File, purpose: ImagePurpose): Promise<string> => {
+  /** onProgress: 0 to 100 while the file is sent to the storage */
+  return async (file: File, purpose: ImagePurpose, onProgress?: (percent: number) => void): Promise<string> => {
     const invalid = checkImage(file, purpose);
     if (invalid) throw new Error(invalid);
     try {
@@ -255,7 +271,7 @@ export function useImageUpload() {
       body.append('files', readyFile);
 
       const method = (target.method || (target.upload_url.includes('ingest.uploadthing.com') ? 'PUT' : 'POST')).toUpperCase();
-      const response = await fetch(target.upload_url, { method, body });
+      const response = onProgress ? await sendWithProgress(target.upload_url, method, body, onProgress) : await fetch(target.upload_url, { method, body });
       const url = response.ok ? await storedUrl(response) : null;
       if (!url) {
         console.error('Storage upload failed with status:', response.status);

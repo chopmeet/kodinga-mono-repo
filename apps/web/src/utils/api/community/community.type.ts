@@ -1,4 +1,5 @@
 import type { User } from '../user/user.type';
+import type { BillingInterval, CommunityPlan } from '../billing/billing.type';
 
 // Mirrors apps/communities (models/community.py, serializers/community.py, serializers/category.py)
 
@@ -138,6 +139,8 @@ export type CommunityDetail = CommunityListItem &
   user_membership: CommunityMembership;
   settings?: CommunitySettings | null;
   rules?: CommunityRuleItem[];
+  /** Active plans of a paid community (PlanSerializer), cheapest first */
+  subscription_plans?: CommunityPlan[];
 };
 
 /** CommunityCreateUpdateSerializer: the slug is generated from the name when omitted */
@@ -152,6 +155,10 @@ export type CommunityCreateData = {
   avatar_url?: string;
   banner_url?: string;
   settings?: { require_approval_to_join?: boolean };
+  /** Paid community: its first plan, created by the api (at least 500 FCFA) */
+  membership_price?: number;
+  membership_interval?: BillingInterval;
+  membership_plan_name?: string;
 };
 
 /** PATCH communities/<slug>/ (CommunityCreateUpdateSerializer, partial) */
@@ -161,6 +168,11 @@ export type CommunityUpdateData = Partial<{
   description: string;
   category_id: string | null;
   privacy_type: CommunityPrivacy;
+  /** "paid" (Kodinga Pro only) with membership_price: the api creates or updates the first plan */
+  pricing_type: CommunityPricing;
+  membership_price: number;
+  membership_interval: BillingInterval;
+  membership_plan_name: string;
   brand_color: string;
   website_url: string;
   github_url: string;
@@ -177,7 +189,11 @@ export type CommunityLinks = { website_url?: string; github_url?: string; discor
 export type ManagedRole = Exclude<CommunityRole, 'member'>;
 
 /** A community the signed-in user belongs to, with their role in it; the detail carries the settings (role permissions) */
-export type MyCommunityMembership = { community: CommunityListItem & { settings?: CommunitySettings | null }; role: CommunityRole };
+/** The community is its detail (communities/<slug>/): settings and the membership of the user come with it */
+export type MyCommunityMembership = {
+  community: CommunityListItem & { settings?: CommunitySettings | null; user_membership?: CommunityMembership };
+  role: CommunityRole;
+};
 
 /** A community the signed-in user manages, with their role in it */
 export type ManagedCommunity = MyCommunityMembership & { role: ManagedRole };
@@ -406,24 +422,50 @@ export type CommunityAISettingsWrite = Omit<CommunityAISettings, 'platform_locke
 // Invitations (apps/memberships/serializers/invitation.py)
 
 /** CommunityInvitationSerializer */
+export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+
+/**
+ * WorkspaceInvitationSerializer (GET communities/<slug>/invitations/, paginated): the code of the
+ * link is never listed, only given once at creation (or when an invitation is sent again)
+ */
 export type CommunityInvitation = {
   id: string;
+  /** Empty for a shareable link */
   email: string;
-  invite_code: string;
   role: CommunityRole;
-  max_uses: number;
-  uses_count: number;
+  status: InvitationStatus;
   expires_at: string | null;
+  accepted_at: string | null;
   is_valid: boolean;
-  is_revoked: boolean;
   invited_by: User;
   created_at: string;
 };
 
+/** POST communities/<slug>/invitations/ (CommunityInvitationSerializer): the invitation and the code of its link */
+export type CreatedInvitation = CommunityInvitation & { invite_code: string; max_uses?: number; uses_count?: number };
+
+/** PublicInvitationDetailSerializer (GET invitations/<token>/, public): shown before accepting a link sent by email */
+export type PublicInvitation = {
+  workspace_id: string;
+  workspace_name: string;
+  workspace_slug: string;
+  workspace_avatar_url: string;
+  role: string;
+  role_display: string;
+  masked_email: string;
+  status: InvitationStatus;
+  expires_at: string | null;
+  is_valid: boolean;
+};
+
 /** CreateInvitationRequestSerializer */
 export type InvitationWriteData = {
+  /** Sent by the api to this address (then max_uses does not apply) */
   email?: string;
   role: CommunityRole;
-  max_uses: number;
+  max_uses?: number;
   expires_in_days: number;
 };
+
+/** A pending request to join a community the user reviews (members?status=pending) */
+export type JoinRequest = { community: { slug: string; name: string }; member: CommunityMemberItem };

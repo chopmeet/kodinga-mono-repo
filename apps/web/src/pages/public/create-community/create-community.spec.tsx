@@ -158,6 +158,48 @@ describe('Create a community', () => {
     expect(calls.some((c) => c.url.includes('auth/'))).toBe(false);
   });
 
+  it('sets the price of a paid community at the access step, created with it by the api', async () => {
+    act(() => {
+      store.dispatch(onSetUserToken({ user: awa, token: 'access', refresh: 'refresh' }));
+    });
+    const proPlan = { id: 'pro-m', name: 'Pro mensuel', slug: 'kodinga-pro-monthly', description: '', price: '7000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: null, community_name: null, features: [], is_active: true, order: 1 };
+    const calls = stubApi({
+      'communities/categories/': ok(categories),
+      'billing/plans/': ok([proPlan]),
+      'communities/dakar-cloud-builders/': ok({ ...created, pricing_type: 'paid' }),
+      'communities/': ok({ ...created, pricing_type: 'paid' }, 201),
+    });
+    renderAppAt('/create-community');
+    await screen.findByRole('heading', { name: 'Comment s’appelle votre communauté ?' }, SLOW);
+    fireEvent.change(screen.getByLabelText(/^Nom de la communauté/), { target: { value: 'Dakar Cloud Builders' } });
+    fireEvent.click(continueButton());
+    await screen.findByRole('heading', { name: 'De quoi va-t-on parler ?' }, SLOW);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cloud & DevOps' }, SLOW));
+    fireEvent.click(continueButton());
+
+    await screen.findByRole('heading', { name: 'Qui peut la rejoindre ?' }, SLOW);
+    // The Pro price comes from the api (set by the superadmin)
+    expect(await screen.findByText(/Réservé aux membres Kodinga Pro \(7\s000 FCFA \/ mois\)/, {}, SLOW)).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: /^Payante/ }));
+    fireEvent.change(screen.getByLabelText(/^Prix \(FCFA\)/), { target: { value: '300' } });
+    fireEvent.click(continueButton());
+    expect(await screen.findByText(/Prix minimum : 500 FCFA/, {}, SLOW)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^Prix \(FCFA\)/), { target: { value: '7500' } });
+    fireEvent.change(screen.getByLabelText('Facturation'), { target: { value: 'year' } });
+    fireEvent.change(screen.getByLabelText(/^Nom de la formule/), { target: { value: 'Pass annuel' } });
+    fireEvent.click(continueButton());
+
+    await screen.findByRole('heading', { name: 'Donnez-lui une identité' }, SLOW);
+    fireEvent.click(screen.getByRole('button', { name: /Créer ma communauté/ }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST' && new URL(c.url).pathname.endsWith('/communities/'))).toBe(true), SLOW);
+    expect(calls.find((c) => c.method === 'POST' && new URL(c.url).pathname.endsWith('/communities/'))?.body).toMatchObject({
+      pricing_type: 'paid',
+      membership_price: 7500,
+      membership_interval: 'year',
+      membership_plan_name: 'Pass annuel',
+    });
+  });
+
   it('adds a logo and a banner by link, shown in the preview and sent to the api', async () => {
     act(() => {
       store.dispatch(onSetUserToken({ user: awa, token: 'access', refresh: 'refresh' }));

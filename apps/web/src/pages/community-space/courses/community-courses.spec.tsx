@@ -129,6 +129,29 @@ describe('Community space: courses', () => {
     });
   });
 
+  it('writes a code exercise with its statement, starting code and solution', async () => {
+    const calls = stubCoursesApi();
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click(await screen.findByRole('button', { name: /Ajouter une leçon/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Titre'), { target: { value: 'Écrire un Deployment' } });
+    // Text written before choosing the type becomes the statement
+    fireEvent.change(within(dialog).getByLabelText('Contenu'), { target: { value: 'Complétez le manifeste.' } });
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'code' } });
+    expect((within(dialog).getByLabelText('Énoncé') as HTMLTextAreaElement).value).toBe('Complétez le manifeste.');
+    fireEvent.change(within(dialog).getByLabelText('Langage'), { target: { value: 'bash' } });
+    fireEvent.change(within(dialog).getByLabelText('Code de départ'), { target: { value: 'kubectl apply -f' } });
+    fireEvent.change(within(dialog).getByLabelText('Solution (facultatif)'), { target: { value: 'kubectl apply -f deploy.yaml' } });
+    // Previewed in the colors of the lesson
+    expect(within(within(dialog).getByRole('group', { name: "Aperçu de l'exercice" })).getAllByText('Bash')).toHaveLength(2);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))).toBe(true), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))?.body).toMatchObject({
+      lesson_type: 'code',
+      content: 'Complétez le manifeste.\n\n```bash exercice\nkubectl apply -f\n```\n\n```bash solution\nkubectl apply -f deploy.yaml\n```',
+    });
+  });
+
   it('adds a video lesson from a link, then sends its video', async () => {
     const calls = stubCoursesApi();
     const append = vi.spyOn(FormData.prototype, 'append');

@@ -12,10 +12,12 @@ type Props = {
   onSend: (content: string) => boolean | Promise<boolean> | void;
   onCancel?: () => void;
   autoFocus?: boolean;
+  /** Height of the text area: 4 on the page of the post, less under a card of the feed */
+  rows?: number;
 };
 
 /** Text area + publish (answer to the post, or reply to a comment) */
-export function CommentForm({ label, placeholder, submitLabel, isSending = false, onSend, onCancel, autoFocus }: Props) {
+export function CommentForm({ label, placeholder, submitLabel, isSending = false, onSend, onCancel, autoFocus, rows = 4 }: Props) {
   const id = useId();
   const [content, setContent] = useState('');
   const text = content.trim();
@@ -35,7 +37,7 @@ export function CommentForm({ label, placeholder, submitLabel, isSending = false
       </label>
       <textarea
         id={id}
-        rows={4}
+        rows={rows}
         value={content}
         autoFocus={autoFocus}
         onChange={(e) => setContent(e.target.value)}

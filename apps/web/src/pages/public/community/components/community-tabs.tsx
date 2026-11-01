@@ -12,20 +12,24 @@ export const communityTabs = [
   { id: 'opportunities', label: 'Opportunités' },
   { id: 'projects', label: 'Projets' },
   { id: 'leaderboard', label: 'Classement' },
+  { id: 'activity', label: 'Mon activité' },
   { id: 'about', label: 'À propos' },
 ] as const;
 
 export type CommunityTabId = (typeof communityTabs)[number]['id'];
 
+/** Tabs about the signed-in member: members only */
+export const MEMBER_TABS: CommunityTabId[] = ['activity'];
+
 /** Sections of the community, kept in the url (?tab=) */
-export function CommunityTabs({ activeTab, slug }: { activeTab: CommunityTabId; slug?: string }) {
+export function CommunityTabs({ activeTab, slug, isMember = false }: { activeTab: CommunityTabId; slug?: string; isMember?: boolean }) {
   const { data } = useGetCommunityEventsQuery({ slug: slug || '', status: 'live' }, { skip: !slug, pollingInterval: 30_000 });
   const hasLive = (data?.results?.length ?? 0) > 0;
 
   return (
     <div className="sticky top-18 z-40 border-b border-slate-200 bg-white">
       <nav aria-label="Sections de la communauté" className="no-scrollbar mx-auto flex max-w-285 gap-2 overflow-x-auto px-4 sm:px-6 lg:px-8">
-        {communityTabs.map((tab) => {
+        {communityTabs.filter((tab) => isMember || !MEMBER_TABS.includes(tab.id)).map((tab) => {
           const active = tab.id === activeTab;
           const isEventsTab = tab.id === 'events';
           return (

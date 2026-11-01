@@ -12,6 +12,7 @@ import {
   SelectInput,
   TextareaInput,
 } from '@kodinga-mono-repo/ui';
+import { BannerUploadField } from '@/pages/shared/banner-upload-field';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { Course, CourseLevel } from '@/utils/api/course/course.type';
 import { courseLevelLabel } from '../course-labels';
@@ -50,7 +51,20 @@ function CourseModal({ slug, open, course, onClose, onSaved }: Props) {
             options={(Object.keys(courseLevelLabel) as CourseLevel[]).map((value) => ({ value, label: courseLevelLabel[value] }))}
             {...register('level')}
           />
-          <Input id="course-thumbnail" label="Image (facultatif)" placeholder="https://…" error={errors.thumbnail_url?.message} {...register('thumbnail_url')} />
+          <Controller
+            control={control}
+            name="thumbnail_url"
+            render={({ field }) => (
+              <BannerUploadField
+                id="course-thumbnail"
+                label="Image de la formation (facultatif)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.thumbnail_url?.message}
+                className="mb-4"
+              />
+            )}
+          />
           <Controller
             control={control}
             name="is_sequential"

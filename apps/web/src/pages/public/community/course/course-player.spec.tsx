@@ -17,9 +17,9 @@ const LESSONS = [
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** A sequential course of two lessons; enroll / progress like the api (unlock, percent) */
-function stubCourseApi({ member = true, slowCourse = false, video = '' } = {}) {
-  let enrolled = false;
-  const done = new Set<string>();
+function stubCourseApi({ member = true, slowCourse = false, video = '', finished = false, exercise = false } = {}) {
+  let enrolled = finished;
+  const done = new Set<string>(finished ? LESSONS.map((l) => l.id) : []);
   const calls: Call[] = [];
   const outline = () =>
     LESSONS.map((l, i) => ({
@@ -27,7 +27,7 @@ function stubCourseApi({ member = true, slowCourse = false, video = '' } = {}) {
       module: 'm1',
       title: l.title,
       slug: l.id,
-      lesson_type: 'text',
+      lesson_type: exercise && i === 0 ? 'code' : 'text',
       content_format: 'markdown',
       duration_seconds: 300,
       order: i,
@@ -70,7 +70,11 @@ function stubCourseApi({ member = true, slowCourse = false, video = '' } = {}) {
       if (l?.is_locked) return json({ success: false, code: 'permission_denied', message: 'Leçon verrouillée.' }, 403);
       // video: the url of the first lesson's video, or "preparing" while Mux encodes it
       const media = lessonId === 'l1' && video ? { has_video: true, video_status: video === 'preparing' ? 'preparing' : 'ready', video_source_url: video === 'preparing' ? '' : video } : {};
-      return json({ success: true, data: { ...l, ...media, content: LESSONS.find((x) => x.id === lessonId)?.content, estimated_duration_display: '5 min' } });
+      const content = exercise && lessonId === 'l1' ? 'Écrivez un hook.\n\n```typescript exercice\nfunction useToggle() {}\n```\n\n```typescript solution\nfunction useToggle() { return useState(false); }\n```' : LESSONS.find((x) => x.id === lessonId)?.content;
+      return json({ success: true, data: { ...l, ...media, content, estimated_duration_display: '5 min' } });
+    }
+    if (path.endsWith('/communities/abidjan-react/gamification/rules/')) {
+      return json({ success: true, data: [{ id: 'r1', action: 'course_completed', label: 'Formation achevée', description: '', points: 50, default_points: 50, is_active: true, allow_multiple_per_reference: false, updated_at: '' }] });
     }
     if (path.endsWith('/communities/abidjan-react/courses/')) {
       const course = (slug: string, title: string, user_progress_percent: number) => ({ id: slug, slug, title, description: '', level: 'beginner', thumbnail_url: '', lessons_count: 2, duration_seconds: 0, user_progress_percent });
@@ -133,8 +137,30 @@ describe('Course player (member)', () => {
     await waitFor(() => expect(screen.getByRole('progressbar', { name: 'Progression de la formation' }).getAttribute('aria-valuenow')).toBe('50'), SLOW);
 
     fireEvent.click(screen.getByRole('button', { name: /Marquer comme terminée/ }));
-    expect(await screen.findByText('Formation terminée, bravo !', {}, SLOW)).toBeTruthy();
+    // Once the api says the course is done: the congratulations, with what was achieved
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    expect(within(dialog).getByRole('heading', { name: 'Félicitations !' })).toBeTruthy();
+    // The logo, not a link (the learner stays on the course)
+    expect(within(dialog).getByRole('img', { name: 'Kodinga' })).toBeTruthy();
+    expect(within(dialog).queryByRole('link', { name: /Kodinga/ })).toBeNull();
+    expect(within(dialog).getByText('« React 19 de A à Z »')).toBeTruthy();
+    const achieved = within(dialog).getByRole('group', { name: 'Ce que vous avez accompli' });
+    expect(achieved.textContent).toMatch(/2leçons suivies/);
+    expect(await within(achieved).findByText('+50', {}, SLOW)).toBeTruthy();
+    expect(within(dialog).getByRole('link', { name: 'Suivre une autre formation' }).getAttribute('href')).toBe('/communities/abidjan-react?tab=classroom');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Revoir la formation' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), SLOW);
+    expect(screen.getByText('Formation terminée, bravo !')).toBeTruthy();
     expect(screen.getByRole('progressbar', { name: 'Progression de la formation' }).getAttribute('aria-valuenow')).toBe('100');
+  });
+
+  it('does not congratulate again when a finished course is opened', async () => {
+    signIn();
+    stubCourseApi({ finished: true });
+    renderAppAt(`${URL_PATH}?lesson=l2`);
+    expect(await screen.findByText('Formation terminée, bravo !', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('keeps the courses for the members of the community', async () => {
@@ -181,5 +207,20 @@ describe('Course player (member)', () => {
     // Right when the next lesson opens, it is already unlocked
     expect(screen.queryByText('Leçon verrouillée')).toBeNull();
     expect(await screen.findByRole('heading', { level: 1, name: 'Server Components' }, SLOW)).toBeTruthy();
+  });
+
+  it('shows a code exercise: the statement, the starting code, the solution on demand', async () => {
+    signIn();
+    stubCourseApi({ exercise: true, finished: true });
+    renderAppAt(`${URL_PATH}?lesson=l1`);
+    expect(await screen.findByText('Écrivez un hook.', {}, SLOW)).toBeTruthy();
+    const starter = screen.getByRole('region', { name: 'À vous de jouer' });
+    expect(within(starter).getByText('TypeScript')).toBeTruthy();
+    expect(within(starter).getByRole('button', { name: 'Copier le code TypeScript' })).toBeTruthy();
+    // Hidden until asked
+    const solution = screen.getByRole('region', { name: 'Solution' });
+    expect(within(solution).queryByText(/return useState/)).toBeNull();
+    fireEvent.click(within(solution).getByRole('button', { name: 'Voir la solution' }));
+    expect(within(solution).getByText(/return/)).toBeTruthy();
   });
 });

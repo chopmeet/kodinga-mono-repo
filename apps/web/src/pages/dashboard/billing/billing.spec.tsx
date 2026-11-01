@@ -88,6 +88,16 @@ describe('Back from PayDunya', () => {
     expect(await screen.findByText(/Le paiement n’a pas abouti/, {}, SLOW)).toBeTruthy();
   });
 
+  it('checks the payment named in the url by the api, even from another tab', async () => {
+    signIn();
+    const calls = stubBillingApi({ confirmAfter: 0 });
+    renderAppAt('/communities/lagos-ai?payment=done&payment_id=pay-1');
+    expect(await screen.findByText(/Paiement confirmé/, {}, { timeout: 8000 })).toBeTruthy();
+    expect(calls.some((c) => c.url.pathname.endsWith('/pay-1/status/'))).toBe(true);
+    // No need to look for it in the history
+    expect(calls.some((c) => c.url.pathname.endsWith('/billing/payments/my/'))).toBe(false);
+  });
+
   it('says when the payment was cancelled', async () => {
     signIn();
     stubBillingApi();

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useAppDispatch } from '@/redux/hook';
 import { CommunityApi, useGetMyPaymentsQuery, useGetPaymentStatusQuery } from '@/utils/api/community/community.api';
@@ -46,16 +47,20 @@ export type PaymentReturn = 'checking' | 'paid' | 'pending' | 'failed' | 'cancel
 /**
  * Back from PayDunya (?payment=done|cancelled): the payment is checked with the api (it asks
  * PayDunya while pending) until it is paid or failed. Paid: the membership (or Pro) is read again.
+ * The payment is the one of the url (the api adds ?payment_id= to the return urls), else the one
+ * kept before leaving, else the latest one of the scope.
  */
 function UsePaymentReturn(scope: PaymentScope | undefined, param: string | null): PaymentReturn {
   const dispatch = useAppDispatch();
+  const [params] = useSearchParams();
   const slug = scope?.slug ?? '';
   const done = param === 'done';
-  const remembered = done && slug ? rememberedPayment(slug) : null;
+  const fromUrl = done ? params.get('payment_id') : null;
+  const remembered = done && slug && !fromUrl ? rememberedPayment(slug) : null;
   // Paid in another tab, or no storage: the latest payment of this scope
-  const payments = useGetMyPaymentsQuery(undefined, { skip: !done || !slug || !!remembered });
+  const payments = useGetMyPaymentsQuery(undefined, { skip: !done || !slug || !!fromUrl || !!remembered });
   const latest = (payments.data ?? []).find((p) => !!p.plan && p.plan.community_id === scope?.communityId);
-  const paymentId = remembered ?? latest?.id ?? '';
+  const paymentId = fromUrl ?? remembered ?? latest?.id ?? '';
 
   const [startedAt] = useState(() => Date.now());
   const [timedOut, setTimedOut] = useState(false);

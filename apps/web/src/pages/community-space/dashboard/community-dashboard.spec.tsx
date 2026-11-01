@@ -52,6 +52,10 @@ function stubDashboardApi() {
       return json({ success: true, pagination: { count: found.length }, results: found.slice(0, Number(p.get('page_size') ?? 20)) });
     }
     if (url.pathname.endsWith('/feed/')) return json({ success: true, pagination: { count: 57 }, results: POSTS });
+    if (url.pathname.endsWith('/revenue/')) {
+      const month = new Date().toISOString().slice(0, 7);
+      return json({ success: true, data: { monthly_revenue: [{ month, gross: '20000.00', fees: '2000.00', net: '18000.00', payments_count: 2 }] } });
+    }
     if (url.pathname.endsWith('/events/')) {
       const event = { id: 'e1', title: 'Atelier Terraform', start_time: daysAgo(-5), end_time: daysAgo(-5), status: 'scheduled' };
       return json({ success: true, pagination: { count: 1 }, results: [event] });
@@ -81,6 +85,14 @@ describe('Community space: dashboard', () => {
     expect(within(figures).getByText("Demandes d'adhésion").parentElement?.textContent).toContain('2');
     expect(within(figures).getByText('Événements à venir').parentElement?.textContent).toContain('1');
     expect(calls.some((u) => u.pathname.endsWith('/feed/') && u.searchParams.get('page_size') === '100')).toBe(true);
+  });
+
+  it('shows the net revenue of the month to the owner of a paid community', async () => {
+    const calls = stubDashboardApi();
+    renderAppAt('/c/lagos-ai-data/dashboard');
+    const figures = await screen.findByRole('region', { name: 'Indicateurs de la communauté' }, SLOW);
+    await waitFor(() => expect(within(figures).getByText('Revenus nets ce mois-ci').parentElement?.textContent).toMatch(/18\s000 FCFA/), SLOW);
+    expect(calls.some((u) => u.pathname.endsWith('/billing/communities/lagos-ai-data/revenue/'))).toBe(true);
   });
 
   it('lists what to handle and the most popular posts', async () => {

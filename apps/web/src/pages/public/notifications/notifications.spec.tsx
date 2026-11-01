@@ -5,6 +5,7 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import { contentKind } from './components/notification-item';
 import { notificationHref } from './form/UseNotifications';
 
 vi.setConfig({ testTimeout: 15_000 });
@@ -25,8 +26,10 @@ const notification = (id: string, title: string, action_url: string, is_read = f
   created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
 });
 
-function stubNotificationsApi() {
+/** reviews: the user owns "Abidjan React", where Kofi asked to join */
+function stubNotificationsApi({ reviews = false } = {}) {
   const calls: Call[] = [];
+  let pending = reviews ? [{ id: 'm9', user: { id: 'u9', username: 'kofi', first_name: 'Kofi', last_name: 'Mensah' }, role: 'member', status: 'pending', custom_title: '', joined_at: '', reputation_score: 0, created_at: '2026-10-30T10:00:00Z' }] : [];
   const items = [
     notification('n1', 'Candidature acceptée', '/communities/abidjan-react/hackathons/devfest'),
     notification('n2', 'Invitation d’équipe', '/communities/abidjan-react/hackathons/devfest/teams'),
@@ -38,6 +41,17 @@ function stubNotificationsApi() {
     calls.push({ method: request.method, url });
     const json = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
     const path = url.pathname;
+    const community = { id: 'c1', name: 'Abidjan React', slug: 'abidjan-react', members_count: 12, privacy_type: 'private', pricing_type: 'free' };
+    if (reviews && path.endsWith('/communities/my/')) return json({ success: true, pagination: { count: 1 }, results: [community] });
+    if (reviews && path.endsWith('/communities/abidjan-react/')) return json({ success: true, data: { ...community, user_membership: { is_member: true, role: 'owner', status: 'active' } } });
+    if (path.endsWith('/communities/abidjan-react/members/') && url.searchParams.get('status') === 'pending') {
+      return json({ success: true, pagination: { count: pending.length }, results: pending });
+    }
+    if (path.endsWith('/communities/abidjan-react/members/m9/') && request.method === 'PUT') {
+      calls.push({ method: 'PUT', url });
+      pending = [];
+      return json({ success: true, data: { id: 'm9', status: 'active' } });
+    }
     if (path.endsWith('/notifications/unread-count/')) return json({ success: true, data: { unread_count: items.filter((n) => !n.is_read).length } });
     if (path.endsWith('/notifications/read-all/')) {
       items.forEach((n) => (n.is_read = true));
@@ -75,6 +89,19 @@ afterEach(() => {
   act(() => {
     store.dispatch(onLogout());
     store.dispatch(CommunityApi.util.resetApiState());
+  });
+});
+
+describe('contentKind', () => {
+  it('names the content of a notification from its target, else from its link', () => {
+    // A new hackathon comes as an "invitation" with target_type "hackathon"
+    expect(contentKind({ target_type: 'hackathon', action_url: '/communities/a/hackathons/devfest' })).toBe('hackathon');
+    expect(contentKind({ target_type: 'hackathon_team', action_url: '/communities/a/hackathons/devfest/teams' })).toBe('hackathon');
+    expect(contentKind({ target_type: '', action_url: '/communities/a/courses/react-19' })).toBe('course');
+    expect(contentKind({ target_type: '', action_url: '/projects/wari-pay' })).toBe('project');
+    expect(contentKind({ target_type: '', action_url: '/opportunities/dev-react' })).toBe('opportunity');
+    expect(contentKind({ target_type: '', action_url: '/c/a/events/e1' })).toBe('event');
+    expect(contentKind({ target_type: 'user', action_url: '/messages/c1' })).toBeNull();
   });
 });
 
@@ -128,6 +155,37 @@ describe('Notifications', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Toutes' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Supprimer la notification : Nouveau vote reçu' }, SLOW));
     await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/notifications/n3/'))).toBe(true), SLOW);
+  });
+
+  it('lists the join requests of the communities the user reviews, to accept them here', async () => {
+    signIn();
+    const calls = stubNotificationsApi({ reviews: true });
+    renderAppAt('/notifications');
+    const requests = await screen.findByRole('list', { name: 'Demandes d’adhésion' }, SLOW);
+    expect(within(requests).getByText(/souhaite rejoindre/).textContent).toMatch(/Kofi Mensah souhaite rejoindre Abidjan React/);
+    expect(within(requests).getByRole('link', { name: 'Abidjan React' }).getAttribute('href')).toBe('/c/abidjan-react/members?status=pending');
+    fireEvent.click(within(requests).getByRole('button', { name: 'Accepter Kofi Mensah' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'PUT' && c.url.pathname.endsWith('/members/m9/'))).toBe(true), SLOW);
+    // Read again: nothing left to answer
+    await waitFor(() => expect(screen.queryByRole('list', { name: 'Demandes d’adhésion' })).toBeNull(), SLOW);
+  });
+
+  it('shows no join request to a user who reviews none', async () => {
+    signIn();
+    stubNotificationsApi();
+    renderAppAt('/notifications');
+    await screen.findByRole('list', { name: 'Notifications' }, SLOW);
+    expect(screen.queryByRole('list', { name: 'Demandes d’adhésion' })).toBeNull();
+  });
+
+  it('says what content a notification is about', async () => {
+    signIn();
+    stubNotificationsApi();
+    renderAppAt('/notifications');
+    const list = await screen.findByRole('list', { name: 'Notifications' }, SLOW);
+    const items = within(list).getAllByRole('listitem');
+    expect(items[0].textContent).toMatch(/^HackathonCandidature acceptée/);
+    expect(items[2].textContent).toMatch(/^ProjetNouveau vote reçu/);
   });
 
   it('has no bell for a visitor', async () => {

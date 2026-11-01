@@ -1,21 +1,9 @@
-import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Button,
-  cn,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Loader,
-} from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { CodeBlock } from '@/pages/shared/code-block';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -24,6 +12,7 @@ import { PollCard } from '../components/poll-card';
 import UsePostDetails, { type PostDetailsPage } from '../form/UsePostDetails';
 import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
+import { DeleteCommentDialog } from './delete-comment-dialog';
 
 function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetailsPage }) {
   const author = getName(post.author) || post.author.username;
@@ -58,10 +47,7 @@ function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetail
       {post.title && <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-900">{post.title}</h1>}
       <p className={cn('leading-relaxed whitespace-pre-line text-slate-700', post.title ? 'mt-4' : 'mt-5')}>{plain(post.content)}</p>
       {post.code_snippet && (
-        <pre className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
-          {post.code_language && <span className="mb-2 block text-xs text-slate-400">{post.code_language}</span>}
-          <code>{post.code_snippet}</code>
-        </pre>
+        <CodeBlock code={post.code_snippet} language={post.code_language} />
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={page.isMember} />}
 
@@ -90,7 +76,6 @@ function PostDetails() {
   const page = UsePostDetails();
   const { community, post, comments, slug } = page;
   const [toDelete, setToDelete] = useState<PostComment | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const back = `/communities/${slug}?tab=feed`;
 
   if (page.isLoading) {
@@ -203,32 +188,7 @@ function PostDetails() {
         </section>
       </div>
 
-      <Dialog open={!!toDelete} onOpenChange={(open) => !open && !isDeleting && setToDelete(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Supprimer ce commentaire ?</DialogTitle>
-            <DialogDescription>Ses réponses seront supprimées avec lui.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setToDelete(null)} disabled={isDeleting}>
-              Annuler
-            </Button>
-            <Button
-              variant="danger"
-              isLoading={isDeleting}
-              onClick={async () => {
-                if (!toDelete) return;
-                setIsDeleting(true);
-                const ok = await page.remove(toDelete);
-                setIsDeleting(false);
-                if (ok) setToDelete(null);
-              }}
-            >
-              <Trash2 /> Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteCommentDialog comment={toDelete} onClose={() => setToDelete(null)} onDelete={page.remove} />
     </div>
   );
 }

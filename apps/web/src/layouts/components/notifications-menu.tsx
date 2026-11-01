@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
 import { NotificationContent } from '@/pages/public/notifications/components/notification-item';
+import UseJoinRequests from '@/pages/public/notifications/form/UseJoinRequests';
 import UseNotifications, { useUnreadNotifications } from '@/pages/public/notifications/form/UseNotifications';
 import { useGetNotificationsQuery } from '@/utils/api/community/community.api';
 
@@ -16,6 +17,8 @@ export function NotificationsMenu() {
   const actions = UseNotifications();
   // Loaded when the menu opens (the count is enough for the badge)
   const { data, isLoading } = useGetNotificationsQuery({ page: 1, page_size: LATEST }, { skip: !open });
+  // Read when the menu opens too (one call per community the user reviews): answered on /notifications
+  const pendingRequests = UseJoinRequests({ skip: !open }).requests.length;
   const notifications = data?.results ?? [];
   const label = unread > 0 ? `Notifications (${unread} non lue${unread > 1 ? 's' : ''})` : 'Notifications';
 
@@ -42,6 +45,13 @@ export function NotificationsMenu() {
             </button>
           )}
         </div>
+        {pendingRequests > 0 && (
+          <DropdownMenuItem asChild className="rounded-none border-b border-amber-100 bg-amber-50/60 px-4 py-3 text-sm font-semibold text-amber-900">
+            <Link to="/notifications">
+              {pendingRequests} demande{pendingRequests > 1 ? 's' : ''} d’adhésion à traiter
+            </Link>
+          </DropdownMenuItem>
+        )}
         <div className="max-h-[min(28rem,70dvh)] overflow-y-auto">
           {isLoading ? (
             <p className="px-4 py-8 text-center text-sm text-slate-500">Chargement…</p>

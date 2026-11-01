@@ -34,9 +34,11 @@ type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 /** Fake members api: list (status / role / search / pagination), decision, role, sanctions */
 function stubMembersApi() {
   let members = [...MEMBERS];
+  // WorkspaceInvitationSerializer: the code of a link is never listed
   let invitations = [
-    { id: 'i1', invite_code: 'CODE-OLD', email: '', role: 'member', max_uses: 10, uses_count: 3, expires_at: '2026-11-01T10:00:00Z', is_valid: true, is_revoked: false, invited_by: MEMBERS[0].user, created_at: '2026-10-01T10:00:00Z' },
-    { id: 'i0', invite_code: 'CODE-USED', email: '', role: 'member', max_uses: 1, uses_count: 1, expires_at: '2026-11-01T10:00:00Z', is_valid: false, is_revoked: false, invited_by: MEMBERS[0].user, created_at: '2026-09-01T10:00:00Z' },
+    { id: 'i2', email: 'awa@example.com', role: 'member', status: 'pending', expires_at: '2026-11-20T10:00:00Z', accepted_at: null, is_valid: true, invited_by: MEMBERS[0].user, created_at: '2026-10-20T10:00:00Z' },
+    { id: 'i1', email: '', role: 'member', status: 'pending', expires_at: '2026-11-21T10:00:00Z', accepted_at: null, is_valid: true, invited_by: MEMBERS[0].user, created_at: '2026-10-01T10:00:00Z' },
+    { id: 'i0', email: 'kofi@example.com', role: 'member', status: 'accepted', expires_at: '2026-10-08T10:00:00Z', accepted_at: '2026-10-02T10:00:00Z', is_valid: false, invited_by: MEMBERS[0].user, created_at: '2026-09-01T10:00:00Z' },
   ];
   const calls: Call[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -48,13 +50,25 @@ function stubMembersApi() {
     const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
     const id = url.pathname.match(/members\/([^/]+)\//)?.[1];
 
+    const invitationId = url.pathname.match(/invitations\/([^/]+)\//)?.[1];
+    if (invitationId && url.pathname.endsWith('/resend/')) {
+      invitations = invitations.map((i) => (i.id === invitationId ? { ...i, status: 'pending', is_valid: true } : i));
+      return json({ success: true, data: { ...invitations.find((i) => i.id === invitationId), raw_token: 'TOKEN-AGAIN' } });
+    }
+    if (invitationId && request.method === 'DELETE') {
+      invitations = invitations.map((i) => (i.id === invitationId ? { ...i, status: 'revoked', is_valid: false } : i));
+      return json({ success: true, data: invitations.find((i) => i.id === invitationId) });
+    }
     if (url.pathname.endsWith('/invitations/')) {
       if (request.method === 'POST') {
-        const created = { id: `i${invitations.length + 1}`, invite_code: 'CODE-NEW', email: body?.email ?? '', role: body?.role, max_uses: body?.max_uses, uses_count: 0, expires_at: '2026-10-24T10:00:00Z', is_valid: true, is_revoked: false, invited_by: MEMBERS[0].user, created_at: '2026-10-17T10:00:00Z' };
+        // With an email: 30 days at most (CreateWorkspaceInvitationSerializer)
+        if (body?.email && body.expires_in_days > 30) return json({ success: false, code: 'validation_error', message: 'Données invalides.', details: { expires_in_days: ['Assurez-vous que cette valeur est inférieure ou égale à 30.'] } }, 400);
+        const created = { id: `i${invitations.length + 1}`, invite_code: 'CODE-NEW', email: body?.email ?? '', role: body?.role, status: 'pending', max_uses: body?.max_uses, uses_count: 0, expires_at: '2026-10-24T10:00:00Z', accepted_at: null, is_valid: true, invited_by: MEMBERS[0].user, created_at: '2026-10-17T10:00:00Z' };
         invitations = [created, ...invitations];
         return json({ success: true, data: created }, 201);
       }
-      return json({ success: true, data: invitations });
+      // Paginated, like StandardResultsSetPagination
+      return json({ success: true, pagination: { count: invitations.length }, results: invitations });
     }
     if (id && url.pathname.endsWith('/sanctions/')) {
       if (body?.sanction_type === 'ban') members = members.map((m) => (m.id === id ? { ...m, status: 'banned' } : m));
@@ -215,10 +229,12 @@ describe('Community space: members', () => {
     renderAppAt('/c/dakar-devops/members');
     fireEvent.click(await screen.findByRole('button', { name: /Inviter des membres/ }, SLOW));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
-    // Only the still usable links
-    const active = await within(dialog).findByRole('list', { name: "Liens d'invitation actifs" }, SLOW);
-    expect(within(active).getAllByRole('listitem')).toHaveLength(1);
-    expect((within(active).getByLabelText("Lien d'invitation 1") as HTMLInputElement).value).toMatch(/\/invitations\/CODE-OLD\?community=dakar-devops$/);
+    // The pending ones, the past ones on demand
+    const pending = await within(dialog).findByRole('list', { name: 'Invitations en attente' }, SLOW);
+    expect(within(pending).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(pending).getByText('Lien partageable')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: /Voir les invitations passées \(1\)/ }));
+    expect(within(within(dialog).getByRole('list', { name: 'Invitations passées' })).getByText('Acceptée')).toBeTruthy();
 
     const role = within(dialog).getByLabelText("Rôle à l'arrivée");
     expect(within(role).getAllByRole('option').map((o) => o.textContent)).toEqual(['Membre', 'Modérateur', 'Administrateur']);
@@ -230,6 +246,32 @@ describe('Community space: members', () => {
     const link = (await within(dialog).findByLabelText("Lien d'invitation", {}, SLOW)) as HTMLInputElement;
     expect(link.value).toMatch(/\/invitations\/CODE-NEW\?community=dakar-devops$/);
     expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/invitations/'))?.body).toEqual({ role: 'moderator', max_uses: 5, expires_in_days: 30 });
+  });
+
+  it('invites by email for 30 days at most, then revokes or sends an invitation again', async () => {
+    const calls = stubMembersApi();
+    renderAppAt('/c/dakar-devops/members');
+    fireEvent.click(await screen.findByRole('button', { name: /Inviter des membres/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/Email/), { target: { value: 'fatou@example.com' } });
+    // One person: no number of uses, no 90 days
+    expect(within(dialog).queryByLabelText(/Nombre d'utilisations/)).toBeNull();
+    expect(within(within(dialog).getByLabelText('Valable')).getAllByRole('option').map((o) => o.textContent)).toEqual(['1 jour', '7 jours', '30 jours']);
+    fireEvent.click(within(dialog).getByRole('button', { name: /Envoyer l’invitation/ }));
+    expect(await within(dialog).findByText('Invitation envoyée à fatou@example.com', {}, SLOW)).toBeTruthy();
+    expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/invitations/'))?.body).toEqual({ role: 'member', expires_in_days: 7, email: 'fatou@example.com' });
+
+    // Sent again: a new link to copy
+    const pending = await within(dialog).findByRole('list', { name: 'Invitations en attente' }, SLOW);
+    fireEvent.click(within(pending).getByRole('button', { name: "Renvoyer l'invitation à awa@example.com" }));
+    const renewed = (await within(dialog).findByLabelText('Nouveau lien pour awa@example.com', {}, SLOW)) as HTMLInputElement;
+    expect(renewed.value).toMatch(/\/invitations\/TOKEN-AGAIN\?community=dakar-devops$/);
+    expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/workspaces/dakar-devops/invitations/i2/resend/'))).toBe(true);
+
+    // Revoked: leaves the pending ones
+    fireEvent.click(within(pending).getByRole('button', { name: "Révoquer l'invitation : Lien partageable" }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/workspaces/dakar-devops/invitations/i1/'))).toBe(true), SLOW);
+    await waitFor(() => expect(within(within(dialog).getByRole('list', { name: 'Invitations en attente' })).queryByText('Lien partageable')).toBeNull(), SLOW);
   });
 
   it('lets an admin invite up to moderator, and a moderator not at all', async () => {

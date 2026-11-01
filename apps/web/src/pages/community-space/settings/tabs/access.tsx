@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
 import FormActions from '@/pages/shared/form-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
+import PaidAccessCard from '../components/paid-access-card';
 import { useSpaceSettings } from '../form/UseSpaceSettings';
 
 const schema = z.object({
@@ -40,83 +41,87 @@ function AccessTab() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <h2 className="text-lg font-semibold text-slate-900">Accès & publication</h2>
-      <p className="mb-5 text-sm text-slate-500">Qui peut voir, rejoindre et publier dans la communauté.</p>
+    <>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <h2 className="text-lg font-semibold text-slate-900">Accès & publication</h2>
+        <p className="mb-5 text-sm text-slate-500">Qui peut voir, rejoindre et publier dans la communauté.</p>
 
-      <div className="grid gap-x-4 md:grid-cols-2">
-        <SelectInput
-          label="Visibilité"
-          fieldHelp={privacyHelp[watch('privacy_type')]}
-          options={[
-            { value: 'public', label: 'Publique' },
-            { value: 'private', label: 'Privée' },
-            { value: 'secret', label: 'Secrète' },
-          ]}
-          {...register('privacy_type')}
-        />
-        <SelectInput
-          label="Qui peut publier"
-          options={[
-            { value: 'all_members', label: 'Tous les membres' },
-            { value: 'moderators_only', label: 'Modérateurs et administrateurs' },
-            { value: 'admins_only', label: 'Administrateurs uniquement' },
-          ]}
-          {...register('default_post_permission')}
-        />
-      </div>
+        <div className="grid gap-x-4 md:grid-cols-2">
+          <SelectInput
+            label="Visibilité"
+            fieldHelp={privacyHelp[watch('privacy_type')]}
+            options={[
+              { value: 'public', label: 'Publique' },
+              { value: 'private', label: 'Privée' },
+              { value: 'secret', label: 'Secrète' },
+            ]}
+            {...register('privacy_type')}
+          />
+          <SelectInput
+            label="Qui peut publier"
+            options={[
+              { value: 'all_members', label: 'Tous les membres' },
+              { value: 'moderators_only', label: 'Modérateurs et administrateurs' },
+              { value: 'admins_only', label: 'Administrateurs uniquement' },
+            ]}
+            {...register('default_post_permission')}
+          />
+        </div>
 
-      <div className="mt-2 divide-y divide-slate-100 border-y border-slate-100">
-        <Controller
-          control={control}
-          name="is_read_only"
-          render={({ field }) => (
-            <SettingSwitch
-              label="Mode lecture seule"
-              description="Les membres ordinaires peuvent seulement lire les discussions et messages sans pouvoir écrire."
-              checked={!!field.value}
-              onCheckedChange={field.onChange}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="require_approval_to_join"
-          render={({ field }) => (
-            <SettingSwitch
-              label="Valider les demandes d'adhésion"
-              description="Les nouvelles demandes arrivent dans Membres > En attente."
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="allow_member_invites"
-          render={({ field }) => (
-            <SettingSwitch
-              label="Les membres peuvent inviter"
-              description="Sinon, seule l'équipe de la communauté envoie des invitations."
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
-          )}
-        />
-      </div>
+        <div className="mt-2 divide-y divide-slate-100 border-y border-slate-100">
+          <Controller
+            control={control}
+            name="is_read_only"
+            render={({ field }) => (
+              <SettingSwitch
+                label="Mode lecture seule"
+                description="Les membres ordinaires peuvent seulement lire les discussions et messages sans pouvoir écrire."
+                checked={!!field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="require_approval_to_join"
+            render={({ field }) => (
+              <SettingSwitch
+                label="Valider les demandes d'adhésion"
+                description="Les nouvelles demandes arrivent dans Membres > En attente."
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="allow_member_invites"
+            render={({ field }) => (
+              <SettingSwitch
+                label="Les membres peuvent inviter"
+                description="Sinon, seule l'équipe de la communauté envoie des invitations."
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+        </div>
 
-      <TextareaInput
-        id="community-welcome"
-        label="Message de bienvenue"
-        rows={3}
-        fieldHelp="Envoyé à chaque nouveau membre."
-        customClassContainer="mt-5"
-        error={errors.welcome_message?.message}
-        {...register('welcome_message')}
-      />
+        <TextareaInput
+          id="community-welcome"
+          label="Message de bienvenue"
+          rows={3}
+          fieldHelp="Envoyé à chaque nouveau membre."
+          customClassContainer="mt-5"
+          error={errors.welcome_message?.message}
+          {...register('welcome_message')}
+        />
 
-      <FormActions isDirty={isDirty} isSaving={isSubmitting} onReset={() => reset({ ...access, is_read_only: access.is_read_only ?? false })} />
-    </form>
+        <FormActions isDirty={isDirty} isSaving={isSubmitting} onReset={() => reset({ ...access, is_read_only: access.is_read_only ?? false })} />
+      </form>
+      {/* Its own form: not part of the save of the access rules */}
+      <PaidAccessCard />
+    </>
   );
 }
 

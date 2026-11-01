@@ -12,7 +12,7 @@ import {
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { referralCode } from '@/utils/referral';
-import { communityTabs, type CommunityTabId } from '../components/community-tabs';
+import { communityTabs, type CommunityTabId, MEMBER_TABS } from '../components/community-tabs';
 import { rememberPayment } from './UsePaymentReturn';
 
 /** Where the signed-in user stands in the community */
@@ -99,9 +99,13 @@ function UseCommunityPage() {
     membership,
     role,
     isTeam: membership === 'member' && !!role && role !== 'member',
+    /** EventService.check_is_manager: the owner, and the roles allowed to manage the events (transcriptions...) */
+    canManage:
+      membership === 'member' && (role === 'owner' || !!community?.user_membership?.permissions?.includes('can_manage_events')),
     canSee: community ? canSeeContent(community, membership) : false,
     // Visitors land on "À propos" (like Skool), members on the feed
-    activeTab: isTab(tabParam) ? tabParam : membership === 'member' ? 'feed' : 'about',
+    // A member tab asked by a visitor: their default tab
+    activeTab: isTab(tabParam) && (membership === 'member' || !MEMBER_TABS.includes(tabParam)) ? tabParam : membership === 'member' ? 'feed' : 'about',
     loginUrl: `/auth/login?next=${encodeURIComponent(pathname)}`,
     payment: params.get('payment'),
     join,

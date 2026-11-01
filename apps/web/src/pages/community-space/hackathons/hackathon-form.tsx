@@ -4,6 +4,7 @@ import { Controller } from 'react-hook-form';
 import { Link, Navigate, useParams } from 'react-router-dom';
 
 import { Button, ColgateWrapper, DetailsPageSkeleton, EmptyAlert, Input, SelectInput, TextareaInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { BannerUploadField } from '@/pages/shared/banner-upload-field';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import { useGetHackathonQuery } from '@/utils/api/community/community.api';
 import type { Hackathon } from '@/utils/api/hackathon/hackathon.type';
@@ -62,7 +63,20 @@ function HackathonForm({ hackathon }: { hackathon?: Hackathon }) {
             <Input id="hk-theme" label="Thème" placeholder="Ex. IA pour l’agriculture" {...register('theme')} />
             <Input id="hk-audience" label="Public visé" placeholder="Ex. Étudiants et développeurs" {...register('target_audience')} />
             <TextareaInput id="hk-prerequisites" label="Prérequis" rows={3} customClassContainer="md:col-span-2" {...register('prerequisites')} />
-            <Input id="hk-cover" label="Image de couverture" placeholder="https://…" error={errors.cover_image_url?.message} {...register('cover_image_url')} />
+            <Controller
+              control={control}
+              name="cover_image_url"
+              render={({ field }) => (
+                <BannerUploadField
+                  id="hk-cover"
+                  label="Image de couverture"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.cover_image_url?.message}
+                  className="mb-4 md:col-span-2"
+                />
+              )}
+            />
             <Input id="hk-rules" label="Lien du règlement" placeholder="https://…" error={errors.rules_url?.message} {...register('rules_url')} />
           </div>
         </Section>

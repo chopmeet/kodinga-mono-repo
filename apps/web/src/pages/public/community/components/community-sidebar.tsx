@@ -28,7 +28,11 @@ const price = (p: CommunityPlan) =>
 
 /** Formulas of a paid community, each with its PayDunya checkout */
 function Plans({ page }: { page: CommunityPage }) {
-  const { data: plans = [], isLoading } = useGetCommunityPlansQuery(page.slug);
+  // The detail carries the plans; billing/plans/ only when it does not
+  const fromDetail = page.community?.subscription_plans;
+  const query = useGetCommunityPlansQuery(page.slug, { skip: !!fromDetail });
+  const plans = fromDetail ?? query.data ?? [];
+  const isLoading = !fromDetail && query.isLoading;
   const [chosen, setChosen] = useState<string | null>(null);
 
   if (isLoading) return <p className="text-center text-sm text-slate-500">Chargement des formules…</p>;

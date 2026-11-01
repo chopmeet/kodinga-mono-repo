@@ -185,6 +185,11 @@ export const AppRoutes: RouteObject[] = [
         element: <AcceptInvitation />,
       },
       {
+        // Link of the invitations sent by email by the api (InvitationService: FRONTEND_URL/invite/<token>)
+        path: 'invite/:code',
+        element: <AcceptInvitation />,
+      },
+      {
         path: 'profiles/:username',
         element: <PublicProfile />,
       },

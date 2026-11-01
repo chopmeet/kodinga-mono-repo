@@ -1,4 +1,5 @@
-import { Crown, Download, Medal, RotateCw, SlidersHorizontal, Sparkles, Trophy, Users } from 'lucide-react';
+import { Crown, Download, Medal, Pencil, RotateCw, SlidersHorizontal, Sparkles, Trophy, Users } from 'lucide-react';
+import { useState } from 'react';
 
 import {
   Avatar,
@@ -14,13 +15,16 @@ import {
   cn,
 } from '@kodinga-mono-repo/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
-import { SoonBadge } from '@/pages/shared/row-actions';
 import { parseApiError } from '@/utils/api/errors';
-import type { LeaderboardEntry } from '@/utils/api/gamification/gamification.type';
+import { type LeaderboardEntry, type LeaderboardPeriod, PERIOD_LABEL } from '@/utils/api/gamification/gamification.type';
 import { nameInitials } from '@/utils/Utils';
 import { useCommunitySpace } from '../community-space-context';
+import PointsJournal from './components/points-journal';
 import UseCommunityLeaderboard, { LIMITS, type Limit } from './form/UseCommunityLeaderboard';
-import { LEVELS, POINT_RULES, pointsFormat } from './leaderboard-labels';
+import UsePointsAdmin from './form/UsePointsAdmin';
+import { LEVELS, pointsFormat } from './leaderboard-labels';
+import AdjustPointsModal from './modals/adjust-points-modal';
+import RulesModal from './modals/rules-modal';
 
 const PODIUM_STYLE: Record<number, { ring: string; badge: string; height: string }> = {
   1: { ring: 'ring-amber-400', badge: 'bg-amber-400 text-amber-950', height: 'sm:pt-0' },
@@ -67,11 +71,16 @@ function Podium({ entries }: { entries: LeaderboardEntry[] }) {
   );
 }
 
+const PERIODS: LeaderboardPeriod[] = ['all_time', 'monthly', 'weekly'];
+
 /** /c/:slug/leaderboard — members ranked by the points earned in the community */
 function CommunityLeaderboard() {
   const { community } = useCommunitySpace();
-  const { entries, filtered, stats, limit, setLimit, search, setSearch, exportCsv, userId, isLoading, isFetching, error, refetch } =
+  const { entries, filtered, stats, limit, setLimit, period, setPeriod, search, setSearch, exportCsv, userId, isLoading, isFetching, error, refetch } =
     UseCommunityLeaderboard(community.slug);
+  const points = UsePointsAdmin();
+  const [modal, setModal] = useState<'rules' | 'adjust' | null>(null);
+  const activeRules = points.rules.filter((r) => r.is_active && r.points > 0).sort((a, b) => b.points - a.points);
 
   const cards: CardType[] = [
     { id: 'ranked', label: 'Membres classés', value: stats.ranked, icon: <Users size={18} />, color: '#1D4ED8' },
@@ -84,11 +93,12 @@ function CommunityLeaderboard() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <TopTitle title="Classement" paragraph={`Les membres les plus actifs de ${community.name}`} />
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled title="Bientôt disponible">
-            <SlidersHorizontal />
-            Ajuster des points
-            <SoonBadge />
-          </Button>
+          {points.canManage && (
+            <Button variant="outline" onClick={() => setModal('adjust')}>
+              <SlidersHorizontal />
+              Ajuster des points
+            </Button>
+          )}
           <Button variant="outline" onClick={exportCsv} disabled={entries.length === 0}>
             <Download />
             Exporter
@@ -113,10 +123,22 @@ function CommunityLeaderboard() {
       ) : entries.length === 0 ? (
         <ColgateWrapper className="flex flex-col items-center border border-neutral-200 py-12 text-center">
           <Medal className="size-10 text-slate-300" aria-hidden />
-          <p className="mt-3 font-semibold text-slate-900">Personne n'a encore marqué de points</p>
-          <p className="mt-1 max-w-md text-sm text-slate-500">
-            Les membres gagnent des points en publiant, en commentant, en suivant les formations et en participant aux événements.
-          </p>
+          {period === 'all_time' ? (
+            <>
+              <p className="mt-3 font-semibold text-slate-900">Personne n'a encore marqué de points</p>
+              <p className="mt-1 max-w-md text-sm text-slate-500">
+                Les membres gagnent des points en publiant, en commentant, en suivant les formations et en participant aux événements.
+              </p>
+            </>
+          ) : (
+            // The period chips are in the hidden panel: a way back
+            <>
+              <p className="mt-3 font-semibold text-slate-900">Aucun point marqué sur les {PERIOD_LABEL[period].toLowerCase()}</p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => setPeriod('all_time')}>
+                Voir le classement depuis le début
+              </Button>
+            </>
+          )}
         </ColgateWrapper>
       ) : (
         <>
@@ -162,12 +184,9 @@ function CommunityLeaderboard() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Période">
-            <FilterChip active onClick={() => undefined}>
-              Depuis le début
-            </FilterChip>
-            {['Ce mois-ci', 'Cette semaine'].map((label) => (
-              <FilterChip key={label} active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
-                {label} <SoonBadge />
+            {PERIODS.map((p) => (
+              <FilterChip key={p} active={period === p} onClick={() => setPeriod(p)}>
+                {PERIOD_LABEL[p]}
               </FilterChip>
             ))}
           </div>
@@ -203,15 +222,28 @@ function CommunityLeaderboard() {
 
         <div className="space-y-6">
           <ColgateWrapper className="border border-neutral-200 p-5">
-            <h2 className="font-semibold text-slate-900">Comment gagner des points</h2>
-            <ul className="mt-3 space-y-2 text-sm">
-              {POINT_RULES.map((r) => (
-                <li key={r.label} className="flex justify-between gap-3">
-                  <span className="text-slate-600">{r.label}</span>
-                  <span className="font-semibold text-emerald-700 tabular-nums">+{r.points}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-semibold text-slate-900">Comment gagner des points</h2>
+              {points.canManage && (
+                <Button variant="ghost" size="sm" onClick={() => setModal('rules')} disabled={points.rules.length === 0}>
+                  <Pencil />
+                  Modifier
+                </Button>
+              )}
+            </div>
+            {points.rulesLoading ? (
+              <p className="mt-3 text-sm text-slate-500">Chargement du barème…</p>
+            ) : (
+              <ul className="mt-3 space-y-2 text-sm" aria-label="Barème des points">
+                {activeRules.length === 0 && <li className="text-slate-500">Aucune action ne rapporte de points.</li>}
+                {activeRules.map((r) => (
+                  <li key={r.action} className="flex justify-between gap-3">
+                    <span className="text-slate-600">{r.label}</span>
+                    <span className="font-semibold text-emerald-700 tabular-nums">+{r.points}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </ColgateWrapper>
           <ColgateWrapper className="border border-neutral-200 p-5">
             <h2 className="font-semibold text-slate-900">Niveaux</h2>
@@ -229,6 +261,16 @@ function CommunityLeaderboard() {
           </ColgateWrapper>
         </div>
       </div>
+
+      {points.canManage && (
+        <ColgateWrapper className="mt-6 border border-neutral-200 p-4">
+          <h2 className="mb-3 font-semibold text-slate-900">Journal des points</h2>
+          <PointsJournal items={points.journal} isLoading={points.journalLoading} />
+        </ColgateWrapper>
+      )}
+
+      <RulesModal open={modal === 'rules'} rules={points.rules} onOpenChange={(open) => setModal(open ? 'rules' : null)} onSave={points.saveRules} />
+      <AdjustPointsModal open={modal === 'adjust'} slug={community.slug} onOpenChange={(open) => setModal(open ? 'adjust' : null)} onAdjust={points.adjust} />
     </div>
   );
 }

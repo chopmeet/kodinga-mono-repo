@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
+import { CodeBlock } from '@/pages/shared/code-block';
 import { useGetCommunityFeedQuery, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -13,6 +14,7 @@ import type { CommunityPage } from '../form/UseCommunityPage';
 import { MembershipActions } from './community-sidebar';
 import { LockedPanel } from './locked-panel';
 import { PollCard } from './poll-card';
+import { PostComments } from './post-comments';
 import { Pill } from './section-header';
 import { useRealtime, useRealtimeCommunityFeed } from '@/utils/realtime/use-realtime';
 
@@ -26,9 +28,11 @@ const FILTERS: { id: PostType | 'all'; label: string }[] = [
   { id: 'poll', label: 'Sondages' },
 ];
 
-function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact: boolean; href: string }) {
+function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; canReact: boolean; href: string; page: CommunityPage }) {
   const [toggleLike, { isLoading }] = useTogglePostLikeMutation();
   const [expanded, setExpanded] = useState(false);
+  // The comments open under the card: no page change, the feed keeps its scroll
+  const [showComments, setShowComments] = useState(false);
   const author = getName(post.author) || post.author.username;
   const liked = !!post.user_reactions?.includes('like');
   const text = plain(post.content);
@@ -82,9 +86,7 @@ function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact:
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={canReact} />}
       {post.code_snippet && (
-        <pre className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
-          <code>{post.code_snippet}</code>
-        </pre>
+        <CodeBlock code={post.code_snippet} language={post.code_language} />
       )}
 
       <footer className="mt-6 flex items-center gap-6 border-t border-slate-200 pt-4 text-sm text-slate-600">
@@ -99,12 +101,17 @@ function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact:
         >
           <ThumbsUp className={cn('size-5', liked && 'fill-blue-900/15')} /> {post.reactions_count}
         </button>
-        <Link to={href} className="flex items-center gap-2 hover:text-slate-900">
+        <button
+          type="button"
+          onClick={() => setShowComments((v) => !v)}
+          aria-expanded={showComments}
+          className={cn('flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:text-slate-900', showComments && 'font-semibold text-blue-900')}
+        >
           <MessageCircle className="size-5" />
           {post.post_type === 'question'
             ? `${post.comments_count} réponse${post.comments_count > 1 ? 's' : ''}`
             : `${post.comments_count} commentaire${post.comments_count > 1 ? 's' : ''}`}
-        </Link>
+        </button>
         {post.post_type === 'question' && post.is_resolved && (
           <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
             <CircleCheck className="size-3.5" /> Résolue
@@ -112,6 +119,7 @@ function PostCard({ post, canReact, href }: { post: CommunityPostItem; canReact:
         )}
         {post.is_locked && <span className="ml-auto text-xs text-slate-500">Commentaires fermés</span>}
       </footer>
+      {showComments && <PostComments post={post} page={page} />}
     </article>
   );
 }
@@ -218,7 +226,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label="Publications">
           {posts.map((post) => (
             <li key={post.id}>
-              <PostCard post={post} canReact={isMember} href={postHref(page.slug, post.id)} />
+              <PostCard post={post} canReact={isMember} href={postHref(page.slug, post.id)} page={page} />
             </li>
           ))}
         </ul>

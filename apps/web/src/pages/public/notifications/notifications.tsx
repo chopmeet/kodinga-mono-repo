@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom';
 import { Button, cn } from '@kodinga-mono-repo/ui';
 import { useAppSelector } from '@/redux/hook';
 import { useGetNotificationsQuery } from '@/utils/api/community/community.api';
+import { JoinRequestsSection } from './components/join-requests';
 import { NotificationContent } from './components/notification-item';
+import UseJoinRequests from './form/UseJoinRequests';
 import UseNotifications, { notificationHref, useUnreadNotifications } from './form/UseNotifications';
 
 const PAGE_SIZE = 20;
@@ -17,6 +19,7 @@ function Notifications() {
   const [count, setCount] = useState(PAGE_SIZE);
   const unread = useUnreadNotifications();
   const actions = UseNotifications();
+  const joinRequests = UseJoinRequests({ skip: !signedIn });
   const { data, isLoading, isFetching } = useGetNotificationsQuery({ page: 1, page_size: count, unread: unreadOnly || undefined }, { skip: !signedIn });
   const notifications = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
@@ -46,6 +49,8 @@ function Notifications() {
           </Button>
         )}
       </div>
+
+      <JoinRequestsSection {...joinRequests} />
 
       <div className="mt-6 flex gap-2" role="group" aria-label="Filtre">
         {(

@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 
 import { cn } from '@kodinga-mono-repo/ui';
+import { CodeBlock } from './code-block';
 
 /** Links kept: web pages and app paths (no javascript:, data:…) */
 const safeHref = (href: string) => (/^(https?:\/\/|\/(?!\/)|#)/i.test(href) ? href : null);
@@ -135,10 +136,7 @@ export function Markdown({ source, className }: { source: string; className?: st
           }
           case 'code':
             return (
-              <pre key={key} className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
-                {b.lang && <span className="mb-2 block text-xs text-slate-400">{b.lang}</span>}
-                <code>{b.code}</code>
-              </pre>
+              <CodeBlock key={key} code={b.code} language={b.lang} className="mt-0" />
             );
           case 'quote':
             return (

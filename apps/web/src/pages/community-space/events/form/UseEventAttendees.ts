@@ -1,6 +1,8 @@
 import { useDeferredValue, useState } from 'react';
 
-import { useGetAllEventAttendeesQuery } from '@/utils/api/community/community.api';
+import { customToast } from '@kodinga-mono-repo/ui';
+import { useCheckInAttendeeMutation, useGetAllEventAttendeesQuery } from '@/utils/api/community/community.api';
+import { parseApiError } from '@/utils/api/errors';
 import type { RsvpStatus } from '@/utils/api/event/event.type';
 
 export type AttendeeFilter = 'all' | RsvpStatus | 'checked_in';
@@ -9,7 +11,8 @@ const normalize = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, ''
 
 /**
  * Attendees of an event for the team: all of them (GET .../attendees/?all=true), searched by
- * name or username, filtered by answer or presence, and paginated here
+ * name or username, filtered by answer or presence, and paginated here. The presence is confirmed
+ * one by one (POST .../check-in/, the host or a manager of the events)
  */
 function UseEventAttendees(slug: string, eventId: string) {
   const { data = [], isLoading } = useGetAllEventAttendeesQuery({ slug, eventId });
@@ -18,6 +21,16 @@ function UseEventAttendees(slug: string, eventId: string) {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const query = normalize(useDeferredValue(search).trim());
+  const [sendCheckIn, { isLoading: isCheckingIn, originalArgs }] = useCheckInAttendeeMutation();
+
+  const checkIn = async (userId: string, name: string) => {
+    try {
+      await sendCheckIn({ slug, eventId, userId }).unwrap();
+      customToast.success({ message: `Présence de ${name} confirmée.` });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    }
+  };
 
   const matching = data.filter((a) => {
     if (filter === 'checked_in' ? !a.checked_in_at : filter !== 'all' && a.status !== filter) return false;
@@ -33,6 +46,9 @@ function UseEventAttendees(slug: string, eventId: string) {
 
   return {
     isLoading,
+    checkIn,
+    /** The participant being checked in, for its spinner */
+    checkingIn: isCheckingIn ? originalArgs?.userId : undefined,
     total: data.length,
     counts,
     matching: matching.length,

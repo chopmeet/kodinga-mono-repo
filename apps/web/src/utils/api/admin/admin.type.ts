@@ -14,3 +14,6 @@ export type SystemSettingWrite = Pick<SystemSetting, 'key' | 'value'> & Partial<
 export type CommunityCreationTier = 'all' | 'pro_only';
 
 export const COMMUNITY_CREATION_KEY = 'community_creation_allowed_for';
+
+/** Monthly price of Kodinga Pro, in FCFA: the api keeps the "kodinga-pro-monthly" plan in sync */
+export const PRO_MONTHLY_PRICE_KEY = 'pro_monthly_price';

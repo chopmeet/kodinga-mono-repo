@@ -21,7 +21,11 @@ const optionalImageUrl = z
   .max(500, '500 caractères maximum')
   .refine((v) => !v || /^https:\/\/\S+\.\S+/.test(v), 'Lien invalide : collez une adresse https://…');
 
-const communitySchema = z.object({
+/** Lowest membership price the api accepts (CommunityCreateUpdateSerializer) */
+export const MIN_MEMBERSHIP_PRICE = 500;
+
+const communitySchema = z
+  .object({
   name: z.string().trim().min(3, 'Au moins 3 caractères').max(150, '150 caractères maximum'),
   /** Empty until the user edits the address: the one built from the name is sent then */
   slug: z
@@ -37,7 +41,20 @@ const communitySchema = z.object({
   /** Url mode of the logo / banner (file mode: the files live in UseCreateCommunity, sent at the end) */
   avatar_url: optionalImageUrl,
   banner_url: optionalImageUrl,
-});
+  /** Paid community: its first plan, created by the api with the community (more in /c/<slug>/payments) */
+  membership_price: z.string().trim(),
+  membership_interval: z.enum(['month', 'year', 'one_time']),
+  membership_plan_name: z.string().trim().max(120, '120 caractères maximum'),
+})
+  .superRefine((v, ctx) => {
+    if (v.pricing_type !== 'paid') return;
+    const price = Number(v.membership_price);
+    if (!v.membership_price || !Number.isInteger(price)) {
+      ctx.addIssue({ code: 'custom', path: ['membership_price'], message: 'Saisissez un prix en FCFA, sans décimales' });
+    } else if (price < MIN_MEMBERSHIP_PRICE) {
+      ctx.addIssue({ code: 'custom', path: ['membership_price'], message: `Prix minimum : ${MIN_MEMBERSHIP_PRICE.toLocaleString('fr-FR')} FCFA` });
+    }
+  });
 
 export type CommunityValues = z.infer<typeof communitySchema>;
 
@@ -75,7 +92,7 @@ export type StepId = (typeof STEPS)[number]['id'];
 const STEP_FIELDS: Record<Exclude<StepId, 'account'>, (keyof CommunityValues)[]> = {
   name: ['name', 'slug'],
   topic: ['tagline', 'category_id'],
-  access: ['privacy_type', 'pricing_type'],
+  access: ['privacy_type', 'pricing_type', 'membership_price', 'membership_interval', 'membership_plan_name'],
   look: ['brand_color', 'avatar_url', 'banner_url'],
 };
 
@@ -91,6 +108,9 @@ const DEFAULTS: CommunityValues = {
   brand_color: BRAND_COLORS[0],
   avatar_url: '',
   banner_url: '',
+  membership_price: '5000',
+  membership_interval: 'month',
+  membership_plan_name: '',
 };
 
 // The draft survives a reload or a detour (sessionStorage: this tab only, never the password)
@@ -334,6 +354,13 @@ function UseCreateCommunity() {
         category_id: v.category_id || null,
         privacy_type: v.privacy_type,
         pricing_type: v.pricing_type,
+        ...(v.pricing_type === 'paid'
+          ? {
+              membership_price: Number(v.membership_price),
+              membership_interval: v.membership_interval,
+              ...(v.membership_plan_name ? { membership_plan_name: v.membership_plan_name } : {}),
+            }
+          : {}),
         brand_color: v.brand_color,
         ...(urls.avatar ? { avatar_url: urls.avatar } : {}),
         ...(urls.banner ? { banner_url: urls.banner } : {}),

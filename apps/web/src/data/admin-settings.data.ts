@@ -25,6 +25,8 @@ export type PaymentChannel = {
 };
 
 export type MonetizationSettings = {
+  /** Stored by the api (system setting pro_monthly_price) */
+  pro_monthly_price: number;
   commission_rate: number;
   min_monthly_price: number;
   currency: 'XOF';
@@ -59,6 +61,7 @@ export const settingsCategories: AdminCategory[] = adminCategories.map((c) => ({
 }));
 
 export const monetizationSettings: MonetizationSettings = {
+  pro_monthly_price: 5_000,
   commission_rate: 10,
   min_monthly_price: 2_000,
   currency: 'XOF',

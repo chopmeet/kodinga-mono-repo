@@ -5,6 +5,9 @@ import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
 import { courseLevelLabel, formatDuration, lessonTypeLabel } from '@/pages/community-space/courses/course-labels';
 import { htmlToText, Markdown } from '@/pages/shared/markdown';
 import type { CourseLesson } from '@/utils/api/course/course.type';
+import { parseExercise } from '@/pages/shared/code-exercise';
+import { CodeExerciseView } from './code-exercise-view';
+import { CourseCompletedDialog } from './course-completed-dialog';
 import UseCoursePlayer, { type CoursePlayer } from './form/UseCoursePlayer';
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -111,6 +114,8 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   }
 
   const content = lesson.content ?? '';
+  // A code exercise written with its parts (statement, starting code, solution); else plain Markdown
+  const exercise = lesson.lesson_type === 'code' ? parseExercise(content) : null;
   const images = ((lesson as CourseLesson & { images?: { url: string; caption?: string; alt?: string }[] }).images ?? []).filter((i) => i.url);
   const attachments = (lesson.attachments ?? []).map((a) => ({ name: a.name || a.file_name || 'Fichier', url: a.url || a.file_url })).filter((a) => a.url);
 
@@ -142,6 +147,8 @@ function LessonContent({ player }: { player: CoursePlayer }) {
           <Markdown source={htmlToText(content)} />
         ) : lesson.content_format === 'json' ? (
           <p className="text-slate-500">Ce contenu n’est pas encore lisible ici.</p>
+        ) : exercise ? (
+          <CodeExerciseView exercise={exercise} />
         ) : (
           <Markdown source={content} />
         )}
@@ -305,6 +312,7 @@ function CoursePlayerPage() {
           )}
         </div>
       </div>
+      <CourseCompletedDialog player={player} />
     </div>
   );
 }
