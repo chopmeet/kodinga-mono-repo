@@ -9,7 +9,7 @@ import type { User } from '@/utils/api/user/user.type';
 vi.setConfig({ testTimeout: 15_000 });
 
 type Membership = { is_member: boolean; role: string | null; status: string | null };
-type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean };
+type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean; commentsFail?: boolean };
 
 const monthlyPlan = { id: 'plan-m', name: 'Mensuel', slug: 'mensuel', description: '', price: '5000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Abidjan React', features: ['Lives mensuels'], is_active: true, order: 1 };
 
@@ -59,8 +59,15 @@ const ACTIVITY = {
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** One community; join / leave change the membership like the api */
+const comment = (id: string, content: string) => ({
+  id, post_id: 'p1', parent_id: null, author: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye' }, content,
+  is_accepted_answer: false, reactions_count: 0, user_reactions: [], replies: [], created_at: '2026-10-10T10:00:00Z',
+});
+
 function stubCommunityApi(o: Options = {}) {
   let membership = o.membership ?? NONE;
+  // Three comments are shown at first: five to show "2 de plus"
+  let comments = ['Bravo', 'Merci', 'Top', 'Génial', 'Super'].map((text, i) => comment(`c${i + 1}`, text));
   const calls: Call[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
@@ -84,6 +91,15 @@ function stubCommunityApi(o: Options = {}) {
       return json({ success: true, data: { ...community(o, membership), ...(o.plansInDetail ? { subscription_plans: [monthlyPlan] } : {}) } });
     }
     if (path.endsWith('/posts/p1/react/')) return json({ success: true, data: { reacted: true } });
+    if (path.endsWith('/posts/p1/comments/')) {
+      if (o.commentsFail) return json({ success: false, code: 'error', message: 'Les commentaires sont indisponibles.' }, 500);
+      if (request.method === 'POST') {
+        const created = comment(`c${comments.length + 1}`, String(body?.content));
+        comments = [...comments, created];
+        return json({ success: true, data: created }, 201);
+      }
+      return json({ success: true, data: comments });
+    }
     if (path.endsWith('/communities/abidjan-react/feed/')) {
       const post = { id: 'p1', community_id: 'c1', author: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye' }, title: 'Retour sur React Conf', content: 'Les **Server Components** en prod.', post_type: 'discussion', is_pinned: true, is_locked: false, is_resolved: false, views_count: 1, reactions_count: 12, comments_count: 3, created_at: '2026-10-10T10:00:00Z' };
       return json({ success: true, pagination: { count: 1 }, results: [post] });
@@ -299,5 +315,34 @@ describe('Public community page', () => {
     fireEvent.click(screen.getByRole('button', { name: /Une question, une idée, un projet/ }));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     expect(within(dialog).getByRole('radio', { name: /Discussion/ }).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('comments a post right in the feed, without leaving it', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    const { where } = renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    fireEvent.click(within(feed).getByRole('button', { name: /3 commentaires/ }));
+    const thread = await within(feed).findByRole('list', { name: 'Commentaires' }, SLOW);
+    expect(within(thread).getAllByRole('article')).toHaveLength(3);
+    fireEvent.click(within(feed).getByRole('button', { name: /Voir 2 commentaires de plus/ }));
+    expect(within(thread).getAllByRole('article')).toHaveLength(5);
+
+    fireEvent.change(within(feed).getByLabelText('Votre commentaire'), { target: { value: 'Très utile, merci !' } });
+    fireEvent.click(within(feed).getByRole('button', { name: /Publier/ }));
+    // Shown at once, the feed stays where it is
+    expect(await within(feed).findByText('Très utile, merci !', {}, SLOW)).toBeTruthy();
+    await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/posts/p1/comments/'))?.body).toEqual({ content: 'Très utile, merci !' }), SLOW);
+    expect(where()).toBe('/communities/abidjan-react');
+  });
+
+  it('says when the comments cannot be loaded, with a retry', async () => {
+    signIn();
+    stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' }, commentsFail: true });
+    renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    fireEvent.click(within(feed).getByRole('button', { name: /3 commentaires/ }));
+    expect((await within(feed).findByRole('alert', {}, SLOW)).textContent).toBe('Les commentaires sont indisponibles.');
+    expect(within(feed).getByRole('button', { name: /Réessayer/ })).toBeTruthy();
   });
 });

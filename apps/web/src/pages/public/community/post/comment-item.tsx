@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage, Button, cn } from '@kodinga-mono-repo/ui';
 import type { PostComment } from '@/utils/api/community/community.type';
 import { ago, getName, nameInitials, plain } from '@/utils/Utils';
-import type { PostDetailsPage } from '../form/UsePostDetails';
+import type { PostComments } from '../form/UsePostComments';
 import { CommentForm } from './comment-form';
 
 type Props = {
   comment: PostComment;
-  page: PostDetailsPage;
+  page: PostComments;
   onDelete: (comment: PostComment) => void;
   /** Replies are not answered again (one level, like the api) */
   isReply?: boolean;
