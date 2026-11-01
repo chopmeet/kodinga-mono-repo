@@ -13,7 +13,7 @@ const URL_PATH = '/invitations/CODE-123?community=abidjan-react';
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** Public detail of the community + POST invitations/accept/ */
-function stubInvitationApi({ isMember = false, role = 'member' } = {}) {
+function stubInvitationApi({ isMember = false, role = 'member', status = 'pending' } = {}) {
   const calls: Call[] = [];
   let currentIsMember = isMember;
   let currentRole = isMember ? 'member' : null;
@@ -51,6 +51,10 @@ function stubInvitationApi({ isMember = false, role = 'member' } = {}) {
           },
         },
       });
+    }
+    // Public details of an invitation sent by email (PublicInvitationDetailSerializer)
+    if (url.pathname.endsWith('/invitations/TOKEN-MAIL/')) {
+      return json({ success: true, data: { workspace_id: 'c1', workspace_name: 'Abidjan React', workspace_slug: 'abidjan-react', workspace_avatar_url: '', role: 'member', role_display: 'Membre', masked_email: 'a***@example.com', status, expires_at: '2026-11-30T10:00:00Z', is_valid: status === 'pending' } });
     }
     if (url.pathname.endsWith('/invitations/accept/')) {
       currentIsMember = true;
@@ -109,6 +113,25 @@ describe('Invitation link', () => {
     stubInvitationApi({ isMember: true });
     renderAppAt(URL_PATH);
     expect(await screen.findByText('Vous faites déjà partie de cette communauté.', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Rejoindre/ })).toBeNull();
+  });
+
+  it('opens the link sent by email (/invite/), without the community in the url', async () => {
+    signIn();
+    const calls = stubInvitationApi();
+    const { where } = renderAppAt('/invite/TOKEN-MAIL');
+    expect(await screen.findByRole('heading', { name: 'Abidjan React' }, SLOW)).toBeTruthy();
+    expect(screen.getByText('Invitation adressée à a***@example.com')).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Rejoindre Abidjan React' }, SLOW));
+    await waitFor(() => expect(where()).toBe('/communities/abidjan-react'), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/invitations/accept/'))?.body).toEqual({ invite_code: 'TOKEN-MAIL' });
+  });
+
+  it('says when an invitation was revoked', async () => {
+    signIn();
+    stubInvitationApi({ status: 'revoked' });
+    renderAppAt('/invite/TOKEN-MAIL');
+    expect((await screen.findByRole('alert', {}, SLOW)).textContent).toBe('Cette invitation a été révoquée par la communauté.');
     expect(screen.queryByRole('button', { name: /Rejoindre/ })).toBeNull();
   });
 });

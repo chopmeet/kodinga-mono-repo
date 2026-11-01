@@ -5,9 +5,10 @@ import { Button, Loader } from '@kodinga-mono-repo/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import UseAcceptInvitation from './form/UseAcceptInvitation';
 
-/** /invitations/:code — join a community with an invitation link */
+/** /invitations/:code and /invite/:code (sent by email) — join a community with an invitation */
 function AcceptInvitation() {
-  const { community, isLoading, isSignedIn, alreadyMember, loginUrl, memberUrl, isJoining, accept } = UseAcceptInvitation();
+  const { community, invitedTo, invitedEmail, closed, isLoading, isSignedIn, alreadyMember, loginUrl, memberUrl, isJoining, accept } = UseAcceptInvitation();
+  const name = community?.name ?? invitedTo?.name;
 
   return (
     <div className="mx-auto flex min-h-[60svh] max-w-lg items-center px-4 py-12">
@@ -18,6 +19,8 @@ function AcceptInvitation() {
           <>
             {community ? (
               <CommunityAvatar community={community} className="mx-auto size-16 rounded-2xl text-xl" />
+            ) : invitedTo?.avatar_url ? (
+              <img src={invitedTo.avatar_url} alt="" className="mx-auto size-16 rounded-2xl object-cover" />
             ) : (
               <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-900" aria-hidden>
                 <MailOpen className="size-7" />
@@ -25,8 +28,9 @@ function AcceptInvitation() {
             )}
             <p className="mt-5 text-sm font-medium text-slate-500">Vous êtes invité à rejoindre</p>
             <h1 id="invitation-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-              {community?.name ?? 'une communauté Kodinga'}
+              {name ?? 'une communauté Kodinga'}
             </h1>
+            {invitedEmail && <p className="mt-2 text-sm text-slate-500">Invitation adressée à {invitedEmail}</p>}
             {community?.tagline && <p className="mt-2 text-slate-600">{community.tagline}</p>}
             {community && (
               <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-500">
@@ -36,7 +40,16 @@ function AcceptInvitation() {
             )}
 
             <div className="mt-8">
-              {!isSignedIn ? (
+              {closed ? (
+                <>
+                  <p role="alert" className="mb-4 text-sm text-amber-800">
+                    {closed}
+                  </p>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/">Découvrir les communautés</Link>
+                  </Button>
+                </>
+              ) : !isSignedIn ? (
                 <>
                   <Button asChild className="w-full">
                     <Link to={loginUrl}>Se connecter pour rejoindre</Link>
@@ -58,7 +71,7 @@ function AcceptInvitation() {
                 </>
               ) : (
                 <Button className="w-full" onClick={accept} isLoading={isJoining}>
-                  Rejoindre {community?.name ?? 'la communauté'}
+                  Rejoindre {name ?? 'la communauté'}
                 </Button>
               )}
             </div>

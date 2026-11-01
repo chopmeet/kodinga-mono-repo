@@ -88,6 +88,9 @@ import type {
   CommunityListItem,
   CommunityListQuery,
   CommunityInvitation,
+  JoinRequest,
+  CreatedInvitation,
+  PublicInvitation,
   CommunityMemberItem,
   CommunityRole,
   InvitationWriteData,
@@ -542,6 +545,24 @@ export const CommunityApi = createApi({
       },
       providesTags: ['members'],
     }),
+    /**
+     * Pending join requests of several communities (one members?status=pending call each, 20 per
+     * community, oldest first): for the notification center, until the api notifies them
+     */
+    getJoinRequests: builder.query<JoinRequest[], { slug: string; name: string }[]>({
+      async queryFn(communities, _api, _extra, baseQuery) {
+        const answers = await Promise.all(
+          communities.map((c) => baseQuery({ url: `communities/${c.slug}/members/`, params: { status: 'pending', page_size: 20 } })),
+        );
+        const failed = answers.find((a) => a.error);
+        if (failed?.error) return { error: failed.error as FetchBaseQueryError };
+        const requests = answers.flatMap((a, i) =>
+          ((a.data as ApiPaginated<CommunityMemberItem>).results ?? []).map((member) => ({ community: communities[i], member })),
+        );
+        return { data: requests.sort((x, y) => x.member.created_at.localeCompare(y.member.created_at)) };
+      },
+      providesTags: ['members'],
+    }),
     decideMember: builder.mutation<CommunityMemberItem, { slug: string; memberId: string; approve: boolean }>({
       query: ({ slug, memberId, approve }) => ({ url: `communities/${slug}/members/${memberId}/`, method: 'PUT', body: { approve } }),
       transformResponse: unwrap<CommunityMemberItem>,
@@ -557,16 +578,35 @@ export const CommunityApi = createApi({
       query: ({ slug, memberId, ...body }) => ({ url: `communities/${slug}/members/${memberId}/sanctions/`, method: 'POST', body }),
       invalidatesTags: ['members', 'communities'],
     }),
-    // Not revoked invitations: owner and admins only (superusers everywhere)
+    // Invitations of the community, most recent first (owner and admins): the 100 latest
     getCommunityInvitations: builder.query<CommunityInvitation[], string>({
-      query: (slug) => `communities/${slug}/invitations/`,
-      transformResponse: unwrap<CommunityInvitation[]>,
+      query: (slug) => ({ url: `communities/${slug}/invitations/`, params: { page_size: 100 } }),
+      transformResponse: (response: ApiPaginated<CommunityInvitation> | ApiSuccess<CommunityInvitation[]>) =>
+        'results' in response ? (response.results ?? []) : (response.data ?? []),
       providesTags: ['invitations'],
     }),
-    createInvitation: builder.mutation<CommunityInvitation, InvitationWriteData & { slug: string }>({
+    // With an email, the api sends the invitation (30 days at most, for one person)
+    createInvitation: builder.mutation<CreatedInvitation, InvitationWriteData & { slug: string }>({
       query: ({ slug, ...body }) => ({ url: `communities/${slug}/invitations/`, method: 'POST', body }),
+      transformResponse: unwrap<CreatedInvitation>,
+      invalidatesTags: ['invitations'],
+    }),
+    // The link stops working at once
+    revokeInvitation: builder.mutation<CommunityInvitation, { slug: string; invitationId: string }>({
+      query: ({ slug, invitationId }) => ({ url: `workspaces/${slug}/invitations/${invitationId}/`, method: 'DELETE' }),
       transformResponse: unwrap<CommunityInvitation>,
       invalidatesTags: ['invitations'],
+    }),
+    // A new link (the former one stops working), valid 7 more days, sent again by email
+    resendInvitation: builder.mutation<CommunityInvitation & { raw_token: string }, { slug: string; invitationId: string }>({
+      query: ({ slug, invitationId }) => ({ url: `workspaces/${slug}/invitations/${invitationId}/resend/`, method: 'POST' }),
+      transformResponse: unwrap<CommunityInvitation & { raw_token: string }>,
+      invalidatesTags: ['invitations'],
+    }),
+    // What an invitation sent by email is about, before signing in (404 for a shareable link)
+    getPublicInvitation: builder.query<PublicInvitation, string>({
+      query: (token) => `invitations/${encodeURIComponent(token)}/`,
+      transformResponse: unwrap<PublicInvitation>,
     }),
     // The signed-in user joins with the role of the invitation (no approval, no subscription)
     acceptInvitation: builder.mutation<CommunityMemberItem, string>({
@@ -1718,6 +1758,10 @@ export const {
   useChangeMemberRoleMutation,
   useGetCommunityInvitationsQuery,
   useCreateInvitationMutation,
+  useGetJoinRequestsQuery,
+  useRevokeInvitationMutation,
+  useResendInvitationMutation,
+  useGetPublicInvitationQuery,
   useAcceptInvitationMutation,
   useGetCommunityFeedQuery,
   useTogglePostPinMutation,

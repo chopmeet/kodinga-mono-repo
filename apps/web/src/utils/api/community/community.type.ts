@@ -422,24 +422,50 @@ export type CommunityAISettingsWrite = Omit<CommunityAISettings, 'platform_locke
 // Invitations (apps/memberships/serializers/invitation.py)
 
 /** CommunityInvitationSerializer */
+export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+
+/**
+ * WorkspaceInvitationSerializer (GET communities/<slug>/invitations/, paginated): the code of the
+ * link is never listed, only given once at creation (or when an invitation is sent again)
+ */
 export type CommunityInvitation = {
   id: string;
+  /** Empty for a shareable link */
   email: string;
-  invite_code: string;
   role: CommunityRole;
-  max_uses: number;
-  uses_count: number;
+  status: InvitationStatus;
   expires_at: string | null;
+  accepted_at: string | null;
   is_valid: boolean;
-  is_revoked: boolean;
   invited_by: User;
   created_at: string;
 };
 
+/** POST communities/<slug>/invitations/ (CommunityInvitationSerializer): the invitation and the code of its link */
+export type CreatedInvitation = CommunityInvitation & { invite_code: string; max_uses?: number; uses_count?: number };
+
+/** PublicInvitationDetailSerializer (GET invitations/<token>/, public): shown before accepting a link sent by email */
+export type PublicInvitation = {
+  workspace_id: string;
+  workspace_name: string;
+  workspace_slug: string;
+  workspace_avatar_url: string;
+  role: string;
+  role_display: string;
+  masked_email: string;
+  status: InvitationStatus;
+  expires_at: string | null;
+  is_valid: boolean;
+};
+
 /** CreateInvitationRequestSerializer */
 export type InvitationWriteData = {
+  /** Sent by the api to this address (then max_uses does not apply) */
   email?: string;
   role: CommunityRole;
-  max_uses: number;
+  max_uses?: number;
   expires_in_days: number;
 };
+
+/** A pending request to join a community the user reviews (members?status=pending) */
+export type JoinRequest = { community: { slug: string; name: string }; member: CommunityMemberItem };

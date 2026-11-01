@@ -16,6 +16,7 @@ import SettingSwitch from '@/pages/shared/setting-switch';
 import type { CommunityEvent, EventFormat, EventType } from '@/utils/api/event/event.type';
 import { eventFormatLabel, eventTypeLabel, hasLink, hasVenue } from '../event-labels';
 import UseEventForm from '../form/UseEventForm';
+import { BannerUploadField } from '@/pages/shared/banner-upload-field';
 
 type Props = {
   slug: string;
@@ -88,12 +89,19 @@ function EventFormModal({ slug, open, event, onClose, onSaved }: Props) {
             error={errors.max_attendees?.message}
             {...register('max_attendees')}
           />
-          <Input
-            id="event-cover"
-            label="Image de couverture (facultatif)"
-            placeholder="https://…"
-            error={errors.cover_image_url?.message}
-            {...register('cover_image_url')}
+          <Controller
+            control={control}
+            name="cover_image_url"
+            render={({ field }) => (
+              <BannerUploadField
+                id="event-cover"
+                label="Image de couverture (facultatif)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.cover_image_url?.message}
+                className="mb-4 sm:col-span-2"
+              />
+            )}
           />
 
           <div className="divide-y divide-slate-100 border-t border-slate-100 sm:col-span-2">

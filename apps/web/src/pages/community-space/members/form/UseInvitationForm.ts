@@ -5,15 +5,28 @@ import { z } from 'zod';
 
 import { customToast } from '@kodinga-mono-repo/ui';
 import { useCreateInvitationMutation } from '@/utils/api/community/community.api';
-import type { CommunityInvitation } from '@/utils/api/community/community.type';
+import type { CreatedInvitation } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 
-const schema = z.object({
-  role: z.enum(['member', 'moderator', 'admin']),
-  max_uses: z.string().refine((v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 1000, 'Entre 1 et 1000'),
-  expires_in_days: z.enum(['1', '7', '30', '90']),
-  email: z.string().trim().refine((v) => !v || z.email().safeParse(v).success, 'Adresse email invalide'),
-});
+/** Days an invitation sent by email can last (CreateWorkspaceInvitationSerializer: 30 at most) */
+export const EMAIL_MAX_DAYS = 30;
+
+const schema = z
+  .object({
+    role: z.enum(['member', 'moderator', 'admin']),
+    max_uses: z.string(),
+    expires_in_days: z.enum(['1', '7', '30', '90']),
+    email: z.string().trim().refine((v) => !v || z.email().safeParse(v).success, 'Adresse email invalide'),
+  })
+  .superRefine((v, ctx) => {
+    // By email: one person, 30 days at most; a shareable link: up to 1000 uses
+    if (v.email && Number(v.expires_in_days) > EMAIL_MAX_DAYS) {
+      ctx.addIssue({ code: 'custom', path: ['expires_in_days'], message: `${EMAIL_MAX_DAYS} jours au plus pour une invitation par email` });
+    }
+    if (!v.email && !(/^\d+$/.test(v.max_uses) && Number(v.max_uses) >= 1 && Number(v.max_uses) <= 1000)) {
+      ctx.addIssue({ code: 'custom', path: ['max_uses'], message: 'Entre 1 et 1000' });
+    }
+  });
 
 export type InvitationFormValues = z.infer<typeof schema>;
 
@@ -34,12 +47,12 @@ export async function copyText(text: string) {
 }
 
 /**
- * Creates an invitation link (POST communities/<slug>/invitations/). With an email, the api sends
- * the invitation; the link is also shown to be copied and shared.
+ * Creates an invitation (POST communities/<slug>/invitations/): a link to share (one or more uses),
+ * or an invitation sent by email to one person. Its link is shown once, to be copied.
  */
 function UseInvitationForm(slug: string) {
   const [createInvitation] = useCreateInvitationMutation();
-  const [created, setCreated] = useState<CommunityInvitation | null>(null);
+  const [created, setCreated] = useState<CreatedInvitation | null>(null);
   const form = useForm<InvitationFormValues>({ resolver: zodResolver(schema), defaultValues: DEFAULTS });
   const { setError, handleSubmit, reset } = form;
 
@@ -48,16 +61,16 @@ function UseInvitationForm(slug: string) {
       const invitation = await createInvitation({
         slug,
         role: v.role,
-        max_uses: Number(v.max_uses),
         expires_in_days: Number(v.expires_in_days),
-        ...(v.email ? { email: v.email } : {}),
+        ...(v.email ? { email: v.email } : { max_uses: Number(v.max_uses) }),
       }).unwrap();
       setCreated(invitation);
-      customToast.success({ message: 'Lien d’invitation créé.' });
+      customToast.success({ message: v.email ? `Invitation envoyée à ${v.email}.` : 'Lien d’invitation créé.' });
     } catch (error) {
+      // Under the field when the api names it, else in a toast
       const { message, fields } = parseApiError(error);
-      if (fields.email) setError('email', { message: fields.email });
-      else if (fields.max_uses) setError('max_uses', { message: fields.max_uses });
+      const field = (['email', 'max_uses', 'expires_in_days', 'role'] as const).find((f) => fields[f]);
+      if (field) setError(field, { message: fields[field] });
       else customToast.error({ message });
     }
   };
