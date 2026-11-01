@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
+import { CodeBlock } from '@/pages/shared/code-block';
 import { useGetCommunityFeedQuery, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -85,9 +86,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={canReact} />}
       {post.code_snippet && (
-        <pre className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
-          <code>{post.code_snippet}</code>
-        </pre>
+        <CodeBlock code={post.code_snippet} language={post.code_language} />
       )}
 
       <footer className="mt-6 flex items-center gap-6 border-t border-slate-200 pt-4 text-sm text-slate-600">

@@ -21,6 +21,7 @@ import SettingSwitch from '@/pages/shared/setting-switch';
 import type { PostType } from '@/utils/api/community/community.type';
 import UsePostForm, { MAX_POLL_OPTIONS } from '../form/UsePostForm';
 import type { SpacePost } from '../form/UseSpacePosts';
+import { CodeBlock } from '@/pages/shared/code-block';
 
 const TYPES: { value: PostType; icon: ReactNode; hint: string }[] = [
   { value: 'announcement', icon: <Megaphone />, hint: 'Information officielle de l’équipe' },
@@ -53,6 +54,8 @@ type Props = {
 
 function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
   const { form, options, type, withCode, titleOptional, onSubmit } = UsePostForm({ slug, post, open, onDone: onClose, defaultType });
+  const codePreview = form.watch('code_snippet');
+  const codeLanguagePreview = form.watch('code_language');
   const {
     register,
     control,
@@ -173,6 +176,13 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
                 error={errors.code_snippet?.message}
                 {...register('code_snippet')}
               />
+              {/* What the members will read: colored, numbered */}
+              {codePreview.trim() && (
+                <div aria-label="Aperçu du code" role="group">
+                  <p className="text-xs font-medium text-slate-500">Aperçu</p>
+                  <CodeBlock code={codePreview} language={codeLanguagePreview} className="mt-1" />
+                </div>
+              )}
             </fieldset>
           ) : null}
 
