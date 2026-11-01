@@ -48,7 +48,18 @@ import type {
   HackathonSubmissionWriteData,
   SubmissionFileType,
 } from '../hackathon/hackathon.type';
-import type { LeaderboardEntry } from '../gamification/gamification.type';
+import type {
+  LeaderboardEntry,
+  LeaderboardPeriod,
+  MyBadge,
+  MyCommunityPoints,
+  MyReputation,
+  PointRule,
+  PointRulesUpdate,
+  PointsAdjustment,
+  PointsTransaction,
+} from '../gamification/gamification.type';
+import type { MemberActivity } from '../analytics/member-activity.type';
 import type { Project, ProjectComment, ProjectListItem, ProjectsQuery, ProjectWriteData } from '../project/project.type';
 import type {
   OpportunitiesQuery,
@@ -170,6 +181,8 @@ export const CommunityApi = createApi({
     'notifications',
     'plans',
     'community-billing',
+    'member-activity',
+    'point-rules',
   ],
   baseQuery: authBaseQuery,
   endpoints: (builder) => ({
@@ -1078,6 +1091,15 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<EventAttendee[]>,
       providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
     }),
+    /**
+     * Confirms the presence of a participant (the host or a manager of the events): they earn the
+     * points of "event_attended"
+     */
+    checkInAttendee: builder.mutation<EventAttendee, { slug: string; eventId: string; userId: string }>({
+      query: ({ slug, eventId, userId }) => ({ url: `communities/${slug}/events/${eventId}/check-in/`, method: 'POST', body: { user_id: userId } }),
+      transformResponse: unwrap<EventAttendee>,
+      invalidatesTags: (_r, _e, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }, 'leaderboard'],
+    }),
     getEventAttendees: builder.query<ApiPaginated<EventAttendee>, { slug: string; eventId: string; page?: number; page_size?: number }>({
       query: ({ slug, eventId, ...params }) => ({ url: `communities/${slug}/events/${eventId}/attendees/`, params: cleanParams(params) }),
       providesTags: (_result, _error, { eventId }) => [{ type: 'events', id: `${eventId}-attendees` }],
@@ -1402,8 +1424,59 @@ export const CommunityApi = createApi({
       invalidatesTags: ['courses'],
     }),
     // Points earned in the community, all time (the api has no period here), at most 100 members
-    getCommunityLeaderboard: builder.query<LeaderboardEntry[], { slug: string; limit?: number }>({
-      query: ({ slug, limit }) => ({ url: `communities/${slug}/leaderboard/`, params: cleanParams({ limit }) }),
+    // Activity of the signed-in member: across Kodinga, or in one community (its slug)
+    getMemberActivity: builder.query<MemberActivity, string | void>({
+      query: (slug) => (slug ? `communities/${slug}/me/dashboard/` : 'analytics/member/dashboard/'),
+      transformResponse: unwrap<MemberActivity>,
+      providesTags: ['member-activity'],
+    }),
+    // Points of the signed-in member: across Kodinga, its last gains (in one community with its slug), badges
+    getMyReputation: builder.query<MyReputation, void>({
+      query: () => 'gamification/reputation/me/',
+      transformResponse: unwrap<MyReputation>,
+      providesTags: ['leaderboard'],
+    }),
+    getMyPointsHistory: builder.query<PointsTransaction[], { community?: string; limit?: number }>({
+      query: ({ community, limit = 10 }) =>
+        community ? { url: `communities/${community}/gamification/points/history/`, params: { limit } } : { url: 'gamification/reputation/history/', params: { limit } },
+      transformResponse: unwrap<PointsTransaction[]>,
+      providesTags: ['leaderboard'],
+    }),
+    getMyBadges: builder.query<MyBadge[], void>({
+      query: () => 'gamification/badges/my/',
+      transformResponse: unwrap<MyBadge[]>,
+      providesTags: ['leaderboard'],
+    }),
+    getMyCommunityPoints: builder.query<MyCommunityPoints, string>({
+      query: (slug) => `communities/${slug}/gamification/points/me/`,
+      transformResponse: unwrap<MyCommunityPoints>,
+      providesTags: ['leaderboard'],
+    }),
+    // Points of each action in the community (anyone who sees it), set by the owner or an allowed admin
+    getPointRules: builder.query<PointRule[], string>({
+      query: (slug) => `communities/${slug}/gamification/rules/`,
+      transformResponse: unwrap<PointRule[]>,
+      providesTags: (_r, _e, slug) => [{ type: 'point-rules', id: slug }],
+    }),
+    updatePointRules: builder.mutation<PointRule[], { slug: string } & PointRulesUpdate>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/gamification/rules/`, method: 'PATCH', body }),
+      transformResponse: unwrap<PointRule[]>,
+      invalidatesTags: (_r, _e, { slug }) => [{ type: 'point-rules', id: slug }],
+    }),
+    adjustPoints: builder.mutation<PointsTransaction, { slug: string } & PointsAdjustment>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/gamification/points/adjust/`, method: 'POST', body }),
+      transformResponse: unwrap<PointsTransaction>,
+      // The ranking and the journal change
+      invalidatesTags: (_r, _e, { slug }) => ['leaderboard', { type: 'point-rules', id: `journal-${slug}` }],
+    }),
+    // Journal of the community (managers): the last 100 gains and adjustments
+    getPointTransactions: builder.query<PointsTransaction[], string>({
+      query: (slug) => `communities/${slug}/gamification/transactions/`,
+      transformResponse: unwrap<PointsTransaction[]>,
+      providesTags: (_r, _e, slug) => [{ type: 'point-rules', id: `journal-${slug}` }],
+    }),
+    getCommunityLeaderboard: builder.query<LeaderboardEntry[], { slug: string; limit?: number; period?: LeaderboardPeriod }>({
+      query: ({ slug, limit, period }) => ({ url: `communities/${slug}/leaderboard/`, params: cleanParams({ limit, period }) }),
       transformResponse: (response: ApiSuccess<LeaderboardEntry[]>) => unwrap(response),
       providesTags: ['leaderboard'],
     }),
@@ -1613,6 +1686,16 @@ export const {
   useGetCommunityTransactionsQuery,
   useGetCommunityRevenueQuery,
   useGetOwnedRevenuesQuery,
+  useGetMemberActivityQuery,
+  useCheckInAttendeeMutation,
+  useGetMyReputationQuery,
+  useGetMyPointsHistoryQuery,
+  useGetMyBadgesQuery,
+  useGetMyCommunityPointsQuery,
+  useGetPointRulesQuery,
+  useUpdatePointRulesMutation,
+  useAdjustPointsMutation,
+  useGetPointTransactionsQuery,
   useGetCommunityPayoutsQuery,
   useRequestPayoutMutation,
   useCreatePlanMutation,

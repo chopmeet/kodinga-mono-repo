@@ -15,6 +15,7 @@ import { ProjectsTab } from './components/projects-tab';
 import { FeedTab } from './components/feed-tab';
 import { HackathonsTab } from './components/hackathons-tab';
 import { LeaderboardTab } from './components/leaderboard-tab';
+import { ActivityTab } from './components/activity-tab';
 import { LiveBanner } from './components/live-banner';
 import { MembersTab } from './components/members-tab';
 import UseCommunityPage from './form/UseCommunityPage';
@@ -79,7 +80,7 @@ function CommunityDetails() {
   return (
     <div className="min-h-full bg-slate-50/60">
       <CommunityHero page={page} />
-      <CommunityTabs activeTab={activeTab} slug={community.slug} />
+      <CommunityTabs activeTab={activeTab} slug={community.slug} isMember={page.membership === 'member'} />
 
       {/* The member cards take the whole width (no side column) */}
       <div className={`mx-auto grid max-w-285 items-start gap-10 px-4 py-10 sm:px-6 lg:px-8 ${fullWidth ? '' : 'lg:grid-cols-[1fr_400px]'}`}>
@@ -95,6 +96,7 @@ function CommunityDetails() {
           {activeTab === 'opportunities' && <OpportunitiesTab page={page} />}
           {activeTab === 'projects' && <ProjectsTab page={page} />}
           {activeTab === 'leaderboard' && <LeaderboardTab slug={community.slug} />}
+          {activeTab === 'activity' && <ActivityTab slug={community.slug} />}
         </div>
 
         {!fullWidth && (

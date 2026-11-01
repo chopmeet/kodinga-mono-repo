@@ -1,15 +1,19 @@
 import { Medal, TrendingUp, Trophy } from 'lucide-react';
+import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga-mono-repo/ui';
-import { SoonBadge } from '@/pages/shared/row-actions';
 import { pointsFormat } from '@/pages/community-space/leaderboard/leaderboard-labels';
 import { useGetCommunityLeaderboardQuery } from '@/utils/api/community/community.api';
+import { type LeaderboardPeriod, PERIOD_LABEL } from '@/utils/api/gamification/gamification.type';
 import { nameInitials, useUser } from '@/utils/Utils';
 import { Pill, SectionHeader } from './section-header';
 
-/** Members ranked by the points earned in the community (public leaderboard, all time) */
+const PERIODS: LeaderboardPeriod[] = ['weekly', 'monthly', 'all_time'];
+
+/** Members ranked by the points earned in the community over the chosen period (public leaderboard) */
 export function LeaderboardTab({ slug }: { slug: string }) {
-  const { data = [], isLoading } = useGetCommunityLeaderboardQuery({ slug, limit: 50 });
+  const [period, setPeriod] = useState<LeaderboardPeriod>('all_time');
+  const { data = [], isLoading } = useGetCommunityLeaderboardQuery({ slug, limit: 50, period });
   const userId = useUser()?.id;
 
   return (
@@ -18,17 +22,12 @@ export function LeaderboardTab({ slug }: { slug: string }) {
         Celles et ceux qui font grandir les échanges.
       </SectionHeader>
 
-      {/* The api ranks the community over all time only */}
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Période">
-        <Pill active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
-          7 jours <SoonBadge />
-        </Pill>
-        <Pill active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
-          30 jours <SoonBadge />
-        </Pill>
-        <Pill active onClick={() => undefined}>
-          Depuis le début
-        </Pill>
+        {PERIODS.map((p) => (
+          <Pill key={p} active={period === p} onClick={() => setPeriod(p)}>
+            {PERIOD_LABEL[p]}
+          </Pill>
+        ))}
       </div>
 
       {isLoading ? (
@@ -36,7 +35,9 @@ export function LeaderboardTab({ slug }: { slug: string }) {
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <Medal className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">Personne n'a encore marqué de points</p>
+          <p className="mt-3 font-semibold text-slate-900">
+            {period === 'all_time' ? "Personne n'a encore marqué de points" : `Aucun point marqué sur les ${PERIOD_LABEL[period].toLowerCase()}`}
+          </p>
           <p className="mt-1 text-sm text-slate-500">Publier, commenter et suivre les formations rapporte des points.</p>
         </div>
       ) : (

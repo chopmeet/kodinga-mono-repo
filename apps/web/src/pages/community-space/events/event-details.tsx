@@ -11,6 +11,7 @@ import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import { useGetCommunityEventQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventAttendee, RsvpStatus } from '@/utils/api/event/event.type';
 import { ApiBaseUrl } from '@/utils/http';
+import { useUser } from '@/utils/Utils';
 import { useCommunitySpace } from '../community-space-context';
 import { eventFormatLabel, eventStatusStyle, eventTypeLabel, formatEventPlace, formatEventWhen } from './event-labels';
 import UseEventActions from './form/UseEventActions';
@@ -24,7 +25,8 @@ const rsvpLabel: Record<RsvpStatus, { label: string; className: string }> = {
   declined: { label: 'Ne vient pas', className: 'border-slate-200 bg-slate-50 text-slate-600' },
 };
 
-function Attendees({ slug, eventId }: { slug: string; eventId: string }) {
+/** Presence: confirmed once the event has started (not when cancelled), by the host or a manager */
+function Attendees({ slug, eventId, canCheckIn }: { slug: string; eventId: string; canCheckIn: boolean }) {
   const list = UseEventAttendees(slug, eventId);
   const { isLoading, rows: attendees } = list;
 
@@ -87,7 +89,17 @@ function Attendees({ slug, eventId }: { slug: string; eventId: string }) {
               {
                 id: 'checkin',
                 header: 'Présence',
-                cell: ({ row }) => <span className="text-slate-600">{row.original.checked_in_at ? 'Présent' : '—'}</span>,
+                cell: ({ row }) => {
+                  const a = row.original;
+                  if (a.checked_in_at) return <span className="font-medium text-emerald-700">Présent</span>;
+                  if (!canCheckIn) return <span className="text-slate-600">—</span>;
+                  const name = a.user.full_name || a.user.username;
+                  return (
+                    <Button size="sm" variant="outline" isLoading={list.checkingIn === a.user.id} disabled={!!list.checkingIn} onClick={() => list.checkIn(a.user.id, name)} aria-label={`Marquer ${name} présent`}>
+                      Marquer présent
+                    </Button>
+                  );
+                },
               },
             ]}
           />
@@ -162,6 +174,7 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
 /** /c/:slug/events/:eventId — one event, its actions and its attendees */
 function EventDetails() {
   const { community } = useCommunitySpace();
+  const user = useUser();
   const { eventId = '' } = useParams();
   const navigate = useNavigate();
   const back = `/c/${community.slug}/events`;
@@ -273,7 +286,11 @@ function EventDetails() {
 
       <ColgateWrapper className="mt-6 border border-neutral-200 p-5">
         <h2 className="mb-4 font-semibold text-slate-900">Participants</h2>
-        <Attendees slug={community.slug} eventId={event.id} />
+        <Attendees
+          slug={community.slug}
+          eventId={event.id}
+          canCheckIn={(canManage || event.host?.id === user?.id) && event.status !== 'cancelled' && new Date(event.start_time) <= new Date()}
+        />
       </ColgateWrapper>
 
       <EventFormModal slug={community.slug} open={editing} event={event} onClose={() => setEditing(false)} />

@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom';
 
 import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
-import { useGetMyCommunitiesQuery, useGetMySubscriptionsQuery, useGetOwnedRevenuesQuery } from '@/utils/api/community/community.api';
+import { MemberActivityView } from '@/pages/shared/member-activity';
+import { MyPointsAndBadges } from '@/pages/shared/member-points';
+import { useGetMemberActivityQuery, useGetMyCommunitiesQuery, useGetMySubscriptionsQuery, useGetOwnedRevenuesQuery } from '@/utils/api/community/community.api';
 import { useGetMyProfileQuery } from '@/utils/api/user/user.api';
 import { formatCompact, getName, useUser, xof } from '@/utils/Utils';
 
@@ -30,6 +32,7 @@ function Overview() {
   const memberships = useGetMyCommunitiesQuery().data;
   const subscriptions = useGetMySubscriptionsQuery().data;
   const profile = useGetMyProfileQuery().data;
+  const activity = useGetMemberActivityQuery();
 
   const ownedList = memberships?.filter((m) => m.role === 'owner');
   const owned = ownedList?.length;
@@ -58,6 +61,28 @@ function Overview() {
         <Stat value={figure(owned)} label={owned === 1 ? 'Communauté créée' : 'Communautés créées'} to="/dashboard/communities" />
         <Stat value={figure(activeSubscriptions)} label={activeSubscriptions === 1 ? 'Abonnement actif' : 'Abonnements actifs'} to="/dashboard/billing" />
         <Stat value={figure(profile?.reputation_points)} label="Points de réputation" to="/dashboard/profile" />
+      </section>
+
+      <section aria-labelledby="activity-title" className="mt-8">
+        <h2 id="activity-title" className="mb-3 text-lg font-semibold text-slate-900">
+          Mon activité
+        </h2>
+        {activity.data ? (
+          <MemberActivityView activity={activity.data} />
+        ) : activity.isError ? (
+          <p className="text-sm text-slate-500">Votre activité n’a pas pu être chargée.</p>
+        ) : (
+          <p className="text-sm text-slate-500" role="status">
+            Chargement de votre activité…
+          </p>
+        )}
+      </section>
+
+      <section aria-labelledby="points-title" className="mt-8">
+        <h2 id="points-title" className="mb-3 text-lg font-semibold text-slate-900">
+          Mes points et badges
+        </h2>
+        <MyPointsAndBadges />
       </section>
 
       <ColgateWrapper className="mt-6 border border-neutral-200 p-4 md:p-6">

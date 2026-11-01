@@ -1,16 +1,5 @@
 // Same values as the api (apps/gamification/models/reputation.py)
 
-/** ACTION_DEFAULT_POINTS: what earns points in a community */
-export const POINT_RULES: { label: string; points: number }[] = [
-  { label: 'Formation achevée', points: 50 },
-  { label: 'Participation à un événement', points: 20 },
-  { label: 'Réponse validée', points: 15 },
-  { label: 'Leçon terminée', points: 10 },
-  { label: 'Publication créée', points: 5 },
-  { label: 'Vote positif reçu', points: 5 },
-  { label: 'Commentaire posté', points: 2 },
-];
-
 /** LEVEL_THRESHOLDS; the level counts every point of the member, on all of Kodinga */
 export const LEVELS: { level: number; title: string; from: number }[] = [
   { level: 1, title: 'Initié', from: 0 },

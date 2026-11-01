@@ -46,6 +46,7 @@ type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 /** Fake events api of dakar-devops: list (status / upcoming filters), detail, CRUD, status, attendees */
 function stubEventsApi() {
   let events = [event('e1', 'Atelier Kubernetes', 'scheduled', 3), event('e2', 'Meetup DevOps', 'completed', -10)];
+  const checkedIn = new Set<string>();
   const calls: Call[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
@@ -57,11 +58,15 @@ function stubEventsApi() {
     const path = url.pathname;
     const id = path.match(/events\/([^/]+)\//)?.[1];
 
+    if (path.endsWith('/check-in/')) {
+      checkedIn.add(String(body?.user_id));
+      return json({ success: true, data: { id: 'a3', status: 'attending', checked_in_at: '2026-10-12T18:00:00Z' } });
+    }
     if (path.endsWith('/attendees/')) {
       const attendees = [
         { id: 'a1', event_id: id, status: 'attending', checked_in_at: '2026-10-02T18:05:00Z', created_at: '2026-10-01T10:00:00Z', user: { id: 'u2', username: 'awa', full_name: 'Awa Ndiaye' } },
         { id: 'a2', event_id: id, status: 'maybe', checked_in_at: null, created_at: '2026-10-01T11:00:00Z', user: { id: 'u3', username: 'kofi', full_name: 'Kofi Mensah' } },
-        { id: 'a3', event_id: id, status: 'attending', checked_in_at: null, created_at: '2026-10-01T12:00:00Z', user: { id: 'u4', username: 'seynabou', full_name: 'Seynabou Fall' } },
+        { id: 'a3', event_id: id, status: 'attending', checked_in_at: checkedIn.has('u4') ? '2026-10-12T18:00:00Z' : null, created_at: '2026-10-01T12:00:00Z', user: { id: 'u4', username: 'seynabou', full_name: 'Seynabou Fall' } },
       ];
       // ?all=true: the whole list, not paginated (like the api)
       if (url.searchParams.get('all') === 'true') return json({ success: true, data: attendees });
@@ -181,5 +186,20 @@ describe('Community space: events', () => {
 
     fireEvent.change(screen.getByLabelText('Rechercher un participant'), { target: { value: 'personne' } });
     expect(await screen.findByText('Aucun participant ne correspond à cette recherche.', {}, SLOW)).toBeTruthy();
+  });
+
+  it('confirms the presence of a participant once the event has started', async () => {
+    const calls = stubEventsApi();
+    // Not started yet: nothing to confirm
+    renderAppAt('/c/dakar-devops/events/e1');
+    expect(await screen.findByText('Seynabou Fall', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Marquer .* présent$/ })).toBeNull();
+    cleanup();
+
+    renderAppAt('/c/dakar-devops/events/e2');
+    fireEvent.click(await screen.findByRole('button', { name: 'Marquer Seynabou Fall présent' }, SLOW));
+    await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/events/e2/check-in/'))?.body).toEqual({ user_id: 'u4' }), SLOW);
+    // Read again: present, no more button
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Marquer Seynabou Fall présent' })).toBeNull(), SLOW);
   });
 });
