@@ -601,7 +601,8 @@ export const CommunityApi = createApi({
           poll: body.poll
             ? {
                 id: `temp-poll-${Date.now()}`,
-                question: body.poll.question,
+                // Like PostService.create_post: the title of the post, else "Sondage"
+                question: body.poll.question ?? (body.title || 'Sondage'),
                 is_multiple_choice: body.poll.is_multiple_choice,
                 expires_at: null,
                 total_votes: 0,

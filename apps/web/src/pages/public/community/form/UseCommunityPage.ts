@@ -99,6 +99,9 @@ function UseCommunityPage() {
     membership,
     role,
     isTeam: membership === 'member' && !!role && role !== 'member',
+    /** EventService.check_is_manager: the owner, and the roles allowed to manage the events (transcriptions...) */
+    canManage:
+      membership === 'member' && (role === 'owner' || !!community?.user_membership?.permissions?.includes('can_manage_events')),
     canSee: community ? canSeeContent(community, membership) : false,
     // Visitors land on "À propos" (like Skool), members on the feed
     activeTab: isTab(tabParam) ? tabParam : membership === 'member' ? 'feed' : 'about',

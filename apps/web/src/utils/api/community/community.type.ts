@@ -189,7 +189,11 @@ export type CommunityLinks = { website_url?: string; github_url?: string; discor
 export type ManagedRole = Exclude<CommunityRole, 'member'>;
 
 /** A community the signed-in user belongs to, with their role in it; the detail carries the settings (role permissions) */
-export type MyCommunityMembership = { community: CommunityListItem & { settings?: CommunitySettings | null }; role: CommunityRole };
+/** The community is its detail (communities/<slug>/): settings and the membership of the user come with it */
+export type MyCommunityMembership = {
+  community: CommunityListItem & { settings?: CommunitySettings | null; user_membership?: CommunityMembership };
+  role: CommunityRole;
+};
 
 /** A community the signed-in user manages, with their role in it */
 export type ManagedCommunity = MyCommunityMembership & { role: ManagedRole };
