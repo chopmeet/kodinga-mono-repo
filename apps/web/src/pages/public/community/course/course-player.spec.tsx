@@ -17,7 +17,7 @@ const LESSONS = [
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** A sequential course of two lessons; enroll / progress like the api (unlock, percent) */
-function stubCourseApi({ member = true, slowCourse = false, video = '', finished = false } = {}) {
+function stubCourseApi({ member = true, slowCourse = false, video = '', finished = false, exercise = false } = {}) {
   let enrolled = finished;
   const done = new Set<string>(finished ? LESSONS.map((l) => l.id) : []);
   const calls: Call[] = [];
@@ -27,7 +27,7 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       module: 'm1',
       title: l.title,
       slug: l.id,
-      lesson_type: 'text',
+      lesson_type: exercise && i === 0 ? 'code' : 'text',
       content_format: 'markdown',
       duration_seconds: 300,
       order: i,
@@ -70,7 +70,8 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       if (l?.is_locked) return json({ success: false, code: 'permission_denied', message: 'Leçon verrouillée.' }, 403);
       // video: the url of the first lesson's video, or "preparing" while Mux encodes it
       const media = lessonId === 'l1' && video ? { has_video: true, video_status: video === 'preparing' ? 'preparing' : 'ready', video_source_url: video === 'preparing' ? '' : video } : {};
-      return json({ success: true, data: { ...l, ...media, content: LESSONS.find((x) => x.id === lessonId)?.content, estimated_duration_display: '5 min' } });
+      const content = exercise && lessonId === 'l1' ? 'Écrivez un hook.\n\n```typescript exercice\nfunction useToggle() {}\n```\n\n```typescript solution\nfunction useToggle() { return useState(false); }\n```' : LESSONS.find((x) => x.id === lessonId)?.content;
+      return json({ success: true, data: { ...l, ...media, content, estimated_duration_display: '5 min' } });
     }
     if (path.endsWith('/communities/abidjan-react/gamification/rules/')) {
       return json({ success: true, data: [{ id: 'r1', action: 'course_completed', label: 'Formation achevée', description: '', points: 50, default_points: 50, is_active: true, allow_multiple_per_reference: false, updated_at: '' }] });
@@ -206,5 +207,20 @@ describe('Course player (member)', () => {
     // Right when the next lesson opens, it is already unlocked
     expect(screen.queryByText('Leçon verrouillée')).toBeNull();
     expect(await screen.findByRole('heading', { level: 1, name: 'Server Components' }, SLOW)).toBeTruthy();
+  });
+
+  it('shows a code exercise: the statement, the starting code, the solution on demand', async () => {
+    signIn();
+    stubCourseApi({ exercise: true, finished: true });
+    renderAppAt(`${URL_PATH}?lesson=l1`);
+    expect(await screen.findByText('Écrivez un hook.', {}, SLOW)).toBeTruthy();
+    const starter = screen.getByRole('region', { name: 'À vous de jouer' });
+    expect(within(starter).getByText('TypeScript')).toBeTruthy();
+    expect(within(starter).getByRole('button', { name: 'Copier le code TypeScript' })).toBeTruthy();
+    // Hidden until asked
+    const solution = screen.getByRole('region', { name: 'Solution' });
+    expect(within(solution).queryByText(/return useState/)).toBeNull();
+    fireEvent.click(within(solution).getByRole('button', { name: 'Voir la solution' }));
+    expect(within(solution).getByText(/return/)).toBeTruthy();
   });
 });

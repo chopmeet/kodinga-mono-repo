@@ -21,7 +21,7 @@ import SettingSwitch from '@/pages/shared/setting-switch';
 import type { PostType } from '@/utils/api/community/community.type';
 import UsePostForm, { MAX_POLL_OPTIONS } from '../form/UsePostForm';
 import type { SpacePost } from '../form/UseSpacePosts';
-import { CodeBlock } from '@/pages/shared/code-block';
+import { CODE_LANGUAGE_OPTIONS, CodeBlock } from '@/pages/shared/code-block';
 
 const TYPES: { value: PostType; icon: ReactNode; hint: string }[] = [
   { value: 'announcement', icon: <Megaphone />, hint: 'Information officielle de l’équipe' },
@@ -31,9 +31,6 @@ const TYPES: { value: PostType; icon: ReactNode; hint: string }[] = [
   { value: 'poll', icon: <BarChart3 />, hint: 'Faire voter les membres' },
 ];
 
-const LANGUAGES = ['typescript', 'javascript', 'python', 'java', 'kotlin', 'go', 'rust', 'php', 'dart', 'swift', 'sql', 'bash', 'html', 'css', 'autre'].map(
-  (value) => ({ value, label: value === 'autre' ? 'Autre' : value }),
-);
 
 const DURATIONS = [
   { value: '1', label: '1 jour' },
@@ -167,7 +164,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
                   Retirer
                 </Button>
               </div>
-              <SelectInput label="Langage" options={LANGUAGES} customClassContainer="sm:w-56" {...register('code_language')} />
+              <SelectInput label="Langage" options={CODE_LANGUAGE_OPTIONS} customClassContainer="sm:w-56" {...register('code_language')} />
               <TextareaInput
                 id="post-code"
                 label="Code"

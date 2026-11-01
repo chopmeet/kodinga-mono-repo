@@ -61,6 +61,11 @@ const LABELS: Partial<Record<keyof typeof LANGUAGES, string>> = {
   yaml: 'YAML',
 };
 
+/** Languages offered to the authors (post form, code exercises): what they write, what they read */
+export const CODE_LANGUAGE_OPTIONS = ['typescript', 'javascript', 'python', 'java', 'kotlin', 'go', 'rust', 'php', 'dart', 'swift', 'sql', 'bash', 'html', 'css', 'autre'].map(
+  (value) => ({ value, label: value === 'autre' ? 'Autre' : (LABELS[codeLanguage(value) ?? 'xml'] ?? value) }),
+);
+
 /** The language of highlight.js for a name, or null (plain text: "autre", unknown) */
 export function codeLanguage(name: string | undefined | null): keyof typeof LANGUAGES | null {
   const key = (name ?? '').trim().toLowerCase();
