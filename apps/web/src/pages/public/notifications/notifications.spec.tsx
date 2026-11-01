@@ -5,6 +5,7 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import { contentKind } from './components/notification-item';
 import { notificationHref } from './form/UseNotifications';
 
 vi.setConfig({ testTimeout: 15_000 });
@@ -91,6 +92,19 @@ afterEach(() => {
   });
 });
 
+describe('contentKind', () => {
+  it('names the content of a notification from its target, else from its link', () => {
+    // A new hackathon comes as an "invitation" with target_type "hackathon"
+    expect(contentKind({ target_type: 'hackathon', action_url: '/communities/a/hackathons/devfest' })).toBe('hackathon');
+    expect(contentKind({ target_type: 'hackathon_team', action_url: '/communities/a/hackathons/devfest/teams' })).toBe('hackathon');
+    expect(contentKind({ target_type: '', action_url: '/communities/a/courses/react-19' })).toBe('course');
+    expect(contentKind({ target_type: '', action_url: '/projects/wari-pay' })).toBe('project');
+    expect(contentKind({ target_type: '', action_url: '/opportunities/dev-react' })).toBe('opportunity');
+    expect(contentKind({ target_type: '', action_url: '/c/a/events/e1' })).toBe('event');
+    expect(contentKind({ target_type: 'user', action_url: '/messages/c1' })).toBeNull();
+  });
+});
+
 describe('notificationHref', () => {
   it('sends the links of the api to the pages of the app', () => {
     expect(notificationHref('/communities/a/hackathons/h')).toBe('/communities/a/hackathons/h');
@@ -162,6 +176,16 @@ describe('Notifications', () => {
     renderAppAt('/notifications');
     await screen.findByRole('list', { name: 'Notifications' }, SLOW);
     expect(screen.queryByRole('list', { name: 'Demandes d’adhésion' })).toBeNull();
+  });
+
+  it('says what content a notification is about', async () => {
+    signIn();
+    stubNotificationsApi();
+    renderAppAt('/notifications');
+    const list = await screen.findByRole('list', { name: 'Notifications' }, SLOW);
+    const items = within(list).getAllByRole('listitem');
+    expect(items[0].textContent).toMatch(/^HackathonCandidature acceptée/);
+    expect(items[2].textContent).toMatch(/^ProjetNouveau vote reçu/);
   });
 
   it('has no bell for a visitor', async () => {
