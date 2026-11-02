@@ -678,8 +678,10 @@ class ClassroomService:
             title=f"{lesson.title} (Vidéo)",
             description=f"Cours : {lesson.module.course.title} | Leçon : {lesson.title}",
         )
-        # If Mux credentials are not configured, mark provider as uploadthing/direct so hls_url returns target_url directly
-        if not MuxVideoService._get_auth():
+        # If Mux could not ingest the video (keys not configured or API error), mark provider as
+        # uploadthing/direct so hls_url returns target_url directly
+        asset_meta = video_asset.metadata if isinstance(video_asset.metadata, dict) else {}
+        if asset_meta.get('mux_fallback'):
             video_asset.provider = 'uploadthing'
             video_asset.status = VideoStatus.READY
             meta = dict(video_asset.metadata or {})
