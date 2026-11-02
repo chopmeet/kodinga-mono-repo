@@ -13,8 +13,15 @@ class NotificationType(models.TextChoices):
     EVENT_REMINDER = "event_reminder", "Rappel d'événement"
     EVENT_LIVE_STARTED = "event_live_started", "Événement en direct"
     COURSE_NEW = "course_new", "Nouveau cours disponible"
+    HACKATHON_NEW = "hackathon_new", "Nouveau hackathon disponible"
+    PROJECT_NEW = "project_new", "Nouveau projet publié"
+    OPPORTUNITY_NEW = "opportunity_new", "Nouvelle opportunité publiée"
+    CONTENT_PUBLISHED = "content_published", "Nouveau contenu publié"
     BADGE_UNLOCKED = "badge_unlocked", "Badge débloqué"
     COMMUNITY_INVITE = "community_invite", "Invitation à une communauté"
+    JOIN_REQUEST = "join_request", "Demande d'adhésion"
+    JOIN_REQUEST_APPROVED = "join_request_approved", "Demande d'adhésion acceptée"
+    JOIN_REQUEST_REJECTED = "join_request_rejected", "Demande d'adhésion refusée"
 
 
 class Notification(BaseModel):

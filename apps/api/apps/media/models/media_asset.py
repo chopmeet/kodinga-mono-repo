@@ -13,8 +13,14 @@ class MediaProvider(models.TextChoices):
 class MediaPurpose(models.TextChoices):
     AVATAR = 'avatar', 'Avatar'
     BANNER = 'banner', 'Banner'
+    EVENT_BANNER = 'event_banner', 'Event Banner'
+    HACKATHON_BANNER = 'hackathon_banner', 'Hackathon Banner'
+    COURSE_BANNER = 'course_banner', 'Course Banner'
+    CLASSROOM_COVER = 'classroom_cover', 'Classroom Cover'
+    COMMUNITY_BANNER = 'community_banner', 'Community Banner'
     POST_ATTACHMENT = 'post_attachment', 'Post Attachment'
     LESSON_ATTACHMENT = 'lesson_attachment', 'Lesson Attachment'
+    LESSON_VIDEO = 'lesson_video', 'Lesson Video'
     DOCUMENT = 'document', 'Document'
     GENERAL = 'general', 'General'
 

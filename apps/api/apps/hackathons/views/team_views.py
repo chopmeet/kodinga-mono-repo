@@ -1,9 +1,9 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.hackathons.models.team import HackathonTeam
+from apps.hackathons.models.team import HackathonTeam, HackathonTeamMember
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.hackathons.serializers.team import (
     CreateTeamRequestSerializer,
@@ -43,8 +43,8 @@ class HackathonTeamListCreateView(APIView):
         )
         qs = (
             HackathonTeam.objects.filter(hackathon=hackathon)
-            .select_related("leader")
-            .prefetch_related("members__user")
+            .select_related("leader", "leader__profile", "hackathon", "hackathon__community")
+            .prefetch_related("members__user", "members__user__profile", "members__team__hackathon__community")
             .order_by("name")
         )
         paginator = self.pagination_class()
@@ -107,8 +107,8 @@ class HackathonTeamDetailView(APIView):
         )
         team = (
             HackathonTeam.objects.filter(id=team_id, hackathon=hackathon)
-            .select_related("leader")
-            .prefetch_related("members__user")
+            .select_related("leader", "leader__profile", "hackathon", "hackathon__community")
+            .prefetch_related("members__user", "members__user__profile", "members__team__hackathon__community")
             .first()
         )
         if not team:
@@ -189,20 +189,25 @@ class HackathonTeamRespondInviteView(APIView):
         request=RespondInvitationRequestSerializer,
         responses={200: HackathonTeamMemberSerializer},
     )
-    def post(self, request, slug, hackathon_slug):
-        HackathonSelector.get_hackathon_by_slug(
-            community_slug=slug,
-            hackathon_slug=hackathon_slug,
-            user=request.user,
-        )
+    def post(self, request, slug=None, hackathon_slug=None):
+        if slug and hackathon_slug:
+            HackathonSelector.get_hackathon_by_slug(
+                community_slug=slug,
+                hackathon_slug=hackathon_slug,
+                user=request.user,
+            )
 
         serializer = RespondInvitationRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        team_id = serializer.validated_data.get("team_id")
+        invitation_id = serializer.validated_data.get("invitation_id")
+
         membership = HackathonTeamService.respond_invitation(
             user=request.user,
-            team_id=str(serializer.validated_data["team_id"]),
+            team_id=str(team_id) if team_id else None,
             accept=serializer.validated_data["accept"],
+            invitation_id=str(invitation_id) if invitation_id else None,
         )
 
         action_label = "acceptée" if serializer.validated_data["accept"] else "déclinée"
@@ -210,3 +215,55 @@ class HackathonTeamRespondInviteView(APIView):
             data=HackathonTeamMemberSerializer(membership).data,
             message=f"Invitation {action_label} avec succès.",
         )
+
+
+class HackathonMyTeamInvitationsView(APIView):
+    """
+    GET /api/v1/hackathons/teams/my-invitations/
+    GET /api/v1/communities/<slug>/hackathons/<hackathon_slug>/teams/my-invitations/
+    Lists team invitations received by the authenticated user.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=["Hackathons"],
+        summary="Lister mes invitations d'équipe reçues",
+        parameters=[
+            OpenApiParameter(
+                name="status",
+                description="Filtrer par statut (invited, accepted, declined, all)",
+                required=False,
+                type=str,
+            )
+        ],
+        responses={200: HackathonTeamMemberSerializer(many=True)},
+    )
+    def get(self, request, slug=None, hackathon_slug=None):
+        status_filter = request.query_params.get("status", "invited")
+        qs = (
+            HackathonTeamMember.objects.filter(user=request.user)
+            .exclude(role="leader")
+            .select_related(
+                "user",
+                "user__profile",
+                "team",
+                "team__hackathon",
+                "team__hackathon__community",
+            )
+            .order_by("-invited_at")
+        )
+
+        if slug and hackathon_slug:
+            hackathon = HackathonSelector.get_hackathon_by_slug(
+                community_slug=slug,
+                hackathon_slug=hackathon_slug,
+                user=request.user,
+            )
+            qs = qs.filter(team__hackathon=hackathon)
+
+        if status_filter and status_filter.lower() != "all":
+            normalized_status = "invited" if status_filter.lower() == "pending" else status_filter.lower()
+            qs = qs.filter(status=normalized_status)
+
+        return success_response(data=HackathonTeamMemberSerializer(qs, many=True).data)

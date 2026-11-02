@@ -108,7 +108,7 @@ class CommunitySelector:
         """
         Retrieves all communities where the user is an active member or owner.
         """
-        if not user.is_authenticated:
+        if not user or not user.is_authenticated:
             return Community.objects.none()
 
         member_community_ids = CommunityMember.objects.filter(
@@ -117,7 +117,8 @@ class CommunitySelector:
 
         return (
             cls.get_base_queryset()
-            .filter(id__in=member_community_ids)
+            .filter(Q(owner=user) | Q(id__in=member_community_ids))
+            .distinct()
             .order_by('-created_at')
         )
 
@@ -137,5 +138,3 @@ class CommunitySelector:
                 Q(id=identifier) | Q(slug__iexact=identifier)
             )
         return CommunityCategory.objects.get(slug__iexact=identifier)
-
-

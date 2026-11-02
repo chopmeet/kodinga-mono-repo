@@ -1,5 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -14,6 +15,7 @@ from apps.hackathons.serializers.hackathon import (
     UserHackathonParticipationSerializer,
 )
 from apps.hackathons.services.hackathon_service import HackathonService
+from apps.media.services.uploadthing_service import UploadThingService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
 
@@ -65,6 +67,7 @@ class CommunityHackathonListCreateView(APIView):
     """
 
     pagination_class = StandardResultsSetPagination
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -112,10 +115,23 @@ class CommunityHackathonListCreateView(APIView):
         serializer = HackathonCreateUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        data = dict(serializer.validated_data)
+        banner_file = (
+            request.FILES.get("cover_image")
+            or request.FILES.get("banner")
+            or request.FILES.get("cover_image_file")
+        )
+        if banner_file:
+            upload_res = UploadThingService.upload_banner(
+                user=request.user,
+                file_obj=banner_file,
+            )
+            data["cover_image_url"] = upload_res["file_url"]
+
         hackathon = HackathonService.create_hackathon(
             actor=request.user,
             community=community,
-            data=serializer.validated_data,
+            data=data,
         )
 
         return success_response(
@@ -130,6 +146,8 @@ class CommunityHackathonDetailView(APIView):
     GET / PATCH / DELETE /api/v1/communities/<slug>/hackathons/<hackathon_slug>/
     Retrieves, updates, or deletes a specific hackathon.
     """
+
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -167,10 +185,28 @@ class CommunityHackathonDetailView(APIView):
         serializer = HackathonCreateUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
+        data = dict(serializer.validated_data)
+        banner_file = (
+            request.FILES.get("cover_image")
+            or request.FILES.get("banner")
+            or request.FILES.get("cover_image_file")
+        )
+        if banner_file:
+            upload_res = UploadThingService.upload_banner(
+                user=request.user,
+                file_obj=banner_file,
+                target_type="hackathon",
+                target_id=str(hackathon.id),
+                community_slug=hackathon.community.slug,
+            )
+            data["cover_image_url"] = upload_res["file_url"]
+        elif str(request.data.get("remove_banner", "")).lower() in ("true", "1"):
+            data["cover_image_url"] = ""
+
         updated = HackathonService.update_hackathon(
             actor=request.user,
             hackathon=hackathon,
-            data=serializer.validated_data,
+            data=data,
         )
         return success_response(
             data=HackathonDetailSerializer(updated, context={"request": request}).data,
@@ -299,4 +335,3 @@ class MyHackathonListView(APIView):
             participations, many=True, context={"request": request}
         )
         return success_response(data=serializer.data)
-

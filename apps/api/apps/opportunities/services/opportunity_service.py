@@ -24,6 +24,19 @@ class OpportunityService:
     """
 
     @classmethod
+    def _notify_if_published(cls, opportunity: Opportunity, actor) -> None:
+        if opportunity.community and opportunity.status == OpportunityStatus.OPEN:
+            action_url = f"/communities/{opportunity.community.slug}/opportunities/{opportunity.slug}"
+            NotificationService.notify_community_content_published(
+                community=opportunity.community,
+                actor=actor,
+                content_type="opportunity",
+                content_id=str(opportunity.id),
+                title=opportunity.title,
+                action_url=action_url,
+            )
+
+    @classmethod
     @transaction.atomic
     def create_opportunity(cls, poster, validated_data, technology_ids=None):
         community = validated_data.get("community")
@@ -33,6 +46,8 @@ class OpportunityService:
         opportunity = Opportunity.objects.create(poster=poster, **validated_data)
         if technology_ids:
             opportunity.technologies.set(technology_ids)
+
+        cls._notify_if_published(opportunity, poster)
         return opportunity
 
     @classmethod
@@ -52,6 +67,7 @@ class OpportunityService:
         if technology_ids is not None:
             opportunity.technologies.set(technology_ids)
 
+        cls._notify_if_published(opportunity, user)
         return opportunity
 
     @classmethod
@@ -71,7 +87,6 @@ class OpportunityService:
 
         if opportunity.status != OpportunityStatus.OPEN:
             raise ValidationError("Cette opportunité n'accepte plus de candidatures.")
-
 
         if OpportunityApplication.objects.filter(opportunity=opportunity, applicant=applicant).exists():
             raise ValidationError("Vous avez déjà postulé à cette opportunité.")

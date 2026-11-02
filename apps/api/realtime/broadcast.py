@@ -410,6 +410,60 @@ def broadcast_comment_accepted(
 
 
 # =====================================================================
+# Events & Hackathons Registration Counter Broadcasts (BE-05)
+# =====================================================================
+
+
+def broadcast_event_registration_updated(
+    event,
+    user_id: str | None = None,
+    status: str | None = None,
+):
+    """
+    Broadcasts updated event registration counter to community_{community_id}.
+    """
+    data = {
+        "community_id": str(event.community_id),
+        "event_id": str(event.id),
+        "event_slug": event.slug,
+        "attendees_count": event.attendees_count,
+        "max_attendees": event.max_attendees,
+        "is_full": event.is_full,
+        "user_id": str(user_id) if user_id else None,
+        "status": status,
+    }
+    send_group_event(
+        f"community_{event.community_id}", "event.registration_updated", data
+    )
+
+
+def broadcast_hackathon_registration_updated(
+    hackathon,
+    user_id: str | None = None,
+    status: str | None = None,
+):
+    """
+    Broadcasts updated hackathon registration counters to community_{community_id}.
+    """
+    data = {
+        "community_id": str(hackathon.community_id),
+        "hackathon_id": str(hackathon.id),
+        "hackathon_slug": hackathon.slug,
+        "participants_count": hackathon.participants_count,
+        "applications_count": hackathon.applications_count,
+        "max_participants": hackathon.max_participants,
+        "is_registration_open": hackathon.is_registration_open,
+        "user_id": str(user_id) if user_id else None,
+        "status": status,
+    }
+    send_group_event(
+        f"community_{hackathon.community_id}",
+        "hackathon.registration_updated",
+        data,
+    )
+
+
+# =====================================================================
 # Notifications Events
 # =====================================================================
 
@@ -427,4 +481,3 @@ def broadcast_notification_created(notification):
         notification, "user_id", None
     )
     send_group_event(f"user_{recipient_id}", "notification.created", data)
-

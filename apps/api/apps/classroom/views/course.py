@@ -1,5 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
@@ -13,6 +14,7 @@ from apps.classroom.serializers.progress import CourseEnrollmentSerializer
 from apps.classroom.services.classroom_service import ClassroomService
 from apps.classroom.services.progress_service import ProgressService
 from apps.communities.selectors.community_selector import CommunitySelector
+from apps.media.services.uploadthing_service import UploadThingService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
 
@@ -20,9 +22,11 @@ from common.utils.responses import error_response, success_response
 class CommunityCourseListView(APIView):
     """
     List courses in a community (Active connected members only) or create a new course (Managers only).
+    Supports multipart banner/thumbnail upload (BE-15).
     """
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
         tags=['Classroom'],
@@ -79,10 +83,25 @@ class CommunityCourseListView(APIView):
         serializer = CourseCreateUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        data = dict(serializer.validated_data)
+        banner_file = (
+            request.FILES.get('thumbnail')
+            or request.FILES.get('banner')
+            or request.FILES.get('cover_image')
+            or request.FILES.get('thumbnail_file')
+        )
+        if banner_file:
+            ClassroomService.check_manager_permission(request.user, community)
+            upload_res = UploadThingService.upload_banner(
+                user=request.user,
+                file_obj=banner_file,
+            )
+            data['thumbnail_url'] = upload_res['file_url']
+
         course = ClassroomService.create_course(
             actor_user=request.user,
             community=community,
-            data=serializer.validated_data
+            data=data
         )
 
         return success_response(
@@ -97,6 +116,7 @@ class CommunityCourseDetailView(APIView):
     Retrieve course details with modules & lessons (Active connected members only), or update/delete course.
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
         tags=['Classroom'],
@@ -110,7 +130,9 @@ class CommunityCourseDetailView(APIView):
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
         course = ClassroomSelector.get_course_by_slug(community, course_slug, user=request.user)
-        return success_response(data=CourseDetailSerializer(course).data)
+        return success_response(
+            data=CourseDetailSerializer(course, context={'request': request}).data
+        )
 
     @extend_schema(
         tags=['Classroom'],
@@ -129,10 +151,30 @@ class CommunityCourseDetailView(APIView):
         serializer = CourseCreateUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
+        data = dict(serializer.validated_data)
+        banner_file = (
+            request.FILES.get('thumbnail')
+            or request.FILES.get('banner')
+            or request.FILES.get('cover_image')
+            or request.FILES.get('thumbnail_file')
+        )
+        if banner_file:
+            ClassroomService.check_manager_permission(request.user, community)
+            upload_res = UploadThingService.upload_banner(
+                user=request.user,
+                file_obj=banner_file,
+                target_type='course',
+                target_id=str(course.id),
+                community_slug=community.slug,
+            )
+            data['thumbnail_url'] = upload_res['file_url']
+        elif str(request.data.get('remove_banner', '')).lower() in ('true', '1'):
+            data['thumbnail_url'] = ''
+
         updated = ClassroomService.update_course(
             actor_user=request.user,
             course=course,
-            data=serializer.validated_data
+            data=data
         )
         return success_response(
             data=CourseSerializer(updated).data,

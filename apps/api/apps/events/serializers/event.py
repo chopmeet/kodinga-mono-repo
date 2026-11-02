@@ -25,6 +25,8 @@ class EventSerializer(BaseModelSerializer):
     user_rsvp_status = serializers.SerializerMethodField()
     has_transcription = serializers.SerializerMethodField()
     has_summary = serializers.SerializerMethodField()
+    video_url = serializers.CharField(source="location_url", read_only=True)
+    location_url = serializers.CharField(read_only=True)
 
     def get_user_rsvp_status(self, obj):
         return getattr(obj, "user_rsvp_status", None)
@@ -68,6 +70,8 @@ class EventSerializer(BaseModelSerializer):
             "user_rsvp_status",
             "has_transcription",
             "has_summary",
+            "location_url",
+            "video_url",
             "replay_video_asset",
             "created_at",
             "updated_at",
@@ -78,7 +82,6 @@ class EventSerializer(BaseModelSerializer):
 class EventDetailSerializer(EventSerializer):
     class Meta(EventSerializer.Meta):
         fields = EventSerializer.Meta.fields + [
-            "location_url",
             "live_room_name",
             "metadata",
         ]
@@ -119,6 +122,9 @@ class EventCreateUpdateSerializer(serializers.Serializer):
     location_url = serializers.URLField(
         max_length=1000, required=False, allow_blank=True, default=""
     )
+    video_url = serializers.URLField(
+        max_length=1000, required=False, allow_blank=True, default=""
+    )
     max_attendees = serializers.IntegerField(
         min_value=1, required=False, allow_null=True, default=None
     )
@@ -133,6 +139,12 @@ class EventCreateUpdateSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"end_time": "La date de fin doit être postérieure à la date de début."}
             )
+        video_url = attrs.get("video_url")
+        loc_url = attrs.get("location_url")
+        if video_url and not loc_url:
+            attrs["location_url"] = video_url
+        elif loc_url and not video_url:
+            attrs["video_url"] = loc_url
         return attrs
 
 

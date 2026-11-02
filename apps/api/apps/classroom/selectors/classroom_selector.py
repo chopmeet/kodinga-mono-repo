@@ -45,12 +45,15 @@ class ClassroomSelector:
             return False
         if is_superadmin_user(user) or community.owner_id == user.id:
             return True
-        return CommunityMember.objects.filter(
+        from apps.memberships.permissions import has_community_permission
+        if CommunityMember.objects.filter(
             community=community,
             user=user,
             status=MembershipStatus.ACTIVE,
             role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
-        ).exists()
+        ).exists():
+            return True
+        return has_community_permission(user, community, 'can_manage_courses')
 
     @classmethod
     def list_community_courses(
@@ -79,16 +82,18 @@ class ClassroomSelector:
 
         qs = qs.select_related('community', 'author').order_by('order', '-created_at')
 
-        # Attach enrollment progress to course objects if user is logged in
         if user and user.is_authenticated:
             enrollments = {
-                e.course_id: e.progress_percent
+                e.course_id: e
                 for e in CourseEnrollment.objects.filter(course__in=qs, user=user)
             }
             courses = list(qs)
             for c in courses:
-                c.user_progress_percent = enrollments.get(c.id, 0.0)
-                c.user_is_enrolled = c.id in enrollments
+                enr = enrollments.get(c.id)
+                c.user_progress_percent = enr.progress_percent if enr else 0.0
+                c.user_is_enrolled = enr is not None
+                c.user_completed_at = enr.completed_at if enr else None
+                c.user_is_completed = bool(enr and (enr.completed_at or enr.progress_percent >= 100.0))
             return courses
 
         return qs
@@ -108,7 +113,6 @@ class ClassroomSelector:
         if not is_mgr:
             qs = qs.filter(is_published=True)
 
-        # Prefetch modules with ordered lessons and related video asset
         lessons_prefetch = Prefetch(
             'lessons',
             queryset=Lesson.objects.select_related('video_asset').order_by('order', 'created_at')
@@ -122,37 +126,60 @@ class ClassroomSelector:
         if not course:
             raise NotFound("Cours introuvable.")
 
-        # Compute progress and lock state per lesson for the current user
-        completed_lesson_ids = set()
+        progress_by_lesson_id = {}
         enrollment_percent = 0.0
         is_enrolled = False
+        completed_at = None
 
         if user and user.is_authenticated:
             enrollment = CourseEnrollment.objects.filter(course=course, user=user).first()
             if enrollment:
                 enrollment_percent = enrollment.progress_percent
                 is_enrolled = True
+                completed_at = enrollment.completed_at
 
-            completed_lesson_ids = set(
-                LessonProgress.objects.filter(
+            progress_by_lesson_id = {
+                lp.lesson_id: lp
+                for lp in LessonProgress.objects.filter(
                     lesson__module__course=course,
                     user=user,
-                    is_completed=True
-                ).values_list('lesson_id', flat=True)
-            )
+                )
+            }
 
-        course.user_progress_percent = enrollment_percent
-        course.user_is_enrolled = is_enrolled
-
-        # Iterate modules and lessons to annotate is_completed and is_locked
         all_ordered_lessons = []
         for module in course.modules.all():
             for lesson in module.lessons.all():
                 all_ordered_lessons.append(lesson)
 
+        total_lessons = len(all_ordered_lessons)
+        completed_lesson_ids = {
+            lid for lid, lp in progress_by_lesson_id.items() if lp.is_completed
+        }
+        completed_count = len(completed_lesson_ids)
+
+        if user and user.is_authenticated and total_lessons > 0:
+            computed_pct = round(min(100.0, (completed_count / total_lessons) * 100.0), 1)
+            if computed_pct != enrollment_percent and (is_enrolled or completed_count > 0):
+                enrollment_percent = computed_pct
+
+        course.user_progress_percent = enrollment_percent
+        course.user_is_enrolled = is_enrolled or completed_count > 0
+        course.user_completed_at = completed_at
+        course.user_is_completed = bool(
+            total_lessons > 0 and (completed_count >= total_lessons or completed_at is not None)
+        )
+        course.completed_lessons_count = completed_count
+        course.total_lessons_count = total_lessons
+
         unlocked_so_far = True
         for idx, lesson in enumerate(all_ordered_lessons):
-            lesson.is_completed = lesson.id in completed_lesson_ids
+            lp = progress_by_lesson_id.get(lesson.id)
+            lesson.is_completed = bool(lp and lp.is_completed)
+            lesson.quiz_score = lp.quiz_score if lp else None
+            lesson.quiz_passed = lp.quiz_passed if lp else False
+            lesson.quiz_attempts_count = lp.quiz_attempts_count if lp else 0
+            lesson.user_quiz_result = lp.quiz_last_submission if (lp and lp.quiz_last_submission) else None
+            lesson._viewer_is_manager = is_mgr
 
             if lesson.is_free_preview or is_mgr or not course.is_sequential:
                 lesson.is_locked = False
@@ -176,6 +203,7 @@ class ClassroomSelector:
         user: Optional[User] = None
     ) -> Lesson:
         cls.check_active_member(community, user)
+        is_mgr = cls.is_manager(community, user)
 
         try:
             lesson = Lesson.objects.select_related(
@@ -190,11 +218,20 @@ class ClassroomSelector:
             raise NotFound("Leçon introuvable.") from err
 
         lesson.is_locked = ProgressService.is_lesson_locked(user, lesson)
+        lesson._viewer_is_manager = is_mgr
         if user and user.is_authenticated:
             prog = LessonProgress.objects.filter(lesson=lesson, user=user).first()
             lesson.is_completed = prog.is_completed if prog else False
+            lesson.quiz_score = prog.quiz_score if prog else None
+            lesson.quiz_passed = prog.quiz_passed if prog else False
+            lesson.quiz_attempts_count = prog.quiz_attempts_count if prog else 0
+            lesson.user_quiz_result = prog.quiz_last_submission if (prog and prog.quiz_last_submission) else None
         else:
             lesson.is_completed = False
+            lesson.quiz_score = None
+            lesson.quiz_passed = False
+            lesson.quiz_attempts_count = 0
+            lesson.user_quiz_result = None
 
         return lesson
 
@@ -205,9 +242,6 @@ class ClassroomSelector:
         course_slug: str,
         user: Optional[User] = None
     ) -> list[CourseModule]:
-        """
-        List all modules for a given course with preloaded lessons and student lock/progress state.
-        """
         course = cls.get_course_by_slug(community, course_slug, user=user)
         return list(course.modules.all())
 
@@ -219,12 +253,8 @@ class ClassroomSelector:
         module_id: str,
         user: Optional[User] = None
     ) -> CourseModule:
-        """
-        Retrieve a single module by ID within a course with lessons and lock/progress state.
-        """
         course = cls.get_course_by_slug(community, course_slug, user=user)
         for module in course.modules.all():
             if str(module.id) == str(module_id):
                 return module
         raise NotFound("Module introuvable dans ce cours.")
-

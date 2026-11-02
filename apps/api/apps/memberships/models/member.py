@@ -59,6 +59,11 @@ class CommunityMember(BaseModel):
         default=0,
         help_text="Points de réputation accumulés au sein de cette communauté"
     )
+    notifications_enabled = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Active ou désactive la réception des notifications pour cette communauté (cloche)"
+    )
 
     class Meta:
         db_table = 'memberships_community_members'

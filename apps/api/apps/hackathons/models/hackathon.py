@@ -157,11 +157,17 @@ class Hackathon(BaseModel):
 
     @property
     def is_registration_open(self) -> bool:
-        if self.status in [HackathonStatus.CANCELLED, HackathonStatus.DRAFT]:
+        """
+        Registration is open only when the hackathon is published or explicitly in
+        `registration_open` status AND current server time is within
+        `[registration_start, registration_end]`.
+        """
+        if self.status not in [
+            HackathonStatus.PUBLISHED,
+            HackathonStatus.REGISTRATION_OPEN,
+        ]:
             return False
         now = timezone.now()
-        if self.status == HackathonStatus.REGISTRATION_OPEN:
-            return True
         return self.registration_start <= now <= self.registration_end
 
     @property
@@ -172,3 +178,17 @@ class Hackathon(BaseModel):
         if self.status == HackathonStatus.IN_PROGRESS:
             return now <= self.submission_deadline
         return self.start_time <= now <= self.submission_deadline
+
+    @property
+    def participants_count(self) -> int:
+        """
+        Returns the number of accepted participants (excludes withdrawn/rejected).
+        """
+        return self.applications.filter(status="accepted").count()
+
+    @property
+    def applications_count(self) -> int:
+        """
+        Returns the number of active applications (accepted, pending, waitlisted).
+        """
+        return self.applications.exclude(status__in=["withdrawn", "rejected"]).count()

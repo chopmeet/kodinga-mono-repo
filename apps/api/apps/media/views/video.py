@@ -1,5 +1,8 @@
+import logging
+
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -8,10 +11,15 @@ from apps.media.serializers.video import (
     MuxUploadRequestSerializer,
     MuxUploadResponseSerializer,
     VideoAssetSerializer,
+    VideoIngestRequestSerializer,
+    VideoUploadRequestSerializer,
 )
 from apps.media.services.mux_service import MuxVideoService
+from apps.media.services.uploadthing_service import UploadThingService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
+
+logger = logging.getLogger('kodinga.media')
 
 
 class MuxDirectUploadView(APIView):
@@ -46,9 +54,10 @@ class MuxDirectUploadView(APIView):
 
 class VideoAssetListView(APIView):
     """
-    List user's uploaded videos with HLS streaming and status info.
+    List user's uploaded videos or upload/ingest a video file to UploadThing + Mux.
     """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     pagination_class = StandardResultsSetPagination
 
     @extend_schema(
@@ -69,6 +78,123 @@ class VideoAssetListView(APIView):
         page = paginator.paginate_queryset(qs, request)
         serializer = VideoAssetSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    @extend_schema(
+        tags=['Media'],
+        summary="Téléverser une vidéo (Stockage UploadThing + Ingestion Mux)",
+        description=(
+            "Téléverse un fichier vidéo binaire (multipart/form-data) ou ingère une URL UploadThing (JSON).\n"
+            "Le fichier est stocké sur UploadThing (stockage permanent) et automatiquement ingéré dans Mux "
+            "pour le streaming HLS adaptatif mondial (avec playback_id, hls_url, et miniatures)."
+        ),
+        request=VideoUploadRequestSerializer,
+        responses={201: VideoAssetSerializer}
+    )
+    def post(self, request):
+        file_obj = request.FILES.get('file') or request.FILES.get('video') or request.FILES.get('video_file')
+        file_url = (request.data.get('file_url') or request.data.get('video_url') or '').strip()
+
+        title = request.data.get('title', '').strip()
+        description = request.data.get('description', '').strip()
+        is_public_val = request.data.get('is_public', True)
+        if isinstance(is_public_val, str):
+            is_public_val = is_public_val.lower() in ('true', '1', 'yes')
+
+        if file_obj:
+            file_name = getattr(file_obj, 'name', 'video.mp4')
+            mime_type = getattr(file_obj, 'content_type', 'video/mp4') or 'video/mp4'
+            title = title or file_name
+
+            # Étape 1 : Stockage sur UploadThing
+            res_ut = UploadThingService.upload_file_direct(
+                user=request.user,
+                file_name=file_name,
+                mime_type=mime_type,
+                purpose='lesson_video',
+                file_obj=file_obj,
+            )
+            raw_url = res_ut['file_url']
+
+            # Étape 2 : Ingestion dans Mux pour streaming adaptatif HLS
+            video_asset = MuxVideoService.create_asset_from_url(
+                user=request.user,
+                input_url=raw_url,
+                title=title,
+                description=description,
+            )
+            video_asset.is_public = is_public_val
+            current_meta = dict(video_asset.metadata or {})
+            current_meta.update({
+                'media_asset_id': res_ut.get('asset_id'),
+                'file_key': res_ut.get('file_key'),
+                'file_size': res_ut.get('file_size'),
+                'source_url': raw_url,
+                'source_provider': 'uploadthing',
+            })
+            video_asset.metadata = current_meta
+            video_asset.save(update_fields=['is_public', 'metadata', 'updated_at'])
+
+            return success_response(
+                data=VideoAssetSerializer(video_asset).data,
+                message="Vidéo stockée sur UploadThing et ingérée dans Mux avec succès.",
+                status_code=status.HTTP_201_CREATED,
+            )
+
+        elif file_url:
+            title = title or "Vidéo"
+            video_asset = MuxVideoService.create_asset_from_url(
+                user=request.user,
+                input_url=file_url,
+                title=title,
+                description=description,
+            )
+            video_asset.is_public = is_public_val
+            video_asset.save(update_fields=['is_public', 'updated_at'])
+
+            return success_response(
+                data=VideoAssetSerializer(video_asset).data,
+                message="Vidéo ingérée dans Mux avec succès.",
+                status_code=status.HTTP_201_CREATED,
+            )
+
+        return error_response(
+            "Veuillez fournir un fichier vidéo ('file' ou 'video') ou une URL ('file_url').",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class VideoAssetIngestView(APIView):
+    """
+    Ingest a video already hosted on UploadThing or external URL into Mux.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Media'],
+        summary="Ingérer une URL vidéo UploadThing vers Mux",
+        request=VideoIngestRequestSerializer,
+        responses={201: VideoAssetSerializer}
+    )
+    def post(self, request):
+        serializer = VideoIngestRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        video_asset = MuxVideoService.create_asset_from_url(
+            user=request.user,
+            input_url=data['file_url'],
+            title=data.get('title') or "Vidéo",
+            description=data.get('description', ''),
+        )
+        if 'is_public' in data:
+            video_asset.is_public = data['is_public']
+            video_asset.save(update_fields=['is_public', 'updated_at'])
+
+        return success_response(
+            data=VideoAssetSerializer(video_asset).data,
+            message="Vidéo ingérée dans Mux avec succès.",
+            status_code=status.HTTP_201_CREATED,
+        )
 
 
 class VideoAssetDetailView(APIView):

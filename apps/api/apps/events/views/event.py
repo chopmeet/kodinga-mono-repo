@@ -1,6 +1,7 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -12,6 +13,7 @@ from apps.events.serializers.event import (
     EventSerializer,
 )
 from apps.events.services.event_service import EventService
+from apps.media.services.uploadthing_service import UploadThingService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
 
@@ -22,6 +24,7 @@ class CommunityEventListView(APIView):
     """
 
     pagination_class = StandardResultsSetPagination
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -131,11 +134,28 @@ class CommunityEventListView(APIView):
                 details=serializer.errors,
             )
 
+        data = dict(serializer.validated_data)
+        banner_file = (
+            request.FILES.get("cover_image")
+            or request.FILES.get("banner")
+            or request.FILES.get("cover_image_file")
+        )
+        if banner_file:
+            try:
+                upload_res = UploadThingService.upload_banner(
+                    user=request.user,
+                    file_obj=banner_file,
+                )
+                data["cover_image_url"] = upload_res["file_url"]
+            except Exception as e:
+                msg = getattr(e, "detail", str(e))
+                return error_response(str(msg), status_code=status.HTTP_400_BAD_REQUEST)
+
         try:
             event = EventService.create_event(
                 actor_user=request.user,
                 community=community,
-                data=serializer.validated_data,
+                data=data,
             )
         except Exception as e:
             msg = getattr(e, "detail", str(e))
@@ -154,6 +174,8 @@ class CommunityEventDetailView(APIView):
     """
     Retrieve, update or delete a community event.
     """
+
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -205,11 +227,33 @@ class CommunityEventDetailView(APIView):
                 details=serializer.errors,
             )
 
+        data = dict(serializer.validated_data)
+        banner_file = (
+            request.FILES.get("cover_image")
+            or request.FILES.get("banner")
+            or request.FILES.get("cover_image_file")
+        )
+        if banner_file:
+            try:
+                upload_res = UploadThingService.upload_banner(
+                    user=request.user,
+                    file_obj=banner_file,
+                    target_type="event",
+                    target_id=str(event.id),
+                    community_slug=community.slug,
+                )
+                data["cover_image_url"] = upload_res["file_url"]
+            except Exception as e:
+                msg = getattr(e, "detail", str(e))
+                return error_response(str(msg), status_code=status.HTTP_400_BAD_REQUEST)
+        elif str(request.data.get("remove_banner", "")).lower() in ("true", "1"):
+            data["cover_image_url"] = ""
+
         try:
             updated = EventService.update_event(
                 actor_user=request.user,
                 event=event,
-                data=serializer.validated_data,
+                data=data,
             )
         except Exception as e:
             msg = getattr(e, "detail", str(e))
@@ -341,4 +385,3 @@ class PublicEventListView(APIView):
         paginated_events = paginator.paginate_queryset(events, request)
         serializer = EventSerializer(paginated_events, many=True)
         return paginator.get_paginated_response(serializer.data)
-

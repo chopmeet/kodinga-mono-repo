@@ -1,9 +1,11 @@
+import contextlib
 import logging
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -21,6 +23,7 @@ logger = logging.getLogger('kodinga.oauth')
 class OAuthService:
     """
     Manages OAuth 2.0 authorization URLs and token exchange for Google and GitHub.
+    Guarantees strict redirect_uri consistency between authorization start and code exchange.
     """
 
     GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -33,13 +36,106 @@ class OAuthService:
     GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 
     @classmethod
+    def _get_allowed_origins(cls) -> set[str]:
+        origins: set[str] = set()
+        candidates = [
+            getattr(settings, 'FRONTEND_URL', ''),
+            getattr(settings, 'BACKEND_URL', ''),
+            getattr(settings, 'GOOGLE_REDIRECT_URI', ''),
+            getattr(settings, 'GITHUB_REDIRECT_URI', ''),
+        ]
+        candidates.extend(getattr(settings, 'CORS_ALLOWED_ORIGINS', []) or [])
+        candidates.extend(getattr(settings, 'OAUTH_ALLOWED_REDIRECT_URIS', []) or [])
+
+        for item in candidates:
+            if not item:
+                continue
+            parsed = urlparse(str(item).strip())
+            if parsed.scheme and parsed.netloc:
+                origins.add(f"{parsed.scheme.lower()}://{parsed.netloc.lower()}")
+        if getattr(settings, 'DEBUG', False) or getattr(settings, 'IS_TESTING', False):
+            origins.update({
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+            })
+        return origins
+
+    @classmethod
+    def resolve_redirect_uri(
+        cls,
+        provider: str,
+        redirect_uri: str | None = None,
+        state: str | None = None,
+    ) -> str:
+        """
+        Resolves and validates the exact redirect_uri for OAuth start and callback.
+        1. If state is provided and redirect_uri is omitted, recovers the exact redirect_uri cached during /start/.
+        2. Otherwise uses explicit redirect_uri if provided and valid.
+        3. Otherwise falls back to GOOGLE_REDIRECT_URI / GITHUB_REDIRECT_URI, then FRONTEND_URL/auth/callback/<provider>.
+        """
+        cleaned = (redirect_uri or '').strip()
+
+        if not cleaned and state:
+            try:
+                cached_uri = cache.get(f"oauth_redirect_uri:{state.strip()}")
+                if cached_uri:
+                    cleaned = str(cached_uri).strip()
+            except Exception:
+                pass
+
+        if not cleaned:
+            if provider == OAuthIdentity.PROVIDER_GOOGLE:
+                configured = (getattr(settings, 'GOOGLE_REDIRECT_URI', '') or '').strip()
+                if configured:
+                    cleaned = configured
+            elif provider == OAuthIdentity.PROVIDER_GITHUB:
+                configured = (getattr(settings, 'GITHUB_REDIRECT_URI', '') or '').strip()
+                if configured:
+                    cleaned = configured
+
+        if not cleaned:
+            frontend_url = (getattr(settings, 'FRONTEND_URL', 'http://localhost:3000') or 'http://localhost:3000').strip().rstrip('/')
+            cleaned = f"{frontend_url}/auth/callback/{provider}"
+
+        parsed = urlparse(cleaned)
+        if parsed.scheme.lower() not in ('http', 'https') or not parsed.netloc:
+            raise ApplicationError(
+                message="Invalid redirect_uri format. Must be an absolute http(s) URL.",
+                code="invalid_redirect_uri",
+                status_code=400,
+            )
+
+        origin = f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
+        allowed_origins = cls._get_allowed_origins()
+        if (
+            allowed_origins
+            and not getattr(settings, 'CORS_ALLOW_ALL_ORIGINS', False)
+            and origin not in allowed_origins
+            and parsed.hostname not in ('localhost', '127.0.0.1')
+        ):
+            raise ApplicationError(
+                message=f"Redirect URI origin '{origin}' is not in the allowed origins.",
+                code="disallowed_redirect_uri",
+                status_code=400,
+            )
+
+        return cleaned
+
+    @classmethod
     def get_authorization_url(cls, provider: str, redirect_uri: str = None) -> dict[str, str]:
+        if provider not in (OAuthIdentity.PROVIDER_GOOGLE, OAuthIdentity.PROVIDER_GITHUB):
+            raise ApplicationError(message="Unsupported OAuth provider.", code="invalid_provider")
+
         state = generate_secure_token(16)
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        cb_url = cls.resolve_redirect_uri(provider=provider, redirect_uri=redirect_uri)
+
+        with contextlib.suppress(Exception):
+            cache.set(f"oauth_redirect_uri:{state}", cb_url, timeout=900)
 
         if provider == OAuthIdentity.PROVIDER_GOOGLE:
             client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
-            cb_url = redirect_uri or f"{frontend_url}/auth/callback/google"
             params = {
                 'client_id': client_id,
                 'redirect_uri': cb_url,
@@ -50,11 +146,10 @@ class OAuthService:
                 'prompt': 'select_account',
             }
             url = f"{cls.GOOGLE_AUTH_URL}?{urlencode(params)}"
-            return {'url': url, 'state': state}
+            return {'url': url, 'state': state, 'redirect_uri': cb_url}
 
         elif provider == OAuthIdentity.PROVIDER_GITHUB:
             client_id = getattr(settings, 'GITHUB_CLIENT_ID', '')
-            cb_url = redirect_uri or f"{frontend_url}/auth/callback/github"
             params = {
                 'client_id': client_id,
                 'redirect_uri': cb_url,
@@ -62,14 +157,22 @@ class OAuthService:
                 'state': state,
             }
             url = f"{cls.GITHUB_AUTH_URL}?{urlencode(params)}"
-            return {'url': url, 'state': state}
+            return {'url': url, 'state': state, 'redirect_uri': cb_url}
 
         raise ApplicationError(message="Unsupported OAuth provider.", code="invalid_provider")
 
     @classmethod
-    def exchange_google_code(cls, code: str, redirect_uri: str = None) -> dict[str, Any]:
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-        cb_url = redirect_uri or f"{frontend_url}/auth/callback/google"
+    def exchange_google_code(
+        cls,
+        code: str,
+        redirect_uri: str = None,
+        state: str = None,
+    ) -> dict[str, Any]:
+        cb_url = cls.resolve_redirect_uri(
+            provider=OAuthIdentity.PROVIDER_GOOGLE,
+            redirect_uri=redirect_uri,
+            state=state,
+        )
         client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
         client_secret = getattr(settings, 'GOOGLE_CLIENT_SECRET', '')
 
@@ -86,13 +189,21 @@ class OAuthService:
         )
         if not token_resp.ok:
             error_data = token_resp.text
-            logger.error(f"Google token error: {error_data}")
+            logger.error(f"Google token error (redirect_uri={cb_url}): {error_data}")
+            err_code = "oauth_exchange_failed"
             try:
                 err_json = token_resp.json()
-                err_desc = err_json.get('error_description') or err_json.get('error') or error_data
+                raw_err = err_json.get('error', '')
+                err_desc = err_json.get('error_description') or raw_err or error_data
+                if raw_err == 'redirect_uri_mismatch':
+                    err_code = 'redirect_uri_mismatch'
+                    err_desc = (
+                        f"Erreur redirect_uri_mismatch : l'URI de redirection envoyée ('{cb_url}') "
+                        "ne correspond pas à celle autorisée dans Google Cloud Console ou lors de l'initialisation OAuth."
+                    )
             except Exception:
                 err_desc = error_data
-            raise ApplicationError(f"Failed to exchange code with Google: {err_desc}", code="oauth_exchange_failed")
+            raise ApplicationError(f"Failed to exchange code with Google: {err_desc}", code=err_code)
 
         tokens = token_resp.json()
         access_token = tokens.get('access_token')
@@ -115,9 +226,17 @@ class OAuthService:
         }
 
     @classmethod
-    def exchange_github_code(cls, code: str, redirect_uri: str = None) -> dict[str, Any]:
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-        cb_url = redirect_uri or f"{frontend_url}/auth/callback/github"
+    def exchange_github_code(
+        cls,
+        code: str,
+        redirect_uri: str = None,
+        state: str = None,
+    ) -> dict[str, Any]:
+        cb_url = cls.resolve_redirect_uri(
+            provider=OAuthIdentity.PROVIDER_GITHUB,
+            redirect_uri=redirect_uri,
+            state=state,
+        )
         client_id = getattr(settings, 'GITHUB_CLIENT_ID', '')
         client_secret = getattr(settings, 'GITHUB_CLIENT_SECRET', '')
 
@@ -141,7 +260,6 @@ class OAuthService:
             err_desc = tokens.get('error_description') or tokens.get('error')
             raise ApplicationError(f"GitHub rejected code: {err_desc}", code="oauth_exchange_failed")
 
-        tokens = token_resp.json()
         access_token = tokens.get('access_token')
         if not access_token:
             raise ApplicationError("Invalid code or GitHub authorization rejected.", code="oauth_exchange_failed")
@@ -187,12 +305,13 @@ class OAuthService:
         provider: str,
         code: str,
         redirect_uri: str = None,
-        request=None
+        request=None,
+        state: str = None,
     ) -> dict[str, Any]:
         if provider == OAuthIdentity.PROVIDER_GOOGLE:
-            profile = cls.exchange_google_code(code, redirect_uri)
+            profile = cls.exchange_google_code(code, redirect_uri=redirect_uri, state=state)
         elif provider == OAuthIdentity.PROVIDER_GITHUB:
-            profile = cls.exchange_github_code(code, redirect_uri)
+            profile = cls.exchange_github_code(code, redirect_uri=redirect_uri, state=state)
         else:
             raise ApplicationError("Unsupported OAuth provider.", code="invalid_provider")
 
@@ -207,6 +326,9 @@ class OAuthService:
 
             if identity:
                 user = identity.user
+                if profile.get('email_verified') and not user.email_verified_at:
+                    user.email_verified_at = timezone.now()
+                    user.save(update_fields=['email_verified_at', 'updated_at'])
             else:
                 if not email:
                     raise ApplicationError(
@@ -231,6 +353,9 @@ class OAuthService:
                         last_name=profile.get('last_name', ''),
                         email_verified_at=timezone.now() if profile.get('email_verified') else None
                     )
+                elif profile.get('email_verified') and not user.email_verified_at:
+                    user.email_verified_at = timezone.now()
+                    user.save(update_fields=['email_verified_at', 'updated_at'])
 
                 # Link OAuth Identity
                 OAuthIdentity.objects.create(
