@@ -1,3 +1,8 @@
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
 from apps.billing.models.payment import PaymentStatus
 from apps.billing.selectors.billing_selector import BillingSelector
 from apps.billing.serializers.payment import (
@@ -6,10 +11,6 @@ from apps.billing.serializers.payment import (
 )
 from apps.billing.serializers.subscription import SubscriptionSerializer
 from common.utils.responses import error_response, success_response
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 
 
 class MySubscriptionsView(APIView):
@@ -89,8 +90,9 @@ class CancelSubscriptionView(APIView):
         responses={200: SubscriptionSerializer}
     )
     def post(self, request, subscription_id):
-        from apps.billing.models.subscription import Subscription, SubscriptionStatus
         from django.utils import timezone
+
+        from apps.billing.models.subscription import Subscription, SubscriptionStatus
 
         try:
             subscription = Subscription.objects.select_related('plan').get(id=subscription_id, user=request.user)

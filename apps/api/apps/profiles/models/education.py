@@ -1,6 +1,7 @@
+from django.db import models
+
 from apps.profiles.models.profile import DeveloperProfile
 from common.models.base import BaseModel
-from django.db import models
 
 
 class DeveloperEducation(BaseModel):

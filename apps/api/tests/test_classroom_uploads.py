@@ -1,6 +1,11 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.contrib.admin.sites import AdminSite
+from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.classroom.admin import LessonAdmin, LessonAdminForm
 from apps.classroom.models.course import Course, CourseLevel
@@ -19,10 +24,6 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
-from django.contrib.admin.sites import AdminSite
-from django.core.files.uploadedfile import SimpleUploadedFile
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

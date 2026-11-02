@@ -1,6 +1,7 @@
+from rest_framework import serializers
+
 from apps.posts.models.poll import Poll, PollOption, PollVote
 from common.serializers.base import BaseModelSerializer
-from rest_framework import serializers
 
 
 class PollOptionSerializer(BaseModelSerializer):

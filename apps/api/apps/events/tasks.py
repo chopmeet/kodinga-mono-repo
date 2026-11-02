@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
-from common.services.email_service import EmailService
 from django.conf import settings
 from django.utils import timezone
 
@@ -11,6 +10,7 @@ from apps.events.models.attendee import AttendeeStatus, EventAttendee
 from apps.events.models.event import Event, EventStatus
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from common.services.email_service import EmailService
 
 logger = logging.getLogger("kodinga.events")
 

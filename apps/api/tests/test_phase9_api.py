@@ -1,6 +1,9 @@
 from decimal import Decimal
 
 import pytest
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.affiliates.models.link import AffiliateLink
 from apps.affiliates.models.payout import PayoutStatus
@@ -23,8 +26,6 @@ from apps.opportunities.models.opportunity import (
     WorkplaceType,
 )
 from apps.profiles.models.technology import Technology, TechnologyCategory
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

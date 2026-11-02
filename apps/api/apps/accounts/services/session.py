@@ -2,15 +2,16 @@ import uuid
 from datetime import datetime
 from datetime import timezone as dt_timezone
 
-from apps.accounts.models.session import UserSession
-from apps.accounts.services.security import AccountSecurityService
-from common.exceptions.handler import ResourceNotFoundError
 from django.utils import timezone
 from rest_framework_simplejwt.token_blacklist.models import (
     BlacklistedToken,
     OutstandingToken,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from apps.accounts.models.session import UserSession
+from apps.accounts.services.security import AccountSecurityService
+from common.exceptions.handler import ResourceNotFoundError
 
 
 class SessionService:

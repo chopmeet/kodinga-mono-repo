@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.communities.views.category import (
     CategoryDetailView,
     CategoryListCreateView,
@@ -12,7 +14,6 @@ from apps.communities.views.settings import (
     CommunityRulesView,
     CommunitySettingsView,
 )
-from django.urls import path
 
 app_name = 'communities'
 

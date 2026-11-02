@@ -1,7 +1,7 @@
-from common.serializers.base import BaseModelSerializer
 from rest_framework import serializers
 
 from apps.classroom.models.progress import CourseEnrollment, LessonProgress
+from common.serializers.base import BaseModelSerializer
 
 
 class LessonProgressSerializer(BaseModelSerializer):

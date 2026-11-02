@@ -1,3 +1,8 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.permissions import check_community_read_permission
 from apps.posts.models.category import PostCategory
@@ -11,10 +16,6 @@ from apps.posts.serializers.post import (
 from apps.posts.services.post_service import PostService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
 
 
 class CommunityFeedView(APIView):

@@ -1,6 +1,7 @@
+from django.db import models
+
 from apps.affiliates.models.link import AffiliateLink
 from common.models.base import BaseModel
-from django.db import models
 
 
 class AffiliateClick(BaseModel):

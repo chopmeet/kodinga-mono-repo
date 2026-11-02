@@ -1,10 +1,11 @@
+from django.db.models import F, Q
+
 from apps.communities.models.community import CommunityPricing, CommunityPrivacy
 from apps.memberships.models.member import MembershipStatus
 from apps.projects.models.comment import ProjectComment
 from apps.projects.models.project import Project, ProjectStatus
 from apps.projects.models.upvote import ProjectUpvote
 from common.permissions.base import is_superadmin_user
-from django.db.models import F, Q
 
 
 class ProjectSelector:

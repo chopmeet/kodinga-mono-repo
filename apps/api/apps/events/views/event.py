@@ -1,5 +1,3 @@
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
@@ -16,6 +14,8 @@ from apps.events.serializers.event import (
 )
 from apps.events.services.event_service import EventService
 from apps.media.services.uploadthing_service import UploadThingService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class CommunityEventListView(APIView):

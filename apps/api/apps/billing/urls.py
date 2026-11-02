@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.billing.views import (
     CancelSubscriptionView,
     CommunityPayoutsView,
@@ -14,7 +16,6 @@ from apps.billing.views import (
     PaymentStatusView,
     PlansListView,
 )
-from django.urls import path
 
 app_name = 'billing'
 

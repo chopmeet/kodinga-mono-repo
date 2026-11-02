@@ -1,5 +1,10 @@
 from typing import Any
 
+from django.db import transaction
+from django.db.models import F
+from django.utils.text import slugify
+from rest_framework.exceptions import NotFound, ValidationError
+
 from apps.accounts.models.user import User
 from apps.profiles.models.education import DeveloperEducation
 from apps.profiles.models.experience import DeveloperExperience
@@ -7,10 +12,6 @@ from apps.profiles.models.portfolio import DeveloperPortfolioProject
 from apps.profiles.models.profile import DeveloperProfile
 from apps.profiles.models.skill import DeveloperSkill
 from apps.profiles.models.technology import Technology
-from django.db import transaction
-from django.db.models import F
-from django.utils.text import slugify
-from rest_framework.exceptions import NotFound, ValidationError
 
 
 class ProfileService:

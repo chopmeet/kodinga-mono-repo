@@ -1,9 +1,10 @@
-from apps.communities.models.community import Community
-from apps.memberships.models.member import CommunityRole
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+from apps.communities.models.community import Community
+from apps.memberships.models.member import CommunityRole
+from common.models.base import BaseModel
 
 
 class InvitationStatus(models.TextChoices):

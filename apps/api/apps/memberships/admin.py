@@ -1,5 +1,11 @@
 from datetime import timedelta
 
+from django.conf import settings
+from django.contrib import admin, messages
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html
+
 from apps.memberships.models.invitation import CommunityInvitation, InvitationStatus
 from apps.memberships.models.member import (
     CommunityMember,
@@ -10,11 +16,6 @@ from apps.memberships.models.sanction import MemberSanction
 from apps.memberships.services.invitation_service import InvitationService
 from common.services.email_service import EmailService
 from common.utils.tokens import generate_secure_token, hash_token
-from django.conf import settings
-from django.contrib import admin, messages
-from django.urls import reverse
-from django.utils import timezone
-from django.utils.html import format_html
 
 
 @admin.action(description="✉️ Renvoyer l'e-mail d'invitation aux destinataires sélectionnés")

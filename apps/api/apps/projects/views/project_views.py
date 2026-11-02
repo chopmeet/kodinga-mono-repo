@@ -1,3 +1,7 @@
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import permissions, status
+from rest_framework.views import APIView
+
 from apps.communities.models.community import Community
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.permissions import (
@@ -16,9 +20,6 @@ from apps.projects.serializers.project_serializers import (
 )
 from apps.projects.services.project_service import ProjectService
 from common.utils.responses import error_response, success_response
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework import permissions, status
-from rest_framework.views import APIView
 
 
 class ProjectListView(APIView):

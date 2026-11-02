@@ -1,6 +1,7 @@
-from apps.accounts.models.user import User
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
+from apps.accounts.models.user import User
 
 
 class Command(BaseCommand):

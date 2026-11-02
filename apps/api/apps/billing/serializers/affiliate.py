@@ -1,6 +1,7 @@
+from rest_framework import serializers
+
 from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from common.serializers.base import BaseModelSerializer
-from rest_framework import serializers
 
 
 class AffiliateCommissionSerializer(BaseModelSerializer):

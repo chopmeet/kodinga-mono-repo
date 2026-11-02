@@ -1,7 +1,8 @@
+from rest_framework import serializers
+
 from apps.accounts.models.consent import UserConsent
 from apps.accounts.models.user import User
 from common.serializers.base import BaseModelSerializer
-from rest_framework import serializers
 
 
 class UserSerializer(BaseModelSerializer):

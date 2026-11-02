@@ -2,10 +2,11 @@ import secrets
 import string
 from decimal import Decimal
 
-from apps.affiliates.models.program import AffiliateProgram
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
+
+from apps.affiliates.models.program import AffiliateProgram
+from common.models.base import BaseModel
 
 
 def generate_affiliate_code(length=8):

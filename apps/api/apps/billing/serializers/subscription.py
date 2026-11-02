@@ -1,7 +1,8 @@
+from rest_framework import serializers
+
 from apps.billing.models.subscription import Subscription
 from apps.billing.serializers.plan import PlanSerializer
 from common.serializers.base import BaseModelSerializer
-from rest_framework import serializers
 
 
 class SubscriptionSerializer(BaseModelSerializer):

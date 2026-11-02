@@ -1,4 +1,7 @@
 import pytest
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.settings import CommunitySettings
@@ -8,8 +11,6 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from apps.memberships.models.sanction import SanctionType
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

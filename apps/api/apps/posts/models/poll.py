@@ -1,8 +1,9 @@
-from apps.posts.models.post import Post
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+from apps.posts.models.post import Post
+from common.models.base import BaseModel
 
 
 class Poll(BaseModel):

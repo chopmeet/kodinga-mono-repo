@@ -1,7 +1,8 @@
+from django.contrib import admin
+
 from apps.administration.models.audit import PlatformAuditLog
 from apps.administration.models.setting import SystemSetting
 from common.permissions.base import is_superadmin_user
-from django.contrib import admin
 
 
 @admin.register(SystemSetting)

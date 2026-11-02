@@ -1,6 +1,10 @@
 from datetime import timedelta
 
 import pytest
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson, LessonType
@@ -24,9 +28,6 @@ from apps.memberships.models.member import (
 )
 from apps.memberships.services.invitation_service import InvitationService
 from apps.notifications.models.notification import Notification, NotificationType
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

@@ -1,10 +1,10 @@
-from common.serializers.base import BaseModelSerializer
 from rest_framework import serializers
 
 from apps.communities.models.community import Community
 from apps.events.models.event import Event, EventFormat, EventStatus, EventType
 from apps.events.serializers.attendee import UserMinimalSerializer
 from apps.media.serializers.video import VideoAssetSerializer
+from common.serializers.base import BaseModelSerializer
 
 
 class CommunitySummarySerializer(serializers.ModelSerializer):

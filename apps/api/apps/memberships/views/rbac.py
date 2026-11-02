@@ -1,3 +1,8 @@
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.models.member import (
     CommunityMember,
@@ -7,10 +12,6 @@ from apps.memberships.models.member import (
 from apps.memberships.serializers.member import CommunityMemberSerializer
 from common.permissions.base import is_superadmin_user
 from common.utils.responses import error_response, success_response
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 
 
 class CommunityRbacView(APIView):

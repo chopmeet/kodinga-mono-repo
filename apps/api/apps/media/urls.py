@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.media.views.media import (
     BannerUploadView,
     ConfirmUploadView,
@@ -13,7 +15,6 @@ from apps.media.views.video import (
     VideoAssetListView,
 )
 from apps.media.views.webhooks import MuxWebhookView
-from django.urls import path
 
 app_name = 'media'
 

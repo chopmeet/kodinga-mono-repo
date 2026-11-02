@@ -3,6 +3,12 @@ from unittest.mock import patch
 
 import jwt
 import pytest
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.settings import CommunitySettings
@@ -14,11 +20,6 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
-from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture
@@ -556,11 +557,12 @@ def test_livekit_webhook_participant_joined(
 
 @pytest.mark.django_db
 def test_event_tasks(user_owner, user_member, scheduled_event):
+    from django.core import mail
+
     from apps.events.tasks import (
         send_event_confirmation_email_task,
         send_event_reminders_task,
     )
-    from django.core import mail
 
     mail.outbox.clear()
 

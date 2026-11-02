@@ -1,6 +1,7 @@
+from django.db import models
+
 from apps.messaging.models.message import Message
 from common.models.base import BaseModel
-from django.db import models
 
 
 class MessageAttachment(BaseModel):

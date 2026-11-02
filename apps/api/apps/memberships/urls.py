@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.memberships.views.invitation import (
     AcceptInvitationTokenView,
     AcceptInvitationView,
@@ -23,7 +25,6 @@ from apps.memberships.views.member import (
     WorkspaceMembersListView,
 )
 from apps.memberships.views.rbac import CommunityRbacView
-from django.urls import path
 
 app_name = 'memberships'
 

@@ -1,12 +1,13 @@
 import uuid
 from typing import Optional
 
+from django.db.models import Prefetch, Q, QuerySet
+
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.rule import CommunityRule
 from apps.memberships.models.member import CommunityMember, MembershipStatus
-from django.db.models import Prefetch, Q, QuerySet
 
 
 def is_valid_uuid(val: str) -> bool:

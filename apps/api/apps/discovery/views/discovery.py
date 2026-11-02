@@ -1,3 +1,8 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+
 from apps.discovery.serializers.discovery_serializer import (
     DiscoveryRecommendationsResponseSerializer,
     DiscoverySearchResponseSerializer,
@@ -5,10 +10,6 @@ from apps.discovery.serializers.discovery_serializer import (
 )
 from apps.discovery.services.discovery_service import DiscoveryService
 from common.utils.responses import success_response
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
 
 
 class DiscoverySearchView(APIView):

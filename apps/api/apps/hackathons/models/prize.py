@@ -1,7 +1,7 @@
-from common.models.base import BaseModel
 from django.db import models
 
 from apps.hackathons.models.hackathon import Hackathon
+from common.models.base import BaseModel
 
 
 class HackathonPrize(BaseModel):

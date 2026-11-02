@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from django.db import transaction
 from django.utils import timezone
-from realtime.broadcast import broadcast_hackathon_registration_updated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
@@ -16,6 +15,7 @@ from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from realtime.broadcast import broadcast_hackathon_registration_updated
 
 
 class HackathonApplicationService:

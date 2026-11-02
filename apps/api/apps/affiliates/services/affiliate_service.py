@@ -1,13 +1,14 @@
 from decimal import Decimal
 
-from apps.affiliates.models.click import AffiliateClick
-from apps.affiliates.models.link import AffiliateLink
-from apps.affiliates.models.payout import PayoutRequest, PayoutStatus
-from common.permissions.base import is_superadmin_user
 from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
+
+from apps.affiliates.models.click import AffiliateClick
+from apps.affiliates.models.link import AffiliateLink
+from apps.affiliates.models.payout import PayoutRequest, PayoutStatus
+from common.permissions.base import is_superadmin_user
 
 
 class AffiliateService:

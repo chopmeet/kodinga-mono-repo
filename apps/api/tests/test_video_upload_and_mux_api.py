@@ -1,11 +1,12 @@
 
 import pytest
-from apps.accounts.models.user import User
-from apps.media.models.media_asset import MediaAsset, MediaPurpose, MediaStatus
-from apps.media.models.video_asset import VideoAsset, VideoStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from apps.accounts.models.user import User
+from apps.media.models.media_asset import MediaAsset, MediaPurpose, MediaStatus
+from apps.media.models.video_asset import VideoAsset, VideoStatus
 
 
 @pytest.fixture

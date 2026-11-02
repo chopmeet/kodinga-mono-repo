@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.profiles.views.profile import (
     MeProfileView,
     PublicProfileDetailView,
@@ -14,7 +16,6 @@ from apps.profiles.views.sub_entities import (
     MeSkillsView,
     TechnologyListView,
 )
-from django.urls import path
 
 app_name = 'profiles'
 

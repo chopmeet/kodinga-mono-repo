@@ -1,11 +1,12 @@
 from typing import Any
 
+from django.contrib.auth.models import update_last_login
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from apps.accounts.models.user import User
 from apps.accounts.services.security import AccountSecurityService
 from apps.accounts.services.session import SessionService
 from common.exceptions.handler import ApplicationError
-from django.contrib.auth.models import update_last_login
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class AuthenticationService:

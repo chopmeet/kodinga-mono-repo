@@ -1,8 +1,8 @@
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 
 from apps.communities.models.community import Community
+from common.models.base import BaseModel
 
 
 class AssistantConversation(BaseModel):

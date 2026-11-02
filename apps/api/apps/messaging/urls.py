@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.messaging.views import (
     ConversationDetailView,
     ConversationListView,
@@ -6,7 +8,6 @@ from apps.messaging.views import (
     MessageDetailView,
     ToggleMessagePinView,
 )
-from django.urls import path
 
 app_name = "messaging"
 

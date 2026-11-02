@@ -2,12 +2,13 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.db import transaction
+from django.utils import timezone
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityCategory
 from apps.posts.selectors.post_selector import PostSelector
 from apps.posts.services.post_service import PostService
-from django.db import transaction
-from django.utils import timezone
 
 
 @pytest.fixture

@@ -1,6 +1,7 @@
+from rest_framework import serializers
+
 from apps.accounts.models.user import User
 from apps.notifications.models.notification import Notification
-from rest_framework import serializers
 
 
 class NotificationActorSerializer(serializers.ModelSerializer):

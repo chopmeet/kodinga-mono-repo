@@ -1,6 +1,7 @@
-from common.services.email_service import EmailService, get_formatted_sender
 from django.conf import settings
 from django.core.management.base import BaseCommand
+
+from common.services.email_service import EmailService, get_formatted_sender
 
 
 class Command(BaseCommand):

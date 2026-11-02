@@ -2,6 +2,10 @@ from unittest.mock import MagicMock
 
 import pytest
 import resend
+from django.conf import settings
+from django.core import mail
+from django.core.mail import EmailMultiAlternatives
+
 from apps.accounts.models.token import AuthToken
 from apps.accounts.models.user import User
 from apps.accounts.services.authentication import AuthenticationService
@@ -11,9 +15,6 @@ from apps.accounts.services.verification import EmailVerificationService
 from common.exceptions.handler import ApplicationError
 from common.services.email_service import EmailService, ResendEmailBackend
 from common.utils.tokens import hash_token
-from django.conf import settings
-from django.core import mail
-from django.core.mail import EmailMultiAlternatives
 
 
 @pytest.mark.django_db

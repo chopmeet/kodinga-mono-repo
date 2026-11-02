@@ -1,8 +1,9 @@
+from rest_framework import serializers
+
 from apps.accounts.models.user import User
 from apps.profiles.models.technology import Technology
 from apps.projects.models.comment import ProjectComment
 from apps.projects.models.project import Project, ProjectStatus
-from rest_framework import serializers
 
 
 class ProjectOwnerSerializer(serializers.ModelSerializer):

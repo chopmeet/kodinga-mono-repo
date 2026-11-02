@@ -1,9 +1,9 @@
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 
 from apps.hackathons.models.criterion import HackathonCriterion
 from apps.hackathons.models.submission import HackathonSubmission
+from common.models.base import BaseModel
 
 
 class HackathonEvaluation(BaseModel):

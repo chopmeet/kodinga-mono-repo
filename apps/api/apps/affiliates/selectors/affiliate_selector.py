@@ -1,8 +1,9 @@
 from decimal import Decimal
 
+from django.db.models import Sum
+
 from apps.affiliates.models.link import AffiliateLink
 from apps.affiliates.models.payout import PayoutRequest, PayoutStatus
-from django.db.models import Sum
 
 
 class AffiliateSelector:

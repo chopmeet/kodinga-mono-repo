@@ -1,5 +1,11 @@
 import logging
 
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+
 from apps.media.models.video_asset import VideoAsset
 from apps.media.serializers.video import (
     MuxUploadRequestSerializer,
@@ -12,11 +18,6 @@ from apps.media.services.mux_service import MuxVideoService
 from apps.media.services.uploadthing_service import UploadThingService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
 
 logger = logging.getLogger('kodinga.media')
 

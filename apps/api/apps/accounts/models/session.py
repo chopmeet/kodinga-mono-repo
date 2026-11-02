@@ -1,7 +1,8 @@
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+from common.models.base import BaseModel
 
 
 class UserSession(BaseModel):

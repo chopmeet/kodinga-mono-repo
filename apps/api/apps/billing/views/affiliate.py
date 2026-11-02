@@ -1,11 +1,12 @@
-from apps.billing.selectors.billing_selector import BillingSelector
-from apps.billing.serializers.affiliate import AffiliateSerializer
-from apps.billing.services.affiliate_service import AffiliateService
-from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+
+from apps.billing.selectors.billing_selector import BillingSelector
+from apps.billing.serializers.affiliate import AffiliateSerializer
+from apps.billing.services.affiliate_service import AffiliateService
+from common.utils.responses import error_response, success_response
 
 
 class MyAffiliateView(APIView):

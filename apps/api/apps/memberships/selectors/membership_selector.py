@@ -1,5 +1,7 @@
 from typing import Optional
 
+from django.db.models import Q, QuerySet
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.memberships.models.invitation import CommunityInvitation
@@ -7,7 +9,6 @@ from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
 )
-from django.db.models import Q, QuerySet
 
 
 class MembershipSelector:

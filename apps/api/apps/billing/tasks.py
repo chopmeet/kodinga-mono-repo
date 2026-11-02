@@ -1,11 +1,12 @@
 import logging
 from datetime import timedelta
 
+from celery import shared_task
+from django.utils import timezone
+
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
 from apps.communities.models.community import CommunityPricing
 from apps.memberships.models.member import CommunityMember, MembershipStatus
-from celery import shared_task
-from django.utils import timezone
 
 logger = logging.getLogger('kodinga.billing.tasks')
 
@@ -63,8 +64,9 @@ def check_and_expire_subscriptions(self) -> dict:
                     status=MembershipStatus.ACTIVE
                 ).update(status=MembershipStatus.SUSPENDED)
                 if updated:
-                    from apps.communities.models.community import Community
                     from django.db.models import F
+
+                    from apps.communities.models.community import Community
                     Community.objects.filter(id=community.id, members_count__gt=0).update(
                         members_count=F('members_count') - 1
                     )

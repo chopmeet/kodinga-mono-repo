@@ -1,3 +1,5 @@
+from rest_framework import serializers
+
 from apps.accounts.serializers.user import UserSerializer
 from apps.media.serializers.media import MediaAssetSerializer
 from apps.posts.models.post import Post
@@ -5,7 +7,6 @@ from apps.posts.models.reaction import PostReaction
 from apps.posts.serializers.category import PostCategorySerializer
 from apps.posts.serializers.poll import PollInputSerializer, PollSerializer
 from common.serializers.base import BaseModelSerializer
-from rest_framework import serializers
 
 
 class PostListSerializer(BaseModelSerializer):

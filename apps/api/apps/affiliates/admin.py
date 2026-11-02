@@ -1,8 +1,9 @@
+from django.contrib import admin
+
 from apps.affiliates.models.click import AffiliateClick
 from apps.affiliates.models.link import AffiliateLink
 from apps.affiliates.models.payout import PayoutRequest
 from apps.affiliates.models.program import AffiliateProgram
-from django.contrib import admin
 
 
 @admin.register(AffiliateProgram)

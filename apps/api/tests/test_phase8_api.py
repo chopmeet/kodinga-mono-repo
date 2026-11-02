@@ -1,6 +1,10 @@
 from datetime import timedelta
 
 import pytest
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course, CourseLevel
 from apps.communities.models.community import Community, CommunityPrivacy
@@ -19,9 +23,6 @@ from apps.profiles.models import (
     DeveloperSkill,
     Technology,
 )
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

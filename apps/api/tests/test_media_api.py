@@ -1,11 +1,12 @@
 import json
 
 import pytest
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.media.models.media_asset import MediaAsset, MediaPurpose, MediaStatus
 from apps.media.models.video_asset import VideoAsset, VideoStatus
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

@@ -1,6 +1,10 @@
 from datetime import timedelta
 
 import pytest
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.settings import CommunitySettings
@@ -17,9 +21,6 @@ from apps.posts.models.bookmark import PostBookmark
 from apps.posts.models.category import PostCategory
 from apps.posts.models.post import Post, PostType
 from apps.projects.models.project import Project, ProjectStatus
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

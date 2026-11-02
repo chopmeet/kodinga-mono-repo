@@ -1,7 +1,7 @@
-from common.models.base import BaseModel
 from django.db import models
 
 from apps.classroom.models.course import Course
+from common.models.base import BaseModel
 
 
 class CourseModule(BaseModel):

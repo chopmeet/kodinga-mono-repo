@@ -1,3 +1,5 @@
+from rest_framework import serializers
+
 from apps.accounts.models.user import User
 from apps.opportunities.models.application import (
     ApplicationStatus,
@@ -11,7 +13,6 @@ from apps.opportunities.models.opportunity import (
     WorkplaceType,
 )
 from apps.profiles.models.technology import Technology
-from rest_framework import serializers
 
 
 class OpportunityPosterSerializer(serializers.ModelSerializer):

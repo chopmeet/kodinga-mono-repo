@@ -1,5 +1,9 @@
 import contextlib
 
+from django.db import transaction
+from django.db.models import F
+from rest_framework.exceptions import PermissionDenied, ValidationError
+
 from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
@@ -12,9 +16,6 @@ from apps.opportunities.models.opportunity import (
     OpportunityStatus,
 )
 from common.permissions.base import is_superadmin_user
-from django.db import transaction
-from django.db.models import F
-from rest_framework.exceptions import PermissionDenied, ValidationError
 
 
 class OpportunityService:

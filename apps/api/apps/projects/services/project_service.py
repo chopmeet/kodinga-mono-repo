@@ -1,5 +1,9 @@
 import contextlib
 
+from django.db import transaction
+from django.db.models import F
+from rest_framework.exceptions import PermissionDenied, ValidationError
+
 from apps.gamification.models.reputation import ReputationAction
 from apps.gamification.services.gamification_service import GamificationService
 from apps.memberships.permissions import check_community_membership
@@ -9,9 +13,6 @@ from apps.projects.models.comment import ProjectComment
 from apps.projects.models.project import Project, ProjectStatus
 from apps.projects.models.upvote import ProjectUpvote
 from common.permissions.base import is_superadmin_user
-from django.db import transaction
-from django.db.models import F
-from rest_framework.exceptions import PermissionDenied, ValidationError
 
 
 class ProjectService:

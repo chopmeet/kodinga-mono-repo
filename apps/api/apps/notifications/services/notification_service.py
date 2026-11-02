@@ -1,10 +1,11 @@
 import logging
 from typing import Any, Optional
 
+from django.utils import timezone
+
 from apps.accounts.models.user import User
 from apps.notifications.models.notification import Notification, NotificationType
 from common.permissions.base import is_superadmin_user
-from django.utils import timezone
 
 logger = logging.getLogger("kodinga.notifications")
 

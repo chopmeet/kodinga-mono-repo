@@ -1,7 +1,8 @@
-from apps.messaging.models.conversation import Conversation
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
+
+from apps.messaging.models.conversation import Conversation
+from common.models.base import BaseModel
 
 
 class Message(BaseModel):

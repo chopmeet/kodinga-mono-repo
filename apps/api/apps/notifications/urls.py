@@ -1,3 +1,5 @@
+from django.urls import path
+
 from apps.notifications.views.notification import (
     NotificationDetailView,
     NotificationListView,
@@ -5,7 +7,6 @@ from apps.notifications.views.notification import (
     NotificationMarkReadView,
     NotificationUnreadCountView,
 )
-from django.urls import path
 
 app_name = "notifications"
 

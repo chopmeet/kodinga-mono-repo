@@ -1,9 +1,10 @@
 from decimal import Decimal
 
-from common.models.base import BaseModel
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+from common.models.base import BaseModel
 
 
 class AvailabilityStatus(models.TextChoices):

@@ -1,3 +1,6 @@
+from django.db.models import F, Q
+from rest_framework.exceptions import PermissionDenied
+
 from apps.communities.models.community import CommunityPricing, CommunityPrivacy
 from apps.memberships.models.member import MembershipStatus
 from apps.opportunities.models.application import OpportunityApplication
@@ -6,8 +9,6 @@ from apps.opportunities.models.opportunity import (
     OpportunityStatus,
 )
 from common.permissions.base import is_superadmin_user
-from django.db.models import F, Q
-from rest_framework.exceptions import PermissionDenied
 
 
 class OpportunitySelector:

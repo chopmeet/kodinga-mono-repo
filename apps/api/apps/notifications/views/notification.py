@@ -1,3 +1,8 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
 from apps.notifications.selectors.notification_selector import (
     NotificationSelector,
 )
@@ -10,10 +15,6 @@ from apps.notifications.services.notification_service import (
 )
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 
 
 class NotificationListView(APIView):

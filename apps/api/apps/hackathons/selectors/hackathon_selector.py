@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-from common.permissions.base import is_superadmin_user
 from django.db.models import Q, QuerySet
 from rest_framework.exceptions import NotFound, PermissionDenied
 
@@ -11,6 +10,7 @@ from apps.hackathons.models.hackathon import Hackathon, HackathonStatus
 from apps.hackathons.models.judge import HackathonJudge
 from apps.hackathons.models.submission import HackathonSubmission
 from apps.hackathons.models.team import HackathonTeam, TeamInvitationStatus
+from common.permissions.base import is_superadmin_user
 
 
 class HackathonSelector:

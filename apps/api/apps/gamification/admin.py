@@ -1,3 +1,5 @@
+from django.contrib import admin
+
 from apps.gamification.models.badge import Badge, UserBadge
 from apps.gamification.models.reputation import (
     CommunityPointRule,
@@ -5,7 +7,6 @@ from apps.gamification.models.reputation import (
     ReputationTransaction,
     UserReputation,
 )
-from django.contrib import admin
 
 
 @admin.register(Badge)

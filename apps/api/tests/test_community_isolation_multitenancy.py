@@ -1,6 +1,10 @@
 from datetime import timedelta
 
 import pytest
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course, CourseLevel
 from apps.classroom.models.lesson import Lesson, LessonType
@@ -24,9 +28,6 @@ from apps.opportunities.models.opportunity import (
 from apps.posts.models.poll import Poll, PollOption
 from apps.posts.models.post import Post, PostType
 from apps.projects.models.project import Project
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.fixture

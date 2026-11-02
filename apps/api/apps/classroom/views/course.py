@@ -1,5 +1,3 @@
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -17,6 +15,8 @@ from apps.classroom.services.classroom_service import ClassroomService
 from apps.classroom.services.progress_service import ProgressService
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.media.services.uploadthing_service import UploadThingService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class CommunityCourseListView(APIView):

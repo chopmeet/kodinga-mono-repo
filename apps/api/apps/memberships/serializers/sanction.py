@@ -1,7 +1,8 @@
+from rest_framework import serializers
+
 from apps.accounts.serializers.user import UserSerializer
 from apps.memberships.models.sanction import MemberSanction, SanctionType
 from common.serializers.base import BaseModelSerializer
-from rest_framework import serializers
 
 
 class MemberSanctionSerializer(BaseModelSerializer):

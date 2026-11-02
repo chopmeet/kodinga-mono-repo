@@ -1,3 +1,5 @@
+from rest_framework import serializers
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.gamification.models.badge import Badge, UserBadge
@@ -8,7 +10,6 @@ from apps.gamification.models.reputation import (
     ReputationTransaction,
     UserReputation,
 )
-from rest_framework import serializers
 
 
 class GamificationCommunitySimpleSerializer(serializers.ModelSerializer):

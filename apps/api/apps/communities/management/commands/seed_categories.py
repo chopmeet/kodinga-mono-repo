@@ -1,5 +1,6 @@
-from apps.communities.models.category import CommunityCategory
 from django.core.management.base import BaseCommand
+
+from apps.communities.models.category import CommunityCategory
 
 # 8 Official developer categories with sub-specialties reference
 CATEGORIES_DATA = [

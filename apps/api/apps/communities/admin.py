@@ -1,14 +1,15 @@
+from django import forms
+from django.contrib import admin, messages
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import Community
 from apps.communities.models.rule import CommunityRule
 from apps.communities.models.settings import CommunitySettings
 from apps.media.services.uploadthing_service import UploadThingService
 from apps.memberships.models.member import CommunityMember
-from django import forms
-from django.contrib import admin, messages
-from django.urls import reverse
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 
 class CommunityMemberInline(admin.TabularInline):

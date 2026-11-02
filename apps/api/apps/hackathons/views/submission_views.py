@@ -1,8 +1,6 @@
 import mimetypes
 import os
 
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
 from django.core.files.storage import default_storage
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -20,6 +18,8 @@ from apps.hackathons.serializers.submission import (
     HackathonSubmissionUpdateSerializer,
 )
 from apps.hackathons.services.submission_service import HackathonSubmissionService
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 
 
 class HackathonMySubmissionView(APIView):

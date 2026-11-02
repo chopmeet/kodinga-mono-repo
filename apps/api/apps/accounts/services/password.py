@@ -1,6 +1,10 @@
 import logging
 from datetime import timedelta
 
+from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
+
 from apps.accounts.models.token import AuthToken
 from apps.accounts.models.user import User
 from apps.accounts.services.security import AccountSecurityService
@@ -8,9 +12,6 @@ from apps.accounts.services.session import SessionService
 from common.exceptions.handler import ApplicationError
 from common.services.email_service import EmailService
 from common.utils.tokens import generate_secure_token, hash_token
-from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 
 logger = logging.getLogger('kodinga.auth')
 

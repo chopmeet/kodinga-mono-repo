@@ -1,5 +1,9 @@
 from typing import Any, Optional
 
+from django.db import transaction
+from django.utils.text import slugify
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import Community
@@ -10,9 +14,6 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
-from django.db import transaction
-from django.utils.text import slugify
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 
 class CommunityService:

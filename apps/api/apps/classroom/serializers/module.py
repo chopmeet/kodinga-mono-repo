@@ -1,7 +1,7 @@
-from common.serializers.base import BaseModelSerializer
 from rest_framework import serializers
 
 from apps.classroom.models.module import CourseModule
+from common.serializers.base import BaseModelSerializer
 
 
 class CourseModuleSerializer(BaseModelSerializer):

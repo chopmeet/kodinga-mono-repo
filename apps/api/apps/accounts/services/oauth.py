@@ -4,17 +4,18 @@ from typing import Any
 from urllib.parse import urlencode, urlparse
 
 import requests
+from django.conf import settings
+from django.core.cache import cache
+from django.db import transaction
+from django.utils import timezone
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from apps.accounts.models.oauth import OAuthIdentity
 from apps.accounts.models.user import User
 from apps.accounts.services.security import AccountSecurityService
 from apps.accounts.services.session import SessionService
 from common.exceptions.handler import ApplicationError
 from common.utils.tokens import generate_secure_token
-from django.conf import settings
-from django.core.cache import cache
-from django.db import transaction
-from django.utils import timezone
-from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger('kodinga.oauth')
 

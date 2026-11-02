@@ -1,8 +1,8 @@
-from common.serializers.base import BaseModelSerializer
 from rest_framework import serializers
 
 from apps.accounts.models.user import User
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
+from common.serializers.base import BaseModelSerializer
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):

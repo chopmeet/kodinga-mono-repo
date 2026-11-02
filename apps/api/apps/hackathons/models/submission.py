@@ -1,4 +1,3 @@
-from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
@@ -6,6 +5,7 @@ from django.utils.text import slugify
 from apps.hackathons.models.hackathon import Hackathon
 from apps.hackathons.models.team import HackathonTeam
 from apps.profiles.models.technology import Technology
+from common.models.base import BaseModel
 
 
 class SubmissionStatus(models.TextChoices):

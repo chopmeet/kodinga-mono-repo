@@ -1,3 +1,8 @@
+from drf_spectacular.utils import extend_schema
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.communities.selectors.community_selector import CommunitySelector
@@ -12,10 +17,6 @@ from apps.messaging.serializers.messaging_serializers import (
     StartDirectConversationSerializer,
 )
 from apps.messaging.services.messaging_service import MessagingService
-from drf_spectacular.utils import extend_schema
-from rest_framework import permissions, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 
 @extend_schema(tags=["Messaging & Notifications"])

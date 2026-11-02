@@ -1,5 +1,6 @@
-from apps.notifications.models.notification import Notification
 from django.contrib import admin
+
+from apps.notifications.models.notification import Notification
 
 
 @admin.register(Notification)

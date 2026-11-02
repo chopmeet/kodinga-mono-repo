@@ -1,4 +1,3 @@
-from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,6 +9,7 @@ from apps.ai.serializers import (
     TranslationResponseSerializer,
 )
 from apps.ai.services.translation_service import TranslationService
+from common.utils.responses import error_response, success_response
 
 
 class AILanguageListView(APIView):
