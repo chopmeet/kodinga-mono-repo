@@ -1,5 +1,6 @@
 import csv
 
+from django.db.models import Q
 from django.http import HttpResponse
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
@@ -115,6 +116,7 @@ class HackathonApplicationListView(APIView):
         parameters=[
             OpenApiParameter(name="status", type=str, required=False, description="Filtrer par statut (pending, accepted, rejected, waitlisted)"),
             OpenApiParameter(name="mode", type=str, required=False, description="Filtrer par mode (individual, team)"),
+            OpenApiParameter(name="search", type=str, required=False, description="Rechercher par username, email, prénom, nom ou équipe"),
         ],
         responses={200: HackathonApplicationSerializer(many=True)},
     )
@@ -124,7 +126,10 @@ class HackathonApplicationListView(APIView):
             hackathon_slug=hackathon_slug,
             user=request.user,
         )
-        if not HackathonSelector.is_community_manager(request.user, hackathon.community):
+        if (
+            hackathon.organizer_id != request.user.id
+            and not HackathonSelector.is_community_manager(request.user, hackathon.community)
+        ):
             return error_response(
                 "Action réservée aux organisateurs.",
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -132,7 +137,7 @@ class HackathonApplicationListView(APIView):
 
         qs = (
             HackathonApplication.objects.filter(hackathon=hackathon)
-            .select_related("applicant")
+            .select_related("applicant", "applicant__profile", "hackathon")
             .order_by("-created_at")
         )
 
@@ -143,6 +148,16 @@ class HackathonApplicationListView(APIView):
         mode_param = request.query_params.get("mode")
         if mode_param:
             qs = qs.filter(participation_mode=mode_param)
+
+        search_param = request.query_params.get("search", "").strip()
+        if search_param:
+            qs = qs.filter(
+                Q(applicant__username__icontains=search_param)
+                | Q(applicant__email__icontains=search_param)
+                | Q(applicant__first_name__icontains=search_param)
+                | Q(applicant__last_name__icontains=search_param)
+                | Q(team_name__icontains=search_param)
+            )
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(qs, request)
@@ -171,9 +186,11 @@ class HackathonApplicationReviewView(APIView):
             user=request.user,
         )
 
-        application = HackathonApplication.objects.filter(
-            id=app_id, hackathon=hackathon
-        ).first()
+        application = (
+            HackathonApplication.objects.filter(id=app_id, hackathon=hackathon)
+            .select_related("applicant", "applicant__profile", "hackathon")
+            .first()
+        )
 
         if not application:
             return error_response("Candidature introuvable.", status_code=status.HTTP_404_NOT_FOUND)
@@ -219,7 +236,10 @@ class CommunityHackathonApplicationsExportView(APIView):
             hackathon_slug=hackathon_slug,
             user=request.user,
         )
-        if not HackathonSelector.is_community_manager(request.user, hackathon.community):
+        if (
+            hackathon.organizer_id != request.user.id
+            and not HackathonSelector.is_community_manager(request.user, hackathon.community)
+        ):
             return error_response(
                 "Action réservée aux organisateurs.",
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -267,4 +287,3 @@ class CommunityHackathonApplicationsExportView(APIView):
             ])
 
         return response
-

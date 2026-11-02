@@ -465,3 +465,25 @@ class PostService:
 
             poll.refresh_from_db()
             return poll
+
+
+    # --- Bookmarks / Sauvegarde de post ---
+
+    @classmethod
+    def toggle_bookmark(cls, user: User, post: Post) -> tuple[bool, int]:
+        """
+        Enregistrer ou retirer des favoris (bookmark) un post.
+        Retourne (is_bookmarked, total_bookmarks_count).
+        """
+        from apps.posts.models.bookmark import PostBookmark
+
+        bookmark = PostBookmark.objects.filter(user=user, post=post).first()
+        if bookmark:
+            bookmark.delete()
+            is_bookmarked = False
+        else:
+            PostBookmark.objects.create(user=user, post=post)
+            is_bookmarked = True
+
+        total_bookmarks = PostBookmark.objects.filter(post=post).count()
+        return is_bookmarked, total_bookmarks

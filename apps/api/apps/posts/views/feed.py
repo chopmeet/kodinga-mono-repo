@@ -37,6 +37,11 @@ class CommunityFeedView(APIView):
             OpenApiParameter(name='type', description="Type de post (discussion, question, project_showcase, poll, announcement)", required=False, type=str),
             OpenApiParameter(name='q', description="Recherche par mot-clé", required=False, type=str),
             OpenApiParameter(name='pinned', description="Filtrer les posts épinglés (true/false)", required=False, type=bool),
+            OpenApiParameter(name='sort', description="Tri (popular, recent, oldest, views)", required=False, type=str),
+            OpenApiParameter(name='ordering', description="Alias de tri (popular, recent...)", required=False, type=str),
+            OpenApiParameter(name='bookmarked', description="Filtrer uniquement les favoris (true/false)", required=False, type=bool),
+            OpenApiParameter(name='author', description="Filtrer par nom d'auteur", required=False, type=str),
+            OpenApiParameter(name='tag', description="Filtrer par hashtag (#python...)", required=False, type=str),
         ],
         responses={200: PostListSerializer(many=True)}
     )
@@ -53,6 +58,12 @@ class CommunityFeedView(APIView):
         q = request.query_params.get('q')
         pinned_param = request.query_params.get('pinned')
         is_pinned = pinned_param.lower() in ['true', '1'] if pinned_param else None
+
+        sort = request.query_params.get('sort') or request.query_params.get('ordering')
+        bookmarked_param = request.query_params.get('bookmarked') or request.query_params.get('saved')
+        bookmarked = bookmarked_param.lower() in ['true', '1'] if bookmarked_param else None
+        author = request.query_params.get('author')
+        tag = request.query_params.get('tag')
 
         since_param = request.query_params.get('since')
         since = None
@@ -72,6 +83,10 @@ class CommunityFeedView(APIView):
             is_pinned=is_pinned,
             user=request.user,
             since=since,
+            sort=sort,
+            bookmarked=bookmarked,
+            author=author,
+            tag=tag,
         )
 
         paginator = self.pagination_class()

@@ -68,19 +68,27 @@ class CommunityListCreateView(APIView):
         page = paginator.paginate_queryset(queryset, request)
 
         user_memberships = None
+        user_memberships_map = None
         if request.user.is_authenticated and page:
-            user_memberships = set(
+            memberships = list(
                 CommunityMember.objects.filter(
                     user=request.user,
                     community_id__in=[c.id for c in page],
-                    status=MembershipStatus.ACTIVE
-                ).values_list('community_id', flat=True)
+                ).only('community_id', 'role', 'status')
             )
+            user_memberships_map = {m.community_id: m for m in memberships}
+            user_memberships = {
+                m.community_id for m in memberships if m.status == MembershipStatus.ACTIVE
+            }
 
         serializer = CommunityListSerializer(
             page,
             many=True,
-            context={'request': request, 'user_memberships': user_memberships}
+            context={
+                'request': request,
+                'user_memberships': user_memberships,
+                'user_memberships_map': user_memberships_map,
+            }
         )
         return paginator.get_paginated_response(serializer.data)
 
@@ -91,7 +99,7 @@ class CommunityListCreateView(APIView):
         responses={201: CommunityDetailSerializer}
     )
     def post(self, request):
-        serializer = CommunityCreateUpdateSerializer(data=request.data)
+        serializer = CommunityCreateUpdateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
         rules_data = serializer.validated_data.pop('rules', None)
@@ -146,7 +154,12 @@ class CommunityDetailView(APIView):
         except Community.DoesNotExist:
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
-        serializer = CommunityCreateUpdateSerializer(data=request.data, partial=True)
+        serializer = CommunityCreateUpdateSerializer(
+            community,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
 
         updated = CommunityService.update_community(community, request.user, serializer.validated_data)
@@ -186,6 +199,28 @@ class MyCommunitiesListView(APIView):
         queryset = CommunitySelector.get_user_communities(request.user)
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = CommunityListSerializer(page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
 
+        user_memberships = set()
+        user_memberships_map = {}
+        if page:
+            memberships = list(
+                CommunityMember.objects.filter(
+                    user=request.user,
+                    community_id__in=[c.id for c in page],
+                ).only('community_id', 'role', 'status')
+            )
+            user_memberships_map = {m.community_id: m for m in memberships}
+            user_memberships = {
+                m.community_id for m in memberships if m.status == MembershipStatus.ACTIVE
+            }
+
+        serializer = CommunityListSerializer(
+            page,
+            many=True,
+            context={
+                'request': request,
+                'user_memberships': user_memberships,
+                'user_memberships_map': user_memberships_map,
+            }
+        )
+        return paginator.get_paginated_response(serializer.data)

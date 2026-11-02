@@ -8,6 +8,8 @@ from django.utils import timezone
 from apps.accounts.models.user import User
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
 from apps.events.models.event import Event, EventStatus
+from apps.notifications.models.notification import NotificationType
+from apps.notifications.services.notification_service import NotificationService
 from common.services.email_service import EmailService
 
 logger = logging.getLogger("kodinga.events")
@@ -55,13 +57,15 @@ def send_event_confirmation_email_task(self, user_id: str, event_id: str) -> boo
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=120)
-def send_event_reminders_task(self) -> int:
+def send_event_reminders_task(self, minutes_before: int = 30) -> int:
     """
-    Periodic Celery task querying upcoming events starting within 1 hour
-    and dispatching reminder emails to all attendees with reminder_sent=False.
+    Periodic Celery task querying upcoming scheduled events starting within
+    `minutes_before` minutes (default: 30 minutes) and dispatching both
+    in-app notifications and reminder emails to registered (ATTENDING) attendees
+    with reminder_sent=False. Excludes cancelled/completed events.
     """
     now = timezone.now()
-    reminder_window_end = now + timedelta(hours=1)
+    reminder_window_end = now + timedelta(minutes=minutes_before)
 
     upcoming_events = Event.objects.filter(
         status=EventStatus.SCHEDULED,
@@ -79,9 +83,8 @@ def send_event_reminders_task(self) -> int:
             reminder_sent=False,
         ).select_related("user")
 
-        event_url = (
-            f"{frontend_url}/c/{event.community.slug}/events/{event.slug or event.id}"
-        )
+        action_path = f"/communities/{event.community.slug}/events/{event.slug or event.id}"
+        event_url = f"{frontend_url}/c/{event.community.slug}/events/{event.slug or event.id}"
 
         for attendee in attendees:
             user = attendee.user
@@ -98,14 +101,39 @@ def send_event_reminders_task(self) -> int:
             }
 
             try:
-                sent = EmailService.send_mail(
+                # 1. Dispatch in-app notification (even if user is also the host)
+                notif = NotificationService.create_notification(
+                    recipient=user,
+                    actor=None,
+                    title=f"Rappel : {event.title} commence dans 30 minutes",
+                    body=(
+                        f"L'événement « {event.title} » de la communauté "
+                        f"{event.community.name} débute à {event.start_time.strftime('%H:%M')} ({event.timezone})."
+                    ),
+                    notification_type=NotificationType.EVENT_REMINDER,
+                    action_url=action_path,
+                    target_type="event",
+                    target_id=str(event.id),
+                    metadata={
+                        "event_id": str(event.id),
+                        "event_slug": event.slug,
+                        "community_id": str(event.community_id),
+                        "community_slug": event.community.slug,
+                        "start_time": event.start_time.isoformat(),
+                        "timezone": event.timezone,
+                    },
+                )
+
+                # 2. Dispatch reminder email
+                email_sent = EmailService.send_mail(
                     to_email=user.email,
                     subject=f"Rappel : {event.title} commence bientôt !",
                     template_name="event_reminder",
                     context=context,
                     fail_silently=True,
                 )
-                if sent:
+
+                if notif is not None or email_sent:
                     attendee.reminder_sent = True
                     attendee.save(update_fields=["reminder_sent", "updated_at"])
                     total_sent += 1
@@ -143,4 +171,3 @@ def transcribe_event_replay_task(
     return EventTranscriptionService.process_transcription(
         event=event, language=language, force=force
     )
-

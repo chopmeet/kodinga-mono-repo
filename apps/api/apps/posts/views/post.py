@@ -10,6 +10,7 @@ from apps.posts.serializers.poll import PollSerializer, VotePollRequestSerialize
 from apps.posts.serializers.post import (
     PostCreateUpdateSerializer,
     PostDetailSerializer,
+    PostListSerializer,
 )
 from apps.posts.serializers.reaction import ToggleReactionRequestSerializer
 from apps.posts.services.post_service import PostService
@@ -208,3 +209,69 @@ class VotePollView(APIView):
             data=PollSerializer(updated_poll, context={'request': request}).data,
             message="Votre vote a été enregistré avec succès !"
         )
+
+
+class ToggleBookmarkView(APIView):
+    """
+    Enregistrer (sauvegarder) ou retirer des favoris une publication.
+    POST /api/v1/posts/<post_id>/bookmark/
+    DELETE /api/v1/posts/<post_id>/bookmark/
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Feed & Posts'],
+        summary="Sauvegarder ou retirer des favoris un post",
+        responses={200: dict}
+    )
+    def post(self, request, post_id):
+        try:
+            post = PostSelector.get_post_by_id(post_id, user=request.user)
+        except Post.DoesNotExist:
+            return error_response("Publication introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        check_community_read_permission(request.user, post.community)
+
+        is_bookmarked, total = PostService.toggle_bookmark(request.user, post)
+        return success_response(
+            data={
+                "post_id": str(post.id),
+                "is_bookmarked": is_bookmarked,
+                "bookmarks_count": total,
+            },
+            message="Publication enregistrée." if is_bookmarked else "Publication retirée des favoris."
+        )
+
+    def delete(self, request, post_id):
+        try:
+            post = PostSelector.get_post_by_id(post_id, user=request.user)
+        except Post.DoesNotExist:
+            return error_response("Publication introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        from apps.posts.models.bookmark import PostBookmark
+        PostBookmark.objects.filter(user=request.user, post=post).delete()
+        total = PostBookmark.objects.filter(post=post).count()
+        return success_response(
+            data={
+                "post_id": str(post.id),
+                "is_bookmarked": False,
+                "bookmarks_count": total,
+            },
+            message="Publication retirée des favoris."
+        )
+
+
+class BookmarkedPostsView(APIView):
+    """
+    Lister l'ensemble des publications enregistrées par l'utilisateur connecté.
+    GET /api/v1/posts/bookmarks/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from common.utils.pagination import StandardResultsSetPagination
+        posts = PostSelector.get_bookmarked_posts(user=request.user)
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(posts, request)
+        serializer = PostListSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)

@@ -9,17 +9,24 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course
-from apps.classroom.models.lesson import Lesson, LessonType
+from apps.classroom.models.lesson import (
+    Lesson,
+    LessonType,
+    VideoProvider,
+    parse_and_normalize_video_url,
+)
 from apps.classroom.models.module import CourseModule
 from apps.communities.models.community import Community
-from apps.media.models.video_asset import VideoAsset
+from apps.media.models.video_asset import VideoAsset, VideoStatus
 from apps.media.services.mux_service import MuxVideoService
 from apps.media.services.uploadthing_service import UploadThingService
+from apps.notifications.services.notification_service import NotificationService
 
 
 class ClassroomService:
     """
-    Business service managing pedagogical courses, modules, lessons and video attachments.
+    Business service managing pedagogical courses, modules, lessons, code blocks,
+    quizzes, and video attachments.
     """
 
     @classmethod
@@ -33,6 +40,226 @@ class ClassroomService:
 
         from apps.memberships.permissions import check_community_permission
         check_community_permission(user, community, 'can_manage_courses', "gérer les cours dans cette communauté")
+
+    @classmethod
+    def _notify_course_published(cls, course: Course, actor_user: User) -> None:
+        if course.is_published and course.community:
+            action_url = f"/communities/{course.community.slug}/classroom/{course.slug}"
+            NotificationService.notify_community_content_published(
+                community=course.community,
+                actor=actor_user,
+                content_type="course",
+                content_id=str(course.id),
+                title=course.title,
+                action_url=action_url,
+            )
+
+    # ---------------- Validation Helpers (BE-10 & BE-11) ----------------
+
+    @classmethod
+    def normalize_code_blocks(
+        cls,
+        code_blocks: Any,
+        code_snippet: str = "",
+        code_language: str = "",
+    ) -> tuple[list[dict[str, Any]], str, str]:
+        """
+        Normalizes `code_blocks`, `code_snippet`, and `code_language` while strictly
+        preserving indentation, newlines, and special characters (`BE-11`).
+        """
+        normalized_blocks: list[dict[str, Any]] = []
+        if isinstance(code_blocks, list):
+            for idx, raw_block in enumerate(code_blocks):
+                if not isinstance(raw_block, dict):
+                    continue
+                code_text = raw_block.get("code")
+                if code_text is None:
+                    code_text = raw_block.get("content", "")
+                code_str = str(code_text)
+                lang = str(raw_block.get("language") or code_language or "plaintext").strip().lower()
+                title = str(raw_block.get("title") or raw_block.get("filename") or "").strip()
+                block_id = str(raw_block.get("id") or f"code_{idx + 1}")
+                normalized_blocks.append(
+                    {
+                        "id": block_id,
+                        "language": lang or "plaintext",
+                        "title": title,
+                        "code": code_str,
+                    }
+                )
+
+        snippet_str = str(code_snippet) if code_snippet is not None else ""
+        lang_str = str(code_language or "").strip().lower()
+
+        if snippet_str and not normalized_blocks:
+            normalized_blocks.append(
+                {
+                    "id": "code_1",
+                    "language": lang_str or "plaintext",
+                    "title": "",
+                    "code": snippet_str,
+                }
+            )
+        elif normalized_blocks and not snippet_str:
+            snippet_str = normalized_blocks[0]["code"]
+            if not lang_str:
+                lang_str = normalized_blocks[0]["language"]
+
+        return normalized_blocks, snippet_str, lang_str
+
+    @classmethod
+    def validate_and_normalize_quiz_data(cls, raw_quiz_data: Any) -> dict[str, Any]:
+        """
+        Validates and normalizes `quiz_data` (`BE-10`), supporting both single-choice
+        and multiple-choice questions and multiple frontend payload conventions.
+        """
+        if not raw_quiz_data:
+            return {}
+
+        if isinstance(raw_quiz_data, list):
+            questions_input = raw_quiz_data
+            passing_score = 50.0
+            title = ""
+            description = ""
+        elif isinstance(raw_quiz_data, dict):
+            questions_input = raw_quiz_data.get("questions", [])
+            passing_score = float(raw_quiz_data.get("passing_score", 50.0))
+            title = str(raw_quiz_data.get("title", "")).strip()
+            description = str(raw_quiz_data.get("description", "")).strip()
+        else:
+            raise ValidationError({"quiz_data": "Format de quiz invalide."})
+
+        if not isinstance(questions_input, list):
+            raise ValidationError({"quiz_data": "Le champ 'questions' doit être une liste."})
+
+        normalized_questions: list[dict[str, Any]] = []
+        for q_idx, raw_q in enumerate(questions_input):
+            if not isinstance(raw_q, dict):
+                raise ValidationError(
+                    {"quiz_data": f"La question #{q_idx + 1} doit être un objet JSON."}
+                )
+
+            q_id = str(raw_q.get("id") or f"q_{q_idx + 1}")
+            q_text = str(
+                raw_q.get("question")
+                or raw_q.get("prompt")
+                or raw_q.get("text")
+                or raw_q.get("title")
+                or ""
+            ).strip()
+            if not q_text:
+                raise ValidationError(
+                    {"quiz_data": f"Le libellé de la question #{q_idx + 1} est requis."}
+                )
+
+            raw_options = raw_q.get("options") if "options" in raw_q else raw_q.get("choices", [])
+            if not isinstance(raw_options, list) or len(raw_options) < 2:
+                raise ValidationError(
+                    {
+                        "quiz_data": (
+                            f"La question « {q_text} » doit comporter au moins 2 choix de réponse."
+                        )
+                    }
+                )
+
+            # Determine explicit correct answers if specified at question level
+            explicit_correct = raw_q.get("correct_options")
+            if explicit_correct is None:
+                explicit_correct = raw_q.get("correct_answers")
+            if explicit_correct is None and "correct_option" in raw_q:
+                explicit_correct = [raw_q["correct_option"]]
+            if explicit_correct is None and "correct_answer" in raw_q:
+                val = raw_q["correct_answer"]
+                explicit_correct = val if isinstance(val, list) else [val]
+
+            explicit_correct_set = (
+                {str(x).strip() for x in explicit_correct if x is not None}
+                if isinstance(explicit_correct, list)
+                else set()
+            )
+
+            normalized_options: list[dict[str, Any]] = []
+            correct_option_ids: list[str] = []
+
+            for opt_idx, raw_opt in enumerate(raw_options):
+                opt_id = f"opt_{opt_idx}"
+                if isinstance(raw_opt, dict):
+                    opt_id = str(raw_opt.get("id") or opt_id)
+                    opt_text = str(
+                        raw_opt.get("text")
+                        or raw_opt.get("label")
+                        or raw_opt.get("value")
+                        or ""
+                    ).strip()
+                    is_correct = bool(raw_opt.get("is_correct", False))
+                else:
+                    opt_text = str(raw_opt).strip()
+                    is_correct = False
+
+                if not opt_text:
+                    raise ValidationError(
+                        {
+                            "quiz_data": (
+                                f"Un choix de réponse de la question « {q_text} » est vide."
+                            )
+                        }
+                    )
+
+                if (
+                    str(opt_idx) in explicit_correct_set
+                    or opt_id in explicit_correct_set
+                    or opt_text in explicit_correct_set
+                ):
+                    is_correct = True
+
+                normalized_options.append(
+                    {
+                        "id": opt_id,
+                        "text": opt_text,
+                        "is_correct": is_correct,
+                    }
+                )
+                if is_correct:
+                    correct_option_ids.append(opt_id)
+
+            if not correct_option_ids:
+                raise ValidationError(
+                    {
+                        "quiz_data": (
+                            f"La question « {q_text} » doit avoir au moins une bonne réponse sélectionnée."
+                        )
+                    }
+                )
+
+            raw_type = str(
+                raw_q.get("question_type") or raw_q.get("type") or ""
+            ).strip().lower()
+            if raw_type in ("multiple_choice", "multiple", "checkbox") or bool(raw_q.get("is_multiple")) or len(correct_option_ids) > 1:
+                q_type = "multiple_choice"
+            else:
+                q_type = "single_choice"
+
+            points = float(raw_q.get("points", 1.0))
+            explanation = str(raw_q.get("explanation") or "").strip()
+
+            normalized_questions.append(
+                {
+                    "id": q_id,
+                    "question": q_text,
+                    "question_type": q_type,
+                    "points": max(1.0, points),
+                    "explanation": explanation,
+                    "options": normalized_options,
+                    "correct_option_ids": correct_option_ids,
+                }
+            )
+
+        return {
+            "title": title,
+            "description": description,
+            "passing_score": max(0.0, min(100.0, passing_score)),
+            "questions": normalized_questions,
+        }
 
     # ---------------- Course Operations ----------------
 
@@ -61,6 +288,7 @@ class ClassroomService:
                 is_sequential=data.get('is_sequential', True),
                 order=data.get('order', 0),
             )
+            cls._notify_course_published(course, actor_user)
             return course
 
     @classmethod
@@ -97,6 +325,7 @@ class ClassroomService:
             fields.append('order')
 
         course.save(update_fields=fields)
+        cls._notify_course_published(course, actor_user)
         return course
 
     @classmethod
@@ -185,12 +414,45 @@ class ClassroomService:
             except VideoAsset.DoesNotExist as err:
                 raise NotFound("La vidéo spécifiée est introuvable.") from err
 
+        raw_video_url = (data.get('video_url') or '').strip()
+        normalized_video_url = ''
+        video_provider = (data.get('video_provider') or '').strip()
+        if raw_video_url:
+            try:
+                normalized_video_url, detected_provider, _ = parse_and_normalize_video_url(raw_video_url)
+                video_provider = video_provider or detected_provider
+            except ValueError as err:
+                raise ValidationError({"video_url": str(err)}) from err
+        elif video_asset:
+            video_provider = video_asset.provider or VideoProvider.MUX
+
+        code_blocks, code_snippet, code_language = cls.normalize_code_blocks(
+            code_blocks=data.get('code_blocks', []),
+            code_snippet=data.get('code_snippet', ''),
+            code_language=data.get('code_language', ''),
+        )
+
+        raw_quiz_data = data.get('quiz_data')
+        quiz_data = cls.validate_and_normalize_quiz_data(raw_quiz_data) if raw_quiz_data else {}
+        lesson_type = data.get('lesson_type')
+        if not lesson_type:
+            if quiz_data and quiz_data.get('questions'):
+                lesson_type = LessonType.QUIZ
+            elif video_asset or normalized_video_url:
+                lesson_type = LessonType.VIDEO
+            elif code_blocks or code_snippet:
+                lesson_type = LessonType.CODE_EXERCISE
+            else:
+                lesson_type = LessonType.TEXT
+
+        if lesson_type == LessonType.QUIZ and raw_quiz_data is not None and not quiz_data.get('questions'):
+            raise ValidationError({"quiz_data": "Un quiz doit contenir au moins une question valide."})
+
         duration = data.get('duration_seconds', 0)
         content = data.get('content', '')
         if not duration and video_asset and video_asset.duration:
             duration = int(video_asset.duration)
         elif not duration and content:
-            # Estimate reading time at ~200 wpm (3.3 words per second)
             word_count = len(content.split())
             duration = max(60, round(word_count / 3.3))
 
@@ -203,8 +465,14 @@ class ClassroomService:
                 content_format=data.get('content_format', 'markdown'),
                 cover_image_url=data.get('cover_image_url', ''),
                 images=data.get('images', []),
-                lesson_type=data.get('lesson_type', 'text' if not video_asset else 'video'),
+                lesson_type=lesson_type,
                 video_asset=video_asset,
+                video_url=normalized_video_url,
+                video_provider=video_provider,
+                code_language=code_language,
+                code_snippet=code_snippet,
+                code_blocks=code_blocks,
+                quiz_data=quiz_data,
                 duration_seconds=duration,
                 order=data.get('order', module.lessons.count()),
                 is_free_preview=data.get('is_free_preview', False),
@@ -258,6 +526,36 @@ class ClassroomService:
                 lesson.video_asset = None
             fields.append('video_asset')
 
+        if 'video_url' in data:
+            raw_video_url = (data.get('video_url') or '').strip()
+            if raw_video_url:
+                try:
+                    normalized_url, detected_provider, _ = parse_and_normalize_video_url(raw_video_url)
+                except ValueError as err:
+                    raise ValidationError({"video_url": str(err)}) from err
+                lesson.video_url = normalized_url
+                lesson.video_provider = data.get('video_provider') or detected_provider
+            else:
+                lesson.video_url = ''
+                lesson.video_provider = ''
+            fields.extend(['video_url', 'video_provider'])
+
+        if any(k in data for k in ('code_blocks', 'code_snippet', 'code_language')):
+            code_blocks, code_snippet, code_language = cls.normalize_code_blocks(
+                code_blocks=data.get('code_blocks', lesson.code_blocks),
+                code_snippet=data.get('code_snippet', lesson.code_snippet),
+                code_language=data.get('code_language', lesson.code_language),
+            )
+            lesson.code_blocks = code_blocks
+            lesson.code_snippet = code_snippet
+            lesson.code_language = code_language
+            fields.extend(['code_blocks', 'code_snippet', 'code_language'])
+
+        if 'quiz_data' in data:
+            raw_quiz = data['quiz_data']
+            lesson.quiz_data = cls.validate_and_normalize_quiz_data(raw_quiz) if raw_quiz else {}
+            fields.append('quiz_data')
+
         if 'duration_seconds' in data:
             diff = data['duration_seconds'] - lesson.duration_seconds
             lesson.duration_seconds = data['duration_seconds']
@@ -280,7 +578,7 @@ class ClassroomService:
             lesson.attachments = data['attachments']
             fields.append('attachments')
 
-        lesson.save(update_fields=fields)
+        lesson.save(update_fields=list(dict.fromkeys(fields)))
         return lesson
 
     @classmethod
@@ -315,38 +613,89 @@ class ClassroomService:
         lesson: Lesson,
         video_file=None,
         video_url: str = "",
+        video_asset_id: str = "",
     ) -> Lesson:
         """
-        Uploads video to UploadThing (if file provided) and ingests into Mux for HLS streaming.
-        Stores the Mux VideoAsset and sets lesson_type to VIDEO.
+        Attaches a video to a lesson (`BE-08` & `BE-09`):
+        - Supports direct `video_asset_id` (from presigned Mux or UploadThing upload).
+        - Supports external platform URLs (`YouTube`, `Vimeo`, `Dailymotion`) without Mux transcoding.
+        - Supports direct video file URLs (`.mp4`, `.webm`, `.m3u8`).
+        - Supports streaming large `video_file` uploads (up to 500 MB) to UploadThing / local storage + Mux.
         """
         cls.check_manager_permission(actor_user, lesson.module.course.community)
 
+        if video_asset_id:
+            try:
+                video_asset = VideoAsset.objects.get(id=video_asset_id)
+            except (VideoAsset.DoesNotExist, ValueError) as err:
+                raise NotFound("Asset vidéo introuvable.") from err
+            lesson.video_asset = video_asset
+            lesson.video_provider = video_asset.provider or VideoProvider.MUX
+            if lesson.lesson_type == LessonType.TEXT:
+                lesson.lesson_type = LessonType.VIDEO
+            lesson.save(update_fields=['video_asset', 'video_provider', 'lesson_type', 'updated_at'])
+            return lesson
+
         target_url = video_url.strip() if video_url else ""
+        if target_url and not video_file:
+            try:
+                normalized_url, provider, _ = parse_and_normalize_video_url(target_url)
+            except ValueError as err:
+                raise ValidationError({"video_url": str(err)}) from err
+
+            # External video platforms (YouTube, Vimeo, Dailymotion) are stored directly
+            if provider in (VideoProvider.YOUTUBE, VideoProvider.VIMEO, VideoProvider.DAILYMOTION):
+                lesson.video_url = normalized_url
+                lesson.video_provider = provider
+                lesson.video_asset = None
+                if lesson.lesson_type == LessonType.TEXT:
+                    lesson.lesson_type = LessonType.VIDEO
+                lesson.save(
+                    update_fields=['video_url', 'video_provider', 'video_asset', 'lesson_type', 'updated_at']
+                )
+                return lesson
+            target_url = normalized_url
+
         if video_file:
+            file_name = getattr(video_file, 'name', 'lesson_video.mp4') or 'lesson_video.mp4'
+            mime_type = getattr(video_file, 'content_type', 'video/mp4') or 'video/mp4'
             res_ut = UploadThingService.upload_file_direct(
                 user=actor_user,
-                file_name=getattr(video_file, 'name', 'lesson_video.mp4'),
-                file_bytes=video_file.read() if hasattr(video_file, 'read') else video_file,
-                mime_type=getattr(video_file, 'content_type', 'video/mp4') or 'video/mp4',
-                purpose='general',
+                file_name=file_name,
+                mime_type=mime_type,
+                purpose='lesson_video',
+                file_obj=video_file,
             )
             target_url = res_ut['file_url']
 
         if not target_url:
             raise ValidationError("Veuillez fournir un fichier vidéo ou une URL vidéo.")
 
-        # Ingest into Mux
+        # Ingest direct video file URL into Mux (or local/UploadThing playback fallback if Mux keys are not set)
         video_asset = MuxVideoService.create_asset_from_url(
             user=actor_user,
             input_url=target_url,
             title=f"{lesson.title} (Vidéo)",
             description=f"Cours : {lesson.module.course.title} | Leçon : {lesson.title}",
         )
+        # If Mux credentials are not configured, mark provider as uploadthing/direct so hls_url returns target_url directly
+        if not MuxVideoService._get_auth():
+            video_asset.provider = 'uploadthing'
+            video_asset.status = VideoStatus.READY
+            meta = dict(video_asset.metadata or {})
+            meta['file_url'] = target_url
+            meta['source_url'] = target_url
+            video_asset.metadata = meta
+            video_asset.save(update_fields=['provider', 'status', 'metadata', 'updated_at'])
 
         lesson.video_asset = video_asset
-        lesson.lesson_type = LessonType.VIDEO
-        lesson.save(update_fields=['video_asset', 'lesson_type', 'updated_at'])
+        lesson.video_url = target_url
+        lesson.video_provider = video_asset.provider or VideoProvider.MUX
+        if lesson.lesson_type == LessonType.TEXT:
+            lesson.lesson_type = LessonType.VIDEO
+        lesson.save(
+            update_fields=['video_asset', 'video_url', 'video_provider', 'lesson_type', 'updated_at']
+        )
         return lesson
 
     @classmethod
@@ -364,9 +713,9 @@ class ClassroomService:
         res_ut = UploadThingService.upload_file_direct(
             user=actor_user,
             file_name=getattr(attachment_file, 'name', 'attachment'),
-            file_bytes=attachment_file.read() if hasattr(attachment_file, 'read') else attachment_file,
             mime_type=getattr(attachment_file, 'content_type', 'application/octet-stream') or 'application/octet-stream',
             purpose='lesson_attachment',
+            file_obj=attachment_file,
         )
 
         item = {

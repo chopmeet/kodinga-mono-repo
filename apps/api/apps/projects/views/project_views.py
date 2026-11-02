@@ -399,3 +399,73 @@ class ProjectCommentListView(APIView):
             message="Commentaire publié avec succès.",
             status_code=status.HTTP_201_CREATED,
         )
+
+
+class ProjectFeatureToggleView(APIView):
+    """
+    POST /api/v1/projects/<slug>/feature/
+    POST /api/v1/communities/<slug>/projects/<project_id>/feature/
+    Mettre en avant ou retirer de l'avant-scène un projet showcase (gestionnaires uniquement).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["Hackathons"],
+        summary="Mettre en avant ou retirer un projet de la une",
+        responses={200: ProjectSerializer},
+    )
+    def post(self, request, slug=None, project_id=None, community_slug=None):
+        from apps.memberships.models.member import CommunityMember, MembershipStatus
+        from common.permissions.base import is_superadmin_user
+
+        identifier = project_id or slug
+        project = None
+        if identifier:
+            import uuid
+            try:
+                uuid.UUID(str(identifier))
+                project = Project.objects.filter(id=identifier).first()
+            except Exception:
+                project = Project.objects.filter(slug=identifier).first()
+
+        if not project:
+            return error_response(
+                "Projet introuvable.",
+                code="resource_not_found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check manager authorization
+        is_authorized = False
+        if is_superadmin_user(request.user):
+            is_authorized = True
+        elif project.community:
+            if project.community.owner_id == request.user.id:
+                is_authorized = True
+            else:
+                member = CommunityMember.objects.filter(
+                    community=project.community,
+                    user=request.user,
+                    status=MembershipStatus.ACTIVE
+                ).first()
+                if member and member.is_admin:
+                    is_authorized = True
+
+        if not is_authorized:
+            return error_response(
+                "Droits administrateur ou propriétaire de la communauté requis pour mettre ce projet en avant.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
+        if isinstance(request.data, dict) and "is_featured" in request.data:
+            project.is_featured = bool(request.data["is_featured"])
+        else:
+            project.is_featured = not project.is_featured
+
+        project.save(update_fields=["is_featured", "updated_at"])
+
+        msg = "Projet mis en avant avec succès !" if project.is_featured else "Projet retiré de la une."
+        return success_response(
+            data=ProjectSerializer(project).data,
+            message=msg,
+        )

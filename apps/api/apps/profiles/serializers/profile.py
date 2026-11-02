@@ -12,7 +12,8 @@ from common.serializers.base import BaseModelSerializer
 
 class DeveloperProfileDetailSerializer(BaseModelSerializer):
     """
-    Complete detailed developer profile representation with nested relations.
+    Complete detailed developer profile representation with nested relations,
+    including public communities and member contributions.
     """
     user = UserSerializer(read_only=True)
     display_name = serializers.CharField(read_only=True)
@@ -21,6 +22,8 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
     experiences = DeveloperExperienceSerializer(many=True, read_only=True)
     educations = DeveloperEducationSerializer(many=True, read_only=True)
     portfolio_projects = DeveloperPortfolioProjectSerializer(many=True, read_only=True)
+    communities = serializers.SerializerMethodField()
+    contributions = serializers.SerializerMethodField()
 
     class Meta:
         model = DeveloperProfile
@@ -59,6 +62,8 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
             'experiences',
             'educations',
             'portfolio_projects',
+            'communities',
+            'contributions',
             'created_at',
             'updated_at',
         ]
@@ -69,9 +74,83 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
             'views_count',
             'reputation_points',
             'completion_percentage',
+            'communities',
+            'contributions',
             'created_at',
             'updated_at',
         ]
+
+    def get_communities(self, obj) -> list[dict]:
+        from apps.communities.models.community import CommunityPrivacy
+        from apps.memberships.models.member import CommunityMember, MembershipStatus
+
+        memberships = CommunityMember.objects.filter(
+            user=obj.user,
+            status=MembershipStatus.ACTIVE,
+            community__privacy_type=CommunityPrivacy.PUBLIC
+        ).select_related('community')
+        return [
+            {
+                'id': str(m.community.id),
+                'name': m.community.name,
+                'slug': m.community.slug,
+                'avatar_url': m.community.avatar_url,
+                'role': m.role,
+                'members_count': m.community.members_count,
+            }
+            for m in memberships
+        ]
+
+    def get_contributions(self, obj) -> dict:
+        from apps.posts.models.post import Post
+        from apps.projects.models.project import Project, ProjectStatus
+
+        posts_count = Post.objects.filter(author=obj.user).count()
+        projects_count = Project.objects.filter(owner=obj.user, status=ProjectStatus.PUBLISHED).count()
+
+        badges_count = 0
+        badges_list = []
+        try:
+            from apps.gamification.models.badge import UserBadge
+            ub_qs = UserBadge.objects.filter(user=obj.user).select_related('badge')
+            badges_count = ub_qs.count()
+            badges_list = [
+                {
+                    'id': str(ub.badge.id),
+                    'name': ub.badge.name,
+                    'icon_url': getattr(ub.badge, 'icon_url', ''),
+                    'earned_at': ub.earned_at,
+                }
+                for ub in ub_qs[:5]
+            ]
+        except Exception:
+            pass
+
+        recent_posts = list(
+            Post.objects.filter(author=obj.user, community__privacy_type='public')
+            .order_by('-created_at')[:3]
+            .values('id', 'title', 'post_type', 'created_at', 'reactions_count', 'comments_count')
+        )
+        for p in recent_posts:
+            p['id'] = str(p['id'])
+
+        recent_projects = list(
+            Project.objects.filter(owner=obj.user, status=ProjectStatus.PUBLISHED)
+            .order_by('-created_at')[:3]
+            .values('id', 'title', 'slug', 'cover_image_url', 'upvotes_count', 'is_featured')
+        )
+        for p in recent_projects:
+            p['id'] = str(p['id'])
+
+        return {
+            'posts_count': posts_count,
+            'projects_count': projects_count,
+            'badges_count': badges_count,
+            'reputation_points': obj.reputation_points,
+            'recent_posts': recent_posts,
+            'recent_projects': recent_projects,
+            'badges': badges_list,
+        }
 
 
 class DeveloperProfileUpdateSerializer(serializers.ModelSerializer):
@@ -157,4 +236,3 @@ class PublicProfileSummarySerializer(BaseModelSerializer):
             }
             for s in highlighted
         ]
-

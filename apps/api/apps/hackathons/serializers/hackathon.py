@@ -33,7 +33,8 @@ class HackathonListSerializer(serializers.ModelSerializer):
     organizer = HackathonOrganizerSerializer(read_only=True)
     technologies = HackathonTechnologySerializer(many=True, read_only=True)
     prizes_count = serializers.IntegerField(source="prizes.count", read_only=True)
-    participants_count = serializers.IntegerField(source="applications.count", read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
+    applications_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Hackathon
@@ -64,6 +65,7 @@ class HackathonListSerializer(serializers.ModelSerializer):
             "results_published",
             "prizes_count",
             "participants_count",
+            "applications_count",
             "created_at",
         ]
 
@@ -75,6 +77,8 @@ class HackathonDetailSerializer(serializers.ModelSerializer):
     prizes = HackathonPrizeSerializer(many=True, read_only=True)
     criteria = HackathonCriterionSerializer(many=True, read_only=True)
     judges = HackathonJudgeSerializer(source="judge_assignments", many=True, read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
+    applications_count = serializers.IntegerField(read_only=True)
     user_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -127,6 +131,8 @@ class HackathonDetailSerializer(serializers.ModelSerializer):
             "is_submission_open",
             "results_published",
             "results_published_at",
+            "participants_count",
+            "applications_count",
             "prizes",
             "criteria",
             "judges",
@@ -149,7 +155,7 @@ class HackathonDetailSerializer(serializers.ModelSerializer):
         is_mgr = HackathonSelector.is_community_manager(request.user, obj.community)
 
         return {
-            "has_applied": bool(app),
+            "has_applied": bool(app and app.status != "withdrawn"),
             "application_status": app.status if app else None,
             "team_id": str(team.id) if team else None,
             "team_name": team.name if team else None,

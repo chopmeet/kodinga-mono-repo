@@ -18,6 +18,7 @@ class PostListSerializer(BaseModelSerializer):
     media_attachments = MediaAssetSerializer(many=True, read_only=True)
     poll = PollSerializer(read_only=True)
     user_reactions = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -40,6 +41,7 @@ class PostListSerializer(BaseModelSerializer):
             'reactions_count',
             'comments_count',
             'user_reactions',
+            'is_bookmarked',
             'created_at',
             'updated_at',
         ]
@@ -50,6 +52,15 @@ class PostListSerializer(BaseModelSerializer):
         if not request or not request.user.is_authenticated:
             return []
         return list(PostReaction.objects.filter(post=obj, user=request.user).values_list('reaction_type', flat=True))
+
+    def get_is_bookmarked(self, obj) -> bool:
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        bookmarked_ids = self.context.get('bookmarked_post_ids')
+        if bookmarked_ids is not None:
+            return obj.id in bookmarked_ids
+        return obj.bookmarks.filter(user=request.user).exists()
 
 
 class PostDetailSerializer(PostListSerializer):

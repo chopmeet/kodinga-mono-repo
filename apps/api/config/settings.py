@@ -182,6 +182,12 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Large file & video upload thresholds (BE-08 & BE-15)
+DATA_UPLOAD_MAX_MEMORY_SIZE = env.int('DATA_UPLOAD_MAX_MEMORY_SIZE', default=524288000)  # 500 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = env.int('FILE_UPLOAD_MAX_MEMORY_SIZE', default=10485760)   # 10 MB before streaming to temp file
+BANNER_MAX_FILE_SIZE_BYTES = env.int('BANNER_MAX_FILE_SIZE_BYTES', default=5242880)     # 5 MB
+VIDEO_MAX_FILE_SIZE_BYTES = env.int('VIDEO_MAX_FILE_SIZE_BYTES', default=524288000)     # 500 MB
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework Configuration
@@ -371,8 +377,11 @@ else:
 # External OAuth Credentials
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
+GOOGLE_REDIRECT_URI = env('GOOGLE_REDIRECT_URI', default='')
 GITHUB_CLIENT_ID = env('GITHUB_CLIENT_ID', default='')
 GITHUB_CLIENT_SECRET = env('GITHUB_CLIENT_SECRET', default='')
+GITHUB_REDIRECT_URI = env('GITHUB_REDIRECT_URI', default='')
+OAUTH_ALLOWED_REDIRECT_URIS = env.list('OAUTH_ALLOWED_REDIRECT_URIS', default=[])
 
 # UploadThing Credentials (v7+ single token, with legacy v6 fallback)
 UPLOADTHING_TOKEN = env('UPLOADTHING_TOKEN', default='')
@@ -424,5 +433,3 @@ AI_SUPPORTED_LANGUAGES = {
     'wo': 'Wolof',
     'bm': 'Bambara',
 }
-
-

@@ -95,7 +95,23 @@ class ConversationListSerializer(serializers.ModelSerializer):
 
 
 class StartDirectConversationSerializer(serializers.Serializer):
-    recipient_id = serializers.UUIDField(required=True)
+    recipient_id = serializers.UUIDField(required=False, allow_null=True)
+    user_id = serializers.UUIDField(required=False, allow_null=True)
+    username = serializers.CharField(required=False, allow_blank=True)
+    community_id = serializers.UUIDField(required=False, allow_null=True)
+    community_slug = serializers.CharField(required=False, allow_blank=True)
+    initial_message = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        recipient_id = attrs.get("recipient_id") or attrs.get("user_id")
+        username = (attrs.get("username") or "").strip()
+        if not recipient_id and not username:
+            raise serializers.ValidationError(
+                {"recipient_id": "Veuillez fournir 'recipient_id', 'user_id' ou 'username'."}
+            )
+        attrs["recipient_id"] = recipient_id
+        attrs["username"] = username
+        return attrs
 
 
 class CreateGroupConversationSerializer(serializers.Serializer):

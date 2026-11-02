@@ -11,7 +11,72 @@ from apps.accounts.serializers.user import (
 )
 from apps.accounts.services.consent import ConsentService
 from common.permissions import IsPlatformAdmin
+from common.permissions.base import is_superadmin_user
 from common.utils.responses import error_response, success_response
+
+
+def build_user_workspace_access(user: User) -> dict:
+    """
+    Builds the workspace/community access payload used by the 'Ouvrir mon espace' button.
+    """
+    from apps.communities.selectors.community_selector import CommunitySelector
+    from apps.memberships.models.member import (
+        CommunityMember,
+        CommunityRole,
+        MembershipStatus,
+    )
+
+    communities = list(CommunitySelector.get_user_communities(user))
+    memberships = {
+        m.community_id: m
+        for m in CommunityMember.objects.filter(
+            user=user,
+            community_id__in=[c.id for c in communities],
+        ).only('community_id', 'role', 'status')
+    }
+
+    spaces = []
+    owned_count = 0
+    primary_space = None
+
+    for comm in communities:
+        is_owner = comm.owner_id == user.id or is_superadmin_user(user)
+        m = memberships.get(comm.id)
+        role = CommunityRole.OWNER if is_owner else (m.role if m else CommunityRole.MEMBER)
+        m_status = MembershipStatus.ACTIVE if is_owner else (m.status if m else MembershipStatus.ACTIVE)
+        can_manage = role in (CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR)
+        if comm.owner_id == user.id:
+            owned_count += 1
+
+        space_info = {
+            "id": str(comm.id),
+            "name": comm.name,
+            "slug": comm.slug,
+            "avatar_url": comm.avatar_url,
+            "privacy_type": comm.privacy_type,
+            "pricing_type": comm.pricing_type,
+            "role": role,
+            "status": m_status,
+            "is_owner": bool(comm.owner_id == user.id),
+            "can_manage": bool(can_manage),
+            "url": f"/communities/{comm.slug}",
+        }
+        spaces.append(space_info)
+        if primary_space is None or (comm.owner_id == user.id and not primary_space.get("is_owner")):
+            primary_space = space_info
+
+    default_redirect_url = primary_space["url"] if primary_space else "/dashboard"
+
+    return {
+        "can_open_workspace": bool(user.is_active),
+        "is_pro": bool(user.is_pro),
+        "is_superadmin": bool(is_superadmin_user(user)),
+        "owned_communities_count": owned_count,
+        "joined_communities_count": len(spaces),
+        "primary_workspace": primary_space,
+        "default_redirect_url": default_redirect_url,
+        "workspaces": spaces,
+    }
 
 
 class UserProfileMeView(APIView):
@@ -21,15 +86,21 @@ class UserProfileMeView(APIView):
     @extend_schema(
         tags=['Authentication & Accounts'],
         summary='Retrieve logged-in user profile',
-        description='Fetches the complete user profile and verification status of the authenticated account.',
+        description='Fetches the complete user profile, verification status, and workspace access summary of the authenticated account.',
         responses={
             200: OpenApiResponse(response=UserSerializer, description='Profile data retrieved'),
             401: OpenApiResponse(description='Authentication required'),
         }
     )
     def get(self, request):
-        serializer = UserSerializer(request.user)
-        return success_response(data=serializer.data)
+        data = dict(UserSerializer(request.user).data)
+        profile = getattr(request.user, 'profile', None)
+        data['avatar_url'] = profile.avatar_url if profile else ''
+        data['banner_url'] = profile.banner_url if profile else ''
+        data['bio'] = profile.bio if profile else ''
+        data['headline'] = getattr(profile, 'headline', '') if profile else ''
+        data['workspace_access'] = build_user_workspace_access(request.user)
+        return success_response(data=data)
 
     @extend_schema(
         tags=['Authentication & Accounts'],
@@ -79,6 +150,33 @@ class UserProfileMeView(APIView):
         return success_response(
             data=UserSerializer(request.user).data,
             message="User profile updated successfully."
+        )
+
+
+class UserWorkspaceAccessView(APIView):
+    """
+    Dedicated endpoint for the 'Ouvrir mon espace' button.
+    Returns the authenticated user's workspace access status, primary community,
+    and full list of communities with roles and permissions.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Authentication & Accounts', 'Communities & Memberships'],
+        summary="Vérifier l'accès à mon espace ('Ouvrir mon espace')",
+        description="Renvoie les informations d'accès à l'espace personnel et aux communautés de l'utilisateur connecté.",
+        responses={200: dict}
+    )
+    def get(self, request):
+        if not request.user.is_active:
+            return error_response(
+                "Votre compte est désactivé.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+        access_data = build_user_workspace_access(request.user)
+        return success_response(
+            data=access_data,
+            message="Accès à l'espace utilisateur vérifié avec succès."
         )
 
 
@@ -210,4 +308,3 @@ class UserDetailAdminView(APIView):
 
     def put(self, request, user_id):
         return self.patch(request, user_id)
-

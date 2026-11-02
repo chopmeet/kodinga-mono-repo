@@ -14,6 +14,7 @@ from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
 )
+from realtime.broadcast import broadcast_event_registration_updated
 
 
 class EventService:
@@ -111,7 +112,7 @@ class EventService:
             location_address=data.get("location_address", ""),
             location_city=data.get("location_city", ""),
             location_country=data.get("location_country", ""),
-            location_url=data.get("location_url", ""),
+            location_url=data.get("location_url") or data.get("video_url", ""),
             live_room_name=live_room_name,
             max_attendees=data.get("max_attendees"),
             is_recorded=data.get("is_recorded", True),
@@ -159,6 +160,9 @@ class EventService:
             if field in data:
                 setattr(event, field, data[field])
 
+        if "video_url" in data and "location_url" not in data:
+            event.location_url = data["video_url"]
+
         # If converted to LiveKit format and no room name
         if event.format == EventFormat.LIVEKIT and not event.live_room_name:
             event.live_room_name = (
@@ -181,35 +185,47 @@ class EventService:
         if not user or not user.is_authenticated:
             raise PermissionDenied("Connexion requise pour s'inscrire à l'événement.")
 
-        # If the event is NOT public, user must be active member of community.
-        # If community is secret, user must also be active member.
-        # If the event IS public (even in a private community), any user can register!
+        if event.status == EventStatus.CANCELLED:
+            raise ValidationError("Impossible de s'inscrire à un événement annulé.")
+
         if not event.is_public or event.community.privacy_type == CommunityPrivacy.SECRET:
             cls.check_active_member(user, event.community)
 
         with transaction.atomic():
-            attendee, created = EventAttendee.objects.get_or_create(
-                event=event, user=user, defaults={"status": status}
-            )
+            locked_event = Event.objects.select_for_update().get(pk=event.pk)
+            existing = EventAttendee.objects.filter(
+                event=locked_event, user=user
+            ).first()
 
-            if not created and attendee.status != status:
-                if status == AttendeeStatus.ATTENDING and event.is_full:
+            if existing is None:
+                if status == AttendeeStatus.ATTENDING and locked_event.is_full:
                     raise ValidationError(
                         "Cet événement a atteint sa capacité maximale d'inscriptions."
                     )
-                attendee.status = status
-                attendee.save(update_fields=["status", "updated_at"])
-            elif created and status == AttendeeStatus.ATTENDING and event.is_full:
-                raise ValidationError(
-                    "Cet événement a atteint sa capacité maximale d'inscriptions."
+                attendee = EventAttendee.objects.create(
+                    event=locked_event, user=user, status=status
                 )
+            else:
+                attendee = existing
+                if attendee.status != status:
+                    if status == AttendeeStatus.ATTENDING and locked_event.is_full:
+                        raise ValidationError(
+                            "Cet événement a atteint sa capacité maximale d'inscriptions."
+                        )
+                    attendee.status = status
+                    attendee.save(update_fields=["status", "updated_at"])
 
-            # Update count
+            # Recompute accurate attendees_count
             count = EventAttendee.objects.filter(
-                event=event, status=AttendeeStatus.ATTENDING
+                event=locked_event, status=AttendeeStatus.ATTENDING
             ).count()
+            locked_event.attendees_count = count
+            locked_event.save(update_fields=["attendees_count"])
             event.attendees_count = count
-            event.save(update_fields=["attendees_count"])
+
+            broadcast_event_registration_updated(
+                locked_event, user_id=str(user.id), status=attendee.status
+            )
 
             if status == AttendeeStatus.ATTENDING:
 
@@ -236,12 +252,18 @@ class EventService:
             cls.check_active_member(user, event.community)
 
         with transaction.atomic():
-            EventAttendee.objects.filter(event=event, user=user).delete()
+            locked_event = Event.objects.select_for_update().get(pk=event.pk)
+            EventAttendee.objects.filter(event=locked_event, user=user).delete()
             count = EventAttendee.objects.filter(
-                event=event, status=AttendeeStatus.ATTENDING
+                event=locked_event, status=AttendeeStatus.ATTENDING
             ).count()
+            locked_event.attendees_count = count
+            locked_event.save(update_fields=["attendees_count"])
             event.attendees_count = count
-            event.save(update_fields=["attendees_count"])
+
+            broadcast_event_registration_updated(
+                locked_event, user_id=str(user.id), status="cancelled"
+            )
 
     @classmethod
     def update_event_status(
@@ -294,8 +316,9 @@ class EventService:
             raise ValidationError("Impossible de confirmer la présence sur un événement annulé.")
 
         with transaction.atomic():
+            locked_event = Event.objects.select_for_update().get(pk=event.pk)
             attendee, _ = EventAttendee.objects.get_or_create(
-                event=event,
+                event=locked_event,
                 user=user,
                 defaults={"status": AttendeeStatus.ATTENDING},
             )
@@ -309,17 +332,21 @@ class EventService:
             attendee.save(update_fields=update_fields)
 
             count = EventAttendee.objects.filter(
-                event=event, status=AttendeeStatus.ATTENDING
+                event=locked_event, status=AttendeeStatus.ATTENDING
             ).count()
-            if event.attendees_count != count:
+            if locked_event.attendees_count != count:
+                locked_event.attendees_count = count
+                locked_event.save(update_fields=["attendees_count"])
                 event.attendees_count = count
-                event.save(update_fields=["attendees_count"])
+                broadcast_event_registration_updated(
+                    locked_event, user_id=str(user.id), status=attendee.status
+                )
 
             from apps.gamification.services.gamification_service import (
                 GamificationService,
             )
 
-            GamificationService.award_event_attended(user=user, event=event)
+            GamificationService.award_event_attended(user=user, event=locked_event)
             return attendee
 
     def _return_event_unused(cls, event):  # pragma: no cover

@@ -10,7 +10,12 @@ from apps.communities.models.settings import CommunitySettings
 from apps.communities.serializers.category import CommunityCategorySerializer
 from apps.communities.serializers.rule import CommunityRuleSerializer
 from apps.communities.serializers.settings import CommunitySettingsSerializer
-from apps.memberships.models.member import CommunityMember, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
+from common.permissions.base import is_superadmin_user
 from common.serializers.base import BaseModelSerializer
 
 
@@ -21,6 +26,9 @@ class CommunityListSerializer(BaseModelSerializer):
     category = CommunityCategorySerializer(read_only=True)
     owner = UserSerializer(read_only=True)
     is_member = serializers.SerializerMethodField()
+    user_role = serializers.SerializerMethodField()
+    user_membership_status = serializers.SerializerMethodField()
+    can_manage = serializers.SerializerMethodField()
     active_live = serializers.SerializerMethodField()
 
     class Meta:
@@ -44,10 +52,25 @@ class CommunityListSerializer(BaseModelSerializer):
             'courses_count',
             'events_count',
             'is_member',
+            'user_role',
+            'user_membership_status',
+            'can_manage',
             'active_live',
             'created_at',
         ]
         read_only_fields = fields
+
+    def _get_membership_obj(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        memberships_map = self.context.get('user_memberships_map')
+        if memberships_map is not None:
+            return memberships_map.get(obj.id)
+        return CommunityMember.objects.filter(
+            community=obj,
+            user=request.user,
+        ).only('role', 'status').first()
 
     def get_active_live(self, obj):
         from apps.events.models.event import EventStatus
@@ -66,16 +89,37 @@ class CommunityListSerializer(BaseModelSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        if obj.owner_id == request.user.id:
+        if obj.owner_id == request.user.id or is_superadmin_user(request.user):
             return True
         user_memberships = self.context.get('user_memberships')
         if user_memberships is not None:
             return obj.id in user_memberships
-        return CommunityMember.objects.filter(
-            community=obj,
-            user=request.user,
-            status=MembershipStatus.ACTIVE
-        ).exists()
+        m = self._get_membership_obj(obj)
+        return bool(m and m.status == MembershipStatus.ACTIVE)
+
+    def get_user_role(self, obj) -> str | None:
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        if obj.owner_id == request.user.id or is_superadmin_user(request.user):
+            return CommunityRole.OWNER
+        m = self._get_membership_obj(obj)
+        if m and m.status == MembershipStatus.ACTIVE:
+            return m.role
+        return None
+
+    def get_user_membership_status(self, obj) -> str | None:
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        if obj.owner_id == request.user.id or is_superadmin_user(request.user):
+            return MembershipStatus.ACTIVE
+        m = self._get_membership_obj(obj)
+        return m.status if m else None
+
+    def get_can_manage(self, obj) -> bool:
+        role = self.get_user_role(obj)
+        return role in (CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR)
 
 
 class CommunityDetailSerializer(BaseModelSerializer):
@@ -88,6 +132,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
     rules = CommunityRuleSerializer(many=True, read_only=True)
     subscription_plans = serializers.SerializerMethodField()
     user_membership = serializers.SerializerMethodField()
+    notifications_enabled = serializers.SerializerMethodField()
     active_live = serializers.SerializerMethodField()
 
     class Meta:
@@ -120,6 +165,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'settings',
             'rules',
             'user_membership',
+            'notifications_enabled',
             'subscription_plans',
             'active_live',
             'created_at',
@@ -133,6 +179,7 @@ class CommunityDetailSerializer(BaseModelSerializer):
             'courses_count',
             'events_count',
             'user_membership',
+            'notifications_enabled',
             'subscription_plans',
             'active_live',
             'created_at',
@@ -160,44 +207,87 @@ class CommunityDetailSerializer(BaseModelSerializer):
     def get_user_membership(self, obj) -> dict:
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
-            return {'is_member': False, 'role': None, 'status': None}
+            return {
+                'is_member': False,
+                'role': None,
+                'status': None,
+                'is_owner': False,
+                'is_admin': False,
+                'is_moderator': False,
+                'can_manage': False,
+                'permissions': [],
+            }
 
+        is_owner = obj.owner_id == request.user.id or is_superadmin_user(request.user)
         membership = CommunityMember.objects.filter(
             community=obj,
             user=request.user
         ).first()
 
-        if not membership:
-            return {'is_member': False, 'role': None, 'status': None}
+        if not membership and not is_owner:
+            return {
+                'is_member': False,
+                'role': None,
+                'status': None,
+                'is_owner': False,
+                'is_admin': False,
+                'is_moderator': False,
+                'can_manage': False,
+                'permissions': [],
+            }
 
-        is_owner = obj.owner_id == request.user.id or getattr(request.user, 'is_superuser', False)
         settings = getattr(obj, 'settings', None)
         if not settings:
             from apps.communities.models.settings import CommunitySettings
             settings, _ = CommunitySettings.objects.get_or_create(community=obj)
 
+        effective_role = CommunityRole.OWNER if is_owner else membership.role
+        effective_status = MembershipStatus.ACTIVE if is_owner else membership.status
+        is_active = effective_status == MembershipStatus.ACTIVE
+
         if is_owner:
             can_start_live = True
             active_permissions = list(settings.get_role_permissions('owner').keys())
-        else:
+        elif is_active:
             from apps.memberships.permissions import has_community_permission
             can_start_live = has_community_permission(request.user, obj, 'can_start_live')
-            role_perms = settings.get_role_permissions(membership.role)
+            role_perms = settings.get_role_permissions(effective_role)
             user_overrides = (settings.role_permissions or {}).get('user_overrides', {}).get(str(request.user.id), {})
             combined = dict(role_perms)
             combined.update(user_overrides)
             active_permissions = [k for k, v in combined.items() if v]
+        else:
+            can_start_live = False
+            active_permissions = []
+
+        is_admin = is_owner or (is_active and effective_role in (CommunityRole.OWNER, CommunityRole.ADMIN))
+        is_moderator = is_admin or (is_active and effective_role == CommunityRole.MODERATOR)
 
         return {
-            'is_member': membership.status == MembershipStatus.ACTIVE,
-            'role': membership.role,
-            'status': membership.status,
-            'custom_title': membership.custom_title,
-            'points': membership.reputation_score,
-            'joined_at': membership.joined_at,
+            'is_member': is_active,
+            'role': effective_role,
+            'status': effective_status,
+            'is_owner': bool(is_owner),
+            'is_admin': bool(is_admin),
+            'is_moderator': bool(is_moderator),
+            'can_manage': bool(is_moderator),
+            'custom_title': membership.custom_title if membership else '',
+            'points': membership.reputation_score if membership else 0,
+            'joined_at': membership.joined_at if membership else obj.created_at,
             'can_start_live': can_start_live,
             'permissions': active_permissions,
+            'notifications_enabled': membership.notifications_enabled if membership else True,
         }
+
+    def get_notifications_enabled(self, obj) -> bool:
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        membership = CommunityMember.objects.filter(
+            community=obj,
+            user=request.user,
+        ).first()
+        return bool(membership.notifications_enabled) if membership else False
 
 
 class CommunityRuleInputSerializer(serializers.ModelSerializer):
@@ -343,5 +433,3 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
                 elif isinstance(val, str):
                     attrs[field] = val.strip()
         return super().validate(attrs)
-
-

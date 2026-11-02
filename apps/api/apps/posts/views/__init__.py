@@ -6,7 +6,9 @@ from apps.posts.views.comment import (
 )
 from apps.posts.views.feed import CommunityFeedView, CommunityPostCategoriesView
 from apps.posts.views.post import (
+    BookmarkedPostsView,
     PostDetailView,
+    ToggleBookmarkView,
     TogglePostLockView,
     TogglePostPinView,
     TogglePostReactionView,
@@ -25,4 +27,6 @@ __all__ = [
     'CommentDetailView',
     'ToggleCommentReactionView',
     'AcceptAnswerView',
+    'ToggleBookmarkView',
+    'BookmarkedPostsView',
 ]

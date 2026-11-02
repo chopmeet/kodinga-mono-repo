@@ -1,5 +1,8 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -16,11 +19,14 @@ from apps.communities.selectors.community_selector import CommunitySelector
 from apps.media.services.uploadthing_service import UploadThingService
 from common.utils.responses import error_response, success_response
 
+logger = logging.getLogger("kodinga.classroom")
+
 
 class CourseLessonListView(APIView):
     """
     Create a lesson inside a module (Owner or Admin).
-    Supports multipart upload for video, cover image, and attachments.
+    Supports multipart upload for video, cover image, attachments, code_blocks, and quiz_data.
+    Decouples lesson persistence from large video transfer so lesson content is never lost on upload error (BE-08).
     """
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -62,14 +68,17 @@ class CourseLessonListView(APIView):
         # Handle direct cover image file upload if provided in multipart
         cover_file = request.FILES.get('cover_image') or request.FILES.get('cover_image_file')
         if cover_file:
-            res_cover = UploadThingService.upload_file_direct(
+            ClassroomService.check_manager_permission(request.user, community)
+            res_cover = UploadThingService.upload_banner(
                 user=request.user,
-                file_name=cover_file.name,
-                file_bytes=cover_file.read(),
-                mime_type=getattr(cover_file, 'content_type', 'image/jpeg') or 'image/jpeg',
-                purpose='classroom_cover',
+                file_obj=cover_file,
             )
             lesson_data['cover_image_url'] = res_cover['file_url']
+
+        video_file = request.FILES.get('video') or request.FILES.get('video_file')
+        # If a binary video file is uploaded alongside, save the lesson first so lesson data is preserved even if video transfer fails (BE-08)
+        if video_file:
+            lesson_data.pop('video_url', None)
 
         lesson = ClassroomService.create_lesson(
             actor_user=request.user,
@@ -77,16 +86,17 @@ class CourseLessonListView(APIView):
             data=lesson_data
         )
 
-        # Handle direct video file upload if provided in multipart
-        video_file = request.FILES.get('video') or request.FILES.get('video_file')
-        video_url = request.data.get('video_url', '')
-        if video_file or video_url:
-            lesson = ClassroomService.attach_video_to_lesson(
-                actor_user=request.user,
-                lesson=lesson,
-                video_file=video_file,
-                video_url=video_url,
-            )
+        video_upload_error = None
+        if video_file:
+            try:
+                lesson = ClassroomService.attach_video_to_lesson(
+                    actor_user=request.user,
+                    lesson=lesson,
+                    video_file=video_file,
+                )
+            except Exception as exc:
+                logger.warning("Video upload failed after lesson %s creation: %s", lesson.id, exc)
+                video_upload_error = str(getattr(exc, 'detail', exc))
 
         # Handle direct attachments upload if provided
         attachment_files = request.FILES.getlist('attachments') or request.FILES.getlist('files')
@@ -102,8 +112,19 @@ class CourseLessonListView(APIView):
             )
 
         lesson.refresh_from_db()
+        lesson._viewer_is_manager = True
+        payload = LessonDetailSerializer(lesson, context={'request': request}).data
+        if video_upload_error:
+            payload['video_upload_status'] = 'errored'
+            payload['video_upload_error'] = video_upload_error
+            return success_response(
+                data=payload,
+                message="La leçon a été enregistrée, mais le téléversement de la vidéo a échoué. Vous pouvez réessayer l'envoi de la vidéo.",
+                status_code=status.HTTP_201_CREATED,
+            )
+
         return success_response(
-            data=LessonDetailSerializer(lesson).data,
+            data=payload,
             message="Leçon ajoutée avec succès.",
             status_code=status.HTTP_201_CREATED
         )
@@ -111,14 +132,14 @@ class CourseLessonListView(APIView):
 
 class CourseLessonDetailView(APIView):
     """
-    Retrieve lesson content and Mux video streaming (Active connected members only), or update/delete lesson.
+    Retrieve lesson content and Mux/External video streaming (Active connected members only), or update/delete lesson.
     """
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
         tags=['Classroom'],
-        summary="Consulter le contenu d'une leçon et flux vidéo Mux",
+        summary="Consulter le contenu d'une leçon et flux vidéo",
         responses={200: LessonDetailSerializer}
     )
     def get(self, request, slug, course_slug, lesson_id):
@@ -140,7 +161,9 @@ class CourseLessonDetailView(APIView):
                 status_code=status.HTTP_403_FORBIDDEN
             )
 
-        return success_response(data=LessonDetailSerializer(lesson).data)
+        return success_response(
+            data=LessonDetailSerializer(lesson, context={'request': request}).data
+        )
 
     @extend_schema(
         tags=['Classroom'],
@@ -167,14 +190,16 @@ class CourseLessonDetailView(APIView):
         # Handle cover image upload if sent in multipart
         cover_file = request.FILES.get('cover_image') or request.FILES.get('cover_image_file')
         if cover_file:
-            res_cover = UploadThingService.upload_file_direct(
+            ClassroomService.check_manager_permission(request.user, community)
+            res_cover = UploadThingService.upload_banner(
                 user=request.user,
-                file_name=cover_file.name,
-                file_bytes=cover_file.read(),
-                mime_type=getattr(cover_file, 'content_type', 'image/jpeg') or 'image/jpeg',
-                purpose='classroom_cover',
+                file_obj=cover_file,
             )
             patch_data['cover_image_url'] = res_cover['file_url']
+
+        video_file = request.FILES.get('video') or request.FILES.get('video_file')
+        if video_file:
+            patch_data.pop('video_url', None)
 
         updated = ClassroomService.update_lesson(
             actor_user=request.user,
@@ -182,16 +207,17 @@ class CourseLessonDetailView(APIView):
             data=patch_data
         )
 
-        # Handle video upload if sent
-        video_file = request.FILES.get('video') or request.FILES.get('video_file')
-        video_url = request.data.get('video_url', '')
-        if video_file or video_url:
-            updated = ClassroomService.attach_video_to_lesson(
-                actor_user=request.user,
-                lesson=updated,
-                video_file=video_file,
-                video_url=video_url,
-            )
+        video_upload_error = None
+        if video_file:
+            try:
+                updated = ClassroomService.attach_video_to_lesson(
+                    actor_user=request.user,
+                    lesson=updated,
+                    video_file=video_file,
+                )
+            except Exception as exc:
+                logger.warning("Video upload failed on lesson %s update: %s", updated.id, exc)
+                video_upload_error = str(getattr(exc, 'detail', exc))
 
         # Handle attachment files upload if sent
         attachment_files = request.FILES.getlist('attachments') or request.FILES.getlist('files')
@@ -207,8 +233,18 @@ class CourseLessonDetailView(APIView):
             )
 
         updated.refresh_from_db()
+        updated._viewer_is_manager = True
+        payload = LessonDetailSerializer(updated, context={'request': request}).data
+        if video_upload_error:
+            payload['video_upload_status'] = 'errored'
+            payload['video_upload_error'] = video_upload_error
+            return success_response(
+                data=payload,
+                message="Les modifications de la leçon ont été sauvegardées, mais le téléversement de la vidéo a échoué.",
+            )
+
         return success_response(
-            data=LessonDetailSerializer(updated).data,
+            data=payload,
             message="Leçon mise à jour avec succès."
         )
 
@@ -234,16 +270,18 @@ class CourseLessonDetailView(APIView):
 
 class CourseLessonVideoUploadView(APIView):
     """
-    Dedicated endpoint to upload a video for a lesson.
-    Stores the raw video file on UploadThing (CDN permanent) and ingests it into Mux (HLS adaptive streaming).
+    Dedicated endpoint to upload or link a video for a lesson (BE-08 & BE-09).
+    Supports:
+    - Direct video file upload ('video' or 'file') up to 500 MB
+    - Presigned video asset linking ('video_asset_id')
+    - External video links ('video_url': YouTube, Vimeo, Dailymotion, or direct .mp4/.webm/.m3u8)
     """
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
         tags=['Classroom'],
-        summary="Téléverser une vidéo pour une leçon (UploadThing + Mux)",
-        description="Téléverse un fichier vidéo qui sera stocké sur UploadThing et automatiquement ingéré dans Mux pour le streaming HLS adaptatif.",
+        summary="Téléverser ou lier une vidéo pour une leçon (UploadThing + Mux + YouTube/Vimeo/Dailymotion)",
         responses={200: LessonDetailSerializer}
     )
     def post(self, request, slug, course_slug, lesson_id):
@@ -258,11 +296,12 @@ class CourseLessonVideoUploadView(APIView):
             return error_response("Leçon ou communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
         video_file = request.FILES.get('video') or request.FILES.get('file') or request.FILES.get('video_file')
-        video_url = request.data.get('video_url', '')
+        video_url = (request.data.get('video_url') or '').strip()
+        video_asset_id = (request.data.get('video_asset_id') or '').strip()
 
-        if not video_file and not video_url:
+        if not video_file and not video_url and not video_asset_id:
             return error_response(
-                "Veuillez fournir un fichier vidéo ('video' ou 'file') ou une URL vidéo ('video_url').",
+                "Veuillez fournir un fichier vidéo ('video' ou 'file'), une URL vidéo ('video_url') ou un 'video_asset_id'.",
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
@@ -272,13 +311,21 @@ class CourseLessonVideoUploadView(APIView):
                 lesson=lesson,
                 video_file=video_file,
                 video_url=video_url,
+                video_asset_id=video_asset_id,
+            )
+        except ValidationError as exc:
+            return error_response(
+                "Lien ou fichier vidéo invalide.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                details=exc.detail if hasattr(exc, 'detail') else str(exc),
             )
         except Exception as exc:
             return error_response(str(exc), status_code=status.HTTP_400_BAD_REQUEST)
 
+        updated_lesson._viewer_is_manager = True
         return success_response(
-            data=LessonDetailSerializer(updated_lesson).data,
-            message="Vidéo téléversée sur UploadThing et ingérée dans Mux avec succès."
+            data=LessonDetailSerializer(updated_lesson, context={'request': request}).data,
+            message="Vidéo associée à la leçon avec succès."
         )
 
 
@@ -306,7 +353,6 @@ class CourseLessonAttachmentUploadView(APIView):
         except Exception:
             return error_response("Leçon ou communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
-        # Support single or multiple files: 'file', 'attachment', 'files'
         files = request.FILES.getlist('files') or request.FILES.getlist('attachments')
         if not files:
             single = request.FILES.get('file') or request.FILES.get('attachment')
@@ -332,13 +378,14 @@ class CourseLessonAttachmentUploadView(APIView):
             return error_response(str(exc), status_code=status.HTTP_400_BAD_REQUEST)
 
         lesson.refresh_from_db()
+        lesson._viewer_is_manager = True
 
         return success_response(
             data={
                 'added_attachments': added_attachments,
-                'lesson': LessonDetailSerializer(lesson).data,
+                'lesson': LessonDetailSerializer(lesson, context={'request': request}).data,
             },
-            message=f"{len(added_attachments)} fichier(s) téléversé(s) sur UploadThing avec succès.",
+            message=f"{len(added_attachments)} fichier(s) téléversé(s) avec succès.",
             status_code=status.HTTP_201_CREATED
         )
 
@@ -374,7 +421,8 @@ class CourseLessonAttachmentDeleteView(APIView):
         except Exception as exc:
             return error_response(str(exc), status_code=status.HTTP_400_BAD_REQUEST)
 
+        updated_lesson._viewer_is_manager = True
         return success_response(
-            data=LessonDetailSerializer(updated_lesson).data,
+            data=LessonDetailSerializer(updated_lesson, context={'request': request}).data,
             message="Pièce jointe retirée avec succès."
         )

@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
-from apps.communities.models.community import Community
+from apps.communities.models.community import Community, CommunityPrivacy
 from apps.memberships.models.invitation import (
     CommunityInvitation,
     InvitationStatus,
@@ -21,8 +21,12 @@ from apps.memberships.models.member import (
 from apps.memberships.models.sanction import MemberSanction, SanctionType
 from apps.memberships.permissions import (
     check_last_admin_protection,
+    has_community_permission,
     is_superadmin_user,
 )
+from apps.notifications.models.notification import NotificationType
+from apps.notifications.services.notification_service import NotificationService
+from common.exceptions.handler import ConflictError
 from common.utils.tokens import hash_token
 
 
@@ -30,6 +34,38 @@ class MembershipService:
     """
     Handles member joins, invitations, role promotions, moderation sanctions, and departures.
     """
+
+    @classmethod
+    def _get_join_request_reviewers(cls, community: Community, exclude_user: Optional[User] = None) -> list[User]:
+        """
+        Returns all users authorized to review join requests for the community:
+        - The community owner
+        - Active members whose role or user override grants `can_review_requests`
+        """
+        recipients_by_id: dict[str, User] = {}
+        if (
+            community.owner_id
+            and (not exclude_user or community.owner_id != exclude_user.id)
+            and community.owner
+            and community.owner.is_active
+        ):
+            recipients_by_id[str(community.owner_id)] = community.owner
+
+        active_members = CommunityMember.objects.filter(
+            community=community,
+            status=MembershipStatus.ACTIVE,
+            user__is_active=True,
+        ).select_related('user')
+
+        for m in active_members:
+            if exclude_user and m.user_id == exclude_user.id:
+                continue
+            if str(m.user_id) in recipients_by_id:
+                continue
+            if has_community_permission(m.user, community, 'can_review_requests'):
+                recipients_by_id[str(m.user_id)] = m.user
+
+        return list(recipients_by_id.values())
 
     @classmethod
     def join_community(
@@ -51,17 +87,18 @@ class MembershipService:
             if existing.status == MembershipStatus.PENDING:
                 raise ValidationError("Votre demande d'adhésion est en cours d'examen.")
 
-        initial_role = CommunityRole.MEMBER
+        is_owner = community.owner_id == user.id
+        initial_role = CommunityRole.OWNER if is_owner else CommunityRole.MEMBER
         initial_status = MembershipStatus.ACTIVE
 
         # Validate invitation if provided
         invitation = None
         if invite_code:
-            code_hash = hash_token(invite_code)
+            code_hash = hash_token(invite_code.strip())
             invitation = CommunityInvitation.objects.filter(
                 community=community
             ).filter(
-                models.Q(token_hash=code_hash) | models.Q(invite_code=invite_code)
+                models.Q(token_hash=code_hash) | models.Q(invite_code=invite_code.strip())
             ).first()
             if not invitation or not invitation.is_valid:
                 raise ValidationError("Ce lien d'invitation est invalide ou a expiré.")
@@ -70,10 +107,11 @@ class MembershipService:
             if invitation.email and user.email.strip().lower() != invitation.email.strip().lower():
                 raise PermissionDenied("Cette invitation a été envoyée à une autre adresse email.")
 
-            initial_role = invitation.role
+            if not is_owner:
+                initial_role = invitation.role
 
-        # Check paid community restriction: direct free join is blocked (superadmins bypass)
-        if community.pricing_type == 'paid' and not invite_code and not is_superadmin_user(user) and user.id != community.owner_id:
+        # Check paid community restriction: direct free join is blocked (superadmins and owners bypass)
+        if community.pricing_type == 'paid' and not invite_code and not is_superadmin_user(user) and not is_owner:
             from apps.billing.models.subscription import (
                 Subscription,
                 SubscriptionStatus,
@@ -89,8 +127,16 @@ class MembershipService:
                     "Cette communauté est payante. Vous devez souscrire à un abonnement (mensuel ou définitif) pour y adhérer."
                 )
 
-        # Check approval setting if no invite (superadmin is instantly active)
-        elif hasattr(community, 'settings') and community.settings.require_approval_to_join and not is_superadmin_user(user):
+        # Check approval setting or private community if no invite (superadmin and owner are instantly active)
+        elif (
+            not invite_code
+            and not is_superadmin_user(user)
+            and not is_owner
+            and (
+                (hasattr(community, 'settings') and community.settings.require_approval_to_join)
+                or community.privacy_type == CommunityPrivacy.PRIVATE
+            )
+        ):
             initial_status = MembershipStatus.PENDING
 
         with transaction.atomic():
@@ -108,18 +154,61 @@ class MembershipService:
                 )
 
             if invitation:
-                CommunityInvitation.objects.filter(id=invitation.id).update(
-                    uses_count=F('uses_count') + 1,
-                    status=InvitationStatus.ACCEPTED,
-                    accepted_at=timezone.now()
-                )
+                new_uses = (invitation.uses_count or 0) + 1
+                update_kwargs = {'uses_count': F('uses_count') + 1}
+                if not invitation.max_uses or new_uses >= invitation.max_uses or invitation.email:
+                    update_kwargs['status'] = InvitationStatus.ACCEPTED
+                    update_kwargs['accepted_at'] = timezone.now()
+                CommunityInvitation.objects.filter(id=invitation.id).update(**update_kwargs)
 
             if initial_status == MembershipStatus.ACTIVE:
                 Community.objects.filter(id=community.id).update(
                     members_count=F('members_count') + 1
                 )
 
-            return member
+        # Dispatch notifications outside transaction
+        user_display = user.get_full_name() or user.username
+        if initial_status == MembershipStatus.PENDING:
+            reviewers = cls._get_join_request_reviewers(community, exclude_user=user)
+            for reviewer in reviewers:
+                NotificationService.create_notification(
+                    recipient=reviewer,
+                    actor=user,
+                    title=f"Nouvelle demande d'adhésion : {community.name}",
+                    body=f"{user_display} demande à rejoindre la communauté {community.name}.",
+                    notification_type=NotificationType.JOIN_REQUEST,
+                    action_url=f"/communities/{community.slug}/members?status=pending",
+                    target_type="community_member",
+                    target_id=str(member.id),
+                    metadata={
+                        "community_id": str(community.id),
+                        "community_slug": community.slug,
+                        "community_name": community.name,
+                        "member_id": str(member.id),
+                        "requester_id": str(user.id),
+                        "requester_username": user.username,
+                        "event": "join_request_created",
+                    },
+                )
+        elif invitation and invitation.invited_by and invitation.invited_by_id != user.id:
+            NotificationService.create_notification(
+                recipient=invitation.invited_by,
+                actor=user,
+                title=f"Invitation acceptée : {user_display}",
+                body=f"{user_display} a rejoint la communauté {community.name} via votre invitation.",
+                notification_type=NotificationType.COMMUNITY_INVITE,
+                action_url=f"/communities/{community.slug}/members",
+                target_type="community_member",
+                target_id=str(member.id),
+                metadata={
+                    "community_id": str(community.id),
+                    "community_slug": community.slug,
+                    "invitation_id": str(invitation.id),
+                    "status": InvitationStatus.ACCEPTED,
+                },
+            )
+
+        return member
 
     @classmethod
     def leave_community(cls, user: User, community: Community) -> None:
@@ -134,11 +223,13 @@ class MembershipService:
         check_last_admin_protection(community, user.id)
 
         with transaction.atomic():
+            was_active = member.status == MembershipStatus.ACTIVE
             member.status = MembershipStatus.LEFT
             member.save(update_fields=['status', 'updated_at'])
-            Community.objects.filter(id=community.id, members_count__gt=0).update(
-                members_count=F('members_count') - 1
-            )
+            if was_active:
+                Community.objects.filter(id=community.id, members_count__gt=0).update(
+                    members_count=F('members_count') - 1
+                )
 
     @classmethod
     def change_member_role(
@@ -157,14 +248,21 @@ class MembershipService:
             status=MembershipStatus.ACTIVE
         ).first()
 
+        is_owner_actor = member.community.owner_id == actor_user.id or (
+            actor_membership and actor_membership.role == CommunityRole.OWNER
+        )
+        is_admin_actor = is_owner_actor or (
+            actor_membership and actor_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN]
+        )
+
         if not is_superadmin_user(actor_user):
-            if not actor_membership or actor_membership.role not in [CommunityRole.OWNER, CommunityRole.ADMIN]:
+            if not is_admin_actor:
                 raise PermissionDenied("Droits administrateur requis.")
 
             if member.role == CommunityRole.OWNER and new_role != CommunityRole.OWNER:
                 raise PermissionDenied("Le rôle du propriétaire ne peut pas être modifié ainsi.")
 
-            if new_role == CommunityRole.OWNER and actor_membership.role != CommunityRole.OWNER:
+            if new_role == CommunityRole.OWNER and not is_owner_actor:
                 raise PermissionDenied("Seul le propriétaire actuel peut transférer la propriété.")
 
         # Check last admin protection if demoting from admin/owner to non-admin
@@ -192,27 +290,81 @@ class MembershipService:
         member: CommunityMember,
         approve: bool
     ) -> CommunityMember:
+        community = member.community
         actor_membership = CommunityMember.objects.filter(
-            community=member.community,
+            community=community,
             user=actor_user,
             status=MembershipStatus.ACTIVE
         ).first()
 
-        if not is_superadmin_user(actor_user) and (not actor_membership or not actor_membership.is_moderator):
+        can_review = (
+            is_superadmin_user(actor_user)
+            or community.owner_id == actor_user.id
+            or (actor_membership and actor_membership.is_moderator)
+            or has_community_permission(actor_user, community, 'can_review_requests')
+        )
+        if not can_review:
             raise PermissionDenied("Droits de modération requis.")
+
+        previous_status = member.status
 
         with transaction.atomic():
             if approve:
                 member.status = MembershipStatus.ACTIVE
                 member.save(update_fields=['status', 'updated_at'])
-                Community.objects.filter(id=member.community_id).update(
-                    members_count=F('members_count') + 1
-                )
+                if previous_status != MembershipStatus.ACTIVE:
+                    Community.objects.filter(id=member.community_id).update(
+                        members_count=F('members_count') + 1
+                    )
             else:
                 member.status = MembershipStatus.REJECTED
                 member.save(update_fields=['status', 'updated_at'])
+                if previous_status == MembershipStatus.ACTIVE:
+                    Community.objects.filter(id=member.community_id, members_count__gt=0).update(
+                        members_count=F('members_count') - 1
+                    )
 
-            return member
+        # Notify the applicant of the decision (BE-02)
+        if approve:
+            NotificationService.create_notification(
+                recipient=member.user,
+                actor=actor_user,
+                title=f"Demande d'adhésion acceptée : {community.name}",
+                body=f"Félicitations ! Votre demande d'adhésion à la communauté {community.name} a été acceptée.",
+                notification_type=NotificationType.JOIN_REQUEST_APPROVED,
+                action_url=f"/communities/{community.slug}",
+                target_type="community",
+                target_id=str(community.id),
+                metadata={
+                    "community_id": str(community.id),
+                    "community_slug": community.slug,
+                    "community_name": community.name,
+                    "member_id": str(member.id),
+                    "decision": "approved",
+                    "status": MembershipStatus.ACTIVE,
+                },
+            )
+        else:
+            NotificationService.create_notification(
+                recipient=member.user,
+                actor=actor_user,
+                title=f"Demande d'adhésion refusée : {community.name}",
+                body=f"Votre demande d'adhésion à la communauté {community.name} a été refusée.",
+                notification_type=NotificationType.JOIN_REQUEST_REJECTED,
+                action_url=f"/communities/{community.slug}",
+                target_type="community",
+                target_id=str(community.id),
+                metadata={
+                    "community_id": str(community.id),
+                    "community_slug": community.slug,
+                    "community_name": community.name,
+                    "member_id": str(member.id),
+                    "decision": "rejected",
+                    "status": MembershipStatus.REJECTED,
+                },
+            )
+
+        return member
 
     @classmethod
     def sanction_member(
@@ -231,8 +383,11 @@ class MembershipService:
             user=actor_user,
             status=MembershipStatus.ACTIVE
         ).first()
+        is_owner_actor = member.community.owner_id == actor_user.id or (
+            actor_membership and actor_membership.role == CommunityRole.OWNER
+        )
 
-        if not is_superadmin_user(actor_user) and (not actor_membership or not actor_membership.is_moderator):
+        if not is_superadmin_user(actor_user) and not is_owner_actor and (not actor_membership or not actor_membership.is_moderator):
             raise PermissionDenied("Droits de modération requis.")
 
         if member.role == CommunityRole.OWNER and not is_superadmin_user(actor_user):
@@ -241,7 +396,7 @@ class MembershipService:
         if (
             member.role == CommunityRole.ADMIN
             and not is_superadmin_user(actor_user)
-            and actor_membership.role != CommunityRole.OWNER
+            and not is_owner_actor
         ):
             raise PermissionDenied("Seul le propriétaire de la communauté peut sanctionner un administrateur.")
 
@@ -258,11 +413,13 @@ class MembershipService:
             )
 
             if sanction_type == SanctionType.BAN:
+                was_active = member.status == MembershipStatus.ACTIVE
                 member.status = MembershipStatus.BANNED
                 member.save(update_fields=['status', 'updated_at'])
-                Community.objects.filter(id=member.community_id, members_count__gt=0).update(
-                    members_count=F('members_count') - 1
-                )
+                if was_active:
+                    Community.objects.filter(id=member.community_id, members_count__gt=0).update(
+                        members_count=F('members_count') - 1
+                    )
             elif sanction_type == SanctionType.SUSPENSION:
                 member.status = MembershipStatus.SUSPENDED
                 member.save(update_fields=['status', 'updated_at'])
@@ -284,21 +441,64 @@ class MembershipService:
             user=actor_user,
             status=MembershipStatus.ACTIVE
         ).first()
+        is_owner = community.owner_id == actor_user.id
 
-        if not is_superadmin_user(actor_user):
+        if not is_superadmin_user(actor_user) and not is_owner:
             if not actor_membership:
                 raise PermissionDenied("Vous n'êtes pas membre de cette communauté.")
-            if not actor_membership.is_admin and not getattr(community.settings, 'allow_member_invites', True):
+            can_invite = (
+                actor_membership.is_admin
+                or getattr(getattr(community, 'settings', None), 'allow_member_invites', True)
+                or has_community_permission(actor_user, community, 'can_invite_members')
+            )
+            if not can_invite:
                 raise PermissionDenied("Les invitations par les membres sont désactivées.")
+            if not actor_membership.is_admin and role != CommunityRole.MEMBER:
+                raise PermissionDenied("Seul un administrateur peut inviter avec un rôle privilégié.")
+
+        normalized_email = email.strip().lower() if email else ''
+        now = timezone.now()
+
+        if normalized_email:
+            existing_user = User.objects.filter(email__iexact=normalized_email).first()
+            if existing_user:
+                is_already_member = (
+                    community.owner_id == existing_user.id
+                    or CommunityMember.objects.filter(
+                        community=community,
+                        user=existing_user,
+                        status=MembershipStatus.ACTIVE
+                    ).exists()
+                )
+                if is_already_member:
+                    raise ConflictError(
+                        message="Cette personne est déjà membre de cette communauté.",
+                        code="already_member"
+                    )
+
+            existing_pending = CommunityInvitation.objects.filter(
+                community=community,
+                email__iexact=normalized_email,
+                status=InvitationStatus.PENDING
+            ).first()
+            if existing_pending:
+                if existing_pending.expires_at and existing_pending.expires_at < now:
+                    existing_pending.status = InvitationStatus.EXPIRED
+                    existing_pending.save(update_fields=['status', 'updated_at'])
+                else:
+                    raise ConflictError(
+                        message="Une invitation en attente existe déjà pour cette adresse email dans cette communauté.",
+                        code="invitation_already_pending"
+                    )
 
         invite_code = secrets.token_urlsafe(24)
         token_hash = hash_token(invite_code)
-        expires_at = timezone.now() + timedelta(days=expires_in_days)
+        expires_at = now + timedelta(days=expires_in_days)
 
-        return CommunityInvitation.objects.create(
+        invitation = CommunityInvitation.objects.create(
             community=community,
             invited_by=actor_user,
-            email=email.strip().lower() if email else '',
+            email=normalized_email,
             invite_code=invite_code,
             token_hash=token_hash,
             role=role,
@@ -307,3 +507,27 @@ class MembershipService:
             expires_at=expires_at
         )
 
+        if normalized_email:
+            existing_user = User.objects.filter(email__iexact=normalized_email).first()
+            if existing_user:
+                inviter_display = actor_user.get_full_name() or actor_user.username
+                NotificationService.create_notification(
+                    recipient=existing_user,
+                    actor=actor_user,
+                    title=f"Invitation à rejoindre {community.name}",
+                    body=f"{inviter_display} vous invite à rejoindre la communauté {community.name}.",
+                    notification_type=NotificationType.COMMUNITY_INVITE,
+                    action_url=f"/invite/{invite_code}",
+                    target_type="community_invitation",
+                    target_id=str(invitation.id),
+                    metadata={
+                        "invitation_id": str(invitation.id),
+                        "community_id": str(community.id),
+                        "community_slug": community.slug,
+                        "community_name": community.name,
+                        "role": role,
+                        "token": invite_code,
+                    },
+                )
+
+        return invitation

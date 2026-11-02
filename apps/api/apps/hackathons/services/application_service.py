@@ -10,11 +10,12 @@ from apps.hackathons.models.application import (
     HackathonApplication,
     ParticipationMode,
 )
-from apps.hackathons.models.hackathon import Hackathon
+from apps.hackathons.models.hackathon import Hackathon, HackathonStatus
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
+from realtime.broadcast import broadcast_hackathon_registration_updated
 
 
 class HackathonApplicationService:
@@ -30,8 +31,31 @@ class HackathonApplicationService:
 
         check_community_membership(applicant, hackathon.community, "participer à ce hackathon")
 
+        now = timezone.now()
+        if hackathon.status in [HackathonStatus.CANCELLED, HackathonStatus.DRAFT]:
+            raise ValidationError(
+                {"hackathon": "Ce hackathon n'accepte pas de candidatures actuellement."}
+            )
+        if now > hackathon.registration_end or hackathon.status in [
+            HackathonStatus.REGISTRATION_CLOSED,
+            HackathonStatus.IN_PROGRESS,
+            HackathonStatus.SUBMISSION_CLOSED,
+            HackathonStatus.JUDGING,
+            HackathonStatus.COMPLETED,
+        ]:
+            raise ValidationError(
+                {
+                    "hackathon": (
+                        "La date limite de candidature pour ce hackathon est dépassée. "
+                        "Les candidatures hors délai ne sont pas autorisées."
+                    )
+                }
+            )
+        if now < hackathon.registration_start:
+            raise ValidationError(
+                {"hackathon": "La période de candidature pour ce hackathon n'a pas encore débuté."}
+            )
         if not hackathon.is_registration_open:
-
             raise ValidationError(
                 {"hackathon": "La période de candidature pour ce hackathon est fermée."}
             )
@@ -55,10 +79,11 @@ class HackathonApplicationService:
         answers: Optional[dict[str, Any]] = None,
         team_name: str = "",
     ) -> HackathonApplication:
-        cls.check_eligibility(applicant, hackathon)
+        locked_hackathon = Hackathon.objects.select_for_update().get(pk=hackathon.pk)
+        cls.check_eligibility(applicant, locked_hackathon)
 
         existing_app = HackathonApplication.objects.filter(
-            hackathon=hackathon, applicant=applicant
+            hackathon=locked_hackathon, applicant=applicant
         ).first()
 
         if existing_app:
@@ -72,7 +97,7 @@ class HackathonApplicationService:
             existing_app.team_name = team_name.strip()
             existing_app.status = (
                 ApplicationStatus.ACCEPTED
-                if hackathon.auto_accept_applications
+                if locked_hackathon.auto_accept_applications
                 else ApplicationStatus.PENDING
             )
             existing_app.terms_accepted = True
@@ -81,11 +106,11 @@ class HackathonApplicationService:
         else:
             initial_status = (
                 ApplicationStatus.ACCEPTED
-                if hackathon.auto_accept_applications
+                if locked_hackathon.auto_accept_applications
                 else ApplicationStatus.PENDING
             )
             application = HackathonApplication.objects.create(
-                hackathon=hackathon,
+                hackathon=locked_hackathon,
                 applicant=applicant,
                 participation_mode=participation_mode,
                 answers=answers or {},
@@ -93,6 +118,12 @@ class HackathonApplicationService:
                 status=initial_status,
                 terms_accepted=True,
             )
+
+        broadcast_hackathon_registration_updated(
+            locked_hackathon,
+            user_id=str(applicant.id),
+            status=application.status,
+        )
 
         # Notify applicant
         status_msg = (
@@ -103,10 +134,10 @@ class HackathonApplicationService:
 
         NotificationService.create_notification(
             recipient=applicant,
-            title=f"Candidature enregistrée : {hackathon.title}",
+            title=f"Candidature enregistrée : {locked_hackathon.title}",
             body=status_msg,
             notification_type=NotificationType.SYSTEM,
-            action_url=f"/communities/{hackathon.community.slug}/hackathons/{hackathon.slug}",
+            action_url=f"/communities/{locked_hackathon.community.slug}/hackathons/{locked_hackathon.slug}",
             target_type="hackathon_application",
             target_id=str(application.id),
         )
@@ -122,7 +153,10 @@ class HackathonApplicationService:
         new_status: str,
         reason: str = "",
     ) -> HackathonApplication:
-        if not HackathonSelector.is_community_manager(actor, application.hackathon.community):
+        if (
+            application.hackathon.organizer_id != actor.id
+            and not HackathonSelector.is_community_manager(actor, application.hackathon.community)
+        ):
             raise PermissionDenied(
                 "Action réservée aux organisateurs de la communauté."
             )
@@ -136,6 +170,12 @@ class HackathonApplicationService:
         application.reviewed_at = timezone.now()
         application.reviewed_by = actor
         application.save()
+
+        broadcast_hackathon_registration_updated(
+            application.hackathon,
+            user_id=str(application.applicant_id),
+            status=application.status,
+        )
 
         # Send decision notification
         labels = {
@@ -172,4 +212,10 @@ class HackathonApplicationService:
 
         application.status = ApplicationStatus.WITHDRAWN
         application.save(update_fields=["status", "updated_at"])
+
+        broadcast_hackathon_registration_updated(
+            hackathon,
+            user_id=str(applicant.id),
+            status=ApplicationStatus.WITHDRAWN,
+        )
         return True

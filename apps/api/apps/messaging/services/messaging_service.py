@@ -21,9 +21,19 @@ class MessagingService:
 
     @classmethod
     @transaction.atomic
-    def start_direct_conversation(cls, user1, user2):
+    def start_direct_conversation(cls, user1, user2, community=None, initial_message: str = ""):
         if user1.id == user2.id:
             raise ValidationError("Impossible de démarrer une conversation privée avec soi-même.")
+
+        if not user2.is_active:
+            raise ValidationError("Impossible de démarrer une conversation avec un compte inactif.")
+
+        if community and not is_superadmin_user(user1):
+            from apps.memberships.permissions import is_active_community_member
+            if not is_active_community_member(user1, community):
+                raise PermissionDenied("Vous devez être membre actif de cette communauté pour contacter ses membres.")
+            if not is_active_community_member(user2, community):
+                raise ValidationError("Ce destinataire n'est pas membre actif de cette communauté.")
 
         # Check existing direct conversation
         existing = (
@@ -33,11 +43,18 @@ class MessagingService:
             .first()
         )
         if existing:
+            if initial_message and initial_message.strip():
+                cls.send_message(
+                    conversation=existing,
+                    sender=user1,
+                    content=initial_message.strip(),
+                )
             return existing, False
 
         conversation = Conversation.objects.create(
             conversation_type=ConversationType.DIRECT,
             created_by=user1,
+            community=community,
             last_message_at=timezone.now(),
         )
         ConversationParticipant.objects.create(
@@ -57,6 +74,14 @@ class MessagingService:
         broadcast_conversation_created(
             conversation, participant_ids=[str(user1.id), str(user2.id)]
         )
+
+        if initial_message and initial_message.strip():
+            cls.send_message(
+                conversation=conversation,
+                sender=user1,
+                content=initial_message.strip(),
+            )
+
         return conversation, True
 
     @classmethod
@@ -119,7 +144,7 @@ class MessagingService:
             else:
                 raise PermissionDenied("Vous ne faites pas partie de cette conversation.")
 
-        if conversation.community:
+        if conversation.community and conversation.conversation_type != ConversationType.DIRECT:
             settings = getattr(conversation.community, "settings", None)
             if settings and settings.is_read_only and not is_superadmin_user(sender):
                 is_owner = conversation.community.owner_id == sender.id
