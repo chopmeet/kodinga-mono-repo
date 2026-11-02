@@ -1,9 +1,8 @@
-from django.conf import settings
-from django.db import models
-
 from apps.posts.models.comment import Comment
 from apps.posts.models.post import Post
 from common.models.base import BaseModel
+from django.conf import settings
+from django.db import models
 
 
 class ReactionType(models.TextChoices):

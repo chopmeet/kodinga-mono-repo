@@ -1,7 +1,6 @@
+from apps.accounts.models.user import User
 from django.contrib.auth import password_validation
 from rest_framework import serializers
-
-from apps.accounts.models.user import User
 
 
 class RegisterSerializer(serializers.Serializer):

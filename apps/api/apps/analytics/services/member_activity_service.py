@@ -2,9 +2,6 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Prefetch, Q
-from django.utils import timezone
-
 from apps.accounts.models.user import User
 from apps.classroom.models.module import CourseModule
 from apps.classroom.models.progress import CourseEnrollment, LessonProgress
@@ -26,6 +23,8 @@ from apps.opportunities.models.application import (
 from apps.opportunities.models.application import (
     OpportunityApplication,
 )
+from django.db.models import Prefetch, Q
+from django.utils import timezone
 
 
 class MemberActivityService:

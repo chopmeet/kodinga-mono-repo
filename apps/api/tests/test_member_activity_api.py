@@ -2,10 +2,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course, CourseLevel
 from apps.classroom.models.lesson import Lesson
@@ -37,6 +33,9 @@ from apps.opportunities.models.opportunity import (
     OpportunityType,
     WorkplaceType,
 )
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

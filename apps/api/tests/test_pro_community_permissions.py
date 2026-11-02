@@ -2,10 +2,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.administration.models.setting import SystemSetting
 from apps.billing.models.plan import BillingInterval, Plan
@@ -21,6 +17,9 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

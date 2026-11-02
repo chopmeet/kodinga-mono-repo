@@ -1,7 +1,4 @@
 import pytest
-from django.contrib.auth import get_user_model
-from rest_framework.exceptions import PermissionDenied
-
 from apps.communities.models.community import (
     Community,
     CommunityPricing,
@@ -15,6 +12,8 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from apps.memberships.permissions import has_community_permission
+from django.contrib.auth import get_user_model
+from rest_framework.exceptions import PermissionDenied
 
 User = get_user_model()
 

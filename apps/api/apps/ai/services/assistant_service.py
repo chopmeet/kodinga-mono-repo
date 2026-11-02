@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 from typing import Any, Optional
 
+from common.permissions.base import is_superadmin_user
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -25,7 +26,6 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from apps.posts.models.post import Post, PostType
-from common.permissions.base import is_superadmin_user
 
 logger = logging.getLogger(__name__)
 

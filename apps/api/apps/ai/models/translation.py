@@ -1,6 +1,5 @@
-from django.db import models
-
 from common.models.base import BaseModel
+from django.db import models
 
 
 class TranslationCache(BaseModel):

@@ -1,8 +1,3 @@
-from django.contrib import admin, messages
-from django.utils import timezone
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
-
 from apps.accounts.models.consent import UserConsent
 from apps.accounts.models.oauth import OAuthIdentity
 from apps.accounts.models.security import SecurityEvent
@@ -12,6 +7,10 @@ from apps.accounts.models.user import User
 from apps.accounts.services.password import PasswordResetService
 from apps.accounts.services.session import SessionService
 from apps.accounts.services.verification import EmailVerificationService
+from django.contrib import admin, messages
+from django.utils import timezone
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 
 class UserSessionInline(admin.TabularInline):

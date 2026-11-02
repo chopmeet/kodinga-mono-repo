@@ -2,9 +2,6 @@ import math
 from datetime import timedelta
 from typing import Any, Optional
 
-from django.db.models import Count, Min, Q, QuerySet, Sum
-from django.utils import timezone
-
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.gamification.models.badge import Badge, UserBadge
@@ -18,6 +15,8 @@ from apps.gamification.models.reputation import (
 )
 from apps.gamification.services.gamification_service import GamificationService
 from apps.memberships.models.member import CommunityMember, MembershipStatus
+from django.db.models import Count, Min, Q, QuerySet, Sum
+from django.utils import timezone
 
 
 class GamificationSelector:

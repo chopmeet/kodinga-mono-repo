@@ -1,8 +1,3 @@
-from drf_spectacular.utils import extend_schema
-from rest_framework import permissions, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from apps.affiliates.models.link import AffiliateLink
 from apps.affiliates.models.program import AffiliateProgram
 from apps.affiliates.selectors.affiliate_selector import AffiliateSelector
@@ -14,6 +9,10 @@ from apps.affiliates.serializers.affiliate_serializers import (
     PayoutRequestSerializer,
 )
 from apps.affiliates.services.affiliate_service import AffiliateService
+from drf_spectacular.utils import extend_schema
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 @extend_schema(tags=["Billing & Affiliates"])

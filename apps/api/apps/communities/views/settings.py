@@ -1,13 +1,12 @@
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.communities.serializers.rule import CommunityRuleSerializer
 from apps.communities.serializers.settings import CommunitySettingsSerializer
 from apps.communities.services.community_service import CommunityService
 from common.utils.responses import error_response, success_response
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
 
 class CommunitySettingsView(APIView):

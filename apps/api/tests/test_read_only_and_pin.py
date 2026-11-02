@@ -1,7 +1,4 @@
 import pytest
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
 from apps.communities.models.community import (
@@ -17,6 +14,8 @@ from apps.memberships.models.member import (
 )
 from apps.messaging.models.conversation import Conversation, ConversationType
 from apps.messaging.models.participant import ConversationParticipant, ParticipantRole
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

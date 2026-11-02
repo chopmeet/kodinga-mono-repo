@@ -13,7 +13,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django_http_app = get_asgi_application()
 
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
-
 from realtime.auth import WebSocketTicketAuthMiddlewareStack  # noqa: E402
 from realtime.routing import websocket_urlpatterns  # noqa: E402
 

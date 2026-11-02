@@ -1,5 +1,3 @@
-from django.urls import path
-
 from apps.gamification.views.badge import BadgeListView, UserBadgeListView
 from apps.gamification.views.community_config import (
     CommunityManualPointsAdjustView,
@@ -21,6 +19,7 @@ from apps.gamification.views.reputation import (
     ReputationHistoryView,
     UserReputationDetailView,
 )
+from django.urls import path
 
 app_name = "gamification"
 

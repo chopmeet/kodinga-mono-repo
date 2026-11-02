@@ -1,11 +1,10 @@
 from unittest.mock import patch
 
 import pytest
-from django.db import transaction
-
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityCategory
 from apps.messaging.services.messaging_service import MessagingService
+from django.db import transaction
 
 
 @pytest.fixture

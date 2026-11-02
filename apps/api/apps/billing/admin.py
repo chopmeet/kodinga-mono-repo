@@ -1,11 +1,10 @@
-from django.contrib import admin
-
 from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
 from apps.billing.models.wallet import CommunityPayout, CommunityWallet
 from common.permissions.base import is_superadmin_user
+from django.contrib import admin
 
 
 @admin.register(Plan)

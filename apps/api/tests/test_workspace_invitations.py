@@ -2,10 +2,6 @@ import hashlib
 from datetime import timedelta
 
 import pytest
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.settings import CommunitySettings
@@ -16,6 +12,9 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from apps.memberships.tasks import expire_outdated_invitations_task
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

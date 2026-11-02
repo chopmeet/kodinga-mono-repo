@@ -1,7 +1,6 @@
+from common.models.base import BaseModel
 from django.db import models
 from django.utils.text import slugify
-
-from common.models.base import BaseModel
 
 
 class CommunityCategory(BaseModel):

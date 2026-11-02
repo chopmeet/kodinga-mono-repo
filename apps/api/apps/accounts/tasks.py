@@ -1,7 +1,6 @@
 import logging
 
 from celery import shared_task
-
 from common.services.email_service import EmailService
 
 logger = logging.getLogger('kodinga.tasks')

@@ -1,11 +1,10 @@
-from rest_framework import serializers
-
 from apps.affiliates.models.link import AffiliateLink
 from apps.affiliates.models.payout import (
     PayoutMethod,
     PayoutRequest,
 )
 from apps.affiliates.models.program import AffiliateProgram
+from rest_framework import serializers
 
 
 class AffiliateProgramSerializer(serializers.ModelSerializer):

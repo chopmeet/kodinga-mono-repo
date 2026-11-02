@@ -1,8 +1,3 @@
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-
 from apps.gamification.selectors.gamification_selector import (
     GamificationSelector,
 )
@@ -11,6 +6,10 @@ from apps.gamification.serializers.gamification_serializer import (
     UserBadgeSerializer,
 )
 from common.utils.responses import success_response
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 
 
 class BadgeListView(APIView):

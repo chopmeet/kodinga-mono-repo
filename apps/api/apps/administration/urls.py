@@ -1,5 +1,3 @@
-from django.urls import path
-
 from apps.administration.views.admin_views import (
     AdminAuditLogListView,
     AdminDashboardView,
@@ -9,6 +7,7 @@ from apps.administration.views.admin_views import (
     AdminUserToggleStatusView,
     PublicSystemSettingsView,
 )
+from django.urls import path
 
 app_name = 'administration'
 

@@ -1,5 +1,6 @@
 from typing import Optional
 
+from common.permissions.base import is_superadmin_user
 from django.db.models import Prefetch, Q, QuerySet
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
 
@@ -15,7 +16,6 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
-from common.permissions.base import is_superadmin_user
 
 
 class ClassroomSelector:

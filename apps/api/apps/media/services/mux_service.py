@@ -7,12 +7,11 @@ import uuid
 from typing import Any, Optional
 
 import requests
-from django.conf import settings
-from rest_framework.exceptions import NotFound, ValidationError
-
 from apps.accounts.models.user import User
 from apps.media.models.video_asset import VideoAsset, VideoStatus
 from common.permissions.base import is_superadmin_user
+from django.conf import settings
+from rest_framework.exceptions import NotFound, ValidationError
 
 logger = logging.getLogger('kodinga.media')
 

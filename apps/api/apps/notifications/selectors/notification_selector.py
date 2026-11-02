@@ -1,7 +1,6 @@
-from django.db.models import QuerySet
-
 from apps.accounts.models.user import User
 from apps.notifications.models.notification import Notification
+from django.db.models import QuerySet
 
 
 class NotificationSelector:

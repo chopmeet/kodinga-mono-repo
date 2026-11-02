@@ -1,9 +1,8 @@
+from apps.communities.models.category import CommunityCategory
+from common.models.base import BaseModel
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
-
-from apps.communities.models.category import CommunityCategory
-from common.models.base import BaseModel
 
 
 class CommunityPrivacy(models.TextChoices):

@@ -1,7 +1,4 @@
 import pytest
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.administration.models.audit import PlatformAuditLog
 from apps.analytics.models.metric import MetricType
@@ -12,6 +9,8 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

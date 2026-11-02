@@ -1,6 +1,3 @@
-from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-
 from apps.accounts.views.auth import (
     ChangePasswordView,
     EmailVerificationView,
@@ -28,7 +25,9 @@ from apps.analytics.views.member_activity import (
     MemberHackathonsView,
     MemberOpportunitiesView,
 )
+from django.urls import path
 from realtime.views import WebSocketTicketView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 app_name = 'accounts'
 

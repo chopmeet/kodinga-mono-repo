@@ -1,12 +1,3 @@
-from drf_spectacular.utils import (
-    OpenApiExample,
-    OpenApiParameter,
-    OpenApiResponse,
-    extend_schema,
-)
-from rest_framework import permissions, status
-from rest_framework.views import APIView
-
 from apps.communities.models.community import Community
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.permissions import (
@@ -35,6 +26,14 @@ from apps.opportunities.serializers.opportunity_serializers import (
 )
 from apps.opportunities.services.opportunity_service import OpportunityService
 from common.utils.responses import error_response, success_response
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
+from rest_framework import permissions, status
+from rest_framework.views import APIView
 
 
 class OpportunityListView(APIView):

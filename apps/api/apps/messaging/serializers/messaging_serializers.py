@@ -1,5 +1,3 @@
-from rest_framework import serializers
-
 from apps.accounts.models.user import User
 from apps.messaging.models.attachment import MessageAttachment
 from apps.messaging.models.conversation import Conversation
@@ -7,6 +5,7 @@ from apps.messaging.models.message import Message
 from apps.messaging.models.participant import (
     ConversationParticipant,
 )
+from rest_framework import serializers
 
 
 class MessageAttachmentSerializer(serializers.ModelSerializer):

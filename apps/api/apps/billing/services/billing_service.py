@@ -3,11 +3,6 @@ from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
 
-from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
-from rest_framework.exceptions import NotFound, ValidationError
-
 from apps.accounts.models.user import User
 from apps.billing.gateways.paydunya import PayDunyaGateway
 from apps.billing.models.payment import Payment, PaymentStatus
@@ -20,6 +15,10 @@ from apps.memberships.models.member import (
     CommunityRole,
     MembershipStatus,
 )
+from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
+from rest_framework.exceptions import NotFound, ValidationError
 
 logger = logging.getLogger('kodinga.billing')
 
@@ -297,9 +296,8 @@ class BillingService:
 
                 # Unlock Community Membership if plan is community-specific
                 if plan.community:
-                    from django.db.models import F
-
                     from apps.communities.models.community import Community
+                    from django.db.models import F
 
                     member, created = CommunityMember.objects.select_for_update().get_or_create(
                         community=plan.community,

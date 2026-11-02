@@ -1,14 +1,13 @@
 from datetime import timedelta
 
 import pytest
+from apps.accounts.models.token import AuthToken
+from apps.accounts.models.user import User
+from common.utils.tokens import hash_token
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-
-from apps.accounts.models.token import AuthToken
-from apps.accounts.models.user import User
-from common.utils.tokens import hash_token
 
 
 @pytest.fixture

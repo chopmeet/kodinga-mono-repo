@@ -1,12 +1,11 @@
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
-
 from apps.accounts.serializers.oauth import OAuthCallbackSerializer
 from apps.accounts.serializers.user import UserSerializer
 from apps.accounts.services.oauth import OAuthService
 from common.serializers.base import EmptySerializer
 from common.utils.responses import success_response
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
 
 
 class OAuthStartView(APIView):

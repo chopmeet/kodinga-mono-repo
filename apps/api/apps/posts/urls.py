@@ -1,5 +1,3 @@
-from django.urls import path
-
 from apps.posts.views import (
     AcceptAnswerView,
     BookmarkedPostsView,
@@ -15,6 +13,7 @@ from apps.posts.views import (
     TogglePostReactionView,
     VotePollView,
 )
+from django.urls import path
 
 app_name = 'posts'
 

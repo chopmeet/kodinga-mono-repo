@@ -1,9 +1,3 @@
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-
 from apps.accounts.serializers.auth import (
     ChangePasswordSerializer,
     EmailVerificationSerializer,
@@ -21,6 +15,11 @@ from apps.accounts.services.session import SessionService
 from apps.accounts.services.verification import EmailVerificationService
 from common.serializers.base import EmptySerializer
 from common.utils.responses import success_response
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class RegisterView(APIView):

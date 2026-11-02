@@ -1,8 +1,3 @@
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import permissions
-from rest_framework.views import APIView
-
 from apps.analytics.serializers.member_activity import (
     MemberActivityDashboardResponseSerializer,
     MemberCoursesResponseSerializer,
@@ -12,6 +7,10 @@ from apps.analytics.serializers.member_activity import (
 )
 from apps.analytics.services.member_activity_service import MemberActivityService
 from common.utils.responses import success_response
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import permissions
+from rest_framework.views import APIView
 
 COMMUNITY_FILTER_PARAMETER = OpenApiParameter(
     name="community",

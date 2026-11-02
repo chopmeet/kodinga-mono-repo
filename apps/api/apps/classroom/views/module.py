@@ -1,3 +1,4 @@
+from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +13,6 @@ from apps.classroom.serializers.module import (
 )
 from apps.classroom.services.classroom_service import ClassroomService
 from apps.communities.selectors.community_selector import CommunitySelector
-from common.utils.responses import error_response, success_response
 
 
 class CourseModuleListView(APIView):

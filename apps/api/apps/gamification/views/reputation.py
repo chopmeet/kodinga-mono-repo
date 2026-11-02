@@ -1,8 +1,3 @@
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-
 from apps.accounts.models.user import User
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.gamification.selectors.gamification_selector import (
@@ -15,6 +10,10 @@ from apps.gamification.serializers.gamification_serializer import (
     UserReputationSerializer,
 )
 from common.utils.responses import error_response, success_response
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 
 
 class UserReputationDetailView(APIView):

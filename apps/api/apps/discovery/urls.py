@@ -1,10 +1,9 @@
-from django.urls import path
-
 from apps.discovery.views.discovery import (
     DiscoveryRecommendationsView,
     DiscoverySearchView,
     DiscoveryTrendingView,
 )
+from django.urls import path
 
 app_name = "discovery"
 

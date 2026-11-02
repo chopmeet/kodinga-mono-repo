@@ -1,7 +1,6 @@
-from django.contrib import admin
-
 from apps.opportunities.models.application import OpportunityApplication
 from apps.opportunities.models.opportunity import Opportunity
+from django.contrib import admin
 
 
 @admin.register(Opportunity)

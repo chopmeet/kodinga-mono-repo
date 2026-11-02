@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 from django.db import transaction
 from django.utils.text import slugify
+from realtime.broadcast import broadcast_event_registration_updated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
@@ -14,7 +15,6 @@ from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
 )
-from realtime.broadcast import broadcast_event_registration_updated
 
 
 class EventService:

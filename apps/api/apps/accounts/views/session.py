@@ -1,11 +1,10 @@
+from apps.accounts.serializers.session import UserSessionSerializer
+from apps.accounts.services.session import SessionService
+from common.utils.responses import success_response
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-
-from apps.accounts.serializers.session import UserSessionSerializer
-from apps.accounts.services.session import SessionService
-from common.utils.responses import success_response
 
 
 class UserSessionListView(APIView):

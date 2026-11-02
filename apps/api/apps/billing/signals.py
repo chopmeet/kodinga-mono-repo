@@ -1,9 +1,5 @@
 import logging
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils import timezone
-
 from apps.administration.models.setting import SystemSetting
 from apps.billing.models.plan import Plan
 from apps.billing.services.billing_service import (
@@ -11,6 +7,9 @@ from apps.billing.services.billing_service import (
     PRO_MONTHLY_PRICE_SETTING_KEY,
     BillingService,
 )
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
 
 logger = logging.getLogger('kodinga.billing.signals')
 

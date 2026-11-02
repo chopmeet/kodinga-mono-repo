@@ -1,10 +1,9 @@
-from rest_framework import serializers
-
 from apps.accounts.serializers.user import UserSerializer
 from apps.media.serializers.media import MediaAssetSerializer
 from apps.posts.models.comment import Comment
 from apps.posts.models.reaction import CommentReaction
 from common.serializers.base import BaseModelSerializer
+from rest_framework import serializers
 
 
 class CommentSerializer(BaseModelSerializer):

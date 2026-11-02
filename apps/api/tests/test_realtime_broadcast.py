@@ -1,8 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from django.db import transaction
-
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community, CommunityCategory
 from apps.messaging.models.conversation import Conversation
@@ -10,6 +8,7 @@ from apps.messaging.models.message import Message
 from apps.messaging.models.participant import ConversationParticipant
 from apps.posts.models.comment import Comment
 from apps.posts.models.post import Post
+from django.db import transaction
 from realtime.broadcast import (
     broadcast_comment_created,
     broadcast_comment_deleted,

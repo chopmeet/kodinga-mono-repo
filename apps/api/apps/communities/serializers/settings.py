@@ -1,7 +1,6 @@
-from rest_framework import serializers
-
 from apps.communities.models.settings import CommunitySettings
 from common.serializers.base import BaseModelSerializer
+from rest_framework import serializers
 
 
 class CommunitySettingsSerializer(BaseModelSerializer):

@@ -1,11 +1,10 @@
 import pytest
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.profiles.models.profile import AvailabilityStatus
 from apps.profiles.models.skill import DeveloperSkill, SkillLevel
 from apps.profiles.models.technology import Technology, TechnologyCategory
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

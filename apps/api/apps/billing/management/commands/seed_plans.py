@@ -1,13 +1,12 @@
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand
-
 from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.services.billing_service import (
     PRO_MONTHLY_PLAN_SLUG,
     PRO_MONTHLY_PRICE_SETTING_KEY,
     BillingService,
 )
+from django.core.management.base import BaseCommand
 
 PLANS_DATA = [
     {

@@ -1,3 +1,4 @@
+from common.utils.responses import error_response, success_response
 from django.http import HttpResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -21,7 +22,6 @@ from apps.events.serializers.event import (
 from apps.events.services.calendar_service import CalendarService
 from apps.events.services.event_service import EventService
 from apps.events.services.livekit_service import LiveKitService
-from common.utils.responses import error_response, success_response
 
 
 class EventJoinLiveView(APIView):

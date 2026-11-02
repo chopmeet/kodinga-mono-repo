@@ -1,8 +1,3 @@
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-
 from apps.communities.models.category import CommunityCategory
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.communities.serializers.category import (
@@ -11,6 +6,10 @@ from apps.communities.serializers.category import (
 )
 from apps.communities.services.category_service import CategoryService
 from common.utils.responses import error_response, success_response
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 
 
 class CategoryListCreateView(APIView):

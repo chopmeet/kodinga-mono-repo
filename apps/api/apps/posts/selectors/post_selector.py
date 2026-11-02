@@ -1,7 +1,5 @@
 from typing import Any, Optional
 
-from django.db.models import F, Prefetch, Q, QuerySet
-
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.memberships.permissions import check_community_read_permission
@@ -9,6 +7,7 @@ from apps.posts.models.category import PostCategory
 from apps.posts.models.comment import Comment
 from apps.posts.models.poll import PollOption
 from apps.posts.models.post import Post
+from django.db.models import F, Prefetch, Q, QuerySet
 
 
 class PostSelector:

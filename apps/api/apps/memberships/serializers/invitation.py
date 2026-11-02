@@ -1,5 +1,3 @@
-from rest_framework import serializers
-
 from apps.accounts.models.user import User
 from apps.accounts.serializers.user import UserSerializer
 from apps.memberships.models.invitation import (
@@ -8,6 +6,7 @@ from apps.memberships.models.invitation import (
 )
 from apps.memberships.models.member import CommunityRole
 from common.serializers.base import BaseModelSerializer
+from rest_framework import serializers
 
 ALLOWED_INVITATION_ROLES = [
     ('admin', 'Administrateur'),

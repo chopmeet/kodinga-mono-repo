@@ -1,3 +1,5 @@
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,8 +22,6 @@ from apps.hackathons.serializers.judge import (
 from apps.hackathons.serializers.submission import HackathonSubmissionListSerializer
 from apps.hackathons.services.evaluation_service import HackathonEvaluationService
 from apps.hackathons.services.hackathon_service import HackathonService
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
 
 
 class HackathonJudgeListView(APIView):

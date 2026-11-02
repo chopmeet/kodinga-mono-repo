@@ -1,6 +1,5 @@
-from django.core.management.base import BaseCommand
-
 from apps.billing.tasks import check_and_expire_subscriptions
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):

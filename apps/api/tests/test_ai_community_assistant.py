@@ -1,10 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.ai.models import AssistantConversation, AssistantMessage
 from apps.ai.providers.exceptions import (
@@ -37,6 +33,9 @@ from apps.memberships.models.member import (
 )
 from apps.posts.models.category import PostCategory
 from apps.posts.models.post import Post, PostType
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

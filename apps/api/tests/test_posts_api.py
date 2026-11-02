@@ -1,9 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.ai.schemas import ModerationResult
 from apps.communities.models.category import CommunityCategory
@@ -21,6 +18,8 @@ from apps.memberships.models.member import (
 from apps.posts.models.category import PostCategory
 from apps.posts.models.post import PostType
 from apps.posts.models.reaction import ReactionType
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

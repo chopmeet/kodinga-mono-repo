@@ -1,3 +1,5 @@
+from common.permissions.base import is_superadmin_user
+from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -7,8 +9,6 @@ from apps.ai.serializers import CommunityAISettingsSerializer
 from apps.communities.models.settings import CommunitySettings
 from apps.communities.selectors.community_selector import CommunitySelector
 from apps.memberships.models.member import CommunityMember, MembershipStatus
-from common.permissions.base import is_superadmin_user
-from common.utils.responses import error_response, success_response
 
 
 class CommunityAISettingsView(APIView):

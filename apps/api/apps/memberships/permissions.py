@@ -1,5 +1,3 @@
-from rest_framework.permissions import BasePermission
-
 from apps.communities.models.community import (
     Community,
     CommunityPricing,
@@ -11,6 +9,7 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from common.permissions.base import is_superadmin_user
+from rest_framework.permissions import BasePermission
 
 
 class IsCommunityOwner(BasePermission):
@@ -137,9 +136,8 @@ def is_active_community_member(user, community) -> bool:
     ).exists():
         return True
     try:
-        from django.utils import timezone
-
         from apps.billing.models.subscription import Subscription, SubscriptionStatus
+        from django.utils import timezone
         return Subscription.objects.filter(
             user=user,
             community=community,

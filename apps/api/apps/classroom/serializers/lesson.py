@@ -1,10 +1,10 @@
 import json
 
+from common.serializers.base import BaseModelSerializer
 from rest_framework import serializers
 
 from apps.classroom.models.lesson import ContentFormat, Lesson, LessonType
 from apps.media.serializers.video import VideoAssetSerializer
-from common.serializers.base import BaseModelSerializer
 
 
 class LessonSerializer(BaseModelSerializer):

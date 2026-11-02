@@ -1,11 +1,5 @@
 import logging
 
-from django.db import transaction
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-
 from apps.billing.models.wallet import CommunityPayout, CommunityWallet, PayoutStatus
 from apps.billing.selectors.billing_selector import BillingSelector
 from apps.billing.serializers.community_billing import (
@@ -16,6 +10,11 @@ from apps.billing.serializers.community_billing import (
     CreateCommunityPayoutRequestSerializer,
 )
 from common.utils.responses import error_response, success_response
+from django.db import transaction
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
 logger = logging.getLogger('kodinga.billing.community')
 

@@ -1,3 +1,4 @@
+from api.views import health
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -7,8 +8,6 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-
-from api.views import health
 
 urlpatterns = [
     # Administration

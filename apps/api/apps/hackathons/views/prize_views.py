@@ -1,3 +1,4 @@
+from common.utils.responses import success_response
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -6,7 +7,6 @@ from rest_framework.views import APIView
 from apps.hackathons.selectors.hackathon_selector import HackathonSelector
 from apps.hackathons.serializers.prize import HackathonPrizeSerializer
 from apps.hackathons.services.hackathon_service import HackathonService
-from common.utils.responses import success_response
 
 
 class CommunityHackathonPrizesView(APIView):

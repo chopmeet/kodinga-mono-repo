@@ -1,8 +1,4 @@
 import pytest
-from channels.testing import WebsocketCommunicator
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-
 from apps.communities.models.community import (
     Community,
     CommunityPricing,
@@ -16,8 +12,11 @@ from apps.memberships.models.member import (
 from apps.messaging.models.conversation import Conversation, ConversationType
 from apps.messaging.models.participant import ConversationParticipant
 from apps.posts.models.post import Post, PostType
+from channels.testing import WebsocketCommunicator
 from config.asgi import application
+from django.contrib.auth import get_user_model
 from realtime.auth import RealtimeAuthService
+from rest_framework.test import APIClient
 
 User = get_user_model()
 

@@ -1,11 +1,11 @@
 import re
 from urllib.parse import parse_qs, urlparse
 
+from common.models.base import BaseModel
 from django.db import models
 
 from apps.classroom.models.module import CourseModule
 from apps.media.models.video_asset import VideoAsset
-from common.models.base import BaseModel
 
 
 class LessonType(models.TextChoices):

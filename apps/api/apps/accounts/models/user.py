@@ -1,3 +1,4 @@
+from common.models.base import BaseModel
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -5,8 +6,6 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 from django.utils import timezone as django_timezone
-
-from common.models.base import BaseModel
 
 
 class UserManager(BaseUserManager):

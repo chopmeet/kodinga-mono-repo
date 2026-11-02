@@ -1,10 +1,9 @@
-from rest_framework import serializers
-
 from apps.classroom.models.course import Course
 from apps.communities.models.community import Community
 from apps.events.models.event import Event
 from apps.posts.models.post import Post
 from apps.profiles.models.profile import DeveloperProfile
+from rest_framework import serializers
 
 
 class DiscoveryCommunitySerializer(serializers.ModelSerializer):

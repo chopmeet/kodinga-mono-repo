@@ -1,11 +1,10 @@
-from django import forms
-from django.contrib import admin, messages
-from django.utils.safestring import mark_safe
-
 from apps.media.services.uploadthing_service import UploadThingService
 from apps.projects.models.comment import ProjectComment
 from apps.projects.models.project import Project
 from apps.projects.models.upvote import ProjectUpvote
+from django import forms
+from django.contrib import admin, messages
+from django.utils.safestring import mark_safe
 
 
 class ProjectAdminForm(forms.ModelForm):

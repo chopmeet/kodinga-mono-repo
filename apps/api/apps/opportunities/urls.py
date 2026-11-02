@@ -1,5 +1,3 @@
-from django.urls import path
-
 from apps.opportunities.views import (
     ApplicationStatusUpdateView,
     MyApplicationListView,
@@ -9,6 +7,7 @@ from apps.opportunities.views import (
     OpportunityDetailView,
     OpportunityListView,
 )
+from django.urls import path
 
 app_name = "opportunities"
 

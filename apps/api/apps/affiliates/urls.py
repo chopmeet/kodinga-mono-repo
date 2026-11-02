@@ -1,5 +1,3 @@
-from django.urls import path
-
 from apps.affiliates.views import (
     AffiliateClickTrackView,
     AffiliateLinkDetailView,
@@ -7,6 +5,7 @@ from apps.affiliates.views import (
     AffiliateStatsView,
     PayoutRequestListView,
 )
+from django.urls import path
 
 app_name = "affiliates"
 

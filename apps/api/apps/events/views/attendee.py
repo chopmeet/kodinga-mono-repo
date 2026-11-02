@@ -1,3 +1,5 @@
+from common.utils.pagination import StandardResultsSetPagination
+from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -11,8 +13,6 @@ from apps.events.serializers.attendee import (
     EventRSVPSerializer,
 )
 from apps.events.services.event_service import EventService
-from common.utils.pagination import StandardResultsSetPagination
-from common.utils.responses import error_response, success_response
 
 
 class EventRSVPView(APIView):

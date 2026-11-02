@@ -3,10 +3,6 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Optional
 
-from django.core.cache import cache
-from django.db.models import Count, Sum
-from django.utils import timezone
-
 from apps.accounts.models.user import User
 from apps.analytics.models.metric import MetricType, PlatformMetric
 from apps.billing.models.payment import Payment, PaymentStatus
@@ -16,6 +12,9 @@ from apps.classroom.models.progress import LessonProgress
 from apps.communities.models.community import Community
 from apps.posts.models.comment import Comment
 from apps.posts.models.post import Post
+from django.core.cache import cache
+from django.db.models import Count, Sum
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 

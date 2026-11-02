@@ -1,8 +1,7 @@
-from rest_framework import serializers
-
 from apps.billing.models.payment import Payment
 from apps.billing.serializers.plan import PlanSerializer
 from common.serializers.base import BaseModelSerializer
+from rest_framework import serializers
 
 
 class CreateCheckoutRequestSerializer(serializers.Serializer):

@@ -1,6 +1,5 @@
-from rest_framework import serializers
-
 from apps.posts.models.reaction import ReactionType
+from rest_framework import serializers
 
 
 class ToggleReactionRequestSerializer(serializers.Serializer):

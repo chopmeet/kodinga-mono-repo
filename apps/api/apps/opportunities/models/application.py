@@ -1,8 +1,7 @@
-from django.conf import settings
-from django.db import models
-
 from apps.opportunities.models.opportunity import Opportunity
 from common.models.base import BaseModel
+from django.conf import settings
+from django.db import models
 
 
 class ApplicationStatus(models.TextChoices):

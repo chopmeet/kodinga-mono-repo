@@ -1,14 +1,13 @@
 from typing import Any, Optional
 
-from django.db.models import Count, Q
-from django.utils import timezone
-
 from apps.accounts.models.user import User
 from apps.classroom.models.course import Course
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.event import Event, EventStatus
 from apps.posts.models.post import Post
 from apps.profiles.models.profile import DeveloperProfile
+from django.db.models import Count, Q
+from django.utils import timezone
 
 
 class DiscoveryService:

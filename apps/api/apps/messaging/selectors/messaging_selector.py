@@ -1,7 +1,6 @@
-from rest_framework.exceptions import PermissionDenied
-
 from apps.messaging.models.conversation import Conversation
 from apps.messaging.models.message import Message
+from rest_framework.exceptions import PermissionDenied
 
 
 class MessagingSelector:

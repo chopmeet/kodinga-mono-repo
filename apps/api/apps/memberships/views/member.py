@@ -1,10 +1,3 @@
-from django.db import models, transaction
-from django.db.models import F
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-
 from apps.administration.models.audit import PlatformAuditLog
 from apps.communities.models.community import (
     Community,
@@ -37,6 +30,12 @@ from apps.memberships.services.invitation_service import ROLE_MAPPING
 from apps.memberships.services.membership_service import MembershipService
 from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
+from django.db import models, transaction
+from django.db.models import F
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
 
 class JoinCommunityView(APIView):

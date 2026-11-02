@@ -1,3 +1,4 @@
+from common.utils.responses import error_response, success_response
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
@@ -14,7 +15,6 @@ from apps.events.serializers.event import (
     EventTranscriptionResponseSerializer,
 )
 from apps.events.services.transcription_service import EventTranscriptionService
-from common.utils.responses import error_response, success_response
 
 
 class EventTranscribeView(APIView):

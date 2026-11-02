@@ -1,7 +1,7 @@
+from common.permissions.base import is_superadmin_user
 from rest_framework.permissions import BasePermission
 
 from apps.communities.models.community import Community
-from common.permissions.base import is_superadmin_user
 
 
 class IsCommunityClassroomManager(BasePermission):

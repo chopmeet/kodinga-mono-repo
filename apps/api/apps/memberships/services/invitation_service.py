@@ -2,12 +2,6 @@ import logging
 import uuid
 from datetime import timedelta
 
-from django.conf import settings
-from django.db import models, transaction
-from django.db.models import F
-from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied
-
 from apps.accounts.models.user import User
 from apps.administration.models.audit import PlatformAuditLog
 from apps.communities.models.community import Community
@@ -33,6 +27,11 @@ from common.exceptions.handler import (
     ResourceNotFoundError,
 )
 from common.utils.tokens import generate_secure_token, hash_token
+from django.conf import settings
+from django.db import models, transaction
+from django.db.models import F
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 
 logger = logging.getLogger('kodinga.memberships')
 

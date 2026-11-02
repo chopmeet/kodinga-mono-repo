@@ -2,15 +2,14 @@ import logging
 import time
 from typing import Any, Optional
 
-from django.conf import settings
-from django.core.cache import cache
-from django.db import connection
-from django.utils import timezone
-
 from apps.accounts.models.user import User
 from apps.administration.models.audit import PlatformAuditLog
 from apps.administration.models.setting import SystemSetting
 from apps.analytics.services.analytics_service import AnalyticsService
+from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,3 @@
-from django.urls import path
-
 from apps.analytics.views.analytics import (
     AnalyticsEngagementView,
     AnalyticsFinancialView,
@@ -13,6 +11,7 @@ from apps.analytics.views.member_activity import (
     MemberHackathonsView,
     MemberOpportunitiesView,
 )
+from django.urls import path
 
 app_name = 'analytics'
 

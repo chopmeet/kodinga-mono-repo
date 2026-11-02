@@ -4,10 +4,6 @@ from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
-
 from apps.accounts.models.user import User
 from apps.billing.models.affiliate import Affiliate, AffiliateCommission
 from apps.billing.models.payment import Payment, PaymentStatus
@@ -26,6 +22,9 @@ from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
 )
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

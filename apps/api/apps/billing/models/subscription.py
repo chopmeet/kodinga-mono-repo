@@ -1,10 +1,9 @@
-from django.conf import settings
-from django.db import models
-from django.utils import timezone
-
 from apps.billing.models.plan import Plan
 from apps.communities.models.community import Community
 from common.models.base import BaseModel
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
 
 
 class SubscriptionStatus(models.TextChoices):

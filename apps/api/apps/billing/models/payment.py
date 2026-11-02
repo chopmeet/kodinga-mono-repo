@@ -1,11 +1,10 @@
 from decimal import Decimal
 
-from django.conf import settings
-from django.db import models
-
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
 from common.models.base import BaseModel
+from django.conf import settings
+from django.db import models
 
 
 class PaymentStatus(models.TextChoices):

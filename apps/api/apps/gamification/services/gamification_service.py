@@ -1,11 +1,6 @@
 import logging
 from typing import Any, Optional
 
-from django.db import IntegrityError, transaction
-from django.db.models import Sum
-from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
-
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
 from apps.gamification.models.badge import Badge, UserBadge
@@ -26,6 +21,10 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from common.permissions.base import is_superadmin_user
+from django.db import IntegrityError, transaction
+from django.db.models import Sum
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 logger = logging.getLogger("kodinga.gamification")
 

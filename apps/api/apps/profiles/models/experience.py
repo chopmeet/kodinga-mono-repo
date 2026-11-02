@@ -1,8 +1,7 @@
-from django.db import models
-
 from apps.profiles.models.profile import DeveloperProfile
 from apps.profiles.models.technology import Technology
 from common.models.base import BaseModel
+from django.db import models
 
 
 class EmploymentType(models.TextChoices):
