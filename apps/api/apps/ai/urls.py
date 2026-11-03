@@ -14,6 +14,7 @@ from apps.ai.views import (
     AIProviderHealthView,
     AITranslateView,
     CommunityAISettingsView,
+    GlobalAIProviderSettingsView,
 )
 
 app_name = "ai"
@@ -25,6 +26,8 @@ urlpatterns = [
     path("ai/translate/", AITranslateView.as_view(), name="ai-translate"),
     # Observability & Health
     path("admin/ai/health/", AIProviderHealthView.as_view(), name="ai-provider-health"),
+    # Global AI Provider Routing Strategy (Superadmin)
+    path("admin/ai/settings/", GlobalAIProviderSettingsView.as_view(), name="admin-ai-settings"),
     # Moderation Audit Logs
     path("ai/moderation/logs/", AIModerationAuditListView.as_view(), name="ai-moderation-logs"),
     # Community Owner AI Settings
@@ -75,4 +78,3 @@ urlpatterns = [
         name="ai-assistant-conversation-clear",
     ),
 ]
-

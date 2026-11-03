@@ -113,6 +113,13 @@ class CommunityAISettingsSerializer(serializers.Serializer):
         default="standard",
         help_text="Sensibilité pour les règles optionnelles",
     )
+    ai_provider_override = serializers.ChoiceField(
+        choices=["", "gemini", "openai"],
+        required=False,
+        default="",
+        allow_blank=True,
+        help_text="Provider IA forcé pour cette communauté ('gemini', 'openai', ou vide = défaut système)",
+    )
 
     # Read-only platform safety invariants
     platform_locked_rules = serializers.SerializerMethodField()
@@ -413,3 +420,20 @@ class AssistantChatResponseSerializer(serializers.Serializer):
     )
 
 
+
+
+class GlobalAISettingsSerializer(serializers.Serializer):
+    strategy = serializers.ChoiceField(
+        choices=["auto", "gemini_only", "openai_only", "openai_first"],
+        required=False,
+        help_text="Stratégie de routage des providers IA",
+    )
+    primary_provider = serializers.CharField(read_only=True)
+    fallback_enabled = serializers.BooleanField(read_only=True)
+    max_retries = serializers.IntegerField(read_only=True)
+    gemini_model = serializers.CharField(read_only=True)
+    openai_model = serializers.CharField(read_only=True)
+    circuit_breaker_open = serializers.BooleanField(read_only=True)
+    available_strategies = serializers.ListField(
+        child=serializers.CharField(), read_only=True
+    )
