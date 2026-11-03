@@ -437,3 +437,303 @@ class GlobalAISettingsSerializer(serializers.Serializer):
     available_strategies = serializers.ListField(
         child=serializers.CharField(), read_only=True
     )
+
+
+# ==============================================================================
+# Feature 2: Semantic Search & Duplicate Detection Serializers
+# ==============================================================================
+
+class CheckDuplicatePostRequestSerializer(serializers.Serializer):
+    title = serializers.CharField(
+        max_length=255,
+        required=True,
+        help_text="Titre du post en cours de rédaction",
+    )
+    content = serializers.CharField(
+        required=False,
+        default="",
+        allow_blank=True,
+        help_text="Corps du post",
+    )
+    threshold = serializers.FloatField(
+        required=False,
+        default=0.65,
+        min_value=0.1,
+        max_value=1.0,
+        help_text="Seuil de similarité cosinus (défaut: 0.65)",
+    )
+    limit = serializers.IntegerField(
+        required=False,
+        default=5,
+        min_value=1,
+        max_value=20,
+    )
+
+
+class DuplicateMatchItemSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    title = serializers.CharField()
+    similarity_score = serializers.FloatField()
+    url = serializers.CharField()
+    snippet = serializers.CharField(allow_blank=True)
+    is_solved = serializers.BooleanField(default=False)
+
+
+class CheckDuplicatePostResponseSerializer(serializers.Serializer):
+    has_duplicates = serializers.BooleanField()
+    threshold = serializers.FloatField()
+    count = serializers.IntegerField()
+    duplicates = DuplicateMatchItemSerializer(many=True)
+
+
+class SemanticSearchRequestSerializer(serializers.Serializer):
+    query = serializers.CharField(
+        max_length=500,
+        required=True,
+        help_text="Requête de recherche en langage naturel",
+    )
+    content_types = serializers.ListField(
+        child=serializers.ChoiceField(choices=["post", "lesson", "event"]),
+        required=False,
+        default=["post", "lesson", "event"],
+        help_text="Types de contenus à inclure",
+    )
+    limit = serializers.IntegerField(
+        required=False,
+        default=10,
+        min_value=1,
+        max_value=50,
+    )
+
+
+class SemanticSearchResultItemSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    content_type = serializers.CharField()
+    title = serializers.CharField()
+    similarity_score = serializers.FloatField()
+    url = serializers.CharField()
+    snippet = serializers.CharField(allow_blank=True)
+
+
+# ==============================================================================
+# Feature 6: Assessment Generation (Quiz & Code Exercises) Serializers
+# ==============================================================================
+
+class GenerateQuizRequestSerializer(serializers.Serializer):
+    lesson_id = serializers.UUIDField(required=True)
+    question_count = serializers.IntegerField(
+        required=False,
+        default=3,
+        min_value=1,
+        max_value=10,
+        help_text="Nombre de questions QCM à générer",
+    )
+    num_questions = serializers.IntegerField(
+        required=False,
+        default=3,
+        min_value=1,
+        max_value=10,
+        help_text="Nombre de questions QCM à générer",
+    )
+    difficulty = serializers.ChoiceField(
+        choices=["beginner", "intermediate", "advanced"],
+        required=False,
+        default="intermediate",
+    )
+    language = serializers.CharField(
+        max_length=10,
+        required=False,
+        default="fr",
+    )
+
+
+class QuizQuestionItemSerializer(serializers.Serializer):
+    question = serializers.CharField()
+    options = serializers.ListField(child=serializers.CharField())
+    correct_index = serializers.IntegerField()
+    explanation = serializers.CharField()
+
+
+class GenerateCodeExerciseRequestSerializer(serializers.Serializer):
+    lesson_id = serializers.UUIDField(required=True)
+    language = serializers.CharField(
+        max_length=30,
+        required=False,
+        default="python",
+        help_text="Langage de programmation (python, javascript, typescript, sql)",
+    )
+    language_code = serializers.CharField(
+        max_length=30,
+        required=False,
+        default="python",
+        help_text="Langage de programmation",
+    )
+    difficulty = serializers.ChoiceField(
+        choices=["beginner", "intermediate", "advanced"],
+        required=False,
+        default="intermediate",
+    )
+    instructions = serializers.CharField(
+        required=False,
+        default="",
+        allow_blank=True,
+        help_text="Consignes ou focus spécifique du formateur",
+    )
+
+
+class CodeExerciseGeneratedSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    instructions_markdown = serializers.CharField()
+    starter_code = serializers.CharField()
+    solution_code = serializers.CharField()
+    test_cases = serializers.ListField(child=serializers.DictField())
+    language = serializers.CharField()
+
+
+# ==============================================================================
+# Feature 1: Peer Matchmaking Serializers
+# ==============================================================================
+
+class PeerMatchItemSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    user_id = serializers.CharField()
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    avatar_url = serializers.CharField(allow_null=True)
+    match_type = serializers.CharField()
+    compatibility_score = serializers.FloatField()
+    match_reasons = serializers.ListField(child=serializers.CharField())
+    status = serializers.CharField()
+
+
+class PeerMatchRespondRequestSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(
+        choices=["accept", "decline", "dismiss", "connect"],
+        required=True,
+    )
+    note = serializers.CharField(
+        required=False,
+        default="",
+        allow_blank=True,
+    )
+
+
+class HackathonTeammateSuggestionRequestSerializer(serializers.Serializer):
+    desired_skills = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    limit = serializers.IntegerField(
+        required=False,
+        default=3,
+        min_value=1,
+        max_value=10,
+    )
+
+
+# ==============================================================================
+# Feature 4: Post Help & Mentor Tagging Serializers
+# ==============================================================================
+
+class MentorSuggestionItemSerializer(serializers.Serializer):
+    user_id = serializers.CharField()
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    avatar_url = serializers.CharField(allow_null=True)
+    matching_skills = serializers.ListField(child=serializers.CharField())
+    reputation_score = serializers.IntegerField()
+
+
+class PostHelpAssistanceResponseSerializer(serializers.Serializer):
+    post_id = serializers.CharField()
+    matching_skills = serializers.ListField(child=serializers.CharField())
+    ai_comment_draft = serializers.CharField()
+    suggested_mentors = MentorSuggestionItemSerializer(many=True)
+    status = serializers.CharField()
+
+
+class PingMentorsRequestSerializer(serializers.Serializer):
+    mentor_ids = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        default=list,
+    )
+    custom_message = serializers.CharField(
+        required=False,
+        default="",
+        allow_blank=True,
+    )
+
+
+# ==============================================================================
+# Feature 5: Churn Risk & Smart Nudges Serializers
+# ==============================================================================
+
+class MemberChurnRiskItemSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    member_id = serializers.CharField(source="member.id", read_only=True)
+    user_id = serializers.CharField(source="member.user.id", read_only=True)
+    username = serializers.CharField(source="member.user.username", read_only=True)
+    first_name = serializers.CharField(source="member.user.first_name", read_only=True)
+    last_name = serializers.CharField(source="member.user.last_name", read_only=True)
+    avatar_url = serializers.SerializerMethodField()
+
+    def get_avatar_url(self, obj):
+        user = getattr(getattr(obj, "member", None), "user", None)
+        return getattr(getattr(user, "profile", None), "avatar_url", None) if user else None
+    risk_level = serializers.CharField()
+    risk_score = serializers.FloatField()
+    signals = serializers.DictField()
+    suggested_nudge = serializers.CharField()
+    status = serializers.CharField()
+    nudge_sent_at = serializers.DateTimeField(allow_null=True)
+
+
+class SendNudgeRequestSerializer(serializers.Serializer):
+    member_id = serializers.CharField(required=True)
+    message = serializers.CharField(required=False, default="", allow_blank=True)
+
+
+# ==============================================================================
+# Feature 3: Community Weekly Digest Serializers
+# ==============================================================================
+
+class CommunityWeeklyDigestSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    week_identifier = serializers.CharField()
+    headline = serializers.CharField()
+    summary_markdown = serializers.CharField()
+    top_debates = serializers.ListField(child=serializers.DictField())
+    highlighted_project = serializers.DictField()
+    upcoming_events = serializers.ListField(child=serializers.DictField())
+    kpis_snapshot = serializers.DictField()
+    created_at = serializers.DateTimeField()
+
+
+class ApplyAssessmentSerializer(serializers.Serializer):
+    lesson_id = serializers.UUIDField(required=True)
+    assessment_type = serializers.ChoiceField(choices=["quiz", "code_exercise"])
+    payload = serializers.DictField(required=True)
+
+
+class SendSmartNudgeSerializer(serializers.Serializer):
+    custom_message = serializers.CharField(required=False, default="", allow_blank=True)
+
+
+# Backwards compatibility and alternative naming aliases
+CheckDuplicatePostsSerializer = CheckDuplicatePostRequestSerializer
+DuplicatePostMatchSerializer = DuplicateMatchItemSerializer
+SemanticSearchQuerySerializer = SemanticSearchRequestSerializer
+SemanticSearchResultSerializer = SemanticSearchResultItemSerializer
+PeerMatchRecommendationSerializer = PeerMatchItemSerializer
+HackathonTeammateRequestSerializer = HackathonTeammateSuggestionRequestSerializer
+PeerMatchResponseSerializer = PeerMatchRespondRequestSerializer
+PostHelpAssistanceSerializer = PostHelpAssistanceResponseSerializer
+PingMentorsSerializer = PingMentorsRequestSerializer
+MemberChurnRiskSerializer = MemberChurnRiskItemSerializer
+
+GenerateExerciseRequestSerializer = GenerateCodeExerciseRequestSerializer

@@ -13,8 +13,22 @@ from apps.ai.views import (
     AIModerationAuditListView,
     AIProviderHealthView,
     AITranslateView,
+    ApplyAssessmentView,
+    CheckDuplicatePostsView,
     CommunityAISettingsView,
+    CommunityChurnDashboardView,
+    CommunityDigestCurrentView,
+    CommunityDigestTriggerView,
+    CommunityPeerMatchView,
+    GenerateCodeExerciseView,
+    GenerateQuizView,
     GlobalAIProviderSettingsView,
+    HackathonTeammateSuggestionView,
+    PeerMatchRespondView,
+    PingMentorsView,
+    PostHelpAssistanceView,
+    SemanticSearchView,
+    SendSmartNudgeView,
 )
 
 app_name = "ai"
@@ -76,5 +90,81 @@ urlpatterns = [
         "ai-assistant/conversations/<uuid:conversation_id>/clear/",
         AIAssistantConversationClearView.as_view(),
         name="ai-assistant-conversation-clear",
+    ),
+    # 1. Semantic Search & Live Duplicate Question Detection
+    path(
+        "communities/<slug:slug>/posts/check-duplicates/",
+        CheckDuplicatePostsView.as_view(),
+        name="community-posts-check-duplicates",
+    ),
+    path(
+        "communities/<slug:slug>/ai/semantic-search/",
+        SemanticSearchView.as_view(),
+        name="community-ai-semantic-search",
+    ),
+    # 2. Smart Peer Matching & Hackathon Team Matchmaking
+    path(
+        "communities/<slug:slug>/ai/peer-matches/",
+        CommunityPeerMatchView.as_view(),
+        name="community-ai-peer-matches",
+    ),
+    path(
+        "communities/<slug:slug>/ai/hackathon-suggestions/",
+        HackathonTeammateSuggestionView.as_view(),
+        name="community-ai-hackathon-suggestions",
+    ),
+    path(
+        "ai/peer-matches/<uuid:pk>/respond/",
+        PeerMatchRespondView.as_view(),
+        name="ai-peer-match-respond",
+    ),
+    # 3. Community Help Facilitator & Expert Mentor Tagging
+    path(
+        "posts/<uuid:post_id>/help-assistance/",
+        PostHelpAssistanceView.as_view(),
+        name="post-help-assistance",
+    ),
+    path(
+        "posts/<uuid:post_id>/help-assistance/ping-mentors/",
+        PingMentorsView.as_view(),
+        name="post-help-ping-mentors",
+    ),
+    # 4. Automated Quiz & Code Exercise Generator for Instructors
+    path(
+        "courses/<slug:course_slug>/ai/generate-quiz/",
+        GenerateQuizView.as_view(),
+        name="course-ai-generate-quiz",
+    ),
+    path(
+        "courses/<slug:course_slug>/ai/generate-exercise/",
+        GenerateCodeExerciseView.as_view(),
+        name="course-ai-generate-exercise",
+    ),
+    path(
+        "courses/<slug:course_slug>/ai/apply-assessment/",
+        ApplyAssessmentView.as_view(),
+        name="course-ai-apply-assessment",
+    ),
+    # 5. Predictive Churn Detection & Creator Smart Nudges
+    path(
+        "communities/<slug:slug>/ai/churn-dashboard/",
+        CommunityChurnDashboardView.as_view(),
+        name="community-ai-churn-dashboard",
+    ),
+    path(
+        "ai/churn-risks/<uuid:pk>/send-nudge/",
+        SendSmartNudgeView.as_view(),
+        name="ai-churn-risk-send-nudge",
+    ),
+    # 6. Weekly Community Digest ("Community Pulse")
+    path(
+        "communities/<slug:slug>/ai/weekly-digest/",
+        CommunityDigestCurrentView.as_view(),
+        name="community-ai-weekly-digest",
+    ),
+    path(
+        "communities/<slug:slug>/ai/weekly-digest/trigger/",
+        CommunityDigestTriggerView.as_view(),
+        name="community-ai-weekly-digest-trigger",
     ),
 ]

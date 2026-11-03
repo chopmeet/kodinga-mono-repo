@@ -483,5 +483,10 @@ class ProviderRouter:
         )
 
 
+
+    def generate_embedding(self, text: str, **kwargs) -> list[float]:
+        return self._execute_with_fallback("generate_embedding", "generate_embedding", text, **kwargs)
+
+
 # Global singleton router instance
 ai_router = ProviderRouter()
