@@ -1,5 +1,7 @@
+import hashlib
 import json
 import logging
+import math
 import re
 from typing import Any, Optional
 
@@ -582,3 +584,27 @@ class OpenAIAdapter(BaseAIProvider):
             provider=self.provider_name,
         )
 
+    def generate_embedding(self, text: str) -> list[float]:
+        try:
+            client = self._get_client()
+            res = client.embeddings.create(
+                model="text-embedding-3-small",
+                input=text,
+            )
+            if res.data and len(res.data) > 0:
+                return [float(x) for x in res.data[0].embedding]
+        except Exception as e:
+            logger.warning(f"OpenAI embedding API call failed: {e}. Falling back to deterministic embedding.")
+        
+        return self._deterministic_embedding(text)
+
+    def _deterministic_embedding(self, text: str, dim: int = 128) -> list[float]:
+        words = text.lower().split()
+        vec = [0.0] * dim
+        for _i, word in enumerate(words):
+            h = int(hashlib.sha256(word.encode("utf-8")).hexdigest(), 16)
+            idx = h % dim
+            val = ((h >> 8) % 1000) / 500.0 - 1.0
+            vec[idx] += val
+        norm = math.sqrt(sum(x * x for x in vec)) or 1.0
+        return [round(x / norm, 6) for x in vec]

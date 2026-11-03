@@ -123,7 +123,8 @@ IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in ar
 
 # Database configuration (Neon PostgreSQL or local SQLite fallback)
 DATABASE_URL_VAL = env.str('DATABASE_URL', default='').strip()
-if DATABASE_URL_VAL and not IS_TESTING:
+USE_LOCAL_SQLITE = env.bool('USE_LOCAL_SQLITE', default=False)
+if DATABASE_URL_VAL and not IS_TESTING and not USE_LOCAL_SQLITE:
     DATABASES = {
         'default': env.db_url_config(DATABASE_URL_VAL)
     }
