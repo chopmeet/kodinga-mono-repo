@@ -3,6 +3,13 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models.user import User
+from apps.communities.models.community import (
+    Community,
+    CommunityPricing,
+    CommunityPrivacy,
+)
+from apps.gamification.models.badge import Badge, BadgeCategory, UserBadge
+from apps.posts.models.post import Post, PostType
 from apps.profiles.models.profile import AvailabilityStatus
 from apps.profiles.models.skill import DeveloperSkill, SkillLevel
 from apps.profiles.models.technology import Technology, TechnologyCategory
@@ -97,6 +104,62 @@ class TestProfilesAPI:
 
         user1.profile.refresh_from_db()
         assert user1.profile.views_count == 1
+
+    def test_public_profile_badges_and_recent_posts_with_community_slug(
+        self, api_client, user1, user2
+    ):
+        user1.profile.is_public = True
+        user1.profile.save()
+
+        # Create Badge and assign to user1
+        badge = Badge.objects.create(
+            name="Python Pioneer",
+            slug="python-pioneer",
+            description="Awarded for writing outstanding Python code.",
+            category=BadgeCategory.COMMUNITY,
+            points_reward=50,
+        )
+        UserBadge.objects.create(user=user1, badge=badge)
+
+        # Create a public community and post
+        comm = Community.objects.create(
+            name="Django Pros",
+            slug="django-pros",
+            owner=user1,
+            privacy_type=CommunityPrivacy.PUBLIC,
+            pricing_type=CommunityPricing.FREE,
+        )
+        post = Post.objects.create(
+            community=comm,
+            author=user1,
+            title="Optimiser les requêtes Django ORM",
+            content="Utilisez select_related et prefetch_related.",
+            post_type=PostType.DISCUSSION,
+        )
+
+        api_client.force_authenticate(user=user2)
+        response = api_client.get(f"/api/v1/profiles/@{user1.username}/")
+        assert response.status_code == status.HTTP_200_OK
+
+        contributions = response.json()["data"]["contributions"]
+        # 1. Badges should NOT be empty and have awarded_at
+        assert contributions["badges_count"] == 1
+        assert len(contributions["badges"]) == 1
+        serialized_badge = contributions["badges"][0]
+        assert serialized_badge["id"] == str(badge.id)
+        assert serialized_badge["name"] == "Python Pioneer"
+        assert serialized_badge["awarded_at"] is not None
+        assert serialized_badge["earned_at"] is not None
+
+        # 2. Recent posts must contain community_slug
+        assert contributions["posts_count"] == 1
+        assert len(contributions["recent_posts"]) == 1
+        recent_post = contributions["recent_posts"][0]
+        assert recent_post["id"] == str(post.id)
+        assert recent_post["title"] == "Optimiser les requêtes Django ORM"
+        assert recent_post["community_slug"] == "django-pros"
+        assert recent_post["community_name"] == "Django Pros"
+        assert recent_post["community"]["slug"] == "django-pros"
 
     def test_add_and_delete_skill(self, api_client, user1, tech_python):
         api_client.force_authenticate(user=user1)

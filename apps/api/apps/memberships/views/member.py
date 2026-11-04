@@ -591,28 +591,17 @@ class CommunityNotificationToggleView(APIView):
             if requested_val is None:
                 requested_val = request.data.get("enabled")
 
-        if not member:
-            if community.privacy_type == CommunityPrivacy.PUBLIC and community.pricing_type == CommunityPricing.FREE:
-                new_val = bool(requested_val) if requested_val is not None else True
-                member = CommunityMember.objects.create(
-                    community=community,
-                    user=request.user,
-                    role=CommunityRole.MEMBER,
-                    status=MembershipStatus.ACTIVE,
-                    notifications_enabled=new_val,
-                )
-                Community.objects.filter(id=community.id).update(members_count=F('members_count') + 1)
-            else:
-                return error_response(
-                    "Vous devez être membre de cette communauté pour gérer les notifications.",
-                    status_code=status.HTTP_403_FORBIDDEN
-                )
+        if not member or member.status != MembershipStatus.ACTIVE:
+            return error_response(
+                "Vous devez être membre de cette communauté pour gérer les notifications.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
+        if requested_val is not None:
+            member.notifications_enabled = bool(requested_val)
         else:
-            if requested_val is not None:
-                member.notifications_enabled = bool(requested_val)
-            else:
-                member.notifications_enabled = not member.notifications_enabled
-            member.save(update_fields=['notifications_enabled', 'updated_at'])
+            member.notifications_enabled = not member.notifications_enabled
+        member.save(update_fields=['notifications_enabled', 'updated_at'])
 
         msg = "Notifications activées." if member.notifications_enabled else "Notifications désactivées."
         return success_response(
