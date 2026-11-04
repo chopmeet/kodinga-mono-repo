@@ -363,6 +363,7 @@ class InvitationService:
             # Security verification: recipient email matching (when email is specified)
             user_email = user.email.strip().lower()
             invited_email = (invitation.email or '').strip().lower()
+            is_shareable = not invited_email or invitation.max_uses == 0 or invitation.max_uses > 1
 
             if invited_email and user_email != invited_email:
                 masked = mask_email(invited_email)
@@ -377,12 +378,33 @@ class InvitationService:
             ).first()
 
             if member:
+                if member.status == MembershipStatus.BANNED:
+                    raise PermissionDenied("Vous êtes banni de cette communauté.")
+
+                from apps.memberships.models.sanction import (
+                    MemberSanction,
+                    SanctionType,
+                )
+                if MemberSanction.objects.filter(
+                    member=member,
+                    sanction_type=SanctionType.BAN,
+                    is_active=True
+                ).exists():
+                    raise PermissionDenied("Vous êtes banni de cette communauté.")
+
+                if member.status == MembershipStatus.SUSPENDED:
+                    raise PermissionDenied("Votre compte est actuellement suspendu dans cette communauté.")
+
                 if member.status == MembershipStatus.ACTIVE:
                     # Idempotent return if already active member
-                    invitation.status = InvitationStatus.ACCEPTED
-                    invitation.accepted_at = now
-                    invitation.save(update_fields=['status', 'accepted_at', 'updated_at'])
+                    # A shareable/reusable link must NEVER be closed when an active member accepts it!
+                    if not is_shareable:
+                        invitation.status = InvitationStatus.ACCEPTED
+                        invitation.accepted_at = now
+                        invitation.save(update_fields=['status', 'accepted_at', 'updated_at'])
                     return member
+
+                # Reactivate member who had left or was rejected
                 member.status = MembershipStatus.ACTIVE
                 member.role = invitation.role
                 member.save(update_fields=['status', 'role', 'updated_at'])
@@ -398,7 +420,7 @@ class InvitationService:
             invitation.uses_count = (invitation.uses_count or 0) + 1
             is_unlimited = (invitation.max_uses == 0)
             has_reached_max = bool(invitation.max_uses and invitation.max_uses > 0 and invitation.uses_count >= invitation.max_uses)
-            if invited_email or (not is_unlimited and has_reached_max):
+            if (not is_shareable) or (not is_unlimited and has_reached_max):
                 invitation.status = InvitationStatus.ACCEPTED
                 invitation.accepted_at = now
             invitation.save(update_fields=['status', 'accepted_at', 'uses_count', 'updated_at'])
@@ -508,6 +530,15 @@ class InvitationService:
 
             user_email = user.email.strip().lower()
             invited_email = (invitation.email or '').strip().lower()
+            is_shareable = not invited_email or invitation.max_uses == 0 or invitation.max_uses > 1
+
+            if is_shareable:
+                raise ApplicationError(
+                    message="Un lien d'invitation partageable ne peut pas être refusé.",
+                    code="shareable_link_cannot_be_declined",
+                    status_code=400
+                )
+
             if invited_email and user_email != invited_email:
                 masked = mask_email(invited_email)
                 raise PermissionDenied(
