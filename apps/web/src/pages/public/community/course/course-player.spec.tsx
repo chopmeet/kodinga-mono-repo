@@ -17,7 +17,7 @@ const LESSONS = [
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** A sequential course of two lessons; enroll / progress like the api (unlock, percent) */
-function stubCourseApi({ member = true, slowCourse = false, video = '', finished = false, exercise = false } = {}) {
+function stubCourseApi({ member = true, slowCourse = false, video = '', finished = false, exercise = false, quiz = false, embed = false } = {}) {
   let enrolled = finished;
   const done = new Set<string>(finished ? LESSONS.map((l) => l.id) : []);
   const calls: Call[] = [];
@@ -27,7 +27,7 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       module: 'm1',
       title: l.title,
       slug: l.id,
-      lesson_type: exercise && i === 0 ? 'code' : 'text',
+      lesson_type: quiz && i === LESSONS.length - 1 ? 'quiz' : exercise && i === 0 ? 'code' : 'text',
       content_format: 'markdown',
       duration_seconds: 300,
       order: i,
@@ -64,6 +64,15 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       enrolled = true;
       return json({ success: true, data: { is_completed: body?.is_completed } });
     }
+    if (path.endsWith('/lessons/l2/quiz/submit/')) {
+      const right = body?.answers?.q1?.[0] === 'a' && [...(body?.answers?.q2 ?? [])].sort().join() === 'a,b';
+      if (right) done.add('l2');
+      const results = [
+        { question_id: 'q1', question: 'Un hook commence par ?', question_type: 'single_choice', selected_option_ids: body?.answers?.q1, correct_option_ids: ['a'], is_correct: body?.answers?.q1?.[0] === 'a', points_earned: 1, points_possible: 1, explanation: 'C’est la convention de React.' },
+        { question_id: 'q2', question: 'Quels hooks existent ?', question_type: 'multiple_choice', selected_option_ids: body?.answers?.q2, correct_option_ids: ['a', 'b'], is_correct: right, points_earned: 1, points_possible: 1, explanation: '' },
+      ];
+      return json({ success: true, data: { score_percent: right ? 100 : 50, passing_score: 70, passed: right, earned_points: right ? 2 : 1, total_points: 2, correct_questions_count: right ? 2 : 1, total_questions_count: 2, submitted_at: '2026-11-04T10:00:00Z', question_results: results, just_completed_course: right } });
+    }
     const lessonId = path.match(/courses\/react-19\/lessons\/([^/]+)\/$/)?.[1];
     if (lessonId) {
       const l = outline().find((x) => x.id === lessonId);
@@ -71,7 +80,13 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       // video: the url of the first lesson's video, or "preparing" while Mux encodes it
       const media = lessonId === 'l1' && video ? { has_video: true, video_status: video === 'preparing' ? 'preparing' : 'ready', video_source_url: video === 'preparing' ? '' : video } : {};
       const content = exercise && lessonId === 'l1' ? 'Écrivez un hook.\n\n```typescript exercice\nfunction useToggle() {}\n```\n\n```typescript solution\nfunction useToggle() { return useState(false); }\n```' : LESSONS.find((x) => x.id === lessonId)?.content;
-      return json({ success: true, data: { ...l, ...media, content, estimated_duration_display: '5 min' } });
+      // As a learner gets it: no is_correct
+      const quizData = quiz && lessonId === 'l2' ? { quiz_data: { passing_score: 70, questions: [
+        { id: 'q1', question: 'Un hook commence par ?', question_type: 'single_choice', points: 1, options: [{ id: 'a', text: 'use' }, { id: 'b', text: 'get' }] },
+        { id: 'q2', question: 'Quels hooks existent ?', question_type: 'multiple_choice', points: 1, options: [{ id: 'a', text: 'useState' }, { id: 'b', text: 'useEffect' }, { id: 'c', text: 'useBanana' }] },
+      ] } } : {};
+      const embedded = embed && lessonId === 'l1' ? { has_video: true, video_status: 'ready', video_provider: 'youtube', video_source_url: 'https://www.youtube.com/watch?v=abc123', video_embed_url: 'https://www.youtube.com/embed/abc123' } : {};
+      return json({ success: true, data: { ...l, ...media, ...embedded, ...quizData, content, estimated_duration_display: '5 min' } });
     }
     if (path.endsWith('/communities/abidjan-react/gamification/rules/')) {
       return json({ success: true, data: [{ id: 'r1', action: 'course_completed', label: 'Formation achevée', description: '', points: 50, default_points: 50, is_active: true, allow_multiple_per_reference: false, updated_at: '' }] });
@@ -222,5 +237,60 @@ describe('Course player (member)', () => {
     expect(within(solution).queryByText(/return useState/)).toBeNull();
     fireEvent.click(within(solution).getByRole('button', { name: 'Voir la solution' }));
     expect(within(solution).getByText(/return/)).toBeTruthy();
+  });
+
+  it('runs a quiz: one question at a time, the score, the correction, then the end of the course', async () => {
+    signIn();
+    const calls = stubCourseApi({ quiz: true });
+    // The first lesson done, the quiz is open
+    renderAppAt(URL_PATH);
+    fireEvent.click(await screen.findByRole('button', { name: /Commencer la formation/ }, SLOW));
+    fireEvent.click(await screen.findByRole('button', { name: /Terminer et continuer/ }, SLOW));
+    const quiz = await screen.findByRole('region', { name: 'Quiz' }, SLOW);
+    expect(within(quiz).getByText('Question 1 sur 2')).toBeTruthy();
+    // Done by passing it, not by hand
+    expect(screen.queryByRole('button', { name: /Marquer comme terminée/ })).toBeNull();
+    expect(screen.getByText('Réussissez le quiz pour terminer cette leçon.')).toBeTruthy();
+
+    // A single answer, then several
+    fireEvent.click(within(quiz).getByRole('radio', { name: 'get' }));
+    fireEvent.click(within(quiz).getByRole('radio', { name: 'use' }));
+    expect(within(quiz).getByRole('radio', { name: 'get' })).toHaveProperty('checked', false);
+    fireEvent.click(within(quiz).getByRole('button', { name: /Question suivante/ }));
+    expect(within(quiz).getByText('Plusieurs réponses possibles')).toBeTruthy();
+    // Not answered: said, nothing is sent
+    fireEvent.click(within(quiz).getByRole('button', { name: /Valider mes réponses/ }));
+    expect(within(quiz).getByRole('alert').textContent).toBe('Répondez à la question 2 avant de valider.');
+    expect(calls.some((c) => c.url.pathname.endsWith('/quiz/submit/'))).toBe(false);
+
+    // Failed: the score, the correction, start again
+    fireEvent.click(within(quiz).getByRole('checkbox', { name: 'useState' }));
+    fireEvent.click(within(quiz).getByRole('button', { name: /Valider mes réponses/ }));
+    const score = await screen.findByRole('region', { name: 'Résultat du quiz' }, SLOW);
+    expect(score.textContent).toMatch(/50 %/);
+    expect(score.textContent).toMatch(/Il faut 70 % pour réussir/);
+    expect(calls.find((c) => c.url.pathname.endsWith('/quiz/submit/'))?.body).toEqual({ answers: { q1: ['a'], q2: ['a'] } });
+    const correction = screen.getByRole('list', { name: 'Correction' });
+    expect(within(correction).getByText('C’est la convention de React.')).toBeTruthy();
+    expect(within(correction).getAllByText('Bonne réponse').length).toBeGreaterThan(0);
+
+    // Passed: the course is done
+    fireEvent.click(within(score).getByRole('button', { name: /Recommencer/ }));
+    const again = await screen.findByRole('region', { name: 'Quiz' }, SLOW);
+    fireEvent.click(within(again).getByRole('radio', { name: 'use' }));
+    fireEvent.click(within(again).getByRole('button', { name: /Question suivante/ }));
+    fireEvent.click(within(again).getByRole('checkbox', { name: 'useState' }));
+    fireEvent.click(within(again).getByRole('checkbox', { name: 'useEffect' }));
+    fireEvent.click(within(again).getByRole('button', { name: /Valider mes réponses/ }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    expect(within(dialog).getByRole('heading', { name: 'Félicitations !' })).toBeTruthy();
+  });
+
+  it('plays a video of a platform in its own player', async () => {
+    signIn();
+    stubCourseApi({ embed: true, finished: true });
+    renderAppAt(`${URL_PATH}?lesson=l1`);
+    const player = await screen.findByTitle('Vidéo : Les hooks', {}, SLOW);
+    expect(player.getAttribute('src')).toBe('https://www.youtube.com/embed/abc123');
   });
 });

@@ -1,4 +1,4 @@
-import { Award, Bell, BookOpen, Briefcase, CalendarClock, CheckCircle2, Heart, MessageCircle, Radio, Rocket, Trophy, UserPlus, AtSign, type LucideIcon } from 'lucide-react';
+import { Award, Bell, BookOpen, Briefcase, CalendarClock, CheckCircle2, CircleX, Heart, MessageCircle, Radio, Rocket, Trophy, UserCheck, UserPlus, AtSign, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@kodinga-mono-repo/ui';
 import type { AppNotification, NotificationType } from '@/utils/api/notification/notification.type';
@@ -13,6 +13,13 @@ const icons: Record<NotificationType, LucideIcon> = {
   event_reminder: CalendarClock,
   event_live_started: Radio,
   course_new: BookOpen,
+  hackathon_new: Trophy,
+  project_new: Rocket,
+  opportunity_new: Briefcase,
+  content_published: Bell,
+  join_request: UserPlus,
+  join_request_approved: UserCheck,
+  join_request_rejected: CircleX,
   badge_unlocked: Award,
   community_invite: UserPlus,
 };

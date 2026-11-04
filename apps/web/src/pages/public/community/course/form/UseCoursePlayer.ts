@@ -11,7 +11,7 @@ import {
   useGetLessonQuery,
   useUpdateLessonProgressMutation,
 } from '@/utils/api/community/community.api';
-import type { CourseLesson } from '@/utils/api/course/course.type';
+import type { CourseLesson, QuizResult } from '@/utils/api/course/course.type';
 import { parseApiError } from '@/utils/api/errors';
 import { membershipOf } from '../../form/UseCommunityPage';
 
@@ -97,6 +97,11 @@ function UseCoursePlayer() {
       }
     },
     justFinished,
+    /** A quiz was graded: the course is read again (unlocked lesson), and maybe done */
+    quizGraded: async (result: QuizResult) => {
+      await course.refetch();
+      if (result.just_completed_course) setJustFinished(true);
+    },
     closeCongratulations: () => setJustFinished(false),
     /**
      * Marks the open lesson done (or not), then goes on to the next one. The course is read again:

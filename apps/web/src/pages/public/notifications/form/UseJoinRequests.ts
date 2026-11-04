@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { customToast } from '@kodinga-mono-repo/ui';
 import { hasSpacePermission } from '@/pages/community-space/community-space-context';
@@ -9,8 +9,9 @@ import { getName, useUser } from '@/utils/Utils';
 
 /**
  * Join requests waiting in the communities where the user reviews them (owner, or a role with
- * can_review_requests): read from members?status=pending, the api not notifying them yet. Accepted
- * or refused here like in /c/<slug>/members; the list is read again after each decision.
+ * can_review_requests): read from members?status=pending. They say which join_request notifications
+ * can still be answered (by member id), and show the ones without a notification (older ones, a
+ * deleted one). Accepted or refused like in /c/<slug>/members; read again after each decision.
  */
 function UseJoinRequests({ skip = false }: { skip?: boolean } = {}) {
   const user = useUser();
@@ -25,11 +26,14 @@ function UseJoinRequests({ skip = false }: { skip?: boolean } = {}) {
   );
   const { data = [], isLoading } = useGetJoinRequestsQuery(reviewed, { skip: skip || reviewed.length === 0 });
   const [decide, { isLoading: isDeciding, originalArgs }] = useDecideMemberMutation();
+  /** Decisions taken here, by member id: what a notification says once answered */
+  const [decided, setDecided] = useState<Record<string, 'accepted' | 'refused'>>({});
 
   const answer = async (r: JoinRequest, approve: boolean) => {
     const name = getName(r.member.user);
     try {
       await decide({ slug: r.community.slug, memberId: r.member.id, approve }).unwrap();
+      setDecided((d) => ({ ...d, [r.member.id]: approve ? 'accepted' : 'refused' }));
       customToast.success({ message: approve ? `${name} a rejoint ${r.community.name}.` : `La demande de ${name} a été refusée.` });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
@@ -38,6 +42,7 @@ function UseJoinRequests({ skip = false }: { skip?: boolean } = {}) {
 
   return {
     requests: data,
+    decided,
     isLoading: !!memberships && reviewed.length > 0 && isLoading,
     /** The request being answered, for its buttons */
     busyId: isDeciding ? originalArgs?.memberId : undefined,

@@ -30,7 +30,7 @@ import type {
   RsvpStatus,
   VideoUploadTarget,
 } from '../event/event.type';
-import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
+import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData, QuizResult } from '../course/course.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -1431,6 +1431,12 @@ export const CommunityApi = createApi({
       }),
       invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }],
     }),
+    // Graded by the api; passed: the lesson is done (and the course, when it was the last one)
+    submitQuiz: builder.mutation<QuizResult, { slug: string; courseSlug: string; lessonId: string; answers: Record<string, string[]> }>({
+      query: ({ slug, courseSlug, lessonId, answers }) => ({ url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/quiz/submit/`, method: 'POST', body: { answers } }),
+      transformResponse: unwrap<QuizResult>,
+      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }, 'leaderboard', 'member-activity'],
+    }),
     // Lesson detail (with its content), for the editor
     getLesson: builder.query<CourseLesson, { slug: string; courseSlug: string; lessonId: string }>({
       query: ({ slug, courseSlug, lessonId }) => `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/`,
@@ -1853,6 +1859,7 @@ export const {
   useUploadLessonVideoMutation,
   useEnrollCourseMutation,
   useUpdateLessonProgressMutation,
+  useSubmitQuizMutation,
   useGetCommunityOpportunitiesQuery,
   useGetOpportunityQuery,
   useCreateOpportunityMutation,

@@ -148,8 +148,44 @@ describe('Community space: courses', () => {
     await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))).toBe(true), SLOW);
     expect(calls.find((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))?.body).toMatchObject({
       lesson_type: 'code',
-      content: 'Complétez le manifeste.\n\n```bash exercice\nkubectl apply -f\n```\n\n```bash solution\nkubectl apply -f deploy.yaml\n```',
+      content: 'Complétez le manifeste.',
+      code_language: 'bash',
+      code_snippet: 'kubectl apply -f',
+      code_blocks: [
+        { id: 'starter', title: 'Code de départ', language: 'bash', code: 'kubectl apply -f' },
+        { id: 'solution', title: 'Solution de référence', language: 'bash', code: 'kubectl apply -f deploy.yaml' },
+      ],
     });
+  });
+
+  it('writes a quiz: questions, single or multiple choice, right answers', async () => {
+    const calls = stubCoursesApi();
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click(await screen.findByRole('button', { name: /Ajouter une leçon/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Titre'), { target: { value: 'Quiz Kubernetes' } });
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'quiz' } });
+    const save = () => fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
+    save();
+    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toBe('Ajoutez au moins une question au quiz.');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /Ajouter une question/ }));
+    const q1 = within(dialog).getByRole('region', { name: 'Question 1' });
+    fireEvent.change(within(q1).getByLabelText('Énoncé'), { target: { value: 'Qu’est-ce qu’un pod ?' } });
+    fireEvent.change(within(q1).getByLabelText('Choix 1 de la question 1'), { target: { value: 'Un conteneur ou plus' } });
+    fireEvent.change(within(q1).getByLabelText('Choix 2 de la question 1'), { target: { value: 'Une base de données' } });
+    save();
+    await waitFor(() => expect(within(dialog).getByRole('alert').textContent).toBe('Question 1 : indiquez la bonne réponse.'), SLOW);
+    expect(calls.some((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))).toBe(false);
+
+    fireEvent.click(within(q1).getByLabelText('Bonne réponse : choix 1 de la question 1'));
+    save();
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))).toBe(true), SLOW);
+    const body = calls.find((c) => c.url.pathname.endsWith('/modules/m1/lessons/'))?.body as { lesson_type: string; quiz_data: { passing_score: number; questions: { question: string; question_type: string; options: { text: string; is_correct: boolean }[] }[] } };
+    expect(body.lesson_type).toBe('quiz');
+    expect(body.quiz_data.passing_score).toBe(50);
+    expect(body.quiz_data.questions[0]).toMatchObject({ question: 'Qu’est-ce qu’un pod ?', question_type: 'single_choice' });
+    expect(body.quiz_data.questions[0].options.map((o) => [o.text, o.is_correct])).toEqual([['Un conteneur ou plus', true], ['Une base de données', false]]);
   });
 
   it('adds a video lesson from a link, then sends its video', async () => {
@@ -167,9 +203,9 @@ describe('Community space: courses', () => {
 
     fireEvent.click(within(dialog).getByRole('radio', { name: /Lien/ }));
     const link = within(dialog).getByLabelText('Lien de la vidéo');
-    fireEvent.change(link, { target: { value: 'https://youtu.be/abc' } });
+    fireEvent.change(link, { target: { value: 'pas-un-lien' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la leçon' }));
-    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toMatch(/YouTube/);
+    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toMatch(/Lien invalide/);
     expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/lessons/'))).toBe(false);
 
     fireEvent.change(link, { target: { value: 'https://cdn.example.com/demo.mp4' } });

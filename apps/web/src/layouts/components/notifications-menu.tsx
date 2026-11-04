@@ -17,8 +17,11 @@ export function NotificationsMenu() {
   const actions = UseNotifications();
   // Loaded when the menu opens (the count is enough for the badge)
   const { data, isLoading } = useGetNotificationsQuery({ page: 1, page_size: LATEST }, { skip: !open });
-  // Read when the menu opens too (one call per community the user reviews): answered on /notifications
-  const pendingRequests = UseJoinRequests({ skip: !open }).requests.length;
+  // Read when the menu opens too (one call per community the user reviews): answered on /notifications.
+  // Only the ones not already among the notifications shown here
+  const pendingRequests = UseJoinRequests({ skip: !open }).requests.filter(
+    (r) => !notifications.some((n) => n.notification_type === 'join_request' && n.target_id === r.member.id),
+  ).length;
   const notifications = data?.results ?? [];
   const label = unread > 0 ? `Notifications (${unread} non lue${unread > 1 ? 's' : ''})` : 'Notifications';
 

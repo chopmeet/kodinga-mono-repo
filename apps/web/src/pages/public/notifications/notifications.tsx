@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Button, cn } from '@kodinga-mono-repo/ui';
 import { useAppSelector } from '@/redux/hook';
 import { useGetNotificationsQuery } from '@/utils/api/community/community.api';
-import { JoinRequestsSection } from './components/join-requests';
+import { JoinRequestActions, JoinRequestsSection } from './components/join-requests';
 import { NotificationContent } from './components/notification-item';
 import UseJoinRequests from './form/UseJoinRequests';
 import UseNotifications, { notificationHref, useUnreadNotifications } from './form/UseNotifications';
@@ -23,6 +23,9 @@ function Notifications() {
   const { data, isLoading, isFetching } = useGetNotificationsQuery({ page: 1, page_size: count, unread: unreadOnly || undefined }, { skip: !signedIn });
   const notifications = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
+  // A join request in the list is answered on its notification, the others above the list
+  const notified = new Set(notifications.filter((n) => n.notification_type === 'join_request').map((n) => n.target_id));
+  const unnotified = joinRequests.requests.filter((r) => !notified.has(r.member.id));
 
   if (!signedIn) {
     return (
@@ -50,7 +53,7 @@ function Notifications() {
         )}
       </div>
 
-      <JoinRequestsSection {...joinRequests} />
+      {!isLoading && <JoinRequestsSection {...joinRequests} requests={unnotified} />}
 
       <div className="mt-6 flex gap-2" role="group" aria-label="Filtre">
         {(
@@ -92,13 +95,32 @@ function Notifications() {
               const href = notificationHref(n.action_url);
               return (
                 <li key={n.id} className={cn('group flex items-start gap-2 px-4 py-4', !n.is_read && 'bg-blue-50/40')}>
-                  <button
-                    type="button"
-                    onClick={() => actions.open(n)}
-                    className={cn('flex min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-900/30', !href && n.is_read && 'cursor-default')}
-                  >
-                    <NotificationContent notification={n} />
-                  </button>
+                  <div className="flex min-w-0 flex-1 flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => actions.open(n)}
+                      className={cn('flex min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-900/30', !href && n.is_read && 'cursor-default')}
+                    >
+                      <NotificationContent notification={n} />
+                    </button>
+                    {n.notification_type === 'join_request' && (
+                      <div className="pl-12">
+                        <JoinRequestActions
+                          request={joinRequests.requests.find((r) => r.member.id === n.target_id)}
+                          decision={joinRequests.decided[n.target_id]}
+                          busyId={joinRequests.busyId}
+                          accept={(r) => {
+                            if (!n.is_read) actions.markRead(n);
+                            return joinRequests.accept(r);
+                          }}
+                          refuse={(r) => {
+                            if (!n.is_read) actions.markRead(n);
+                            return joinRequests.refuse(r);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     aria-label={`Supprimer la notification : ${n.title}`}
