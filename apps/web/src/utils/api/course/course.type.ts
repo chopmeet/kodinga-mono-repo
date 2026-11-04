@@ -41,6 +41,16 @@ export type QuizResult = {
   }[];
   /** Answer of the submit only */
   just_completed_course?: boolean;
+  /** Answer of the submit only, when the course is done */
+  congratulations?: { xp_awarded: number } | null;
+};
+
+/** LessonProgressSerializer (POST .../progress/): what the lesson changed in the course */
+export type LessonProgressResult = {
+  is_completed: boolean;
+  just_completed_course: boolean;
+  /** Points of this lesson, and of the course when it is done */
+  xp_awarded: number;
 };
 
 /** One block of code of a lesson (a code exercise: ids "starter", "solution", "test_cases") */

@@ -30,7 +30,7 @@ import type {
   RsvpStatus,
   VideoUploadTarget,
 } from '../event/event.type';
-import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData, QuizResult } from '../course/course.type';
+import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonProgressResult, LessonWriteData, ModuleWriteData, QuizResult } from '../course/course.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -1500,13 +1500,14 @@ export const CommunityApi = createApi({
       invalidatesTags: ['courses'],
     }),
     // Done / not done; the api refuses a locked lesson and recomputes the course progress
-    updateLessonProgress: builder.mutation<unknown, { slug: string; courseSlug: string; lessonId: string; is_completed: boolean }>({
+    updateLessonProgress: builder.mutation<LessonProgressResult, { slug: string; courseSlug: string; lessonId: string; is_completed: boolean }>({
       query: ({ slug, courseSlug, lessonId, is_completed }) => ({
         url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/progress/`,
         method: 'POST',
         body: { is_completed },
       }),
-      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }],
+      transformResponse: unwrap<LessonProgressResult>,
+      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }, 'leaderboard', 'member-activity'],
     }),
     // Graded by the api; passed: the lesson is done (and the course, when it was the last one)
     submitQuiz: builder.mutation<QuizResult, { slug: string; courseSlug: string; lessonId: string; answers: Record<string, string[]> }>({

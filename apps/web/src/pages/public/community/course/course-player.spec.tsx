@@ -62,7 +62,9 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       if (body?.is_completed) done.add(progressId);
       else done.delete(progressId);
       enrolled = true;
-      return json({ success: true, data: { is_completed: body?.is_completed } });
+      // The last lesson: 10 points, and 50 for the course
+      const justCompleted = !!body?.is_completed && done.size === LESSONS.length;
+      return json({ success: true, data: { is_completed: body?.is_completed, just_completed_course: justCompleted, xp_awarded: !body?.is_completed ? 0 : justCompleted ? 60 : 10 } });
     }
     if (path.endsWith('/lessons/l2/quiz/submit/')) {
       const right = body?.answers?.q1?.[0] === 'a' && [...(body?.answers?.q2 ?? [])].sort().join() === 'a,b';
@@ -71,7 +73,7 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
         { question_id: 'q1', question: 'Un hook commence par ?', question_type: 'single_choice', selected_option_ids: body?.answers?.q1, correct_option_ids: ['a'], is_correct: body?.answers?.q1?.[0] === 'a', points_earned: 1, points_possible: 1, explanation: 'C’est la convention de React.' },
         { question_id: 'q2', question: 'Quels hooks existent ?', question_type: 'multiple_choice', selected_option_ids: body?.answers?.q2, correct_option_ids: ['a', 'b'], is_correct: right, points_earned: 1, points_possible: 1, explanation: '' },
       ];
-      return json({ success: true, data: { score_percent: right ? 100 : 50, passing_score: 70, passed: right, earned_points: right ? 2 : 1, total_points: 2, correct_questions_count: right ? 2 : 1, total_questions_count: 2, submitted_at: '2026-11-04T10:00:00Z', question_results: results, just_completed_course: right } });
+      return json({ success: true, data: { score_percent: right ? 100 : 50, passing_score: 70, passed: right, earned_points: right ? 2 : 1, total_points: 2, correct_questions_count: right ? 2 : 1, total_questions_count: 2, submitted_at: '2026-11-04T10:00:00Z', question_results: results, just_completed_course: right, congratulations: right ? { xp_awarded: 35 } : null } });
     }
     const lessonId = path.match(/courses\/react-19\/lessons\/([^/]+)\/$/)?.[1];
     if (lessonId) {
@@ -87,9 +89,6 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
       ] } } : {};
       const embedded = embed && lessonId === 'l1' ? { has_video: true, video_status: 'ready', video_provider: 'youtube', video_source_url: 'https://www.youtube.com/watch?v=abc123', video_embed_url: 'https://www.youtube.com/embed/abc123' } : {};
       return json({ success: true, data: { ...l, ...media, ...embedded, ...quizData, content, estimated_duration_display: '5 min' } });
-    }
-    if (path.endsWith('/communities/abidjan-react/gamification/rules/')) {
-      return json({ success: true, data: [{ id: 'r1', action: 'course_completed', label: 'Formation achevée', description: '', points: 50, default_points: 50, is_active: true, allow_multiple_per_reference: false, updated_at: '' }] });
     }
     if (path.endsWith('/communities/abidjan-react/courses/')) {
       const course = (slug: string, title: string, user_progress_percent: number) => ({ id: slug, slug, title, description: '', level: 'beginner', thumbnail_url: '', lessons_count: 2, duration_seconds: 0, user_progress_percent });
@@ -148,6 +147,7 @@ describe('Course player (member)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Terminer et continuer/ }));
     await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/lessons/l1/progress/'))?.body).toEqual({ is_completed: true }), SLOW);
     await waitFor(() => expect(where()).toBe(`${URL_PATH}?lesson=l2`), SLOW);
+    expect(await screen.findByText('Leçon terminée : +10 points', {}, SLOW)).toBeTruthy();
     expect(await screen.findByRole('heading', { level: 1, name: 'Server Components' }, SLOW)).toBeTruthy();
     await waitFor(() => expect(screen.getByRole('progressbar', { name: 'Progression de la formation' }).getAttribute('aria-valuenow')).toBe('50'), SLOW);
 
@@ -161,7 +161,7 @@ describe('Course player (member)', () => {
     expect(within(dialog).getByText('« React 19 de A à Z »')).toBeTruthy();
     const achieved = within(dialog).getByRole('group', { name: 'Ce que vous avez accompli' });
     expect(achieved.textContent).toMatch(/2leçons suivies/);
-    expect(await within(achieved).findByText('+50', {}, SLOW)).toBeTruthy();
+    expect(within(achieved).getByText('+60')).toBeTruthy();
     expect(within(dialog).getByRole('link', { name: 'Suivre une autre formation' }).getAttribute('href')).toBe('/communities/abidjan-react?tab=classroom');
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Revoir la formation' }));
@@ -284,6 +284,7 @@ describe('Course player (member)', () => {
     fireEvent.click(within(again).getByRole('button', { name: /Valider mes réponses/ }));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     expect(within(dialog).getByRole('heading', { name: 'Félicitations !' })).toBeTruthy();
+    expect(within(within(dialog).getByRole('group', { name: 'Ce que vous avez accompli' })).getByText('+35')).toBeTruthy();
   });
 
   it('plays a video of a platform in its own player', async () => {

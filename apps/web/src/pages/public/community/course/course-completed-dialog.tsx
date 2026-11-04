@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
 import { Logo } from '@/layouts/components/header';
 import { formatDuration } from '@/pages/community-space/courses/course-labels';
-import { useGetPointRulesQuery } from '@/utils/api/community/community.api';
 import type { CoursePlayer } from './form/UseCoursePlayer';
 
 function Figure({ icon, value, label }: { icon: ReactNode; value: string; label: string }) {
@@ -22,13 +21,10 @@ function Figure({ icon, value, label }: { icon: ReactNode; value: string; label:
 
 /**
  * Congratulations once the api has confirmed the course done: its name, what was achieved (lessons,
- * modules, time, the points of the community for a finished course), then another course
+ * modules, time, the points it gave), then another course
  */
 export function CourseCompletedDialog({ player }: { player: CoursePlayer }) {
   const course = player.course;
-  // The points the community gives for a finished course (its rules), when it gives any
-  const rule = useGetPointRulesQuery(player.slug, { skip: !player.justFinished }).data?.find((r) => r.action === 'course_completed');
-  const points = rule?.is_active && rule.points > 0 ? rule.points : null;
   if (!course) return null;
   const duration = formatDuration(course.duration_seconds);
 
@@ -50,7 +46,7 @@ export function CourseCompletedDialog({ player }: { player: CoursePlayer }) {
           <Figure icon={<BookOpen className="size-5" />} value={String(player.lessons.length)} label={player.lessons.length > 1 ? 'leçons suivies' : 'leçon suivie'} />
           <Figure icon={<Layers className="size-5" />} value={String(course.modules_count)} label={course.modules_count > 1 ? 'modules' : 'module'} />
           {duration && <Figure icon={<Clock className="size-5" />} value={duration} label="de contenu" />}
-          {points && <Figure icon={<Sparkles className="size-5" />} value={`+${points}`} label="points gagnés" />}
+          {player.earnedPoints > 0 && <Figure icon={<Sparkles className="size-5" />} value={`+${player.earnedPoints}`} label={player.earnedPoints > 1 ? 'points gagnés' : 'point gagné'} />}
         </div>
         <div className="h-2 rounded-full bg-emerald-100" role="progressbar" aria-label="Progression de la formation" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full w-full rounded-full bg-emerald-600" />

@@ -49,10 +49,17 @@ function UseCoursePlayer() {
   const [updateProgress, { isLoading: isSaving }] = useUpdateLessonProgressMutation();
   /** The congratulations: only when the api has just confirmed the course done (100 %) */
   const [justFinished, setJustFinished] = useState(false);
+  /** What the api gave for it: the last lesson and the course */
+  const [earnedPoints, setEarnedPoints] = useState(0);
 
   const open = (lessonId: string) => setParams({ lesson: lessonId }, { replace: false });
   const previous = index > 0 ? lessons[index - 1] : null;
   const next = index >= 0 && index < lessons.length - 1 ? lessons[index + 1] : null;
+
+  const congratulate = (points: number) => {
+    setEarnedPoints(points);
+    setJustFinished(true);
+  };
 
   const run = async (action: Promise<unknown>, message?: string) => {
     try {
@@ -97,28 +104,33 @@ function UseCoursePlayer() {
       }
     },
     justFinished,
+    earnedPoints,
     /** A quiz was graded: the course is read again (unlocked lesson), and maybe done */
     quizGraded: async (result: QuizResult) => {
       await course.refetch();
-      if (result.just_completed_course) setJustFinished(true);
+      if (result.just_completed_course) congratulate(result.congratulations?.xp_awarded ?? 0);
     },
     closeCongratulations: () => setJustFinished(false),
     /**
-     * Marks the open lesson done (or not), then goes on to the next one. The course is read again:
-     * it unlocks the next lesson, and says whether the course is now done (the api recomputes it)
+     * Marks the open lesson done (or not), then goes on to the next one. The answer says what it
+     * gave and whether the course is now done; the course is read again to unlock the next lesson.
      */
     toggleDone: async () => {
       if (!outline) return;
       const done = !outline.is_completed;
-      const wasFinished = (course.data?.user_progress_percent ?? 0) >= 100;
-      const ok = await run(updateProgress({ slug, courseSlug, lessonId: outline.id, is_completed: done }).unwrap());
-      if (!ok || !done) return;
-      const fresh = await course.refetch();
-      if (!wasFinished && (fresh.data?.user_progress_percent ?? 0) >= 100) {
-        setJustFinished(true);
-        return;
+      try {
+        const result = await updateProgress({ slug, courseSlug, lessonId: outline.id, is_completed: done }).unwrap();
+        if (!done) return;
+        await course.refetch();
+        if (result.just_completed_course) {
+          congratulate(result.xp_awarded);
+          return;
+        }
+        if (result.xp_awarded > 0) customToast.success({ message: `Leçon terminée : +${result.xp_awarded} point${result.xp_awarded > 1 ? 's' : ''}` });
+        if (next) open(next.id);
+      } catch (error) {
+        customToast.error({ message: parseApiError(error).message });
       }
-      if (next) open(next.id);
     },
   };
 }
