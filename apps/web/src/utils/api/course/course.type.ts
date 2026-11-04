@@ -3,6 +3,62 @@
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced' | 'all_levels';
 export type LessonType = 'text' | 'video' | 'hybrid' | 'article' | 'code' | 'quiz';
 
+export type QuizQuestionType = 'single_choice' | 'multiple_choice';
+
+/** is_correct: only for those who manage the course (the api hides it from the learners) */
+export type QuizOption = { id: string; text: string; is_correct?: boolean };
+
+export type QuizQuestion = {
+  id: string;
+  question: string;
+  question_type: QuizQuestionType;
+  points: number;
+  options: QuizOption[];
+  explanation?: string;
+};
+
+/** quiz_data of a lesson (LessonDetailSerializer); {} without a quiz */
+export type QuizData = { title?: string; description?: string; passing_score?: number; questions?: QuizQuestion[] };
+
+/** Result of a quiz: POST .../quiz/submit/, and user_quiz_result (the last attempt) of the lesson */
+export type QuizResult = {
+  score_percent: number;
+  passing_score: number;
+  passed: boolean;
+  earned_points: number;
+  total_points: number;
+  correct_questions_count: number;
+  total_questions_count: number;
+  submitted_at: string;
+  question_results: {
+    question_id: string;
+    question: string;
+    question_type: QuizQuestionType;
+    selected_option_ids: string[];
+    correct_option_ids: string[];
+    is_correct: boolean;
+    explanation: string;
+  }[];
+  /** Answer of the submit only */
+  just_completed_course?: boolean;
+  /** Answer of the submit only, when the course is done */
+  congratulations?: { xp_awarded: number } | null;
+};
+
+/** LessonProgressSerializer (POST .../progress/): what the lesson changed in the course */
+export type LessonProgressResult = {
+  is_completed: boolean;
+  just_completed_course: boolean;
+  /** Points of this lesson, and of the course when it is done */
+  xp_awarded: number;
+};
+
+/** One block of code of a lesson (a code exercise: ids "starter", "solution", "test_cases") */
+export type LessonCodeBlock = { id: string; language: string; title: string; code: string };
+
+/** Lesson video on a platform: played in its own player (video_embed_url) */
+export type VideoProvider = 'youtube' | 'vimeo' | 'dailymotion' | 'direct' | 'mux' | 'uploadthing' | '';
+
 /** LessonSerializer (list) — LessonDetailSerializer adds content, images, attachments */
 export type CourseLesson = {
   id: string;
@@ -27,6 +83,17 @@ export type CourseLesson = {
   video_thumbnail_url?: string;
   /** Mux: waiting, preparing (encoding), ready, errored */
   video_status?: 'waiting' | 'preparing' | 'ready' | 'errored' | 'deleted' | '';
+  video_provider?: VideoProvider;
+  video_embed_url?: string;
+  code_language?: string;
+  /** Detail: the starting code of a code exercise */
+  code_snippet?: string;
+  code_blocks?: LessonCodeBlock[];
+  /** Detail */
+  quiz_data?: QuizData;
+  user_quiz_result?: QuizResult | null;
+  quiz_passed?: boolean;
+  quiz_attempts_count?: number;
   attachments?: { name?: string; file_name?: string; url?: string; file_url?: string }[];
 };
 
@@ -81,4 +148,8 @@ export type LessonWriteData = {
   duration_seconds?: number;
   order?: number;
   is_free_preview?: boolean;
+  code_language?: string;
+  code_snippet?: string;
+  code_blocks?: LessonCodeBlock[];
+  quiz_data?: QuizData;
 };

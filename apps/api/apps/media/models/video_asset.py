@@ -26,7 +26,7 @@ class VideoAsset(BaseModel):
     )
     title = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
-    
+
     # Mux IDs
     upload_id = models.CharField(max_length=255, unique=True, null=True, blank=True, db_index=True)
     asset_id = models.CharField(max_length=255, unique=True, null=True, blank=True, db_index=True)
@@ -38,7 +38,7 @@ class VideoAsset(BaseModel):
     aspect_ratio = models.CharField(max_length=20, blank=True, help_text="ex: 16:9")
     resolution = models.CharField(max_length=20, blank=True, help_text="ex: 1080p")
     max_stored_resolution = models.CharField(max_length=20, blank=True)
-    
+
     # Status & Policy
     status = models.CharField(
         max_length=30,
@@ -61,37 +61,44 @@ class VideoAsset(BaseModel):
         return f"{self.title or self.id} ({self.status})"
 
     @property
+    def source_url(self) -> str:
+        """Direct raw file URL stored on UploadThing or local storage."""
+        meta = self.metadata if isinstance(self.metadata, dict) else {}
+        return meta.get('source_url') or meta.get('file_url') or ""
+
+    @property
     def hls_url(self) -> str:
-        """Adaptive streaming HLS manifest URL from Mux or direct URL from UploadThing."""
-        if self.provider == 'uploadthing':
-            return self.metadata.get('file_url') or (self.playback_id if self.playback_id and self.playback_id.startswith('http') else "")
-        if self.playback_id and self.status == VideoStatus.READY:
+        """Adaptive streaming HLS manifest URL from Mux or direct URL fallback."""
+        if self.provider in ('uploadthing', 'local', 'direct'):
+            return self.source_url or (
+                self.playback_id if self.playback_id and self.playback_id.startswith('http') else ""
+            )
+        if self.playback_id and not self.playback_id.startswith('http'):
             return f"https://stream.mux.com/{self.playback_id}.m3u8"
-        return ""
+        return self.source_url or (
+            self.playback_id if self.playback_id and self.playback_id.startswith('http') else ""
+        )
 
     @property
     def thumbnail_url(self) -> str:
         """High-resolution video thumbnail image."""
-        if self.provider == 'uploadthing':
-            return self.metadata.get('thumbnail_url') or ""
-        if self.playback_id and self.status == VideoStatus.READY:
+        meta = self.metadata if isinstance(self.metadata, dict) else {}
+        if self.playback_id and not self.playback_id.startswith('http'):
             return f"https://image.mux.com/{self.playback_id}/thumbnail.webp?width=640&height=360&fit_mode=smart"
-        return ""
+        return meta.get('thumbnail_url') or ""
 
     @property
     def poster_url(self) -> str:
         """Full HD video poster frame."""
-        if self.provider == 'uploadthing':
-            return self.metadata.get('poster_url') or ""
-        if self.playback_id and self.status == VideoStatus.READY:
+        meta = self.metadata if isinstance(self.metadata, dict) else {}
+        if self.playback_id and not self.playback_id.startswith('http'):
             return f"https://image.mux.com/{self.playback_id}/thumbnail.webp?width=1920&height=1080&fit_mode=smart"
-        return ""
+        return meta.get('poster_url') or ""
 
     @property
     def animated_gif_url(self) -> str:
         """Short animated preview GIF."""
-        if self.provider == 'uploadthing':
-            return self.metadata.get('animated_gif_url') or ""
-        if self.playback_id and self.status == VideoStatus.READY:
+        meta = self.metadata if isinstance(self.metadata, dict) else {}
+        if self.playback_id and not self.playback_id.startswith('http'):
             return f"https://image.mux.com/{self.playback_id}/animated.gif?width=320&fps=15"
-        return ""
+        return meta.get('animated_gif_url') or ""

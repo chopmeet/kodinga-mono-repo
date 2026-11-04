@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
@@ -38,9 +38,39 @@ const post = (id: string, title: string, created_at: string, reactions_count: nu
 
 const POSTS = [post('p1', 'Retour sur le meetup', daysAgo(2), 4), post('p2', 'Kubernetes en prod', daysAgo(12), 18), post('p3', 'Vieux sujet', daysAgo(90), 30)];
 
+const DIGEST = {
+  id: 'd1',
+  week_identifier: '2026-W45',
+  headline: 'Une semaine dense',
+  summary_markdown: 'Beaucoup de **questions** cette semaine.',
+  top_debates: [{ id: 'p1', title: 'Retour sur le meetup', author: 'awa', comments_count: 4, post_type: 'discussion' }],
+  highlighted_project: { id: 'x', title: 'Wari Pay', slug: 'wari-pay', owner: 'awa', tagline: '' },
+  upcoming_events: [],
+  kpis_snapshot: { new_members: 2, posts_created: 1, comments_posted: 5 },
+  created_at: daysAgo(1),
+};
+
+const risk = (id: string, first_name: string, risk_level: string, suggested_nudge: string) => ({
+  id,
+  member_id: `m-${id}`,
+  user_id: `u-${id}`,
+  username: first_name.toLowerCase(),
+  first_name,
+  last_name: 'Sow',
+  avatar_url: null,
+  risk_level,
+  risk_score: 60,
+  signals: { days_inactive: 21, total_recent_interactions: 0, activity_trend: 'declining' },
+  suggested_nudge,
+  status: 'open',
+  nudge_sent_at: null,
+});
+const CHURN = [risk('r1', 'Fatou', 'high', 'Bonjour Fatou, tout va bien ?'), risk('r2', 'Kofi', 'low', '')];
+
 /** Members (status / page), feed and upcoming events of dakar-devops */
 function stubDashboardApi() {
   const calls: URL[] = [];
+  let nudged = false;
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const url = new URL((input as Request).url);
     calls.push(url);
@@ -50,6 +80,13 @@ function stubDashboardApi() {
       const status = p.get('status');
       const found = status === 'pending' ? [{ ...MEMBERS[0], id: 'm-p', status: 'pending' }, { ...MEMBERS[1], id: 'm-q', status: 'pending' }] : MEMBERS;
       return json({ success: true, pagination: { count: found.length }, results: found.slice(0, Number(p.get('page_size') ?? 20)) });
+    }
+    if (url.pathname.endsWith('/ai/weekly-digest/')) return json(DIGEST);
+    if (url.pathname.endsWith('/ai/weekly-digest/trigger/')) return json({ ...DIGEST, headline: 'Une semaine réécrite' });
+    if (url.pathname.endsWith('/ai/churn-dashboard/')) return json({ community: 'dakar-devops', total_at_risk: 3, members: CHURN.map((m) => ({ ...m, nudge_sent_at: nudged && m.id === 'r1' ? daysAgo(0) : null })) });
+    if (url.pathname.endsWith('/ai/churn-risks/r1/send-nudge/')) {
+      nudged = true;
+      return json({ message: 'ok', churn_risk: CHURN[0] });
     }
     if (url.pathname.endsWith('/feed/')) return json({ success: true, pagination: { count: 57 }, results: POSTS });
     if (url.pathname.endsWith('/revenue/')) {
@@ -102,5 +139,49 @@ describe('Community space: dashboard', () => {
     expect(screen.getByRole('link', { name: /Atelier Terraform/ }).getAttribute('href')).toBe('/c/dakar-devops/events/e1');
     const top = await screen.findByRole('list', { name: 'Publications les plus populaires' }, SLOW);
     expect(within(top).getAllByRole('listitem').map((li) => li.textContent?.includes('Vieux sujet'))[0]).toBe(true);
+  });
+
+  it('shows the summary of the week and lets a manager write it again', async () => {
+    const calls = stubDashboardApi();
+    renderAppAt('/c/dakar-devops/dashboard');
+    const digest = await screen.findByRole('region', { name: 'Résumé de la semaine' }, SLOW);
+    expect(within(digest).getByText('Une semaine dense')).toBeTruthy();
+    expect(within(digest).getByText('questions').tagName).toBe('STRONG');
+    expect(within(digest).getByText(/2 nouveaux membres · 1 publication · 5 commentaires/)).toBeTruthy();
+    expect(within(digest).getByRole('link', { name: 'Retour sur le meetup' }).getAttribute('href')).toBe('/communities/dakar-devops/posts/p1');
+    expect(within(digest).getByRole('link', { name: 'Wari Pay' }).getAttribute('href')).toBe('/projects/wari-pay');
+    fireEvent.click(within(digest).getByRole('button', { name: /Réécrire le résumé/ }));
+    await waitFor(() => expect(calls.some((u) => u.pathname.endsWith('/ai/weekly-digest/trigger/'))).toBe(true), SLOW);
+  });
+
+  it('keeps the summary of the week without the rewrite for a moderator', async () => {
+    stubDashboardApi();
+    renderAppAt('/c/python-africa-core/dashboard');
+    const digest = await screen.findByRole('region', { name: 'Résumé de la semaine' }, SLOW);
+    expect(within(digest).queryByRole('button', { name: /Réécrire/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Analyser les membres/ })).toBeNull();
+  });
+
+  it('analyzes the members only on demand, leaves out the low risks, records a nudge', async () => {
+    const calls = stubDashboardApi();
+    renderAppAt('/c/dakar-devops/dashboard');
+    const analyze = await screen.findByRole('button', { name: /Analyser les membres/ }, SLOW);
+    const churnCalls = () => calls.filter((u) => u.pathname.endsWith('/ai/churn-dashboard/'));
+    expect(churnCalls()).toHaveLength(0);
+
+    fireEvent.click(analyze);
+    const list = await screen.findByRole('list', { name: 'Membres à relancer' }, SLOW);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(list).getByText(/Risque élevé/)).toBeTruthy();
+    expect(within(list).getByText('Inactif depuis 21 j · aucune activité sur 14 j · activité en baisse')).toBeTruthy();
+    expect(within(list).getByText('Bonjour Fatou, tout va bien ?')).toBeTruthy();
+    expect(within(list).queryByText('Kofi Sow')).toBeNull();
+
+    fireEvent.click(within(list).getByRole('button', { name: 'Noter Fatou Sow comme relancé' }));
+    await waitFor(() => expect(calls.some((u) => u.pathname.endsWith('/ai/churn-risks/r1/send-nudge/'))).toBe(true), SLOW);
+    expect(await within(list).findByText(/Relancé le/, {}, SLOW)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /Analyser de nouveau/ }));
+    await waitFor(() => expect(churnCalls().some((u) => u.searchParams.get('refresh') === 'true')).toBe(true), SLOW);
   });
 });

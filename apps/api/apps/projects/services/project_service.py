@@ -10,7 +10,7 @@ from apps.memberships.permissions import check_community_membership
 from apps.notifications.models.notification import NotificationType
 from apps.notifications.services.notification_service import NotificationService
 from apps.projects.models.comment import ProjectComment
-from apps.projects.models.project import Project
+from apps.projects.models.project import Project, ProjectStatus
 from apps.projects.models.upvote import ProjectUpvote
 from common.permissions.base import is_superadmin_user
 
@@ -19,6 +19,19 @@ class ProjectService:
     """
     Business logic for developer project showcase, upvotes, and comments.
     """
+
+    @classmethod
+    def _notify_if_published(cls, project: Project, actor) -> None:
+        if project.community and project.status == ProjectStatus.PUBLISHED:
+            action_url = f"/communities/{project.community.slug}/projects/{project.slug}"
+            NotificationService.notify_community_content_published(
+                community=project.community,
+                actor=actor,
+                content_type="project",
+                content_id=str(project.id),
+                title=project.title,
+                action_url=action_url,
+            )
 
     @classmethod
     @transaction.atomic
@@ -40,6 +53,7 @@ class ProjectService:
                 description=f"Publication du projet vitrine: {project.title}",
             )
 
+        cls._notify_if_published(project, owner)
         return project
 
     @classmethod
@@ -59,6 +73,7 @@ class ProjectService:
         if technology_ids is not None:
             project.technologies.set(technology_ids)
 
+        cls._notify_if_published(project, user)
         return project
 
     @classmethod
@@ -140,4 +155,3 @@ class ProjectService:
                 )
 
         return comment
-

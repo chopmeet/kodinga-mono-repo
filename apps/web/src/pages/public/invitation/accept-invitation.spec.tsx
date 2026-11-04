@@ -52,11 +52,16 @@ function stubInvitationApi({ isMember = false, role = 'member', status = 'pendin
         },
       });
     }
+    // Public details of a shareable link: an empty address comes masked
+    if (url.pathname.endsWith('/invitations/TOKEN-LINK/')) {
+      return json({ success: true, data: { workspace_id: 'c1', workspace_name: 'Abidjan React', workspace_slug: 'abidjan-react', workspace_avatar_url: '', role: 'member', role_display: 'Membre', masked_email: '***', status: 'pending', expires_at: '2026-11-30T10:00:00Z', is_valid: true } });
+    }
     // Public details of an invitation sent by email (PublicInvitationDetailSerializer)
     if (url.pathname.endsWith('/invitations/TOKEN-MAIL/')) {
       return json({ success: true, data: { workspace_id: 'c1', workspace_name: 'Abidjan React', workspace_slug: 'abidjan-react', workspace_avatar_url: '', role: 'member', role_display: 'Membre', masked_email: 'a***@example.com', status, expires_at: '2026-11-30T10:00:00Z', is_valid: status === 'pending' } });
     }
-    if (url.pathname.endsWith('/invitations/accept/')) {
+    if (url.pathname.endsWith('/invitations/TOKEN-MAIL/decline/')) return json({ success: true, data: {} });
+    if (url.pathname.endsWith('/invitations/accept/') || url.pathname.endsWith('/invitations/TOKEN-MAIL/accept/') || url.pathname.endsWith('/invitations/TOKEN-LINK/accept/')) {
       currentIsMember = true;
       currentRole = role;
       return json({ success: true, data: { id: 'm1', role, status: 'active' } });
@@ -124,7 +129,31 @@ describe('Invitation link', () => {
     expect(screen.getByText('Invitation adressée à a***@example.com')).toBeTruthy();
     fireEvent.click(await screen.findByRole('button', { name: 'Rejoindre Abidjan React' }, SLOW));
     await waitFor(() => expect(where()).toBe('/communities/abidjan-react'), SLOW);
-    expect(calls.find((c) => c.url.pathname.endsWith('/invitations/accept/'))?.body).toEqual({ invite_code: 'TOKEN-MAIL' });
+    expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/invitations/TOKEN-MAIL/accept/'))).toBe(true);
+  });
+
+  it('joins with a shareable link by its token, which cannot be declined', async () => {
+    signIn();
+    const calls = stubInvitationApi();
+    const { where } = renderAppAt('/invite/TOKEN-LINK');
+    const join = await screen.findByRole('button', { name: 'Rejoindre Abidjan React' }, SLOW);
+    expect(screen.queryByText(/Invitation adressée/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Refuser l’invitation' })).toBeNull();
+    fireEvent.click(join);
+    await waitFor(() => expect(where()).toBe('/communities/abidjan-react'), SLOW);
+    // invitations/accept/ would consume the link at its first use
+    expect(calls.some((c) => c.url.pathname.endsWith('/invitations/TOKEN-LINK/accept/'))).toBe(true);
+    expect(calls.some((c) => c.url.pathname.endsWith('/invitations/accept/'))).toBe(false);
+  });
+
+  it('declines an invitation sent by email', async () => {
+    signIn();
+    const calls = stubInvitationApi();
+    renderAppAt('/invite/TOKEN-MAIL');
+    fireEvent.click(await screen.findByRole('button', { name: 'Refuser l’invitation' }, SLOW));
+    expect((await screen.findByRole('alert', {}, SLOW)).textContent).toBe('Vous avez refusé cette invitation.');
+    expect(calls.some((c) => c.method === 'POST' && c.url.pathname.endsWith('/invitations/TOKEN-MAIL/decline/'))).toBe(true);
+    expect(screen.queryByRole('button', { name: /Rejoindre/ })).toBeNull();
   });
 
   it('says when an invitation was revoked', async () => {

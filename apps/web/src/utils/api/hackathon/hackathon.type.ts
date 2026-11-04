@@ -276,3 +276,13 @@ export type HackathonResult = {
   rank: number | null;
   won_prizes: HackathonPrize[];
 };
+
+/** GET hackathons/teams/my-invitations/ (HackathonTeamMemberSerializer): neither the title of the hackathon nor who invites */
+export type MyTeamInvitation = {
+  id: string;
+  team_id: string;
+  team_name: string;
+  hackathon_slug: string;
+  community_slug: string;
+  invited_at: string;
+};

@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@kodinga-mono-repo/ui';
 import type { RowAction } from '@/pages/shared/row-actions';
-import { useDeleteProjectMutation } from '@/utils/api/community/community.api';
+import { useDeleteProjectMutation, useFeatureProjectMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { ProjectListItem } from '@/utils/api/project/project.type';
 import { isAdmin, useUser } from '@/utils/Utils';
@@ -20,13 +20,23 @@ import { isCommunityManager, useCommunitySpace } from '../../community-space-con
 
 /**
  * Actions on a project. The api lets only its owner (or the platform staff) edit and delete it;
- * featuring a project or taking it out of the community are not in the api yet ("Bientôt").
+ * the owner and admins of the community feature it. Taking it out of the community is not in the api yet.
  */
 function UseProjectActions({ onEdit, afterDelete }: { onEdit: (p: ProjectListItem) => void; afterDelete?: () => void }) {
   const space = useCommunitySpace();
   const user = useUser();
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
+  const [featureProject] = useFeatureProjectMutation();
   const [confirm, setConfirm] = useState<ProjectListItem | null>(null);
+
+  const toggleFeatured = async (p: ProjectListItem) => {
+    try {
+      await featureProject({ projectSlug: p.slug, is_featured: !p.is_featured }).unwrap();
+      customToast.success({ message: p.is_featured ? `« ${p.title} » n’est plus mis en avant.` : `« ${p.title} » est mis en avant.` });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    }
+  };
 
   const isOwner = (p: Pick<ProjectListItem, 'owner'>) => !!user && p.owner.id === user.id;
   const canHandle = (p: Pick<ProjectListItem, 'owner'>) => isOwner(p) || isAdmin(user);
@@ -38,7 +48,7 @@ function UseProjectActions({ onEdit, afterDelete }: { onEdit: (p: ProjectListIte
       actions.push({ label: 'Modifier', icon: <Pencil />, onSelect: () => onEdit(p) });
     }
     if (isCommunityManager(space)) {
-      actions.push({ label: p.is_featured ? 'Ne plus mettre en avant' : 'Mettre en avant', icon: <Star />, soon: true, onSelect: () => undefined });
+      actions.push({ label: p.is_featured ? 'Ne plus mettre en avant' : 'Mettre en avant', icon: <Star />, onSelect: () => toggleFeatured(p) });
       if (!isOwner(p)) actions.push({ label: 'Retirer de la communauté', icon: <EyeOff />, soon: true, onSelect: () => undefined });
     }
     if (canHandle(p)) {

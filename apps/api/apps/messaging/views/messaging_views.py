@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models.user import User
 from apps.communities.models.community import Community
+from apps.communities.selectors.community_selector import CommunitySelector
 from apps.messaging.models.conversation import ConversationType
 from apps.messaging.models.message import Message
 from apps.messaging.selectors.messaging_selector import MessagingSelector
@@ -59,16 +60,37 @@ class ConversationListView(APIView):
         else:
             serializer = StartDirectConversationSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            recipient_id = serializer.validated_data["recipient_id"]
-            recipient = User.objects.filter(id=recipient_id).first()
+            recipient_id = serializer.validated_data.get("recipient_id")
+            username = serializer.validated_data.get("username")
+            community_id = serializer.validated_data.get("community_id")
+            community_slug = serializer.validated_data.get("community_slug")
+            initial_message = serializer.validated_data.get("initial_message", "")
+
+            if recipient_id:
+                recipient = User.objects.filter(id=recipient_id).first()
+            else:
+                recipient = User.objects.filter(username__iexact=username).first()
+
             if not recipient:
                 return Response(
                     {"detail": "Destinataire introuvable."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
+            community = None
+            if community_id:
+                community = Community.objects.filter(id=community_id).first()
+            elif community_slug:
+                try:
+                    community = CommunitySelector.get_community_by_slug(community_slug, user=request.user)
+                except Exception:
+                    community = None
+
             conversation, created = MessagingService.start_direct_conversation(
-                user1=request.user, user2=recipient
+                user1=request.user,
+                user2=recipient,
+                community=community,
+                initial_message=initial_message,
             )
             code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
             return Response(

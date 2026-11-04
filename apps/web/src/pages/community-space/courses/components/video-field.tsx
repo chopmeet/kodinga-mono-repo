@@ -4,19 +4,17 @@ import { type ChangeEvent, useId, useState } from 'react';
 import { cn } from '@kodinga-mono-repo/ui';
 import { useFilePreview } from '@/pages/public/create-community/components/image-field';
 import type { CourseLesson } from '@/utils/api/course/course.type';
+import { isPlatformUrl } from '@/utils/Utils';
 
 export type VideoSource = 'file' | 'url';
 
 export const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 export const VIDEO_MAX_MB = 500;
 
-/** Error of a video link, or null: Mux fetches the file itself, so it must be a public file */
+/** Error of a video link, or null: YouTube, Vimeo, Dailymotion, or a public video file (the api checks it too) */
 export function checkVideoUrl(url: string) {
   const link = url.trim();
   if (!/^https:\/\/\S+\.\S+/.test(link)) return 'Lien invalide : il doit commencer par https://';
-  if (/(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com)/i.test(link)) {
-    return 'Les liens YouTube, Vimeo ou Dailymotion ne sont pas pris en charge : donnez le lien direct du fichier vidéo (.mp4, .webm…).';
-  }
   return null;
 }
 
@@ -40,7 +38,8 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
   const [fileError, setFileError] = useState<string | null>(null);
   const filePreview = useFilePreview(file);
   const link = url.trim();
-  const preview = source === 'file' ? filePreview : link && !checkVideoUrl(link) ? link : null;
+  const platformLink = source === 'url' && isPlatformUrl(link);
+  const preview = source === 'file' ? filePreview : link && !platformLink && !checkVideoUrl(link) ? link : null;
   const currentSrc = current?.video_source_url || current?.video_hls_url || '';
 
   const choose = (e: ChangeEvent<HTMLInputElement>) => {
@@ -99,11 +98,17 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
         >
           <track kind="captions" />
         </video>
+      ) : platformLink ? (
+        <p className="rounded-lg bg-white px-3 py-6 text-center text-sm text-slate-500">Vidéo hébergée sur une plateforme : elle s’affichera dans son lecteur après l’enregistrement.</p>
       ) : currentSrc ? (
         <div className="flex flex-col gap-1">
-          <video src={currentSrc} controls preload="metadata" aria-label="Vidéo actuelle" className="aspect-video w-full rounded-lg bg-slate-900">
-            <track kind="captions" />
-          </video>
+          {current?.video_embed_url && isPlatformUrl(currentSrc) ? (
+            <iframe src={current.video_embed_url} title="Vidéo actuelle" allowFullScreen className="aspect-video w-full rounded-lg bg-slate-900" />
+          ) : (
+            <video src={currentSrc} controls preload="metadata" aria-label="Vidéo actuelle" className="aspect-video w-full rounded-lg bg-slate-900">
+              <track kind="captions" />
+            </video>
+          )}
           <p className="text-xs text-slate-500">Vidéo actuelle. Choisissez un fichier ou un lien pour la remplacer.</p>
         </div>
       ) : current?.has_video ? (
@@ -147,13 +152,13 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
             inputMode="url"
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
-            placeholder="https://…/ma-video.mp4"
+            placeholder="https://youtu.be/… ou https://…/ma-video.mp4"
             className="custom-form-control bg-background px-4 py-2"
           />
-          <span className="text-xs text-slate-500">Lien direct vers un fichier vidéo public (pas YouTube ni Vimeo).</span>
+          <span className="text-xs text-slate-500">YouTube, Vimeo, Dailymotion, ou lien direct vers un fichier vidéo public (.mp4, .webm…).</span>
         </div>
       )}
-      <p className="text-[11px] text-slate-400">La vidéo est encodée par Mux pour une lecture fluide : comptez quelques minutes avant qu’elle soit disponible.</p>
+      {!platformLink && <p className="text-[11px] text-slate-400">La vidéo est encodée par Mux pour une lecture fluide : comptez quelques minutes avant qu’elle soit disponible.</p>}
       {(fileError || error) && (
         <p role="alert" className="text-sm text-red-600">
           {fileError ?? error}

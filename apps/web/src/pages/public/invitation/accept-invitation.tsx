@@ -7,7 +7,7 @@ import UseAcceptInvitation from './form/UseAcceptInvitation';
 
 /** /invitations/:code and /invite/:code (sent by email) — join a community with an invitation */
 function AcceptInvitation() {
-  const { community, invitedTo, invitedEmail, closed, isLoading, isSignedIn, alreadyMember, loginUrl, memberUrl, isJoining, accept } = UseAcceptInvitation();
+  const { community, invitedTo, invitedEmail, closed, isLoading, isSignedIn, alreadyMember, loginUrl, memberUrl, isJoining, accept, canDecline, isDeclining, decline } = UseAcceptInvitation();
   const name = community?.name ?? invitedTo?.name;
 
   return (
@@ -70,9 +70,16 @@ function AcceptInvitation() {
                   </Button>
                 </>
               ) : (
-                <Button className="w-full" onClick={accept} isLoading={isJoining}>
-                  Rejoindre {name ?? 'la communauté'}
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button className="w-full" onClick={accept} isLoading={isJoining} disabled={isDeclining}>
+                    Rejoindre {name ?? 'la communauté'}
+                  </Button>
+                  {canDecline && (
+                    <Button variant="outline" className="w-full" onClick={decline} isLoading={isDeclining} disabled={isJoining}>
+                      Refuser l’invitation
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </>

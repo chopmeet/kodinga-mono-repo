@@ -16,6 +16,13 @@ class NotificationService:
     in-app notifications.
     """
 
+    CONTENT_LABELS = {
+        "course": ("Formation", NotificationType.COURSE_NEW),
+        "hackathon": ("Hackathon", NotificationType.HACKATHON_NEW),
+        "project": ("Projet", NotificationType.PROJECT_NEW),
+        "opportunity": ("Opportunité", NotificationType.OPPORTUNITY_NEW),
+    }
+
     @classmethod
     def create_notification(
         cls,
@@ -56,6 +63,98 @@ class NotificationService:
                 f"Failed to create notification for {recipient.username}: {exc}"
             )
             return None
+
+    @classmethod
+    def notify_community_content_published(
+        cls,
+        community,
+        actor: Optional[User],
+        content_type: str,
+        content_id: str,
+        title: str,
+        action_url: str,
+    ) -> int:
+        """
+        Dispatches publication notifications to all active members of `community`
+        for one of the 4 supported content types: course, hackathon, project, opportunity.
+        Guarantees idempotency so a single content item is never notified twice.
+        """
+        if not community or not content_id:
+            return 0
+
+        normalized_type = content_type.strip().lower()
+        target_id_str = str(content_id).strip()
+
+        # Prevent duplicate notifications for the same published content
+        if Notification.objects.filter(
+            target_type=normalized_type,
+            target_id=target_id_str,
+        ).exists():
+            return 0
+
+        label, notif_type = cls.CONTENT_LABELS.get(
+            normalized_type, ("Contenu", NotificationType.CONTENT_PUBLISHED)
+        )
+
+        from apps.memberships.models.member import CommunityMember, MembershipStatus
+
+        members = (
+            CommunityMember.objects.filter(
+                community=community,
+                status=MembershipStatus.ACTIVE,
+                notifications_enabled=True,
+            )
+            .select_related("user")
+        )
+
+        recipients: dict[Any, User] = {}
+        for member in members:
+            recipients[member.user_id] = member.user
+
+        # Check if owner has explicitly disabled notifications
+        owner_membership = CommunityMember.objects.filter(
+            community=community,
+            user_id=community.owner_id
+        ).first()
+        if getattr(community, "owner", None) and (not owner_membership or owner_membership.notifications_enabled):
+            recipients[community.owner_id] = community.owner
+
+        if actor and actor.id in recipients:
+            recipients.pop(actor.id, None)
+
+        notif_title = f"Nouveau {label.lower()} publié : {title}"
+        if normalized_type in ("course", "opportunity"):
+            notif_title = f"Nouvelle {label.lower()} publiée : {title}"
+
+        notif_body = (
+            f"{label} « {title} » est maintenant disponible dans la communauté "
+            f"{community.name}."
+        )
+        metadata = {
+            "community_id": str(community.id),
+            "community_slug": community.slug,
+            "content_type": normalized_type,
+            "content_id": target_id_str,
+            "content_title": title,
+            "action_url": action_url,
+        }
+
+        dispatched = 0
+        for recipient in recipients.values():
+            created = cls.create_notification(
+                recipient=recipient,
+                actor=actor,
+                title=notif_title,
+                body=notif_body,
+                notification_type=notif_type,
+                action_url=action_url,
+                target_type=normalized_type,
+                target_id=target_id_str,
+                metadata=metadata,
+            )
+            if created is not None:
+                dispatched += 1
+        return dispatched
 
     @classmethod
     def mark_as_read(cls, notification_id: str, user: User) -> bool:

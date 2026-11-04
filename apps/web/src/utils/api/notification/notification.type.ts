@@ -9,6 +9,13 @@ export type NotificationType =
   | 'event_reminder'
   | 'event_live_started'
   | 'course_new'
+  | 'hackathon_new'
+  | 'project_new'
+  | 'opportunity_new'
+  | 'content_published'
+  | 'join_request'
+  | 'join_request_approved'
+  | 'join_request_rejected'
   | 'badge_unlocked'
   | 'community_invite';
 
@@ -20,6 +27,7 @@ export type AppNotification = {
   /** Path in the web app chosen by the api (it may name pages the app does not have) */
   action_url: string;
   target_type: string;
+  /** join_request: the id of the member who asked to join */
   target_id: string;
   is_read: boolean;
   read_at: string | null;

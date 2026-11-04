@@ -112,3 +112,7 @@ ignore = ["E501"]
 
 fixable = ["ALL"]
 unfixable = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "apps", "common", "config", "realtime"]
+

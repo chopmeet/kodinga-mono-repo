@@ -6,17 +6,15 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
-import { nameInitials, useUser } from '@/utils/Utils';
+import { formatCompact, nameInitials, useUser } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
-import { ProfileAbout, ProfileAvailability, ProfileCareer, ProfileLinks, ProfilePortfolio } from './components/profile-details';
+import { ProfileAbout, ProfileAvailability, ProfileCareer, ProfileCommunities, ProfileContributions, ProfileLinks, ProfilePortfolio } from './components/profile-details';
 
 type TabId = 'about' | 'career' | 'portfolio' | 'communities' | 'contributions';
 
 const joinedFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-// Followers and contributions have no api yet: shown, without a made-up number
-const STATS = ['Contributions', 'Abonnés', 'Abonnements'];
 
 function Banner({ imageUrl }: { imageUrl?: string }) {
   return (
@@ -124,9 +122,15 @@ function PublicProfile() {
           <ProfileLinks profile={profile} />
 
           <dl className="mt-8 grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-5 text-center">
-            {STATS.map((label) => (
-              <div key={label} title="Bientôt disponible">
-                <dd className="text-2xl font-bold text-slate-900">—</dd>
+            {(
+              [
+                ['Publications', profile.contributions?.posts_count],
+                ['Projets', profile.contributions?.projects_count],
+                ['Points', profile.contributions?.reputation_points ?? profile.reputation_points],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label}>
+                <dd className="text-2xl font-bold text-slate-900 tabular-nums">{value === undefined ? '—' : formatCompact(value)}</dd>
                 <dt className="mt-1 text-xs text-slate-500">{label}</dt>
               </div>
             ))}
@@ -160,7 +164,7 @@ function PublicProfile() {
               <h2 id="activity-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
                 Activité
               </h2>
-              <p className="mt-4 text-slate-600">L'historique des contributions arrive bientôt.</p>
+              <p className="mt-4 text-slate-600">L'historique jour par jour arrive bientôt.</p>
             </div>
             <label className="sr-only" htmlFor="activity-year">
               Année
@@ -209,21 +213,8 @@ function PublicProfile() {
             {tab === 'about' && <ProfileAbout profile={profile} name={name} />}
             {tab === 'career' && <ProfileCareer profile={profile} name={name} />}
             {tab === 'portfolio' && <ProfilePortfolio profile={profile} name={name} />}
-            {(tab === 'communities' || tab === 'contributions') && (
-              <div className="flex flex-col items-center py-14 text-center">
-                <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
-                  {tab === 'communities' ? <Users className="size-6" /> : <MessageCircle className="size-6" />}
-                </span>
-                <p className="mt-4 font-semibold text-slate-900">
-                  {tab === 'communities' ? 'Communautés bientôt visibles' : 'Contributions bientôt visibles'}
-                </p>
-                <p className="mt-1 max-w-sm text-sm text-slate-500">
-                  {tab === 'communities'
-                    ? `Les communautés de ${name} apparaîtront ici.`
-                    : `Les publications et réponses de ${name} apparaîtront ici.`}
-                </p>
-              </div>
-            )}
+            {tab === 'communities' && <ProfileCommunities profile={profile} name={name} />}
+            {tab === 'contributions' && <ProfileContributions profile={profile} name={name} />}
           </div>
         </section>
       </div>

@@ -19,6 +19,7 @@ from apps.hackathons.views import (
     HackathonLeaderboardView,
     HackathonMyApplicationView,
     HackathonMySubmissionView,
+    HackathonMyTeamInvitationsView,
     HackathonPublishResultsView,
     HackathonSubmissionDetailView,
     HackathonSubmissionEvaluateView,
@@ -47,6 +48,16 @@ urlpatterns = [
         "hackathons/my/",
         MyHackathonListView.as_view(),
         name="my-hackathons-list",
+    ),
+    path(
+        "hackathons/teams/my-invitations/",
+        HackathonMyTeamInvitationsView.as_view(),
+        name="global-hackathon-team-my-invitations",
+    ),
+    path(
+        "hackathons/teams/respond-invite/",
+        HackathonTeamRespondInviteView.as_view(),
+        name="global-hackathon-team-respond-invite",
     ),
     # Community Hackathons List & Create
     path(
@@ -129,6 +140,16 @@ urlpatterns = [
         name="community-hackathon-teams",
     ),
     path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/my-invitations/",
+        HackathonMyTeamInvitationsView.as_view(),
+        name="community-hackathon-team-my-invitations",
+    ),
+    path(
+        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/respond-invite/",
+        HackathonTeamRespondInviteView.as_view(),
+        name="community-hackathon-team-respond-invite",
+    ),
+    path(
         "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/<uuid:team_id>/",
         HackathonTeamDetailView.as_view(),
         name="community-hackathon-team-detail",
@@ -137,11 +158,6 @@ urlpatterns = [
         "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/<uuid:team_id>/invite/",
         HackathonTeamInviteView.as_view(),
         name="community-hackathon-team-invite",
-    ),
-    path(
-        "communities/<slug:slug>/hackathons/<slug:hackathon_slug>/teams/respond-invite/",
-        HackathonTeamRespondInviteView.as_view(),
-        name="community-hackathon-team-respond-invite",
     ),
     # Submissions
     path(

@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
+import { WeeklyDigest } from '@/pages/shared/weekly-digest';
 import { CodeBlock } from '@/pages/shared/code-block';
-import { useGetCommunityFeedQuery, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
+import { useGetCommunityFeedQuery, useToggleBookmarkMutation, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
@@ -30,6 +31,8 @@ const FILTERS: { id: PostType | 'all'; label: string }[] = [
 
 function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; canReact: boolean; href: string; page: CommunityPage }) {
   const [toggleLike, { isLoading }] = useTogglePostLikeMutation();
+  const [toggleBookmark, { isLoading: isSaving }] = useToggleBookmarkMutation();
+  const signedIn = page.membership !== 'visitor';
   const [expanded, setExpanded] = useState(false);
   // The comments open under the card: no page change, the feed keeps its scroll
   const [showComments, setShowComments] = useState(false);
@@ -41,6 +44,14 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
   const like = async () => {
     try {
       await toggleLike(post.id).unwrap();
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    }
+  };
+
+  const save = async () => {
+    try {
+      await toggleBookmark(post.id).unwrap();
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     }
@@ -64,8 +75,16 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
             <time dateTime={post.created_at}>{ago(post.created_at)}</time> · {postTypeLabel[post.post_type]}
           </p>
         </div>
-        <button type="button" disabled title="Enregistrer : bientôt disponible" aria-label="Enregistrer (bientôt disponible)" className="cursor-not-allowed p-1 text-slate-400">
-          <Bookmark className="size-5" />
+        <button
+          type="button"
+          onClick={save}
+          disabled={!signedIn || isSaving}
+          aria-pressed={!!post.is_bookmarked}
+          aria-label={post.is_bookmarked ? 'Retirer des publications enregistrées' : 'Enregistrer la publication'}
+          title={signedIn ? undefined : 'Connectez-vous pour enregistrer'}
+          className={cn('rounded-md p-1 transition-colors disabled:cursor-not-allowed disabled:text-slate-300', post.is_bookmarked ? 'text-blue-900' : 'text-slate-400 hover:text-slate-700')}
+        >
+          <Bookmark className={cn('size-5', post.is_bookmarked && 'fill-blue-900')} />
         </button>
       </header>
 
@@ -133,12 +152,22 @@ export function FeedTab({ page }: { page: CommunityPage }) {
   const [type, setType] = useState<PostType | 'all'>('all');
   const [search, setSearch] = useState('');
   const [count, setCount] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<'recent' | 'popular'>('recent');
+  const [saved, setSaved] = useState(false);
   const [writing, setWriting] = useState(false);
   const q = useDebounced(search.trim(), 300);
   const isMember = page.membership === 'member';
 
   const { data, isLoading, isFetching } = useGetCommunityFeedQuery(
-    { slug: page.slug, type: type === 'all' ? undefined : type, q: q || undefined, page: 1, page_size: count },
+    {
+      slug: page.slug,
+      type: type === 'all' ? undefined : type,
+      q: q || undefined,
+      sort: sort === 'popular' ? 'popular' : undefined,
+      bookmarked: saved || undefined,
+      page: 1,
+      page_size: count,
+    },
     { skip: !page.canSee, pollingInterval: connected ? 0 : 30_000 },
   );
 
@@ -152,6 +181,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {isMember && page.community && <WeeklyDigest slug={page.community.slug} />}
       {isMember ? (
         <button
           type="button"
@@ -184,6 +214,17 @@ export function FeedTab({ page }: { page: CommunityPage }) {
             {f.label}
           </Pill>
         ))}
+        {page.membership !== 'visitor' && (
+          <Pill
+            active={saved}
+            onClick={() => {
+              setSaved((v) => !v);
+              setCount(PAGE_SIZE);
+            }}
+          >
+            <Bookmark className="size-4" aria-hidden /> Enregistrées
+          </Pill>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -204,12 +245,17 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <SlidersHorizontal className="size-4" aria-hidden />
-          {/* The api serves the feed by date (pinned first) */}
-          <select aria-label="Trier les publications" defaultValue="recent" className="h-12 rounded-lg bg-transparent pr-2 font-medium">
+          <select
+            aria-label="Trier les publications"
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value as 'recent' | 'popular');
+              setCount(PAGE_SIZE);
+            }}
+            className="h-12 rounded-lg bg-transparent pr-2 font-medium"
+          >
             <option value="recent">Récentes</option>
-            <option value="popular" disabled>
-              Populaires (bientôt)
-            </option>
+            <option value="popular">Populaires</option>
           </select>
         </label>
       </div>
@@ -219,8 +265,8 @@ export function FeedTab({ page }: { page: CommunityPage }) {
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <MessagesSquare className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{q || type !== 'all' ? 'Aucune publication ne correspond' : 'Pas encore de publication'}</p>
-          <p className="mt-1 text-sm text-slate-500">{isMember ? 'Lancez la première discussion !' : 'Les premiers échanges apparaîtront ici.'}</p>
+          <p className="mt-3 font-semibold text-slate-900">{saved && !q && type === 'all' ? 'Aucune publication enregistrée' : q || type !== 'all' || saved ? 'Aucune publication ne correspond' : 'Pas encore de publication'}</p>
+          <p className="mt-1 text-sm text-slate-500">{saved ? 'Enregistrez une publication pour la retrouver ici.' : isMember ? 'Lancez la première discussion !' : 'Les premiers échanges apparaîtront ici.'}</p>
         </div>
       ) : (
         <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label="Publications">

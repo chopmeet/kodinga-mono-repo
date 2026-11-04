@@ -33,6 +33,7 @@ class MembershipSelector:
         status: str = None,
         search: str = None,
         is_manager: bool = False,
+        ordering: str = None,
     ) -> QuerySet[CommunityMember]:
         qs = CommunityMember.objects.filter(community=community).select_related(
             'user',
@@ -42,20 +43,38 @@ class MembershipSelector:
         if role:
             qs = qs.filter(role=role)
 
-        if status:
-            if status.lower() != 'all':
-                qs = qs.filter(status=status)
-        elif not is_manager:
+        if not is_manager:
             qs = qs.filter(status=MembershipStatus.ACTIVE)
+        elif status and status.lower() != 'all':
+            qs = qs.filter(status=status)
 
         if search:
-            qs = qs.filter(
+            q_filter = (
                 Q(user__username__icontains=search) |
                 Q(user__first_name__icontains=search) |
                 Q(user__last_name__icontains=search) |
-                Q(user__email__icontains=search) |
                 Q(custom_title__icontains=search)
             )
+            if is_manager:
+                q_filter = q_filter | Q(user__email__icontains=search)
+            qs = qs.filter(q_filter)
+
+        allowed_orderings = {
+            'joined_at': 'joined_at',
+            '-joined_at': '-joined_at',
+            'reputation': '-reputation_score',
+            '-reputation': 'reputation_score',
+            'points': '-reputation_score',
+            '-points': 'reputation_score',
+            'reputation_score': '-reputation_score',
+            '-reputation_score': '-reputation_score',
+            'username': 'user__username',
+            '-username': '-user__username',
+            'role': 'role',
+            '-role': '-role',
+        }
+        if ordering and ordering in allowed_orderings:
+            return qs.order_by(allowed_orderings[ordering], '-joined_at')
 
         return qs.order_by('-reputation_score', '-joined_at')
 
@@ -69,4 +88,3 @@ class MembershipSelector:
         ).filter(
             Q(token_hash=token_hash) | Q(invite_code=invite_code)
         ).select_related('community', 'invited_by').first()
-

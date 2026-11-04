@@ -38,6 +38,7 @@ from apps.hackathons.views.submission_views import (
     HackathonSubmissionListView,
 )
 from apps.hackathons.views.team_views import (
+    HackathonMyTeamInvitationsView,
     HackathonTeamDetailView,
     HackathonTeamInviteView,
     HackathonTeamListCreateView,
@@ -65,6 +66,7 @@ __all__ = [
     "HackathonTeamDetailView",
     "HackathonTeamInviteView",
     "HackathonTeamRespondInviteView",
+    "HackathonMyTeamInvitationsView",
     "HackathonMySubmissionView",
     "HackathonSubmissionFileAttachView",
     "HackathonSubmissionFileDeleteView",

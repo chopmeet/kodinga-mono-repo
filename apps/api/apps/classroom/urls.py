@@ -16,7 +16,10 @@ from apps.classroom.views.module import (
     CourseModuleDetailView,
     CourseModuleListView,
 )
-from apps.classroom.views.progress import LessonProgressView
+from apps.classroom.views.progress import (
+    LessonProgressView,
+    LessonQuizSubmitView,
+)
 
 app_name = 'classroom'
 
@@ -64,7 +67,7 @@ urlpatterns = [
         CourseLessonDetailView.as_view(),
         name='course_lesson_detail',
     ),
-    # Video & Attachments Uploads (UploadThing + Mux)
+    # Video & Attachments Uploads (UploadThing + Mux + YouTube/Vimeo/Dailymotion)
     path(
         'communities/<str:slug>/courses/<str:course_slug>/lessons/<uuid:lesson_id>/video/',
         CourseLessonVideoUploadView.as_view(),
@@ -80,10 +83,20 @@ urlpatterns = [
         CourseLessonAttachmentDeleteView.as_view(),
         name='course_lesson_attachment_delete',
     ),
-    # Progress & Completion
+    # Progress, Quiz & Completion
     path(
         'communities/<str:slug>/courses/<str:course_slug>/lessons/<uuid:lesson_id>/progress/',
         LessonProgressView.as_view(),
         name='lesson_progress',
+    ),
+    path(
+        'communities/<str:slug>/courses/<str:course_slug>/lessons/<uuid:lesson_id>/quiz/submit/',
+        LessonQuizSubmitView.as_view(),
+        name='lesson_quiz_submit',
+    ),
+    path(
+        'communities/<str:slug>/courses/<str:course_slug>/lessons/<uuid:lesson_id>/quiz/',
+        LessonQuizSubmitView.as_view(),
+        name='lesson_quiz',
     ),
 ]

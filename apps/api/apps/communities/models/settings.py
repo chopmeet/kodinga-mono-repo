@@ -81,6 +81,12 @@ class CommunitySettings(BaseModel):
         default=True,
         help_text="Activer l'analyse de sentiment globale et anonymisée"
     )
+    ai_provider_override = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Provider IA forcé pour cette communauté ('gemini', 'openai', ou vide = défaut système)"
+    )
     role_permissions = models.JSONField(
         default=dict,
         blank=True,

@@ -5,9 +5,10 @@ import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
 import { courseLevelLabel, formatDuration, lessonTypeLabel } from '@/pages/community-space/courses/course-labels';
 import { htmlToText, Markdown } from '@/pages/shared/markdown';
 import type { CourseLesson } from '@/utils/api/course/course.type';
-import { parseExercise } from '@/pages/shared/code-exercise';
+import { exerciseOfLesson } from '@/pages/shared/code-exercise';
 import { CodeExerciseView } from './code-exercise-view';
 import { CourseCompletedDialog } from './course-completed-dialog';
+import { QuizView } from './quiz-view';
 import UseCoursePlayer, { type CoursePlayer } from './form/UseCoursePlayer';
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -68,6 +69,19 @@ function Outline({ player }: { player: CoursePlayer }) {
  * alone needs the HLS player of the browser (Safari)
  */
 function LessonVideo({ lesson }: { lesson: CourseLesson }) {
+  // On a platform: its own player
+  if (lesson.video_embed_url && ['youtube', 'vimeo', 'dailymotion'].includes(lesson.video_provider ?? '')) {
+    return (
+      <iframe
+        src={lesson.video_embed_url}
+        title={`Vidéo : ${lesson.title}`}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+        className="aspect-video w-full rounded-xl bg-slate-900"
+      />
+    );
+  }
   const src = lesson.video_source_url || lesson.video_hls_url;
   if (!src) {
     return (
@@ -114,8 +128,9 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   }
 
   const content = lesson.content ?? '';
-  // A code exercise written with its parts (statement, starting code, solution); else plain Markdown
-  const exercise = lesson.lesson_type === 'code' ? parseExercise(content) : null;
+  // A code exercise with its parts (statement, starting code, solution); else plain Markdown
+  const exercise = lesson.lesson_type === 'code' ? exerciseOfLesson(lesson) : null;
+  const hasQuiz = (lesson.quiz_data?.questions?.length ?? 0) > 0;
   const images = ((lesson as CourseLesson & { images?: { url: string; caption?: string; alt?: string }[] }).images ?? []).filter((i) => i.url);
   const attachments = (lesson.attachments ?? []).map((a) => ({ name: a.name || a.file_name || 'Fichier', url: a.url || a.file_url })).filter((a) => a.url);
 
@@ -141,8 +156,8 @@ function LessonContent({ player }: { player: CoursePlayer }) {
       )}
 
       <div className="mt-6">
-        {!content ? (
-          <p className="text-slate-500">{lesson.has_video ? '' : 'Cette leçon n’a pas encore de contenu.'}</p>
+        {!content && !exercise ? (
+          <p className="text-slate-500">{lesson.has_video || hasQuiz ? '' : 'Cette leçon n’a pas encore de contenu.'}</p>
         ) : lesson.content_format === 'html' ? (
           <Markdown source={htmlToText(content)} />
         ) : lesson.content_format === 'json' ? (
@@ -153,6 +168,12 @@ function LessonContent({ player }: { player: CoursePlayer }) {
           <Markdown source={content} />
         )}
       </div>
+
+      {hasQuiz && (
+        <div className="mt-6">
+          <QuizView key={lesson.id} slug={player.slug} courseSlug={player.courseSlug} lesson={lesson} onGraded={player.quizGraded} />
+        </div>
+      )}
 
       {images.length > 0 && (
         <div className="mt-6 space-y-4">
@@ -185,26 +206,37 @@ function LessonContent({ player }: { player: CoursePlayer }) {
           <ArrowLeft /> Précédente
         </Button>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant={outline.is_completed ? 'outline' : 'default'}
-            onClick={player.toggleDone}
-            isLoading={player.isSaving}
-            aria-pressed={!!outline.is_completed}
-          >
-            {outline.is_completed ? (
-              <>
-                <Check /> Terminée
-              </>
-            ) : next ? (
-              <>
-                Terminer et continuer <ArrowRight />
-              </>
+          {/* A quiz is done by passing it, not by hand */}
+          {hasQuiz ? (
+            outline.is_completed ? (
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+                <Check className="size-4" aria-hidden /> Terminée
+              </span>
             ) : (
-              <>
-                <CircleCheck /> Marquer comme terminée
-              </>
-            )}
-          </Button>
+              <span className="text-sm text-slate-500">Réussissez le quiz pour terminer cette leçon.</span>
+            )
+          ) : (
+            <Button
+              variant={outline.is_completed ? 'outline' : 'default'}
+              onClick={player.toggleDone}
+              isLoading={player.isSaving}
+              aria-pressed={!!outline.is_completed}
+            >
+              {outline.is_completed ? (
+                <>
+                  <Check /> Terminée
+                </>
+              ) : next ? (
+                <>
+                  Terminer et continuer <ArrowRight />
+                </>
+              ) : (
+                <>
+                  <CircleCheck /> Marquer comme terminée
+                </>
+              )}
+            </Button>
+          )}
           {outline.is_completed && next && !next.is_locked && (
             <Button onClick={() => player.open(next.id)}>
               Leçon suivante <ArrowRight />

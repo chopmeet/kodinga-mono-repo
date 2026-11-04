@@ -30,7 +30,8 @@ import type {
   RsvpStatus,
   VideoUploadTarget,
 } from '../event/event.type';
-import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonWriteData, ModuleWriteData } from '../course/course.type';
+import type { AIDifficulty, ChurnDashboard, GeneratedExercise, GeneratedQuizQuestion, PeerMatch, WeeklyDigest } from '../ai/ai.type';
+import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonProgressResult, LessonWriteData, ModuleWriteData, QuizResult } from '../course/course.type';
 import type {
   ApplicationStatus,
   Hackathon,
@@ -42,6 +43,7 @@ import type {
   HackathonResult,
   HackathonSubmission,
   HackathonTeam,
+  MyTeamInvitation,
   HackathonStatus,
   HackathonWriteData,
   HackathonApplyData,
@@ -90,6 +92,8 @@ import type {
   CommunityInvitation,
   JoinRequest,
   CreatedInvitation,
+  MyInvitation,
+  ShareableInviteLink,
   PublicInvitation,
   CommunityMemberItem,
   CommunityRole,
@@ -172,6 +176,9 @@ export const CommunityApi = createApi({
     'posts',
     'settings',
     'ai-settings',
+    'weekly-digest',
+    'churn-risks',
+    'peer-matches',
     'events',
     'hackathons',
     'courses',
@@ -277,6 +284,19 @@ export const CommunityApi = createApi({
     leaveCommunity: builder.mutation<unknown, string>({
       query: (slug) => ({ url: `communities/${slug}/leave/`, method: 'POST' }),
       invalidatesTags: ['communities', 'members'],
+    }),
+    // The bell of a community: its notifications reach the member, or not
+    setCommunityNotifications: builder.mutation<{ notifications_enabled: boolean }, { slug: string; enabled: boolean }>({
+      query: ({ slug, enabled }) => ({ url: `communities/${slug}/notifications/toggle/`, method: 'POST', body: { notifications_enabled: enabled } }),
+      transformResponse: unwrap<{ notifications_enabled: boolean }>,
+      async onQueryStarted({ slug }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(CommunityApi.util.updateQueryData('getCommunity', slug, (c) => void (c.notifications_enabled = data.notifications_enabled)));
+        } catch {
+          // the caller shows the error
+        }
+      },
     }),
     // Active plans of a paid community (public)
     getCommunityPlans: builder.query<CommunityPlan[], string>({
@@ -614,6 +634,30 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityMemberItem>,
       invalidatesTags: ['members', 'communities'],
     }),
+    // By the token of a link or the id of an invitation. The route that keeps a shareable link reusable
+    // (invitations/accept/ would consume it at its first use)
+    acceptInvitationByToken: builder.mutation<CommunityMemberItem, string>({
+      query: (token) => ({ url: `invitations/${encodeURIComponent(token)}/accept/`, method: 'POST' }),
+      transformResponse: unwrap<CommunityMemberItem>,
+      invalidatesTags: ['members', 'communities', 'invitations'],
+    }),
+    // Only for an invitation by email: a shareable link would be closed for everyone
+    declineInvitation: builder.mutation<unknown, string>({
+      query: (token) => ({ url: `invitations/${encodeURIComponent(token)}/decline/`, method: 'POST' }),
+      invalidatesTags: ['invitations'],
+    }),
+    // Invitations received at the address of the user (pending by default)
+    getMyInvitations: builder.query<MyInvitation[], void>({
+      query: () => ({ url: 'invitations/my/', params: { page_size: 100 } }),
+      transformResponse: (response: ApiPaginated<MyInvitation>) => response.results ?? [],
+      providesTags: ['invitations'],
+    }),
+    // Created at the first call for a role, then the same link until it is revoked or expires
+    createShareLink: builder.mutation<ShareableInviteLink, { slug: string; role: CommunityRole }>({
+      query: ({ slug, role }) => ({ url: `communities/${slug}/invitations/share-link/`, method: 'POST', body: { role } }),
+      transformResponse: unwrap<ShareableInviteLink>,
+      invalidatesTags: ['invitations'],
+    }),
     getCommunityFeed: builder.query<ApiPaginated<CommunityPostItem>, CommunityFeedQuery>({
       query: ({ slug, ...params }) => ({ url: `communities/${slug}/feed/`, params: cleanParams(params) }),
       providesTags: ['posts'],
@@ -766,6 +810,33 @@ export const CommunityApi = createApi({
                 const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
                 post.user_reactions = data.reacted ? [...others, 'like'] : others;
                 post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
+              }),
+            );
+          }
+        } catch {
+          // the caller shows the error
+        }
+      },
+    }),
+    // Saves or unsaves a post for the signed-in user: the cached post and feeds are patched
+    toggleBookmark: builder.mutation<{ is_bookmarked: boolean }, string>({
+      query: (postId) => ({ url: `posts/${postId}/bookmark/`, method: 'POST' }),
+      transformResponse: unwrap<{ is_bookmarked: boolean }>,
+      async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(CommunityApi.util.updateQueryData('getPost', postId, (post) => void (post.is_bookmarked = data.is_bookmarked)));
+          for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const post = feed.results.find((p) => p.id === postId);
+                if (!post) return;
+                post.is_bookmarked = data.is_bookmarked;
+                // Unsaved from the list of the saved ones: it leaves it
+                if (args.bookmarked && !data.is_bookmarked) {
+                  feed.results = feed.results.filter((p) => p.id !== postId);
+                  feed.pagination.count = Math.max(0, feed.pagination.count - 1);
+                }
               }),
             );
           }
@@ -1327,6 +1398,16 @@ export const CommunityApi = createApi({
       query: ({ slug, hackathonSlug, ...body }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/respond-invite/`, method: 'POST', body }),
       invalidatesTags: ['hackathons'],
     }),
+    // Team invitations waiting for an answer, across every hackathon
+    getMyTeamInvitations: builder.query<MyTeamInvitation[], void>({
+      query: () => 'hackathons/teams/my-invitations/',
+      transformResponse: unwrap<MyTeamInvitation[]>,
+      providesTags: ['hackathons'],
+    }),
+    respondMyTeamInvitation: builder.mutation<unknown, { invitation_id: string; accept: boolean }>({
+      query: (body) => ({ url: 'hackathons/teams/respond-invite/', method: 'POST', body }),
+      invalidatesTags: ['hackathons'],
+    }),
     // Leaves the team; the leader alone dissolves it
     leaveHackathonTeam: builder.mutation<unknown, { slug: string; hackathonSlug: string; teamId: string }>({
       query: ({ slug, hackathonSlug, teamId }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/${teamId}/`, method: 'DELETE' }),
@@ -1423,13 +1504,20 @@ export const CommunityApi = createApi({
       invalidatesTags: ['courses'],
     }),
     // Done / not done; the api refuses a locked lesson and recomputes the course progress
-    updateLessonProgress: builder.mutation<unknown, { slug: string; courseSlug: string; lessonId: string; is_completed: boolean }>({
+    updateLessonProgress: builder.mutation<LessonProgressResult, { slug: string; courseSlug: string; lessonId: string; is_completed: boolean }>({
       query: ({ slug, courseSlug, lessonId, is_completed }) => ({
         url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/progress/`,
         method: 'POST',
         body: { is_completed },
       }),
-      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }],
+      transformResponse: unwrap<LessonProgressResult>,
+      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }, 'leaderboard', 'member-activity'],
+    }),
+    // Graded by the api; passed: the lesson is done (and the course, when it was the last one)
+    submitQuiz: builder.mutation<QuizResult, { slug: string; courseSlug: string; lessonId: string; answers: Record<string, string[]> }>({
+      query: ({ slug, courseSlug, lessonId, answers }) => ({ url: `communities/${slug}/courses/${courseSlug}/lessons/${lessonId}/quiz/submit/`, method: 'POST', body: { answers } }),
+      transformResponse: unwrap<QuizResult>,
+      invalidatesTags: (_result, _error, { lessonId }) => ['courses', { type: 'courses', id: lessonId }, 'leaderboard', 'member-activity'],
     }),
     // Lesson detail (with its content), for the editor
     getLesson: builder.query<CourseLesson, { slug: string; courseSlug: string; lessonId: string }>({
@@ -1542,6 +1630,11 @@ export const CommunityApi = createApi({
       invalidatesTags: ['projects'],
     }),
     // Owner or staff only
+    // Owner and admins of its community
+    featureProject: builder.mutation<unknown, { projectSlug: string; is_featured: boolean }>({
+      query: ({ projectSlug, is_featured }) => ({ url: `projects/${projectSlug}/feature/`, method: 'POST', body: { is_featured } }),
+      invalidatesTags: (_r, _e, { projectSlug }) => ['projects', { type: 'projects', id: projectSlug }],
+    }),
     deleteProject: builder.mutation<unknown, string>({
       query: (projectSlug) => ({ url: `projects/${projectSlug}/`, method: 'DELETE' }),
       invalidatesTags: ['projects'],
@@ -1687,6 +1780,40 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunitySettings>,
       providesTags: (_result, _error, slug) => [{ type: 'settings', id: slug }],
     }),
+    // Written by the api at the first reading of the week
+    getWeeklyDigest: builder.query<WeeklyDigest, string>({
+      query: (slug) => `communities/${slug}/ai/weekly-digest/`,
+      providesTags: (_result, _error, slug) => [{ type: 'weekly-digest', id: slug }],
+    }),
+    // Waits for the text (async: false), not for a task of the worker
+    regenerateWeeklyDigest: builder.mutation<WeeklyDigest, string>({
+      query: (slug) => ({ url: `communities/${slug}/ai/weekly-digest/trigger/`, method: 'POST', body: { async: false } }),
+      invalidatesTags: (_result, _error, slug) => [{ type: 'weekly-digest', id: slug }],
+    }),
+    // Slow when it evaluates the members: the first time, and with refresh
+    getChurnDashboard: builder.query<ChurnDashboard, { slug: string; refresh?: boolean }>({
+      query: ({ slug, refresh }) => ({ url: `communities/${slug}/ai/churn-dashboard/`, params: refresh ? { refresh: true } : undefined }),
+      providesTags: ['churn-risks'],
+    }),
+    // Records the nudge: the api sends nothing to the member
+    markChurnNudged: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `ai/churn-risks/${id}/send-nudge/`, method: 'POST', body: {} }),
+      invalidatesTags: ['churn-risks'],
+    }),
+    getPeerMatches: builder.query<PeerMatch[], string>({
+      query: (slug) => `communities/${slug}/ai/peer-matches/`,
+      providesTags: ['peer-matches'],
+    }),
+    respondPeerMatch: builder.mutation<unknown, { id: string; action: 'accept' | 'decline' }>({
+      query: ({ id, action }) => ({ url: `ai/peer-matches/${id}/respond/`, method: 'POST', body: { action } }),
+      invalidatesTags: ['peer-matches'],
+    }),
+    generateQuiz: builder.mutation<{ questions: GeneratedQuizQuestion[] }, { courseSlug: string; lesson_id: string; question_count: number; difficulty: AIDifficulty }>({
+      query: ({ courseSlug, ...body }) => ({ url: `courses/${courseSlug}/ai/generate-quiz/`, method: 'POST', body }),
+    }),
+    generateExercise: builder.mutation<{ exercise: GeneratedExercise }, { courseSlug: string; lesson_id: string; difficulty: AIDifficulty; language?: string }>({
+      query: ({ courseSlug, ...body }) => ({ url: `courses/${courseSlug}/ai/generate-exercise/`, method: 'POST', body }),
+    }),
     analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
     }),
@@ -1715,6 +1842,9 @@ export const {
   useDeleteCommunityRuleMutation,
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
+  useToggleBookmarkMutation,
+  useSetCommunityNotificationsMutation,
+  useFeatureProjectMutation,
   useGetCommunityMemberJoinsQuery,
   useJoinCommunityMutation,
   useLeaveCommunityMutation,
@@ -1756,6 +1886,14 @@ export const {
   useDeleteMessageMutation,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
+  useGetWeeklyDigestQuery,
+  useRegenerateWeeklyDigestMutation,
+  useLazyGetChurnDashboardQuery,
+  useMarkChurnNudgedMutation,
+  useGetPeerMatchesQuery,
+  useRespondPeerMatchMutation,
+  useGenerateQuizMutation,
+  useGenerateExerciseMutation,
   useGetCommunityInvitationsQuery,
   useCreateInvitationMutation,
   useGetJoinRequestsQuery,
@@ -1763,6 +1901,10 @@ export const {
   useResendInvitationMutation,
   useGetPublicInvitationQuery,
   useAcceptInvitationMutation,
+  useAcceptInvitationByTokenMutation,
+  useDeclineInvitationMutation,
+  useGetMyInvitationsQuery,
+  useCreateShareLinkMutation,
   useGetCommunityFeedQuery,
   useTogglePostPinMutation,
   useTogglePostLockMutation,
@@ -1832,6 +1974,8 @@ export const {
   useCreateHackathonTeamMutation,
   useInviteToHackathonTeamMutation,
   useRespondHackathonTeamInviteMutation,
+  useGetMyTeamInvitationsQuery,
+  useRespondMyTeamInvitationMutation,
   useLeaveHackathonTeamMutation,
   useGetMyHackathonProjectQuery,
   useUpdateMyHackathonProjectMutation,
@@ -1853,6 +1997,7 @@ export const {
   useUploadLessonVideoMutation,
   useEnrollCourseMutation,
   useUpdateLessonProgressMutation,
+  useSubmitQuizMutation,
   useGetCommunityOpportunitiesQuery,
   useGetOpportunityQuery,
   useCreateOpportunityMutation,

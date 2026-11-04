@@ -27,13 +27,14 @@ const notification = (id: string, title: string, action_url: string, is_read = f
 });
 
 /** reviews: the user owns "Abidjan React", where Kofi asked to join */
-function stubNotificationsApi({ reviews = false } = {}) {
+function stubNotificationsApi({ reviews = false, notified = false } = {}) {
   const calls: Call[] = [];
   let pending = reviews ? [{ id: 'm9', user: { id: 'u9', username: 'kofi', first_name: 'Kofi', last_name: 'Mensah' }, role: 'member', status: 'pending', custom_title: '', joined_at: '', reputation_score: 0, created_at: '2026-10-30T10:00:00Z' }] : [];
   const items = [
     notification('n1', 'Candidature acceptée', '/communities/abidjan-react/hackathons/devfest'),
     notification('n2', 'Invitation d’équipe', '/communities/abidjan-react/hackathons/devfest/teams'),
     notification('n3', 'Nouveau vote reçu', '/projects/wari-pay', true),
+    ...(notified ? [{ ...notification('n4', 'Nouvelle demande d’adhésion : Abidjan React', '/communities/abidjan-react/members?status=pending'), notification_type: 'join_request', target_type: 'community_member', target_id: 'm9' }] : []),
   ];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
@@ -115,6 +116,16 @@ describe('notificationHref', () => {
     expect(notificationHref('/projects/wari-pay')).toBe('/projects/wari-pay');
     expect(notificationHref('/opportunities/dev-react')).toBe('/opportunities/dev-react');
     expect(notificationHref('/opportunities/dev-react/applications')).toBe('/opportunities/dev-react');
+    // Named after the routes of the api
+    expect(notificationHref('/communities/a/members?status=pending')).toBe('/c/a/members?status=pending');
+    expect(notificationHref('/communities/a/members')).toBe('/c/a/members');
+    expect(notificationHref('/communities/a/classroom/react-19')).toBe('/communities/a/courses/react-19');
+    expect(notificationHref('/communities/a/opportunities/dev-react')).toBe('/opportunities/dev-react');
+    expect(notificationHref('/communities/a/projects/wari-pay')).toBe('/projects/wari-pay');
+    expect(notificationHref('/communities/a/events/atelier')).toBe('/communities/a?tab=events');
+    expect(notificationHref('/communities/a/events/e1/live')).toBe('/communities/a/events/e1/live');
+    expect(notificationHref('/communities/a')).toBe('/communities/a');
+    expect(notificationHref('/invite/TOKEN')).toBe('/invite/TOKEN');
     // No page in the app (yet), or not a path of the app
     expect(notificationHref('/profile/badges')).toBeNull();
     expect(notificationHref('https://evil.example.com')).toBeNull();
@@ -168,6 +179,21 @@ describe('Notifications', () => {
     await waitFor(() => expect(calls.some((c) => c.method === 'PUT' && c.url.pathname.endsWith('/members/m9/'))).toBe(true), SLOW);
     // Read again: nothing left to answer
     await waitFor(() => expect(screen.queryByRole('list', { name: 'Demandes d’adhésion' })).toBeNull(), SLOW);
+  });
+
+  it('answers a join request on its notification, without showing it twice', async () => {
+    signIn();
+    const calls = stubNotificationsApi({ reviews: true, notified: true });
+    renderAppAt('/notifications');
+    const list = await screen.findByRole('list', { name: 'Notifications' }, SLOW);
+    const accept = await within(list).findByRole('button', { name: 'Accepter Kofi Mensah' }, SLOW);
+    expect(screen.queryByRole('list', { name: 'Demandes d’adhésion' })).toBeNull();
+    fireEvent.click(accept);
+    await waitFor(() => expect(calls.some((c) => c.method === 'PUT' && c.url.pathname.endsWith('/members/m9/'))).toBe(true), SLOW);
+    // Marked read, and the decision replaces the buttons
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/notifications/n4/read/'))).toBe(true), SLOW);
+    expect(await within(list).findByText('Demande acceptée', {}, SLOW)).toBeTruthy();
+    expect(within(list).queryByRole('button', { name: 'Accepter Kofi Mensah' })).toBeNull();
   });
 
   it('shows no join request to a user who reviews none', async () => {

@@ -10,6 +10,7 @@ from common.models.base import BaseModel
 class InvitationStatus(models.TextChoices):
     PENDING = 'pending', 'En attente'
     ACCEPTED = 'accepted', 'Acceptée'
+    DECLINED = 'declined', 'Refusée'
     REVOKED = 'revoked', 'Révoquée'
     EXPIRED = 'expired', 'Expirée'
 
@@ -69,6 +70,7 @@ class CommunityInvitation(BaseModel):
     uses_count = models.PositiveIntegerField(default=0)
     expires_at = models.DateTimeField(db_index=True)
     accepted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    declined_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = 'memberships_invitations'
@@ -115,5 +117,4 @@ class CommunityInvitation(BaseModel):
             return False
         if self.expires_at and timezone.now() > self.expires_at:
             return False
-        return not (self.max_uses and self.uses_count >= self.max_uses)
-
+        return not (self.max_uses and self.max_uses > 0 and self.uses_count >= self.max_uses)

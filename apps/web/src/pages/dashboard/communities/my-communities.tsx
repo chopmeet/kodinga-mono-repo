@@ -6,6 +6,7 @@ import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
 import { FormAlert } from '@/pages/auth/components/form-alert';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { FilterChip } from '@/pages/shared/filter-chip';
+import { MyInvitations } from '@/pages/shared/my-invitations';
 import { isManaged, useGetMyCommunitiesQuery } from '@/utils/api/community/community.api';
 import type { CommunityRole } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -73,6 +74,8 @@ function MyCommunities() {
           Vous n'avez pas accès à la gestion de « {deniedSlug} ».
         </p>
       )}
+
+      <MyInvitations className="mb-4" />
 
       <ColgateWrapper className="border border-neutral-200 p-4 md:p-6">
         {isLoading ? (

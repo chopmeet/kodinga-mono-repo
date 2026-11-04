@@ -10,6 +10,7 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 from apps.memberships.serializers.member import CommunityMemberSerializer
+from common.permissions.base import is_superadmin_user
 from common.utils.responses import error_response, success_response
 
 
@@ -36,12 +37,28 @@ class CommunityRbacView(APIView):
             status=MembershipStatus.ACTIVE
         ).first()
 
-        from common.permissions.base import is_superadmin_user
         is_owner = is_superadmin_user(request.user) or community.owner_id == request.user.id
-        is_admin = is_owner or (my_membership and my_membership.is_admin)
-        is_moderator = is_owner or (my_membership and my_membership.is_moderator)
+        is_admin = is_owner or bool(my_membership and my_membership.is_admin)
+        is_moderator = is_owner or bool(my_membership and my_membership.is_moderator)
         can_manage_roles = is_owner or is_admin
 
+        effective_role = CommunityRole.OWNER if is_owner else (my_membership.role if my_membership else None)
+
+        settings = getattr(community, 'settings', None)
+        if not settings:
+            from apps.communities.models.settings import CommunitySettings
+            settings, _ = CommunitySettings.objects.get_or_create(community=community)
+
+        if is_owner:
+            active_permissions = list(settings.get_role_permissions('owner').keys())
+        elif effective_role:
+            role_perms = settings.get_role_permissions(effective_role)
+            user_overrides = (settings.role_permissions or {}).get('user_overrides', {}).get(str(request.user.id), {})
+            combined = dict(role_perms)
+            combined.update(user_overrides)
+            active_permissions = [k for k, v in combined.items() if v]
+        else:
+            active_permissions = []
 
         roles_catalog = [
             {
@@ -99,7 +116,7 @@ class CommunityRbacView(APIView):
             community=community,
             status=MembershipStatus.ACTIVE,
             role__in=[CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
-        ).select_related('user')
+        ).select_related('user', 'user__profile')
 
         return success_response(
             data={
@@ -114,14 +131,15 @@ class CommunityRbacView(APIView):
                 },
                 "roles_catalog": roles_catalog,
                 "my_permissions": {
-                    "role": my_membership.role if my_membership else None,
+                    "role": effective_role,
                     "is_owner": bool(is_owner),
                     "is_admin": bool(is_admin),
                     "is_moderator": bool(is_moderator),
                     "can_manage_roles": bool(can_manage_roles),
                     "can_manage_classroom": bool(is_admin),
+                    "permissions": active_permissions,
                 },
-                "privileged_members": CommunityMemberSerializer(privileged_members, many=True).data
+                "privileged_members": CommunityMemberSerializer(privileged_members, many=True, context={'request': request, 'is_manager': is_moderator}).data
             },
             message="RBAC et rôles de la communauté récupérés avec succès."
         )

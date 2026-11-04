@@ -20,6 +20,7 @@ import { getName, memberRoleLabel } from '@/utils/Utils';
 import { invitableRoles } from '../form/member-permissions';
 import UseInvitationForm, { copyText, EMAIL_MAX_DAYS, invitationLink } from '../form/UseInvitationForm';
 import UseInvitationList, { type InvitationList } from '../form/UseInvitationList';
+import UseShareLink from '../form/UseShareLink';
 
 const DURATIONS = [
   { value: '1', label: '1 jour' },
@@ -31,6 +32,7 @@ const DURATIONS = [
 const statusStyle: Record<InvitationStatus, { label: string; className: string }> = {
   pending: { label: 'En attente', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   accepted: { label: 'Acceptée', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
+  declined: { label: 'Refusée', className: 'border-slate-200 bg-slate-50 text-slate-600' },
   expired: { label: 'Expirée', className: 'border-slate-200 bg-slate-50 text-slate-600' },
   revoked: { label: 'Révoquée', className: 'border-slate-200 bg-slate-50 text-slate-600' },
 };
@@ -64,6 +66,33 @@ function LinkField({ id, link, label }: { id: string; link: string; label: strin
         {copied ? 'Copié' : 'Copier'}
       </Button>
     </div>
+  );
+}
+
+/** The reusable link of the community: anyone with it joins as a member, until it expires or is revoked below */
+function ShareLink({ slug }: { slug: string }) {
+  const { shareLink, link, isLoading, reveal } = UseShareLink(slug);
+  return (
+    <section aria-labelledby="community-share-link" className="rounded-xl border border-slate-200 p-4">
+      <h3 id="community-share-link" className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <Link2 className="size-4 text-blue-900" aria-hidden />
+        Lien de la communauté
+      </h3>
+      <p className="mt-1 mb-3 text-xs text-slate-500">Toute personne qui a ce lien rejoint la communauté comme membre : nombre de personnes illimité, valable 30 jours.</p>
+      {shareLink ? (
+        <>
+          <LinkField id="community-share-link-url" link={link} label="Lien de la communauté" />
+          <p className="mt-2 text-xs text-slate-500">
+            Utilisé {shareLink.uses_count} fois · expire le {dateFormat.format(new Date(shareLink.expires_at))}
+          </p>
+        </>
+      ) : (
+        <Button type="button" variant="outline" size="sm" onClick={reveal} isLoading={isLoading}>
+          <Link2 />
+          Obtenir le lien
+        </Button>
+      )}
+    </section>
   );
 }
 
@@ -175,6 +204,8 @@ function InviteMembersModal({ slug, communityName, actor, open, onClose }: Props
             Partagez un lien, ou invitez une personne par email : elle rejoint {communityName} dès qu'elle accepte, sans validation de l'équipe ni abonnement.
           </DialogDescription>
         </DialogHeader>
+
+        <ShareLink slug={slug} />
 
         {created ? (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">

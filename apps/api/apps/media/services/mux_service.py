@@ -143,10 +143,21 @@ class MuxVideoService:
                 logger.error(f"Failed to connect to Mux API for asset creation: {exc}")
 
         # Fallback / dev mock mode if Mux keys not configured or error
+        mux_fallback = False
         if not asset_id:
             asset_id = f"mux_asset_{uuid.uuid4().hex[:16]}"
             playback_id = f"playback_{uuid.uuid4().hex[:16]}"
             status = VideoStatus.READY
+            mux_fallback = True
+
+        metadata = {
+            'source_url': input_url,
+            'source_provider': 'uploadthing',
+        }
+        if mux_fallback:
+            # Flag consumed by callers: the asset was NOT ingested by Mux,
+            # playback must use the raw source URL instead of stream.mux.com.
+            metadata['mux_fallback'] = True
 
         video_asset = VideoAsset.objects.create(
             user=user,
@@ -156,10 +167,7 @@ class MuxVideoService:
             playback_id=playback_id,
             passthrough=passthrough_val,
             status=status,
-            metadata={
-                'source_url': input_url,
-                'source_provider': 'uploadthing',
-            }
+            metadata=metadata,
         )
         return video_asset
 

@@ -130,3 +130,9 @@ class BaseAIProvider(ABC):
         """
         pass
 
+    @abstractmethod
+    def generate_embedding(self, text: str) -> list[float]:
+        """
+        Generates normalized float vector embedding for semantic search and duplicate detection.
+        """
+        pass

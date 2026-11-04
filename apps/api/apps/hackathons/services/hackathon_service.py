@@ -31,6 +31,19 @@ class HackathonService:
             )
 
     @classmethod
+    def _notify_if_published(cls, hackathon: Hackathon, actor: User) -> None:
+        if hackathon.status != HackathonStatus.DRAFT and hackathon.status != HackathonStatus.CANCELLED:
+            action_url = f"/communities/{hackathon.community.slug}/hackathons/{hackathon.slug}"
+            NotificationService.notify_community_content_published(
+                community=hackathon.community,
+                actor=actor,
+                content_type="hackathon",
+                content_id=str(hackathon.id),
+                title=hackathon.title,
+                action_url=action_url,
+            )
+
+    @classmethod
     @transaction.atomic
     def create_hackathon(
         cls,
@@ -93,6 +106,7 @@ class HackathonService:
                 **c_data,
             )
 
+        cls._notify_if_published(hackathon, actor)
         return hackathon
 
     @classmethod
@@ -153,6 +167,7 @@ class HackathonService:
                     **c_data,
                 )
 
+        cls._notify_if_published(hackathon, actor)
         return hackathon
 
     @classmethod
@@ -170,26 +185,7 @@ class HackathonService:
             hackathon.status = HackathonStatus.PUBLISHED
 
         hackathon.save(update_fields=["status", "updated_at"])
-
-        # Notify active community members about the new hackathon
-        from apps.memberships.models.member import CommunityMember, MembershipStatus
-        members = CommunityMember.objects.filter(
-            community=hackathon.community,
-            status=MembershipStatus.ACTIVE,
-        ).select_related("user")[:200]
-
-        for m in members:
-            NotificationService.create_notification(
-                recipient=m.user,
-                actor=actor,
-                title=f"Nouveau Hackathon : {hackathon.title}",
-                body=f"La communauté {hackathon.community.name} organise un hackathon ! Découvrez les défis et inscrivez-vous.",
-                notification_type=NotificationType.COMMUNITY_INVITE,
-                action_url=f"/communities/{hackathon.community.slug}/hackathons/{hackathon.slug}",
-                target_type="hackathon",
-                target_id=str(hackathon.id),
-            )
-
+        cls._notify_if_published(hackathon, actor)
         return hackathon
 
     @classmethod
@@ -215,6 +211,7 @@ class HackathonService:
 
         hackathon.status = target_status
         hackathon.save(update_fields=["status", "updated_at"])
+        cls._notify_if_published(hackathon, actor)
         return hackathon
 
     @classmethod

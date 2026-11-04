@@ -7,6 +7,8 @@ from apps.media.serializers.video import (
     MuxUploadRequestSerializer,
     MuxUploadResponseSerializer,
     VideoAssetSerializer,
+    VideoIngestRequestSerializer,
+    VideoUploadRequestSerializer,
 )
 
 __all__ = [
@@ -14,6 +16,8 @@ __all__ = [
     'PresignedUploadRequestSerializer',
     'ConfirmUploadRequestSerializer',
     'VideoAssetSerializer',
+    'VideoUploadRequestSerializer',
+    'VideoIngestRequestSerializer',
     'MuxUploadRequestSerializer',
     'MuxUploadResponseSerializer',
 ]

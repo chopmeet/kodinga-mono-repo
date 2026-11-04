@@ -1,11 +1,13 @@
-import { ArrowLeft, BadgeCheck, Bell, Check, ChevronDown, Copy, Link2, LogOut, Radio, Settings, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Bell, BellOff, Check, ChevronDown, Copy, Link2, LogOut, Radio, Settings, ShieldCheck, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { customToast, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
+import { useSetCommunityNotificationsMutation } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
+import { parseApiError } from '@/utils/api/errors';
 import { formatCompact, memberRoleLabel } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { LeaveDialog, MembershipActions } from './community-sidebar';
@@ -26,6 +28,37 @@ async function copyPageLink() {
     customToast.error({ message: 'Copie impossible : copiez l’adresse de la page.' });
     return false;
   }
+}
+
+/** Member: the notifications of this community reach them, or not */
+function NotificationsBell({ page }: { page: CommunityPage }) {
+  const [setNotifications, { isLoading }] = useSetCommunityNotificationsMutation();
+  const enabled = !!page.community?.notifications_enabled;
+  const Icon = enabled ? Bell : BellOff;
+
+  const toggle = async () => {
+    try {
+      await setNotifications({ slug: page.slug, enabled: !enabled }).unwrap();
+      customToast.success({ message: enabled ? 'Notifications de cette communauté coupées.' : 'Notifications de cette communauté activées.' });
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    }
+  };
+
+  const label = enabled ? 'Couper les notifications de cette communauté' : 'Activer les notifications de cette communauté';
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={isLoading}
+      aria-pressed={enabled}
+      aria-label={label}
+      title={label}
+      className={`flex size-11 items-center justify-center rounded-lg border border-slate-200 bg-white/90 shadow-2xs transition-colors hover:bg-white disabled:opacity-60 ${enabled ? 'text-blue-900' : 'text-slate-500'}`}
+    >
+      <Icon className="size-5" />
+    </button>
+  );
 }
 
 /** Member: role menu (manage, copy the link, leave) */
@@ -151,16 +184,7 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
           {isMember ? (
             // Phones: on their own row under the name (the name column keeps its width)
             <div className="flex w-full items-center gap-3 sm:w-auto">
-              {/* Notifications of the community: not in the api yet */}
-              <button
-                type="button"
-                disabled
-                title="Notifications : bientôt disponible"
-                aria-label="Notifications (bientôt disponible)"
-                className="flex size-11 cursor-not-allowed items-center justify-center rounded-lg border border-slate-200 bg-white/90 text-slate-400 shadow-2xs"
-              >
-                <Bell className="size-5" />
-              </button>
+              <NotificationsBell page={page} />
               <MemberMenu page={page} />
             </div>
           ) : (

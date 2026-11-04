@@ -8,7 +8,7 @@ from common.models.base import BaseModel
 
 class LessonProgress(BaseModel):
     """
-    Per-user progress for an individual lesson (completion and playback position).
+    Per-user progress for an individual lesson (completion, playback position, and quiz results).
     """
     lesson = models.ForeignKey(
         Lesson,
@@ -29,6 +29,24 @@ class LessonProgress(BaseModel):
     )
     completed_at = models.DateTimeField(null=True, blank=True, db_index=True)
     notes = models.TextField(blank=True, help_text="Notes personnelles de l'apprenant")
+    quiz_score = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Dernier score obtenu au quiz en pourcentage (0-100)"
+    )
+    quiz_passed = models.BooleanField(
+        default=False,
+        help_text="Indique si l'apprenant a réussi le quiz de cette leçon"
+    )
+    quiz_attempts_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Nombre de tentatives soumises pour ce quiz"
+    )
+    quiz_last_submission = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Détails de la dernière soumission au quiz (réponses, score, correction)"
+    )
 
     class Meta:
         db_table = 'classroom_lesson_progress'

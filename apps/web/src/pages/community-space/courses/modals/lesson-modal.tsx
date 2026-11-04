@@ -2,6 +2,8 @@ import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogH
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { LessonType } from '@/utils/api/course/course.type';
 import { CodeExerciseFields } from '../components/code-exercise-fields';
+import { LessonAIPanel } from '../components/lesson-ai-panel';
+import { QuizFields } from '../components/quiz-fields';
 import VideoField from '../components/video-field';
 import { lessonTypeLabel } from '../course-labels';
 import UseLessonForm, { type LessonTarget } from '../form/UseLessonForm';
@@ -19,6 +21,7 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
     uploading, 
     isVideo, 
     isCode, 
+    isQuiz,
     type 
   } = form;
 
@@ -32,7 +35,9 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
               ? 'Une vidéo, accompagnée si besoin d’un texte en Markdown.'
               : isCode
                 ? 'Un énoncé, le code de départ que l’apprenant complète, et la solution qu’il ouvre quand il veut.'
-                : 'Le contenu s’écrit en Markdown (titres, listes, blocs de code…).'}
+                : isQuiz
+                  ? 'Des questions à choix unique ou multiple, corrigées automatiquement. Réussi, le quiz termine la leçon.'
+                  : 'Le contenu s’écrit en Markdown (titres, listes, blocs de code…).'}
           </DialogDescription>
         </DialogHeader>
         {form.isLoadingDetail ? (
@@ -85,13 +90,14 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
                 />
               </div>
             )}
+            {(isCode || isQuiz) && <LessonAIPanel courseSlug={courseSlug} form={form} />}
             {isCode ? (
               <CodeExerciseFields value={form.exercise} onChange={form.setExercise} />
             ) : (
               <label className="flex flex-col gap-1 sm:col-span-3">
-                <span className="custom-form-label">{isVideo ? 'Texte d’accompagnement (optionnel)' : 'Contenu'}</span>
+                <span className="custom-form-label">{isVideo ? 'Texte d’accompagnement (optionnel)' : isQuiz ? 'Consigne (facultatif)' : 'Contenu'}</span>
                 <textarea
-                  rows={isVideo ? 6 : 14}
+                  rows={isVideo ? 6 : isQuiz ? 3 : 14}
                   value={form.content}
                   onChange={(e) => form.setContent(e.target.value)}
                   placeholder={'## Objectif\n\nCe que vous allez apprendre…'}
@@ -99,6 +105,7 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
                 />
               </label>
             )}
+            {isQuiz && <QuizFields value={form.quiz} onChange={form.setQuiz} />}
             <div className="sm:col-span-3">
               <SettingSwitch
                 label="Aperçu gratuit"

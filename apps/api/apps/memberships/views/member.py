@@ -19,6 +19,8 @@ from apps.memberships.models.member import (
 )
 from apps.memberships.permissions import (
     check_last_admin_protection,
+    has_community_permission,
+    is_active_community_member,
     is_superadmin_user,
 )
 from apps.memberships.selectors.membership_selector import MembershipSelector
@@ -93,13 +95,13 @@ class LeaveCommunityView(APIView):
 
 class MyMembershipView(APIView):
     """
-    Get authenticated user's membership details in a community.
+    Get authenticated user's membership details and permissions in a community.
     """
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=['Communities & Memberships'],
-        summary="Consulter son statut d'adhésion dans la communauté",
+        summary="Consulter son statut d'adhésion et ses permissions dans la communauté",
         responses={200: CommunityMemberSerializer}
     )
     def get(self, request, slug):
@@ -109,17 +111,72 @@ class MyMembershipView(APIView):
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
         member = MembershipSelector.get_member(community, request.user)
+        if not member and community.owner_id == request.user.id:
+            member, _ = CommunityMember.objects.get_or_create(
+                community=community,
+                user=request.user,
+                defaults={
+                    'role': CommunityRole.OWNER,
+                    'status': MembershipStatus.ACTIVE,
+                }
+            )
+
         if not member:
+            if is_superadmin_user(request.user):
+                settings = getattr(community, 'settings', None)
+                if not settings:
+                    from apps.communities.models.settings import CommunitySettings
+                    settings, _ = CommunitySettings.objects.get_or_create(community=community)
+                return success_response(
+                    data={
+                        'id': None,
+                        'user': CommunityMemberSerializer().get_user(type('Obj', (), {'user': request.user})()),
+                        'role': CommunityRole.OWNER,
+                        'status': MembershipStatus.ACTIVE,
+                        'is_owner': True,
+                        'is_admin': True,
+                        'is_moderator': True,
+                        'can_manage': True,
+                        'permissions': list(settings.get_role_permissions('owner').keys()),
+                    }
+                )
             return success_response(None, message="Non membre.")
 
-        return success_response(data=CommunityMemberSerializer(member).data)
+        data = CommunityMemberSerializer(member, context={'request': request, 'is_manager': True}).data
+        is_owner = community.owner_id == request.user.id or is_superadmin_user(request.user) or member.role == CommunityRole.OWNER
+        is_admin = is_owner or member.is_admin
+        is_moderator = is_owner or member.is_moderator
+        settings = getattr(community, 'settings', None)
+        if not settings:
+            from apps.communities.models.settings import CommunitySettings
+            settings, _ = CommunitySettings.objects.get_or_create(community=community)
+
+        if is_owner:
+            active_permissions = list(settings.get_role_permissions('owner').keys())
+        elif member.status == MembershipStatus.ACTIVE:
+            role_perms = settings.get_role_permissions(member.role)
+            user_overrides = (settings.role_permissions or {}).get('user_overrides', {}).get(str(request.user.id), {})
+            combined = dict(role_perms)
+            combined.update(user_overrides)
+            active_permissions = [k for k, v in combined.items() if v]
+        else:
+            active_permissions = []
+
+        data['is_owner'] = bool(is_owner)
+        data['is_admin'] = bool(is_admin and member.status == MembershipStatus.ACTIVE)
+        data['is_moderator'] = bool(is_moderator and member.status == MembershipStatus.ACTIVE)
+        data['can_manage'] = bool((is_owner or is_moderator) and member.status == MembershipStatus.ACTIVE)
+        data['permissions'] = active_permissions
+        data['notifications_enabled'] = member.notifications_enabled
+
+        return success_response(data=data)
 
 
 class CommunityMemberListView(APIView):
     """
     List members of a community with filters and search.
     - Community managers (owner, admin, moderator, platform admin) can view all members and filter by any status (active, pending, banned, etc.).
-    - Community members (or public visitors for public communities) can view the active members directory.
+    - Active community members can view the active members directory with safe public user fields.
     """
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
@@ -127,11 +184,12 @@ class CommunityMemberListView(APIView):
     @extend_schema(
         tags=['Communities & Memberships'],
         summary="Lister les membres d'une communauté",
-        description="Renvoie la liste des membres d'une communauté avec leurs rôles (owner, admin, moderator, member) et statuts (active, pending, banned...). Réservé aux gestionnaires de la communauté (owner, admin, modérateur) et administrateurs de la plateforme.",
+        description="Renvoie la liste paginée des membres d'une communauté. Les gestionnaires ont accès à tous les statuts ; les membres réguliers consultent l'annuaire des membres actifs.",
         parameters=[
             OpenApiParameter(name='role', description="Filtrer par rôle (owner, admin, moderator, member)", required=False, type=str),
             OpenApiParameter(name='status', description="Statut (active, pending, banned, all...)", required=False, type=str),
-            OpenApiParameter(name='search', description="Recherche par pseudo, nom ou email", required=False, type=str),
+            OpenApiParameter(name='search', description="Recherche par pseudo, nom ou titre", required=False, type=str),
+            OpenApiParameter(name='ordering', description="Tri (joined_at, -joined_at, reputation, username)", required=False, type=str),
         ],
         responses={200: CommunityMemberSerializer(many=True)}
     )
@@ -141,29 +199,27 @@ class CommunityMemberListView(APIView):
         except Exception:
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
-        is_platform_admin = bool(
-            getattr(request.user, 'is_superadmin', False) or
-            getattr(request.user, 'is_superuser', False) or
-            getattr(request.user, 'is_staff', False)
-        )
+        is_platform_admin = is_superadmin_user(request.user)
         is_owner = (community.owner_id == request.user.id)
         current_membership = MembershipSelector.get_member(community, request.user)
-        is_active_member = bool(current_membership and current_membership.status == MembershipStatus.ACTIVE)
-        has_community_permission = bool(
-            is_active_member and
-            current_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
+        is_active_member = is_active_community_member(request.user, community)
+        has_mgr_permission = bool(
+            (current_membership and current_membership.status == MembershipStatus.ACTIVE and current_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR])
+            or has_community_permission(request.user, community, 'can_review_requests')
+            or has_community_permission(request.user, community, 'can_ban_members')
         )
-        is_manager = is_platform_admin or is_owner or has_community_permission
+        is_manager = is_platform_admin or is_owner or has_mgr_permission
 
-        if not is_manager:
+        if not (is_manager or is_active_member):
             return error_response(
-                "Vous devez être propriétaire, administrateur ou modérateur de la communauté pour consulter la liste des membres.",
+                "Vous devez être membre actif de cette communauté pour consulter l'annuaire des membres.",
                 status_code=status.HTTP_403_FORBIDDEN
             )
 
         role = request.query_params.get('role')
         status_filter = request.query_params.get('status')
-        search = request.query_params.get('search')
+        search = request.query_params.get('search') or request.query_params.get('q')
+        ordering = request.query_params.get('ordering')
 
         # Non-managers can only see active members
         if not is_manager:
@@ -175,11 +231,16 @@ class CommunityMemberListView(APIView):
             status=status_filter,
             search=search,
             is_manager=is_manager,
+            ordering=ordering,
         )
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = CommunityMemberSerializer(page, many=True)
+        serializer = CommunityMemberSerializer(
+            page,
+            many=True,
+            context={'request': request, 'is_manager': is_manager}
+        )
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -201,19 +262,22 @@ class CommunityMemberDetailView(APIView):
     def get(self, request, slug, member_id):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
-            member = CommunityMember.objects.select_related('user', 'user__profile').get(id=member_id, community=community)
+            member = CommunityMember.objects.select_related('user', 'user__profile').get(
+                models.Q(id=member_id) | models.Q(user_id=member_id),
+                community=community
+            )
         except Exception:
             return error_response("Membre introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
-        is_platform_admin = bool(
-            getattr(request.user, 'is_superadmin', False) or
-            getattr(request.user, 'is_superuser', False) or
-            getattr(request.user, 'is_staff', False)
-        )
+        is_platform_admin = is_superadmin_user(request.user)
         is_owner = (community.owner_id == request.user.id)
         current_membership = MembershipSelector.get_member(community, request.user)
-        is_active_member = bool(current_membership and current_membership.status == MembershipStatus.ACTIVE)
-        is_manager = is_platform_admin or is_owner or (is_active_member and current_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR])
+        is_active_member = is_active_community_member(request.user, community)
+        is_manager = is_platform_admin or is_owner or (
+            current_membership
+            and current_membership.status == MembershipStatus.ACTIVE
+            and current_membership.role in [CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
+        )
 
         is_private_or_paid = (
             community.privacy_type in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET]
@@ -225,7 +289,15 @@ class CommunityMemberDetailView(APIView):
                 status_code=status.HTTP_403_FORBIDDEN
             )
 
-        return success_response(data=CommunityMemberSerializer(member).data)
+        if not is_manager and member.status != MembershipStatus.ACTIVE and member.user_id != request.user.id:
+            return error_response("Membre introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        return success_response(
+            data=CommunityMemberSerializer(
+                member,
+                context={'request': request, 'is_manager': is_manager or request.user.id == member.user_id}
+            ).data
+        )
 
     @extend_schema(
         tags=['Communities & Memberships'],
@@ -431,7 +503,7 @@ class WorkspaceMemberDetailView(APIView):
 
         is_self = (request.user.id == member.user_id)
         actor_membership = MembershipSelector.get_member(workspace, request.user)
-        is_admin_actor = is_superadmin_user(request.user) or (actor_membership and actor_membership.is_admin)
+        is_admin_actor = is_superadmin_user(request.user) or workspace.owner_id == request.user.id or (actor_membership and actor_membership.is_admin)
 
         if not is_self and not is_admin_actor:
             return error_response("Droits administrateur requis pour retirer un collaborateur.", status_code=status.HTTP_403_FORBIDDEN)
@@ -444,11 +516,13 @@ class WorkspaceMemberDetailView(APIView):
             return error_response("Le propriétaire ne peut pas quitter l'espace sans transférer la propriété au préalable.", status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
         with transaction.atomic():
+            was_active = member.status == MembershipStatus.ACTIVE
             member.status = MembershipStatus.LEFT
             member.save(update_fields=['status', 'updated_at'])
-            Community.objects.filter(id=workspace.id, members_count__gt=0).update(
-                members_count=F('members_count') - 1
-            )
+            if was_active:
+                Community.objects.filter(id=workspace.id, members_count__gt=0).update(
+                    members_count=F('members_count') - 1
+                )
 
             PlatformAuditLog.objects.create(
                 actor=request.user,
@@ -467,3 +541,86 @@ class WorkspaceMemberDetailView(APIView):
         msg = "Vous avez quitté l'espace avec succès." if is_self else "Le collaborateur a été retiré de l'espace."
         return success_response(message=msg)
 
+
+class CommunityNotificationToggleView(APIView):
+    """
+    Activer, désactiver ou consulter les notifications d'une communauté (cloche).
+    POST /api/v1/communities/<slug>/notifications/toggle/
+    POST /api/v1/communities/<slug>/notifications/
+    GET /api/v1/communities/<slug>/notifications/
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Communities & Memberships'],
+        summary="Consulter l'état des notifications pour une communauté",
+        responses={200: CommunityMemberSerializer}
+    )
+    def get(self, request, slug):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+        except Exception:
+            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        member = CommunityMember.objects.filter(community=community, user=request.user).first()
+        enabled = member.notifications_enabled if member else False
+        return success_response(
+            data={
+                "community_id": str(community.id),
+                "community_slug": community.slug,
+                "notifications_enabled": enabled,
+                "is_member": bool(member and member.status == MembershipStatus.ACTIVE),
+            }
+        )
+
+    @extend_schema(
+        tags=['Communities & Memberships'],
+        summary="Basculer l'état des notifications pour une communauté (cloche)",
+        responses={200: CommunityMemberSerializer}
+    )
+    def post(self, request, slug):
+        try:
+            community = CommunitySelector.get_community_by_slug(slug, user=request.user)
+        except Exception:
+            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+
+        member = CommunityMember.objects.filter(community=community, user=request.user).first()
+        requested_val = None
+        if isinstance(request.data, dict):
+            requested_val = request.data.get("notifications_enabled")
+            if requested_val is None:
+                requested_val = request.data.get("enabled")
+
+        if not member:
+            if community.privacy_type == CommunityPrivacy.PUBLIC and community.pricing_type == CommunityPricing.FREE:
+                new_val = bool(requested_val) if requested_val is not None else True
+                member = CommunityMember.objects.create(
+                    community=community,
+                    user=request.user,
+                    role=CommunityRole.MEMBER,
+                    status=MembershipStatus.ACTIVE,
+                    notifications_enabled=new_val,
+                )
+                Community.objects.filter(id=community.id).update(members_count=F('members_count') + 1)
+            else:
+                return error_response(
+                    "Vous devez être membre de cette communauté pour gérer les notifications.",
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
+        else:
+            if requested_val is not None:
+                member.notifications_enabled = bool(requested_val)
+            else:
+                member.notifications_enabled = not member.notifications_enabled
+            member.save(update_fields=['notifications_enabled', 'updated_at'])
+
+        msg = "Notifications activées." if member.notifications_enabled else "Notifications désactivées."
+        return success_response(
+            data={
+                "community_id": str(community.id),
+                "community_slug": community.slug,
+                "notifications_enabled": member.notifications_enabled,
+                "is_member": member.status == MembershipStatus.ACTIVE,
+            },
+            message=msg,
+        )

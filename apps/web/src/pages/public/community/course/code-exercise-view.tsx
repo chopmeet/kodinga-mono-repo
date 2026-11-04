@@ -27,6 +27,13 @@ export function CodeExerciseView({ exercise }: { exercise: CodeExercise }) {
         </section>
       )}
 
+      {exercise.extras.map((b) => (
+        <section key={b.id} aria-label={b.title || 'Code'}>
+          {b.title && <h2 className="text-base font-semibold text-slate-900">{b.title}</h2>}
+          <CodeBlock code={b.code} language={b.language} className="mt-3" />
+        </section>
+      ))}
+
       {exercise.solution && (
         <section aria-labelledby="exercise-solution" className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

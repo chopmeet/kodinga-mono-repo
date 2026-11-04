@@ -19,6 +19,7 @@ from apps.accounts.views.user import (
     UserDetailAdminView,
     UserListView,
     UserProfileMeView,
+    UserWorkspaceAccessView,
 )
 from apps.analytics.views.member_activity import (
     MemberActivityDashboardView,
@@ -56,6 +57,7 @@ urlpatterns = [
     # Users & Profiles
     path('users/', UserListView.as_view(), name='user_list'),
     path('users/me/', UserProfileMeView.as_view(), name='user_me'),
+    path('users/me/workspace/', UserWorkspaceAccessView.as_view(), name='user_me_workspace'),
     path('users/me/consents/', UserConsentView.as_view(), name='user_consents'),
     path('users/me/dashboard/', MemberActivityDashboardView.as_view(), name='user_me_dashboard'),
     path('users/me/hackathons/', MemberHackathonsView.as_view(), name='user_me_hackathons'),

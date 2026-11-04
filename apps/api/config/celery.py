@@ -9,6 +9,10 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
+    'send-upcoming-event-reminders-every-5-minutes': {
+        'task': 'apps.events.tasks.send_event_reminders_task',
+        'schedule': 300.0,  # Run every 5 minutes to catch events starting within 30 minutes
+    },
     'expire-outdated-workspace-invitations-daily': {
         'task': 'apps.memberships.tasks.expire_outdated_invitations_task',
         'schedule': 86400.0,  # Run daily

@@ -3,12 +3,32 @@ import { Link } from 'react-router-dom';
 
 import { Button } from '@kodinga-mono-repo/ui';
 import { getName } from '@/utils/Utils';
+import type { JoinRequest } from '@/utils/api/community/community.type';
 import type { JoinRequests } from '../form/UseJoinRequests';
 
 const when = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-/** Join requests to answer (communities the user reviews), above the notifications */
-export function JoinRequestsSection({ requests, busyId, accept, refuse }: JoinRequests) {
+/** Accept / refuse a join request, or what was decided here */
+export function JoinRequestActions({ request, decision, busyId, accept, refuse }: { request?: JoinRequest; decision?: 'accepted' | 'refused'; busyId?: string; accept: JoinRequests['accept']; refuse: JoinRequests['refuse'] }) {
+  if (decision) {
+    return <p className="text-sm font-semibold text-slate-600">{decision === 'accepted' ? 'Demande acceptée' : 'Demande refusée'}</p>;
+  }
+  if (!request) return null;
+  const name = getName(request.member.user);
+  return (
+    <div className="flex gap-2">
+      <Button size="sm" variant="outline" disabled={!!busyId} onClick={() => refuse(request)} aria-label={`Refuser ${name}`}>
+        Refuser
+      </Button>
+      <Button size="sm" disabled={!!busyId} isLoading={busyId === request.member.id} onClick={() => accept(request)} aria-label={`Accepter ${name}`}>
+        Accepter
+      </Button>
+    </div>
+  );
+}
+
+/** Join requests to answer without a notification on the page (older ones, a deleted one), above the list */
+export function JoinRequestsSection({ requests, busyId, accept, refuse }: Pick<JoinRequests, 'requests' | 'busyId' | 'accept' | 'refuse'>) {
   if (requests.length === 0) return null;
 
   return (
@@ -20,7 +40,6 @@ export function JoinRequestsSection({ requests, busyId, accept, refuse }: JoinRe
       <ul className="divide-y divide-slate-100" aria-label="Demandes d’adhésion">
         {requests.map((r) => {
           const name = getName(r.member.user);
-          const busy = busyId === r.member.id;
           return (
             <li key={r.member.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1 text-sm">
@@ -34,14 +53,7 @@ export function JoinRequestsSection({ requests, busyId, accept, refuse }: JoinRe
                   @{r.member.user.username} · {when.format(new Date(r.member.created_at))}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={!!busyId} onClick={() => refuse(r)} aria-label={`Refuser ${name}`}>
-                  Refuser
-                </Button>
-                <Button size="sm" disabled={!!busyId} isLoading={busy} onClick={() => accept(r)} aria-label={`Accepter ${name}`}>
-                  Accepter
-                </Button>
-              </div>
+              <JoinRequestActions request={r} busyId={busyId} accept={accept} refuse={refuse} />
             </li>
           );
         })}

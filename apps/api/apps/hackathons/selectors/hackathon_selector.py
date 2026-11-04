@@ -30,13 +30,17 @@ class HackathonSelector:
             CommunityRole,
             MembershipStatus,
         )
+        from apps.memberships.permissions import has_community_permission
 
-        return CommunityMember.objects.filter(
+        if CommunityMember.objects.filter(
             community=community,
             user=user,
             status=MembershipStatus.ACTIVE,
             role__in=[CommunityRole.OWNER, CommunityRole.ADMIN],
-        ).exists()
+        ).exists():
+            return True
+
+        return has_community_permission(user, community, "can_manage_events")
 
     @classmethod
     def is_hackathon_judge(cls, user: Optional[User], hackathon: Hackathon) -> bool:
@@ -122,7 +126,11 @@ class HackathonSelector:
         if not hackathon:
             raise NotFound("Hackathon introuvable dans cette communauté.")
 
-        if hackathon.status == HackathonStatus.DRAFT and not cls.is_community_manager(user, hackathon.community):
+        if (
+            hackathon.status == HackathonStatus.DRAFT
+            and (not user or hackathon.organizer_id != user.id)
+            and not cls.is_community_manager(user, hackathon.community)
+        ):
             raise PermissionDenied(
                 "Ce hackathon est encore au stade de brouillon."
             )
