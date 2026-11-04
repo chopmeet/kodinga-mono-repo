@@ -1,8 +1,9 @@
-import { Briefcase, Code2, ExternalLink, FolderKanban, Globe, GraduationCap, Link2, Star } from 'lucide-react';
+import { Award, Briefcase, Code2, ExternalLink, FolderKanban, Globe, GraduationCap, Link2, MessageCircle, Star, ThumbsUp, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga-mono-repo/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
-import { availabilityLabel, employmentLabel, period, skillLevelLabel } from '@/utils/Utils';
+import { ago, availabilityLabel, employmentLabel, formatCompact, memberRoleLabel, period, plain, skillLevelLabel } from '@/utils/Utils';
 import type { AvailabilityStatus, PublicProfile } from '@/utils/api/profile/profile.type';
 
 const safeUrl = (url?: string) => (url && /^https?:\/\/\S+\.\S+/.test(url) ? url : null);
@@ -207,5 +208,90 @@ export function ProfilePortfolio({ profile, name }: { profile: PublicProfile; na
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Its public communities (of its profile), with its role in each */
+export function ProfileCommunities({ profile, name }: { profile: PublicProfile; name: string }) {
+  const communities = profile.communities ?? [];
+  if (communities.length === 0) return <Empty icon={Users} text={`${name} ne fait partie d’aucune communauté publique.`} />;
+  return (
+    <ul className="grid gap-4 py-6 sm:grid-cols-2" aria-label={`Communautés de ${name}`}>
+      {communities.map((c) => (
+        <li key={c.id}>
+          <Link to={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-slate-300">
+            {c.avatar_url ? (
+              <img src={c.avatar_url} alt="" className="size-11 shrink-0 rounded-xl object-cover" />
+            ) : (
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
+                <Users className="size-5" />
+              </span>
+            )}
+            <span className="min-w-0">
+              <span className="block truncate font-semibold text-slate-900">{c.name}</span>
+              <span className="block text-sm text-slate-500">
+                {memberRoleLabel[c.role] ?? c.role} · {formatCompact(c.members_count)} membre{c.members_count > 1 ? 's' : ''}
+              </span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** What it published: its figures, its latest posts (in public communities) and projects */
+export function ProfileContributions({ profile, name }: { profile: PublicProfile; name: string }) {
+  const c = profile.contributions;
+  if (!c || (c.posts_count === 0 && c.projects_count === 0 && c.badges_count === 0)) return <Empty icon={MessageCircle} text={`${name} n’a pas encore de contribution.`} />;
+  return (
+    <div className="flex flex-col gap-8 py-6">
+      {c.badges_count > 0 && (
+        <p className="flex items-center gap-2 text-sm text-slate-600">
+          <Award className="size-4 text-amber-600" aria-hidden />
+          {c.badges_count} badge{c.badges_count > 1 ? 's' : ''} obtenu{c.badges_count > 1 ? 's' : ''}
+        </p>
+      )}
+      {c.recent_posts.length > 0 && (
+        <section aria-label="Dernières publications">
+          <h3 className="font-semibold text-slate-900">Dernières publications</h3>
+          <ul className="mt-3 divide-y divide-slate-100">
+            {c.recent_posts.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-slate-900">{plain(p.title) || 'Publication sans titre'}</span>
+                  <span className="text-xs text-slate-500">{ago(p.created_at)}</span>
+                </span>
+                <span className="flex items-center gap-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1" aria-label={`${p.reactions_count} réactions`}>
+                    <ThumbsUp className="size-3.5" aria-hidden /> {p.reactions_count}
+                  </span>
+                  <span className="flex items-center gap-1" aria-label={`${p.comments_count} commentaires`}>
+                    <MessageCircle className="size-3.5" aria-hidden /> {p.comments_count}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {c.recent_projects.length > 0 && (
+        <section aria-label="Derniers projets">
+          <h3 className="font-semibold text-slate-900">Derniers projets</h3>
+          <ul className="mt-3 divide-y divide-slate-100">
+            {c.recent_projects.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <Link to={`/projects/${p.slug}`} className="min-w-0 truncate font-medium text-slate-900 hover:text-primary">
+                  {p.title}
+                </Link>
+                <span className="flex shrink-0 items-center gap-1 text-xs text-slate-500" aria-label={`${p.upvotes_count} votes`}>
+                  <ThumbsUp className="size-3.5" aria-hidden /> {p.upvotes_count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
   );
 }

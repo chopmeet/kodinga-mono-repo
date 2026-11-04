@@ -2,10 +2,11 @@ import { ArrowUpRight, CalendarDays, Info, Sparkles, Users } from 'lucide-react'
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, cn, SearchInput } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn, SearchInput } from '@kodinga-mono-repo/ui';
 import { SoonBadge } from '@/pages/shared/row-actions';
 import { useGetCommunityLeaderboardQuery, useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
+import { useDebounced } from '@/utils/hooks/useDebounced';
 import { formatCompact, getName, memberRoleLabel, nameInitials } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { Pill, SectionHeader } from './section-header';
@@ -27,22 +28,32 @@ const since = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' 
 const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 const AVATAR_TONES = ['bg-blue-50 text-blue-900', 'bg-blue-900 text-white', 'bg-amber-50 text-amber-700', 'bg-emerald-50 text-emerald-800'];
 
+/** Choices of the list, by the api (GET .../members/?ordering=) */
+const ORDERINGS = [
+  { value: 'reputation', label: 'Les plus actifs' },
+  { value: '-joined_at', label: 'Les plus récents' },
+  { value: 'username', label: 'Par pseudo' },
+] as const;
+type Ordering = (typeof ORDERINGS)[number]['value'];
+
+const PAGE_SIZE = 60;
+
 /**
- * People of the community. The team reads the full list (GET .../members/, moderators and above);
- * the other members see the contributors of the public leaderboard.
+ * People of the community. Its active members read the directory (GET .../members/: searched and
+ * sorted by the api); visitors see the contributors of the public leaderboard.
  */
-function useMemberCards(slug: string, isTeam: boolean) {
-  const members = useGetCommunityMembersQuery({ slug, status: 'active', page: 1, page_size: 100 }, { skip: !isTeam });
-  const ranking = useGetCommunityLeaderboardQuery({ slug, limit: 100 }, { skip: isTeam });
+function useMemberCards(slug: string, canList: boolean, search: string, ordering: Ordering, size: number) {
+  const members = useGetCommunityMembersQuery({ slug, status: 'active', search: search || undefined, ordering, page: 1, page_size: size }, { skip: !canList });
+  const ranking = useGetCommunityLeaderboardQuery({ slug, limit: 100 }, { skip: canList });
 
   const cards = useMemo<Card[]>(() => {
-    if (isTeam) {
+    if (canList) {
       return (members.data?.results ?? []).map((m) => ({
         id: m.id,
         userId: m.user.id,
         username: m.user.username,
         name: getName(m.user) || m.user.username,
-        avatar: m.user.avatar ?? '',
+        avatar: m.user.avatar_url ?? m.user.avatar ?? '',
         badge: m.custom_title || memberRoleLabel[m.role],
         team: m.role !== 'member',
         line: `Membre depuis ${since.format(new Date(m.joined_at))}`,
@@ -59,36 +70,42 @@ function useMemberCards(slug: string, isTeam: boolean) {
       level: e.level,
       line: `${formatCompact(e.points)} points dans la communauté`,
     }));
-  }, [isTeam, members.data, ranking.data]);
+  }, [canList, members.data, ranking.data]);
 
-  return { cards, isLoading: isTeam ? members.isLoading : ranking.isLoading };
+  return { cards, total: members.data?.pagination.count ?? cards.length, isLoading: canList ? members.isLoading : ranking.isLoading, isFetching: members.isFetching };
 }
 
 export function MembersTab({ community, isTeam }: { community: CommunityDetail; isTeam: boolean }) {
   const [filter, setFilter] = useState<'all' | 'team'>('all');
   const [search, setSearch] = useState('');
-  const { cards, isLoading } = useMemberCards(community.slug, isTeam);
-  const n = community.members_count;  
+  const [ordering, setOrdering] = useState<Ordering>('reputation');
+  const [size, setSize] = useState(PAGE_SIZE);
+  const membership = community.user_membership;
+  const canList = isTeam || (!!membership?.is_member && membership.status === 'active');
+  const query = useDebounced(search.trim(), 300);
+  const { cards, total, isLoading, isFetching } = useMemberCards(community.slug, canList, query, ordering, size);
+  const n = community.members_count;
 
   const needle = normalize(search.trim());
-  const shown = cards.filter((c) => (filter === 'all' || c.team) && (!needle || normalize(`${c.name} ${c.username} ${c.badge}`).includes(needle)));
+  // The directory is searched by the api, the leaderboard here
+  const shown = cards.filter((c) => (filter === 'all' || c.team) && (canList || !needle || normalize(`${c.name} ${c.username} ${c.badge}`).includes(needle)));
 
   return (
     <section>
-      {/* Until the api opens the member list to the members: the others see the contributors */}
+      {/* Visitors: the contributors (the directory is for the members) */}
       <SectionHeader
         eyebrow="Les personnes derrière le code"
-        title={isTeam ? 'Membres' : 'Membres actifs'}
+        title={canList ? 'Membres' : 'Membres actifs'}
         aside={
           <span className="flex items-center gap-2 text-sm text-slate-600">
             <Users className="size-4" /> {formatCompact(n)} membre{n > 1 ? 's' : ''}
           </span>
         }
       >
-        {isTeam ? undefined : 'Celles et ceux qui ont déjà contribué : publications, réponses, formations…'}
+        {canList ? undefined : 'Celles et ceux qui ont déjà contribué : publications, réponses, formations…'}
       </SectionHeader>
 
-      {!isTeam && !isLoading && (
+      {!canList && !isLoading && (
         <p className="mb-6 flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-blue-950">
           <Info className="mt-0.5 size-4 shrink-0 text-blue-900" aria-hidden />
           <span>
@@ -96,7 +113,7 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
             <strong>
               {cards.length} membre{cards.length > 1 ? 's' : ''} actif{cards.length > 1 ? 's' : ''}
             </strong>{' '}
-            sur {formatCompact(n)} au total. La liste complète de la communauté est réservée à son équipe.
+            sur {formatCompact(n)} au total. La liste complète est réservée aux membres de la communauté.
           </span>
         </p>
       )}
@@ -109,11 +126,30 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
           <Pill active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
             En ligne <SoonBadge />
           </Pill>
-          {/* Roles are only in the team's list */}
-          <Pill active={filter === 'team'} disabled={!isTeam} title={isTeam ? undefined : 'Visible par l’équipe'} onClick={() => setFilter('team')}>
+          {/* Roles are only in the directory */}
+          <Pill active={filter === 'team'} disabled={!canList} title={canList ? undefined : 'Visible par les membres'} onClick={() => setFilter('team')}>
             Équipe
           </Pill>
         </div>
+        {canList && (
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <span className="sr-only">Trier les membres</span>
+            <select
+              value={ordering}
+              onChange={(e) => {
+                setOrdering(e.target.value as Ordering);
+                setSize(PAGE_SIZE);
+              }}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-2 font-medium text-slate-700"
+            >
+              {ORDERINGS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <SearchInput
           id="community-members-search"
           size="md"
@@ -122,7 +158,10 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
           clearLabel="Effacer la recherche"
           placeholder="Un nom, un pseudo…"
           value={search}
-          onValueChange={(value: string) => setSearch(value)}
+          onValueChange={(value: string) => {
+            setSearch(value);
+            setSize(PAGE_SIZE);
+          }}
         />
       </div>
 
@@ -131,11 +170,11 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
       ) : shown.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <Users className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{cards.length ? 'Aucun membre ne correspond' : isTeam ? 'Les membres apparaîtront ici' : 'Pas encore de membre actif'}</p>
-          {!isTeam && !cards.length && <p className="mt-1 text-sm text-slate-500">Dès leurs premières contributions dans la communauté.</p>}
+          <p className="mt-3 font-semibold text-slate-900">{cards.length || query ? 'Aucun membre ne correspond' : canList ? 'Les membres apparaîtront ici' : 'Pas encore de membre actif'}</p>
+          {!canList && !cards.length && <p className="mt-1 text-sm text-slate-500">Dès leurs premières contributions dans la communauté.</p>}
         </div>
       ) : (
-        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-label={isTeam ? 'Membres' : 'Membres actifs'}>
+        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-label={canList ? 'Membres' : 'Membres actifs'}>
           {shown.map((c, i) => (
             <li key={c.id} className="flex flex-col rounded-xl border border-slate-200 bg-white p-6">
               <div className="flex items-start justify-between gap-2">
@@ -155,7 +194,7 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
               </p>
               <p className="text-sm text-slate-500">@{c.username}</p>
               <p className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-                {isTeam ? <CalendarDays className="size-4 text-slate-400" /> : <Sparkles className="size-4 text-slate-400" />}
+                {canList ? <CalendarDays className="size-4 text-slate-400" /> : <Sparkles className="size-4 text-slate-400" />}
                 {c.line}
               </p>
               <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-4">
@@ -167,6 +206,12 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
             </li>
           ))}
         </ul>
+      )}
+
+      {canList && cards.length < total && (
+        <Button variant="outline" className="mx-auto mt-6 flex" isLoading={isFetching} onClick={() => setSize((v) => v + PAGE_SIZE)}>
+          Afficher plus
+        </Button>
       )}
     </section>
   );

@@ -54,6 +54,8 @@ export type CommunityListItem = {
   is_member?: boolean;
   /** Active live stream information if one is in progress */
   active_live?: ActiveLiveInfo | null;
+  /** Signed-in member: the notifications of this community reach them */
+  notifications_enabled?: boolean;
 };
 
 /** Query params of GET communities/ */
@@ -205,7 +207,8 @@ export type MembershipStatus = 'active' | 'pending' | 'rejected' | 'suspended' |
 /** CommunityMemberSerializer */
 export type CommunityMemberItem = {
   id: string;
-  user: User;
+  /** Without the email for those who do not manage the community */
+  user: User & { avatar_url?: string; headline?: string };
   role: CommunityRole;
   status: MembershipStatus;
   custom_title: string;
@@ -219,6 +222,8 @@ export type CommunityMembersQuery = {
   status?: MembershipStatus;
   role?: CommunityRole;
   search?: string;
+  /** joined_at, -joined_at, reputation, username, role… */
+  ordering?: string;
   page?: number;
   page_size?: number;
 };
@@ -246,6 +251,8 @@ export type CommunityPostItem = {
   code_language?: string;
   /** Reactions of the signed-in user ('like', 'fire'…) */
   user_reactions?: string[];
+  /** Saved by the signed-in user */
+  is_bookmarked?: boolean;
   poll?: PostPoll | null;
   is_pinned: boolean;
   is_locked: boolean;
@@ -299,6 +306,10 @@ export type CommunityFeedQuery = {
   type?: PostType;
   q?: string;
   pinned?: boolean;
+  /** Pinned first, then by reactions + comments (the most recent without it) */
+  sort?: 'popular';
+  /** Only the posts saved by the signed-in user */
+  bookmarked?: boolean;
   page?: number;
   page_size?: number;
 };

@@ -1,3 +1,4 @@
+import type { CommunityRole } from '../community/community.type';
 import type { User } from '../user/user.type';
 
 // Mirrors apps/profiles (serializers/profile.py DeveloperProfileDetailSerializer, serializers/skill.py)
@@ -43,6 +44,19 @@ export type PublicProfile = {
   experiences?: ProfileExperience[];
   educations?: ProfileEducation[];
   portfolio_projects?: PortfolioProject[];
+  /** Its public communities */
+  communities?: { id: string; name: string; slug: string; avatar_url: string; role: CommunityRole; members_count: number }[];
+  contributions?: ProfileContributions;
+};
+
+export type ProfileContributions = {
+  posts_count: number;
+  projects_count: number;
+  badges_count: number;
+  reputation_points: number;
+  /** The 3 latest, in public communities (no community slug: no link to them) */
+  recent_posts: { id: string; title: string; post_type: string; created_at: string; reactions_count: number; comments_count: number }[];
+  recent_projects: { id: string; title: string; slug: string; cover_image_url: string; upvotes_count: number; is_featured: boolean }[];
 };
 
 export type ProfileExperience = {

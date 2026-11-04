@@ -96,8 +96,22 @@ describe('Replay of an event', () => {
     await waitFor(() => expect(FakeXhr.sent[0]).toMatchObject({ method: 'PUT', url: 'https://storage.mux.com/upload/u1' }), SLOW);
     await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/events/e1/replay/'))?.body).toEqual({ video_asset_id: 'v-new' }), SLOW);
     expect(await screen.findByText(/Le replay est en cours de préparation/, {}, SLOW)).toBeTruthy();
-    // The link of a video is not supported by the api yet
-    expect(screen.getByText(/Lien vidéo · bientôt/)).toBeTruthy();
+  });
+
+  it('adds the replay from the link of a video file, not of a platform', async () => {
+    const calls = stubApi();
+    renderAppAt('/c/dakar-devops/events/e1');
+    fireEvent.click(await screen.findByRole('button', { name: /Lien vidéo/ }, SLOW));
+    const link = screen.getByLabelText('Lien de la vidéo du replay');
+    fireEvent.change(link, { target: { value: 'https://youtu.be/abc123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    expect((await screen.findByRole('alert', {}, SLOW)).textContent).toMatch(/pas YouTube/);
+    expect(calls.some((c) => c.url.pathname.endsWith('/events/e1/replay/'))).toBe(false);
+
+    fireEvent.change(link, { target: { value: 'https://cdn.example.com/live.mp4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/events/e1/replay/'))?.body).toEqual({ video_url: 'https://cdn.example.com/live.mp4' }), SLOW);
+    await waitFor(() => expect(screen.queryByLabelText('Lien de la vidéo du replay')).toBeNull(), SLOW);
   });
 
   it('plays a ready replay in the space', async () => {

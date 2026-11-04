@@ -4,6 +4,7 @@ import { customToast } from '@kodinga-mono-repo/ui';
 import { useAttachEventReplayMutation, useCreateVideoUploadMutation } from '@/utils/api/community/community.api';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
+import { isPlatformUrl } from '@/utils/Utils';
 
 export const REPLAY_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 export const REPLAY_MAX_GB = 5;
@@ -37,6 +38,27 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
   const [attach] = useAttachEventReplayMutation();
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /** A public video file: played as it is (a link to a platform would not play in the replay player) */
+  const attachLink = async (url: string) => {
+    if (!event) return false;
+    const link = url.trim();
+    const invalid = !/^https:\/\/\S+\.\S+/.test(link)
+      ? 'Lien invalide : il doit commencer par https://'
+      : isPlatformUrl(link)
+        ? 'Le replay se lit depuis un fichier vidéo : donnez le lien direct (.mp4, .webm…), pas YouTube ni Vimeo.'
+        : null;
+    setError(invalid);
+    if (invalid) return false;
+    try {
+      await attach({ slug, eventId: event.id, video_url: link }).unwrap();
+      customToast.success({ message: 'Replay ajouté depuis le lien.' });
+      return true;
+    } catch (err) {
+      setError(parseApiError(err).message);
+      return false;
+    }
+  };
 
   const uploadToUploadThing = async (file: File | Blob) => {
     if (!event) return;
@@ -89,6 +111,7 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
   return { 
     upload, 
     uploadToUploadThing,
+    attachLink,
     progress, 
     isUploading: progress !== null, 
     error 

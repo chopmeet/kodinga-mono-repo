@@ -4,6 +4,7 @@ import { type ChangeEvent, useId, useState } from 'react';
 import { cn } from '@kodinga-mono-repo/ui';
 import { useFilePreview } from '@/pages/public/create-community/components/image-field';
 import type { CourseLesson } from '@/utils/api/course/course.type';
+import { isPlatformUrl } from '@/utils/Utils';
 
 export type VideoSource = 'file' | 'url';
 
@@ -16,9 +17,6 @@ export function checkVideoUrl(url: string) {
   if (!/^https:\/\/\S+\.\S+/.test(link)) return 'Lien invalide : il doit commencer par https://';
   return null;
 }
-
-/** A link played by its platform: no file to preview, nothing for Mux to encode */
-const isPlatformUrl = (url: string) => /(youtube\.com|youtube-nocookie\.com|youtu\.be|vimeo\.com|dailymotion\.com|dai\.ly)/i.test(url);
 
 type Props = {
   source: VideoSource;

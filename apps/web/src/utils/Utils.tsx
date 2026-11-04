@@ -218,6 +218,9 @@ async function storedUrl(response: Response) {
   return typeof url === 'string' ? url : null;
 }
 
+/** A video link played by its platform (YouTube, Vimeo, Dailymotion), not a video file */
+export const isPlatformUrl = (url: string) => /(youtube\.com|youtube-nocookie\.com|youtu\.be|vimeo\.com|dailymotion\.com|dai\.ly)/i.test(url);
+
 /** Upload with progress (fetch does not report the upload): an XMLHttpRequest, answered as a Response */
 function sendWithProgress(url: string, method: string, body: FormData, onProgress: (percent: number) => void): Promise<Response> {
   return new Promise((resolve, reject) => {

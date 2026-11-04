@@ -278,6 +278,19 @@ export const CommunityApi = createApi({
       query: (slug) => ({ url: `communities/${slug}/leave/`, method: 'POST' }),
       invalidatesTags: ['communities', 'members'],
     }),
+    // The bell of a community: its notifications reach the member, or not
+    setCommunityNotifications: builder.mutation<{ notifications_enabled: boolean }, { slug: string; enabled: boolean }>({
+      query: ({ slug, enabled }) => ({ url: `communities/${slug}/notifications/toggle/`, method: 'POST', body: { notifications_enabled: enabled } }),
+      transformResponse: unwrap<{ notifications_enabled: boolean }>,
+      async onQueryStarted({ slug }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(CommunityApi.util.updateQueryData('getCommunity', slug, (c) => void (c.notifications_enabled = data.notifications_enabled)));
+        } catch {
+          // the caller shows the error
+        }
+      },
+    }),
     // Active plans of a paid community (public)
     getCommunityPlans: builder.query<CommunityPlan[], string>({
       query: (community) => ({ url: 'billing/plans/', params: { community } }),
@@ -766,6 +779,33 @@ export const CommunityApi = createApi({
                 const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
                 post.user_reactions = data.reacted ? [...others, 'like'] : others;
                 post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
+              }),
+            );
+          }
+        } catch {
+          // the caller shows the error
+        }
+      },
+    }),
+    // Saves or unsaves a post for the signed-in user: the cached post and feeds are patched
+    toggleBookmark: builder.mutation<{ is_bookmarked: boolean }, string>({
+      query: (postId) => ({ url: `posts/${postId}/bookmark/`, method: 'POST' }),
+      transformResponse: unwrap<{ is_bookmarked: boolean }>,
+      async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(CommunityApi.util.updateQueryData('getPost', postId, (post) => void (post.is_bookmarked = data.is_bookmarked)));
+          for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
+            dispatch(
+              CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+                const post = feed.results.find((p) => p.id === postId);
+                if (!post) return;
+                post.is_bookmarked = data.is_bookmarked;
+                // Unsaved from the list of the saved ones: it leaves it
+                if (args.bookmarked && !data.is_bookmarked) {
+                  feed.results = feed.results.filter((p) => p.id !== postId);
+                  feed.pagination.count = Math.max(0, feed.pagination.count - 1);
+                }
               }),
             );
           }
@@ -1548,6 +1588,11 @@ export const CommunityApi = createApi({
       invalidatesTags: ['projects'],
     }),
     // Owner or staff only
+    // Owner and admins of its community
+    featureProject: builder.mutation<unknown, { projectSlug: string; is_featured: boolean }>({
+      query: ({ projectSlug, is_featured }) => ({ url: `projects/${projectSlug}/feature/`, method: 'POST', body: { is_featured } }),
+      invalidatesTags: (_r, _e, { projectSlug }) => ['projects', { type: 'projects', id: projectSlug }],
+    }),
     deleteProject: builder.mutation<unknown, string>({
       query: (projectSlug) => ({ url: `projects/${projectSlug}/`, method: 'DELETE' }),
       invalidatesTags: ['projects'],
@@ -1721,6 +1766,9 @@ export const {
   useDeleteCommunityRuleMutation,
   useGetCommunityMembersQuery,
   useDecideMemberMutation,
+  useToggleBookmarkMutation,
+  useSetCommunityNotificationsMutation,
+  useFeatureProjectMutation,
   useGetCommunityMemberJoinsQuery,
   useJoinCommunityMutation,
   useLeaveCommunityMutation,

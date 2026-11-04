@@ -55,6 +55,7 @@ function stubProjectsApi() {
     const path = url.pathname;
     const slug = path.match(/projects\/([^/]+)\//)?.[1];
 
+    if (path.endsWith('/feature/')) return json({ success: true, data: {} });
     if (path.endsWith('/projects/')) {
       if (request.method === 'POST') {
         const created = project('new-project', String(body?.title), { ...body, owner: me, technologies: [] });
@@ -113,15 +114,16 @@ describe('Community space: projects', () => {
     expect(within(screen.getByRole('list', { name: 'Projets' })).getAllByRole('link').map((a) => a.textContent)).toEqual(['Kube Dash']);
   });
 
-  it("shows featuring as coming soon, and no delete on someone else's project", async () => {
-    stubProjectsApi();
+  it("features a project or stops, and no delete on someone else's project", async () => {
+    const calls = stubProjectsApi();
     renderAppAt('/c/dakar-devops/projects');
     const trigger = await screen.findByRole('button', { name: 'Actions pour Irrigo' }, SLOW);
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'Enter' });
     const menu = await screen.findByRole('menu', {}, SLOW);
-    expect(within(menu).getByRole('menuitem', { name: /Ne plus mettre en avant/ }).getAttribute('aria-disabled')).toBe('true');
     expect(within(menu).queryByRole('menuitem', { name: 'Supprimer' })).toBeNull();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Ne plus mettre en avant/ }));
+    await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/projects/irrigo/feature/'))?.body).toEqual({ is_featured: false }), SLOW);
   });
 
   it('shares a project with the community: a repository or a demo is required', async () => {

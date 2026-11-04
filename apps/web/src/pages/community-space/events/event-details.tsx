@@ -112,10 +112,46 @@ function Attendees({ slug, eventId, canCheckIn }: { slug: string; eventId: strin
   );
 }
 
+/** A replay from the link of a public video file */
+function ReplayLinkForm({ onAttach, onClose }: { onAttach: (url: string) => Promise<boolean>; onClose: () => void }) {
+  const [url, setUrl] = useState('');
+  const [sending, setSending] = useState(false);
+  return (
+    <form
+      className="mt-3 flex flex-wrap items-center gap-2"
+      noValidate
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setSending(true);
+        const attached = await onAttach(url);
+        setSending(false);
+        if (attached) onClose();
+      }}
+    >
+      <input
+        type="url"
+        aria-label="Lien de la vidéo du replay"
+        autoFocus
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="https://…/replay.mp4"
+        className="custom-form-control min-w-0 flex-1 bg-background px-3 py-2 text-sm"
+      />
+      <Button type="submit" size="sm" isLoading={sending} disabled={!url.trim()}>
+        Ajouter
+      </Button>
+      <Button type="button" variant="ghost" size="sm" disabled={sending} onClick={onClose}>
+        Annuler
+      </Button>
+    </form>
+  );
+}
+
 /** Replay of the event: watched by the team; the managers add (or replace) it once the live is over */
 function ReplayPanel({ slug, event, canManage }: { slug: string; event: CommunityEvent; canManage: boolean }) {
   const replay = UseEventReplay(slug, event);
   const video = event.replay_video_asset;
+  const [byLink, setByLink] = useState(false);
   return (
     <section aria-labelledby="replay-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -139,12 +175,13 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
                 }}
               />
             </label>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-400" title="Bientôt disponible">
-              <Link2 className="size-4" /> Lien vidéo · bientôt
-            </span>
+            <Button type="button" variant="outline" size="sm" aria-expanded={byLink} onClick={() => setByLink((v) => !v)}>
+              <Link2 /> Lien vidéo
+            </Button>
           </div>
         )}
       </div>
+      {byLink && !replay.isUploading && <ReplayLinkForm onAttach={replay.attachLink} onClose={() => setByLink(false)} />}
       {replay.isUploading && (
         <div className="mt-4" role="status">
           <p className="text-sm text-slate-600">Envoi de la vidéo vers Mux… {replay.progress} %</p>
