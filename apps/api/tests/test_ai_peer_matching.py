@@ -171,3 +171,46 @@ def test_hackathon_teammate_suggestions_api_with_hackathon_id(api_client, users,
     assert len(res.data) >= 1
     # Verify participant is in returned suggestions
     assert any(item["user_id"] == str(participant.id) for item in res.data)
+
+
+@pytest.mark.django_db
+def test_peer_matches_excludes_ignored_and_declined_peers(api_client, community_with_members):
+    comm, m1, m2 = community_with_members
+    u1 = m1.user
+    u2 = m2.user
+
+    # Create third member
+    u3 = User.objects.create_user(
+        email="charlie_match@kodinga.com",
+        username="charlie_match",
+        password="SecurePassword123!",
+    )
+    CommunityMember.objects.create(
+        community=comm,
+        user=u3,
+        role=CommunityRole.MEMBER,
+        status=MembershipStatus.ACTIVE,
+        reputation_score=100,
+    )
+
+    # u1 ignores u2
+    PeerMatchRecommendation.objects.create(
+        community=comm,
+        source_user=u1,
+        target_user=u2,
+        compatibility_score=95.0,
+        match_reasons=["Compétences en Python"],
+        status=MatchStatus.DECLINED,
+    )
+
+    api_client.force_authenticate(user=u1)
+    url = f"/api/v1/communities/{comm.slug}/ai/peer-matches/"
+
+    res = api_client.get(url)
+    assert res.status_code == status.HTTP_200_OK
+
+    returned_user_ids = [item["user_id"] for item in res.data]
+    # Ignored member u2 must be excluded!
+    assert str(u2.id) not in returned_user_ids
+    # Active member u3 should be suggested
+    assert str(u3.id) in returned_user_ids

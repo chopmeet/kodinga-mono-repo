@@ -129,14 +129,29 @@ urlpatterns = [
     ),
     # 3. Dynamic Educational Assessment Generator (Quizzes & Code Exercises)
     path(
+        "communities/<slug:community_slug>/courses/<slug:course_slug>/ai/generate-quiz/",
+        GenerateQuizView.as_view(),
+        name="community-course-ai-generate-quiz",
+    ),
+    path(
         "courses/<slug:course_slug>/ai/generate-quiz/",
         GenerateQuizView.as_view(),
         name="course-ai-generate-quiz",
     ),
     path(
+        "communities/<slug:community_slug>/courses/<slug:course_slug>/ai/generate-exercise/",
+        GenerateCodeExerciseView.as_view(),
+        name="community-course-ai-generate-exercise",
+    ),
+    path(
         "courses/<slug:course_slug>/ai/generate-exercise/",
         GenerateCodeExerciseView.as_view(),
         name="course-ai-generate-exercise",
+    ),
+    path(
+        "communities/<slug:community_slug>/courses/<slug:course_slug>/ai/apply-assessment/",
+        ApplyAssessmentView.as_view(),
+        name="community-course-ai-apply-assessment",
     ),
     path(
         "courses/<slug:course_slug>/ai/apply-assessment/",

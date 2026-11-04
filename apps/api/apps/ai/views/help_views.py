@@ -1,11 +1,11 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.ai.serializers import PingMentorsSerializer
 from apps.ai.services.help_assistance_service import HelpAssistanceService
+from apps.ai.views.base import ai_success_response
 from apps.communities.models.community import CommunityPrivacy
 from apps.memberships.models.member import CommunityMember, MembershipStatus
 from apps.posts.models.post import Post
@@ -34,13 +34,13 @@ class PostHelpAssistanceView(APIView):
         post = get_object_or_404(Post.objects.select_related("community", "author"), id=post_id)
         self._check_access(request, post)
         assistance = HelpAssistanceService.get_or_create_assistance(post=post)
-        return Response(assistance, status=status.HTTP_200_OK)
+        return ai_success_response(assistance, status_code=status.HTTP_200_OK)
 
     def post(self, request, post_id: str):
         post = get_object_or_404(Post.objects.select_related("community", "author"), id=post_id)
         self._check_access(request, post)
         assistance = HelpAssistanceService.get_or_create_assistance(post=post)
-        return Response(assistance, status=status.HTTP_200_OK)
+        return ai_success_response(assistance, status_code=status.HTTP_200_OK)
 
 
 class PingMentorsView(APIView):
@@ -81,10 +81,12 @@ class PingMentorsView(APIView):
             custom_message=custom_message,
         )
 
-        return Response(
-            {
-                "message": f"{notified_count} mentors notifiés avec succès.",
-                "notified_count": notified_count,
-            },
-            status=status.HTTP_200_OK,
+        resp_data = {
+            "message": f"{notified_count} mentors notifiés avec succès.",
+            "notified_count": notified_count,
+        }
+        return ai_success_response(
+            resp_data,
+            message=f"{notified_count} mentors notifiés avec succès.",
+            status_code=status.HTTP_200_OK,
         )

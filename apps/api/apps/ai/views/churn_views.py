@@ -1,11 +1,11 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.ai.models.churn import MemberChurnRisk
 from apps.ai.serializers import MemberChurnRiskSerializer, SendSmartNudgeSerializer
 from apps.ai.services.churn_service import ChurnPredictionService
+from apps.ai.views.base import ai_success_response
 from apps.communities.models.community import Community
 from apps.memberships.permissions import IsCommunityAdmin
 
@@ -35,19 +35,18 @@ class CommunityChurnDashboardView(APIView):
                 risks = ChurnPredictionService.evaluate_community_churn(community=community, limit=50)
 
         serializer = MemberChurnRiskSerializer(risks, many=True)
-        return Response(
-            {
-                "community": community.slug,
-                "total_at_risk": len(risks),
-                "members": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        resp_data = {
+            "community": community.slug,
+            "total_at_risk": len(risks),
+            "members": serializer.data,
+        }
+        return ai_success_response(resp_data, status_code=status.HTTP_200_OK)
 
 
 class SendSmartNudgeView(APIView):
     """
-    Sends or records an AI-generated personalized re-engagement nudge to an at-risk member.
+    Sends and records an AI-generated personalized re-engagement nudge to an at-risk member.
+    Dispatches real-time in-app notification to the recipient.
     """
 
     permission_classes = [permissions.IsAuthenticated, IsCommunityAdmin]
@@ -67,13 +66,15 @@ class SendSmartNudgeView(APIView):
         updated = ChurnPredictionService.send_smart_nudge(
             churn_risk_id=str(target_id),
             custom_message=custom_message,
+            sender=request.user,
         )
 
-        return Response(
-            {
-                "message": "Nudge de réengagement envoyé avec succès.",
-                "churn_risk": MemberChurnRiskSerializer(updated).data,
-            },
-            status=status.HTTP_200_OK,
+        resp_data = {
+            "message": "Nudge de réengagement envoyé avec succès.",
+            "churn_risk": MemberChurnRiskSerializer(updated).data,
+        }
+        return ai_success_response(
+            resp_data,
+            message="Nudge de réengagement envoyé avec succès.",
+            status_code=status.HTTP_200_OK,
         )
-

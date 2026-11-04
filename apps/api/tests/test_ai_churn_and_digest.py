@@ -95,6 +95,13 @@ def test_churn_dashboard_and_nudge_api(api_client, setup_community):
     churn_risk.refresh_from_db()
     assert churn_risk.status == "nudge_sent"
 
+    # Verify real in-app notification was dispatched
+    from apps.notifications.models.notification import Notification
+    assert Notification.objects.filter(
+        recipient=m_inactive.user,
+        metadata__type="smart_nudge",
+    ).exists()
+
 
 @pytest.mark.django_db
 def test_weekly_digest_api(api_client, setup_community):
