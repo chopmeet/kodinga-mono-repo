@@ -30,6 +30,7 @@ import type {
   RsvpStatus,
   VideoUploadTarget,
 } from '../event/event.type';
+import type { AIDifficulty, ChurnDashboard, GeneratedExercise, GeneratedQuizQuestion, PeerMatch, WeeklyDigest } from '../ai/ai.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonProgressResult, LessonWriteData, ModuleWriteData, QuizResult } from '../course/course.type';
 import type {
   ApplicationStatus,
@@ -175,6 +176,9 @@ export const CommunityApi = createApi({
     'posts',
     'settings',
     'ai-settings',
+    'weekly-digest',
+    'churn-risks',
+    'peer-matches',
     'events',
     'hackathons',
     'courses',
@@ -1776,6 +1780,40 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunitySettings>,
       providesTags: (_result, _error, slug) => [{ type: 'settings', id: slug }],
     }),
+    // Written by the api at the first reading of the week
+    getWeeklyDigest: builder.query<WeeklyDigest, string>({
+      query: (slug) => `communities/${slug}/ai/weekly-digest/`,
+      providesTags: (_result, _error, slug) => [{ type: 'weekly-digest', id: slug }],
+    }),
+    // Waits for the text (async: false), not for a task of the worker
+    regenerateWeeklyDigest: builder.mutation<WeeklyDigest, string>({
+      query: (slug) => ({ url: `communities/${slug}/ai/weekly-digest/trigger/`, method: 'POST', body: { async: false } }),
+      invalidatesTags: (_result, _error, slug) => [{ type: 'weekly-digest', id: slug }],
+    }),
+    // Slow when it evaluates the members: the first time, and with refresh
+    getChurnDashboard: builder.query<ChurnDashboard, { slug: string; refresh?: boolean }>({
+      query: ({ slug, refresh }) => ({ url: `communities/${slug}/ai/churn-dashboard/`, params: refresh ? { refresh: true } : undefined }),
+      providesTags: ['churn-risks'],
+    }),
+    // Records the nudge: the api sends nothing to the member
+    markChurnNudged: builder.mutation<unknown, string>({
+      query: (id) => ({ url: `ai/churn-risks/${id}/send-nudge/`, method: 'POST', body: {} }),
+      invalidatesTags: ['churn-risks'],
+    }),
+    getPeerMatches: builder.query<PeerMatch[], string>({
+      query: (slug) => `communities/${slug}/ai/peer-matches/`,
+      providesTags: ['peer-matches'],
+    }),
+    respondPeerMatch: builder.mutation<unknown, { id: string; action: 'accept' | 'decline' }>({
+      query: ({ id, action }) => ({ url: `ai/peer-matches/${id}/respond/`, method: 'POST', body: { action } }),
+      invalidatesTags: ['peer-matches'],
+    }),
+    generateQuiz: builder.mutation<{ questions: GeneratedQuizQuestion[] }, { courseSlug: string; lesson_id: string; question_count: number; difficulty: AIDifficulty }>({
+      query: ({ courseSlug, ...body }) => ({ url: `courses/${courseSlug}/ai/generate-quiz/`, method: 'POST', body }),
+    }),
+    generateExercise: builder.mutation<{ exercise: GeneratedExercise }, { courseSlug: string; lesson_id: string; difficulty: AIDifficulty; language?: string }>({
+      query: ({ courseSlug, ...body }) => ({ url: `courses/${courseSlug}/ai/generate-exercise/`, method: 'POST', body }),
+    }),
     analyzeCommunity: builder.mutation<ApiSuccess<CommunityAnalysisResult>, { community: string; language?: string }>({
       query: (body) => ({ url: 'ai-assistant/analyze-community/', method: 'POST', body }),
     }),
@@ -1848,6 +1886,14 @@ export const {
   useDeleteMessageMutation,
   useSanctionMemberMutation,
   useChangeMemberRoleMutation,
+  useGetWeeklyDigestQuery,
+  useRegenerateWeeklyDigestMutation,
+  useLazyGetChurnDashboardQuery,
+  useMarkChurnNudgedMutation,
+  useGetPeerMatchesQuery,
+  useRespondPeerMatchMutation,
+  useGenerateQuizMutation,
+  useGenerateExerciseMutation,
   useGetCommunityInvitationsQuery,
   useCreateInvitationMutation,
   useGetJoinRequestsQuery,

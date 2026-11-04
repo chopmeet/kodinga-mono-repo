@@ -2,6 +2,7 @@ import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogH
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { LessonType } from '@/utils/api/course/course.type';
 import { CodeExerciseFields } from '../components/code-exercise-fields';
+import { LessonAIPanel } from '../components/lesson-ai-panel';
 import { QuizFields } from '../components/quiz-fields';
 import VideoField from '../components/video-field';
 import { lessonTypeLabel } from '../course-labels';
@@ -89,6 +90,7 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
                 />
               </div>
             )}
+            {(isCode || isQuiz) && <LessonAIPanel courseSlug={courseSlug} form={form} />}
             {isCode ? (
               <CodeExerciseFields value={form.exercise} onChange={form.setExercise} />
             ) : (

@@ -9,6 +9,7 @@ import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 import { formatCompact, getName, memberRoleLabel, nameInitials } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
+import { PeerMatches } from './peer-matches';
 import { Pill, SectionHeader } from './section-header';
 
 type Card = {
@@ -117,6 +118,8 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
           </span>
         </p>
       )}
+
+      {!!membership?.is_member && membership.status === 'active' && <PeerMatches slug={community.slug} />}
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer les membres">

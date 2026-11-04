@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
+import { WeeklyDigest } from '@/pages/shared/weekly-digest';
 import { CodeBlock } from '@/pages/shared/code-block';
 import { useGetCommunityFeedQuery, useToggleBookmarkMutation, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
@@ -180,6 +181,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {isMember && page.community && <WeeklyDigest slug={page.community.slug} />}
       {isMember ? (
         <button
           type="button"

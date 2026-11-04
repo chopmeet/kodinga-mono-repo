@@ -66,6 +66,7 @@ const comment = (id: string, content: string) => ({
 
 function stubCommunityApi(o: Options = {}) {
   let membership = o.membership ?? NONE;
+  let peerDeclined = false;
   // Three comments are shown at first: five to show "2 de plus"
   let comments = ['Bravo', 'Merci', 'Top', 'Génial', 'Super'].map((text, i) => comment(`c${i + 1}`, text));
   const calls: Call[] = [];
@@ -92,6 +93,14 @@ function stubCommunityApi(o: Options = {}) {
     }
     if (path.endsWith('/posts/p1/react/')) return json({ success: true, data: { reacted: true } });
     if (path.endsWith('/posts/p1/bookmark/')) return json({ success: true, data: { is_bookmarked: true } });
+    if (path.endsWith('/ai/weekly-digest/')) return json({ id: 'd1', week_identifier: '2026-W45', headline: 'La semaine de la communauté', summary_markdown: 'Un résumé.', top_debates: [], highlighted_project: null, upcoming_events: [], kpis_snapshot: {}, created_at: '2026-11-03T10:00:00Z' });
+    if (path.endsWith('/ai/peer-matches/pm1/respond/')) {
+      peerDeclined = true;
+      return json({ id: 'pm1', status: 'declined' });
+    }
+    if (path.endsWith('/ai/peer-matches/')) {
+      return json([{ id: 'pm1', user_id: 'u-fatou', username: 'fatou', first_name: 'Fatou', last_name: 'Sow', avatar_url: null, match_reasons: ['Compétences partagées : React'], status: peerDeclined ? 'declined' : 'suggested', match_type: 'pair_programming', compatibility_score: 0.9 }]);
+    }
     if (path.endsWith('/communities/abidjan-react/notifications/toggle/')) return json({ success: true, data: { notifications_enabled: body?.notifications_enabled } });
     if (path.endsWith('/communities/abidjan-react/members/')) {
       const m = (id: string, first_name: string, role: string) => ({ id, user: { id, username: first_name.toLowerCase(), first_name, last_name: 'Diop', avatar_url: '' }, role, status: 'active', custom_title: '', joined_at: '2026-01-15T10:00:00Z', reputation_score: 0, created_at: '' });
@@ -391,5 +400,34 @@ describe('Public community page', () => {
     await waitFor(() => expect(memberCalls().some((c) => c.url.searchParams.get('ordering') === '-joined_at')).toBe(true), SLOW);
     fireEvent.change(screen.getByLabelText('Rechercher un membre'), { target: { value: 'kofi' } });
     await waitFor(() => expect(memberCalls().some((c) => c.url.searchParams.get('search') === 'kofi')).toBe(true), SLOW);
+  });
+
+  it('shows the summary of the week to a member only', async () => {
+    signIn();
+    stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    renderAppAt('/communities/abidjan-react');
+    const digest = await screen.findByRole('region', { name: 'Résumé de la semaine' }, SLOW);
+    expect(within(digest).getByText('La semaine de la communauté')).toBeTruthy();
+    // Only a manager writes it again, from their space
+    expect(within(digest).queryByRole('button', { name: /Réécrire/ })).toBeNull();
+  });
+
+  it('suggests members to meet to a member, who can ignore them', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    renderAppAt('/communities/abidjan-react?tab=members');
+    const list = await screen.findByRole('list', { name: 'Membres à rencontrer' }, SLOW);
+    expect(within(list).getByRole('link', { name: 'Fatou Sow' }).getAttribute('href')).toBe('/profiles/fatou');
+    expect(within(list).getByText('Compétences partagées : React')).toBeTruthy();
+    fireEvent.click(within(list).getByRole('button', { name: 'Ignorer Fatou Sow' }));
+    await waitFor(() => expect(screen.queryByRole('list', { name: 'Membres à rencontrer' })).toBeNull(), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/ai/peer-matches/pm1/respond/'))?.body).toEqual({ action: 'decline' });
+  });
+
+  it('calls no AI for a visitor', async () => {
+    const calls = stubCommunityApi();
+    renderAppAt('/communities/abidjan-react?tab=members');
+    await screen.findByRole('heading', { name: 'Membres actifs' }, SLOW);
+    expect(calls.some((c) => c.url.pathname.includes('/ai/'))).toBe(false);
   });
 });

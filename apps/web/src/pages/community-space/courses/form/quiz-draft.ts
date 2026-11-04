@@ -1,3 +1,4 @@
+import type { GeneratedQuizQuestion } from '@/utils/api/ai/ai.type';
 import type { QuizData, QuizQuestion } from '@/utils/api/course/course.type';
 
 // A quiz while it is being written: every field is a text, the ids stay stable to keep the last
@@ -27,6 +28,17 @@ export const toQuizDraft = (quiz: QuizData | undefined): QuizDraft => ({
     options: q.options.map((o) => ({ id: o.id, text: o.text, is_correct: !!o.is_correct })),
   })),
 });
+
+/** The questions proposed by the AI (one right answer, by position); the ones it wrote badly are left out */
+export const generatedToQuestions = (generated: GeneratedQuizQuestion[]): QuizQuestionDraft[] =>
+  generated
+    .filter((q) => q.question?.trim() && Array.isArray(q.options) && q.options.length >= 2)
+    .map((q) => ({
+      ...emptyQuestion(),
+      question: q.question,
+      explanation: q.explanation ?? '',
+      options: q.options.map((text, i) => ({ ...emptyOption(), text: String(text), is_correct: i === q.correct_index })),
+    }));
 
 /** What is wrong in the quiz, said for the creator; null when it can be sent */
 export function checkQuiz(draft: QuizDraft): string | null {

@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 
 import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
 import { useUser } from '@/utils/Utils';
-import { useCommunitySpace } from '../community-space-context';
+import { WeeklyDigest } from '@/pages/shared/weekly-digest';
+import { isCommunityManager, useCommunitySpace } from '../community-space-context';
 import { formatEventWhen } from '../events/event-labels';
+import { ChurnPanel } from './components/churn-panel';
 import MembersGrowthChart from './components/members-growth-chart';
 import SpaceOverview from './components/space-overview';
 import WelcomeChecklist from './components/welcome-checklist';
@@ -47,6 +49,8 @@ function CommunityDashboardPage() {
       <section aria-label="Indicateurs de la communauté" className="mb-6">
         <SpaceOverview stats={stats} />
       </section>
+
+      <WeeklyDigest slug={space.community.slug} canRegenerate={isCommunityManager(space)} className="mb-4" />
 
       <div className="grid gap-3.5 pb-4 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">
@@ -155,6 +159,8 @@ function CommunityDashboardPage() {
           </Panel>
         </div>
       </div>
+
+      {isCommunityManager(space) && <ChurnPanel slug={space.community.slug} />}
     </div>
   );
 }

@@ -66,6 +66,13 @@ function stubCoursesApi() {
       const found = courses.filter((c) => published === null || String(c.is_published) === published);
       return json({ success: true, pagination: { count: found.length }, results: found });
     }
+    if (path.endsWith('/ai/generate-quiz/')) {
+      return json({ lesson_id: 'l1', lesson_title: 'Installer kubectl', questions: [{ question: 'Quelle commande ?', options: ['kubectl get', 'ls'], correct_index: 0, explanation: 'Voir la doc' }, { question: '', options: [], correct_index: 0, explanation: '' }] });
+    }
+    if (path.endsWith('/ai/generate-exercise/')) {
+      return json({ lesson_id: 'l1', lesson_title: 'Installer kubectl', exercise: { title: 'Pod', instructions_markdown: 'Créez un pod.', starter_code: 'def pod():\n  pass', solution_code: 'def pod():\n  return 1', test_cases: [{ input: 'a', expected_output: '1' }], language: 'python' } });
+    }
+    if (path.endsWith('/lessons/l1/') && request.method === 'GET') return json({ success: true, data: lesson('l1', 'Installer kubectl', 0) });
     if (path.endsWith('/video/')) return json({ success: true, data: { ...lesson('new', 'Vidéo', 2), lesson_type: 'video', has_video: true } });
     if (path.endsWith('/modules/') || path.endsWith('/lessons/')) return json({ success: true, data: { id: 'new', ...body, lessons: [] } }, 201);
     if (request.method === 'PATCH') return json({ success: true, data: { id: 'x', ...body } });
@@ -156,6 +163,53 @@ describe('Community space: courses', () => {
         { id: 'solution', title: 'Solution de référence', language: 'bash', code: 'kubectl apply -f deploy.yaml' },
       ],
     });
+  });
+
+  it('adds the questions proposed by the AI to the form, saved only with the lesson', async () => {
+    const calls = stubCoursesApi();
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifier la leçon Installer kubectl' }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/lessons/l1/'))).toBe(true), SLOW);
+    await waitFor(() => expect((within(dialog).getByLabelText('Titre') as HTMLInputElement).value).toBe('Installer kubectl'), SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'quiz' } });
+    fireEvent.change(within(dialog).getByLabelText('Nombre de questions'), { target: { value: '5' } });
+    fireEvent.change(within(dialog).getByLabelText('Niveau'), { target: { value: 'advanced' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ajouter les questions' }));
+    await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/courses/k8s/ai/generate-quiz/'))?.body).toEqual({ lesson_id: 'l1', question_count: 5, difficulty: 'advanced' }), SLOW);
+    expect(await within(dialog).findByDisplayValue('Quelle commande ?', {}, SLOW)).toBeTruthy();
+    // The question written badly is left out, nothing goes to apply-assessment
+    expect(within(dialog).getAllByDisplayValue('kubectl get')).toHaveLength(1);
+    expect(calls.some((c) => c.url.pathname.endsWith('/apply-assessment/'))).toBe(false);
+  });
+
+  it('fills the exercise proposed by the AI, with its test cases', async () => {
+    const calls = stubCoursesApi();
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifier la leçon Installer kubectl' }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/lessons/l1/'))).toBe(true), SLOW);
+    await waitFor(() => expect((within(dialog).getByLabelText('Titre') as HTMLInputElement).value).toBe('Installer kubectl'), SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'code' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: /(Proposer|Remplacer) l’exercice/ }));
+    expect(await within(dialog).findByDisplayValue('Créez un pod.', {}, SLOW)).toBeTruthy();
+    expect(calls.find((c) => c.url.pathname.endsWith('/ai/generate-exercise/'))?.body).toMatchObject({ lesson_id: 'l1', difficulty: 'intermediate', language: 'python' });
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /Enregistrer/ }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'PATCH')).toBe(true), SLOW);
+    const blocks = (calls.find((c) => c.method === 'PATCH')?.body as { code_blocks: { id: string; code: string }[] }).code_blocks;
+    expect(blocks.find((b) => b.id === 'test_cases')?.code).toContain('expected_output');
+    expect(blocks.find((b) => b.id === 'solution')?.code).toBe('def pod():\n  return 1');
+  });
+
+  it('asks to save a new lesson before proposing a quiz', async () => {
+    stubCoursesApi();
+    renderAppAt('/c/dakar-devops/courses/k8s');
+    fireEvent.click((await screen.findAllByRole('button', { name: /Ajouter une leçon/ }, SLOW))[0]);
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText('Type'), { target: { value: 'quiz' } });
+    expect(within(dialog).getByText('Enregistrez d’abord la leçon : l’IA part de son contenu.')).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Ajouter les questions' })).toBeNull();
   });
 
   it('writes a quiz: questions, single or multiple choice, right answers', async () => {
