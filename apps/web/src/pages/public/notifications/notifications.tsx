@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { Button, cn } from '@kodinga-mono-repo/ui';
 import { useAppSelector } from '@/redux/hook';
+import { MyInvitations } from '@/pages/shared/my-invitations';
 import { useGetNotificationsQuery } from '@/utils/api/community/community.api';
 import { JoinRequestActions, JoinRequestsSection } from './components/join-requests';
 import { NotificationContent } from './components/notification-item';
@@ -52,6 +53,8 @@ function Notifications() {
           </Button>
         )}
       </div>
+
+      <MyInvitations className="mt-6" />
 
       {!isLoading && <JoinRequestsSection {...joinRequests} requests={unnotified} />}
 

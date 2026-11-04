@@ -59,6 +59,9 @@ function stubMembersApi() {
       invitations = invitations.map((i) => (i.id === invitationId ? { ...i, status: 'revoked', is_valid: false } : i));
       return json({ success: true, data: invitations.find((i) => i.id === invitationId) });
     }
+    if (url.pathname.endsWith('/invitations/share-link/')) {
+      return json({ success: true, data: { community_slug: 'dakar-devops', share_url: 'http://api.test/invite/TOKEN-LINK', token: 'TOKEN-LINK', role: 'member', expires_at: '2026-12-04T10:00:00Z', uses_count: 3 } });
+    }
     if (url.pathname.endsWith('/invitations/')) {
       if (request.method === 'POST') {
         // With an email: 30 days at most (CreateWorkspaceInvitationSerializer)
@@ -272,6 +275,21 @@ describe('Community space: members', () => {
     fireEvent.click(within(pending).getByRole('button', { name: "Révoquer l'invitation : Lien partageable" }));
     await waitFor(() => expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/workspaces/dakar-devops/invitations/i1/'))).toBe(true), SLOW);
     await waitFor(() => expect(within(within(dialog).getByRole('list', { name: 'Invitations en attente' })).queryByText('Lien partageable')).toBeNull(), SLOW);
+  });
+
+  it('gives the shareable link only on demand, on the address of this site', async () => {
+    const calls = stubMembersApi();
+    renderAppAt('/c/dakar-devops/members');
+    fireEvent.click(await screen.findByRole('button', { name: /Inviter des membres/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    const shareLink = () => calls.filter((c) => c.url.pathname.endsWith('/invitations/share-link/'));
+    expect(shareLink()).toHaveLength(0);
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Obtenir le lien' }));
+    const link = await within(dialog).findByRole('textbox', { name: 'Lien de la communauté' }, SLOW);
+    expect((link as HTMLInputElement).value).toBe(`${window.location.origin}/invite/TOKEN-LINK`);
+    expect(shareLink()[0].method).toBe('POST');
+    expect(within(dialog).getByText(/Utilisé 3 fois/)).toBeTruthy();
   });
 
   it('lets an admin invite up to moderator, and a moderator not at all', async () => {

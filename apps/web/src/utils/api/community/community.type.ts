@@ -433,7 +433,7 @@ export type CommunityAISettingsWrite = Omit<CommunityAISettings, 'platform_locke
 // Invitations (apps/memberships/serializers/invitation.py)
 
 /** CommunityInvitationSerializer */
-export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'revoked' | 'expired';
 
 /**
  * WorkspaceInvitationSerializer (GET communities/<slug>/invitations/, paginated): the code of the
@@ -454,6 +454,25 @@ export type CommunityInvitation = {
 
 /** POST communities/<slug>/invitations/ (CommunityInvitationSerializer): the invitation and the code of its link */
 export type CreatedInvitation = CommunityInvitation & { invite_code: string; max_uses?: number; uses_count?: number };
+
+/** GET invitations/my/ (WorkspaceInvitationSerializer): invitations by email to the address of the user */
+export type MyInvitation = Omit<CommunityInvitation, 'invited_by'> & {
+  community_id: string;
+  community_name: string;
+  community_slug: string;
+  community_avatar_url: string;
+  invited_by: User | null;
+};
+
+/** POST communities/<slug>/invitations/share-link/: the one reusable link of a role, unlimited uses for 30 days */
+export type ShareableInviteLink = {
+  community_slug: string;
+  share_url: string;
+  token: string;
+  role: CommunityRole;
+  expires_at: string;
+  uses_count: number;
+};
 
 /** PublicInvitationDetailSerializer (GET invitations/<token>/, public): shown before accepting a link sent by email */
 export type PublicInvitation = {

@@ -42,6 +42,7 @@ import type {
   HackathonResult,
   HackathonSubmission,
   HackathonTeam,
+  MyTeamInvitation,
   HackathonStatus,
   HackathonWriteData,
   HackathonApplyData,
@@ -90,6 +91,8 @@ import type {
   CommunityInvitation,
   JoinRequest,
   CreatedInvitation,
+  MyInvitation,
+  ShareableInviteLink,
   PublicInvitation,
   CommunityMemberItem,
   CommunityRole,
@@ -626,6 +629,30 @@ export const CommunityApi = createApi({
       query: (invite_code) => ({ url: 'invitations/accept/', method: 'POST', body: { invite_code } }),
       transformResponse: unwrap<CommunityMemberItem>,
       invalidatesTags: ['members', 'communities'],
+    }),
+    // By the token of a link or the id of an invitation. The route that keeps a shareable link reusable
+    // (invitations/accept/ would consume it at its first use)
+    acceptInvitationByToken: builder.mutation<CommunityMemberItem, string>({
+      query: (token) => ({ url: `invitations/${encodeURIComponent(token)}/accept/`, method: 'POST' }),
+      transformResponse: unwrap<CommunityMemberItem>,
+      invalidatesTags: ['members', 'communities', 'invitations'],
+    }),
+    // Only for an invitation by email: a shareable link would be closed for everyone
+    declineInvitation: builder.mutation<unknown, string>({
+      query: (token) => ({ url: `invitations/${encodeURIComponent(token)}/decline/`, method: 'POST' }),
+      invalidatesTags: ['invitations'],
+    }),
+    // Invitations received at the address of the user (pending by default)
+    getMyInvitations: builder.query<MyInvitation[], void>({
+      query: () => ({ url: 'invitations/my/', params: { page_size: 100 } }),
+      transformResponse: (response: ApiPaginated<MyInvitation>) => response.results ?? [],
+      providesTags: ['invitations'],
+    }),
+    // Created at the first call for a role, then the same link until it is revoked or expires
+    createShareLink: builder.mutation<ShareableInviteLink, { slug: string; role: CommunityRole }>({
+      query: ({ slug, role }) => ({ url: `communities/${slug}/invitations/share-link/`, method: 'POST', body: { role } }),
+      transformResponse: unwrap<ShareableInviteLink>,
+      invalidatesTags: ['invitations'],
     }),
     getCommunityFeed: builder.query<ApiPaginated<CommunityPostItem>, CommunityFeedQuery>({
       query: ({ slug, ...params }) => ({ url: `communities/${slug}/feed/`, params: cleanParams(params) }),
@@ -1367,6 +1394,16 @@ export const CommunityApi = createApi({
       query: ({ slug, hackathonSlug, ...body }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/respond-invite/`, method: 'POST', body }),
       invalidatesTags: ['hackathons'],
     }),
+    // Team invitations waiting for an answer, across every hackathon
+    getMyTeamInvitations: builder.query<MyTeamInvitation[], void>({
+      query: () => 'hackathons/teams/my-invitations/',
+      transformResponse: unwrap<MyTeamInvitation[]>,
+      providesTags: ['hackathons'],
+    }),
+    respondMyTeamInvitation: builder.mutation<unknown, { invitation_id: string; accept: boolean }>({
+      query: (body) => ({ url: 'hackathons/teams/respond-invite/', method: 'POST', body }),
+      invalidatesTags: ['hackathons'],
+    }),
     // Leaves the team; the leader alone dissolves it
     leaveHackathonTeam: builder.mutation<unknown, { slug: string; hackathonSlug: string; teamId: string }>({
       query: ({ slug, hackathonSlug, teamId }) => ({ url: `communities/${slug}/hackathons/${hackathonSlug}/teams/${teamId}/`, method: 'DELETE' }),
@@ -1817,6 +1854,10 @@ export const {
   useResendInvitationMutation,
   useGetPublicInvitationQuery,
   useAcceptInvitationMutation,
+  useAcceptInvitationByTokenMutation,
+  useDeclineInvitationMutation,
+  useGetMyInvitationsQuery,
+  useCreateShareLinkMutation,
   useGetCommunityFeedQuery,
   useTogglePostPinMutation,
   useTogglePostLockMutation,
@@ -1886,6 +1927,8 @@ export const {
   useCreateHackathonTeamMutation,
   useInviteToHackathonTeamMutation,
   useRespondHackathonTeamInviteMutation,
+  useGetMyTeamInvitationsQuery,
+  useRespondMyTeamInvitationMutation,
   useLeaveHackathonTeamMutation,
   useGetMyHackathonProjectQuery,
   useUpdateMyHackathonProjectMutation,
