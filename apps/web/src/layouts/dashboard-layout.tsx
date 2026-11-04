@@ -16,7 +16,7 @@ function DashboardLayout() {
       style={{ '--sidebar-width': 'calc(var(--spacing) * 62)' } as CSSProperties}
     >
       <DashboardSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <DashboardHeader />
         <div className="flex-1 p-4 md:p-6">
           <Outlet />

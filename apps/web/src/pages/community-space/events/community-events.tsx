@@ -42,7 +42,7 @@ function CommunityEvents() {
 
   return (
     <div className="community__events">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Événements" paragraph={`Lives, ateliers et rencontres de ${community.name}`} />
         {(canLaunchLive || canManage) && (
           <div className="flex flex-wrap items-center gap-2">

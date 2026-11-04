@@ -73,7 +73,7 @@ function CommunityOpportunities() {
 
   return (
     <div className="community__opportunities">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Opportunités" paragraph={`Offres d'emploi, missions et bounties partagées avec ${community.name}`} />
         {canPublish && (
           <Button onClick={() => setCreating(true)}>

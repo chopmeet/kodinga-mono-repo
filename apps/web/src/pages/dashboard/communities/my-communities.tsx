@@ -59,7 +59,7 @@ function MyCommunities() {
 
   return (
     <div className="dashboard__communities">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Mes communautés" paragraph="Votre rôle dans chaque communauté." />
         {all.length > 0 && (
           <Link to="/create-community" className={createLinkClassName}>
@@ -150,24 +150,27 @@ function MyCommunities() {
                 {shown.map((m) => {
                   const { community } = m;
                   return (
-                    <li key={community.id} className="flex flex-wrap items-center gap-4 py-3">
-                      <CommunityAvatar community={community} className="size-12 rounded-xl font-mono" />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 font-semibold text-slate-900">
-                          <span className="truncate">{community.name}</span>
-                          {community.active_live && (
-                            <span className="inline-flex shrink-0 animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                              <span className="size-1.5 animate-ping rounded-full bg-white" />
-                              Live
-                            </span>
-                          )}
-                        </span>
-                        <span className="mt-0.5 block text-sm text-slate-500">
-                          {memberRoleLabel[m.role]} · {community.privacy_type === 'public' ? 'Publique' : 'Privée'} ·{' '}
-                          {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
+                    <li key={community.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 py-3">
+                      {/* Its width comes first: without enough room beside it, the actions go underneath */}
+                      <span className="flex min-w-0 flex-[1_1_18rem] items-center gap-4">
+                        <CommunityAvatar community={community} className="size-12 shrink-0 rounded-xl font-mono" />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2 font-semibold text-slate-900">
+                            <span className="truncate">{community.name}</span>
+                            {community.active_live && (
+                              <span className="inline-flex shrink-0 animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                                <span className="size-1.5 animate-ping rounded-full bg-white" />
+                                Live
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-0.5 block text-sm text-slate-500">
+                            {memberRoleLabel[m.role]} · {community.privacy_type === 'public' ? 'Publique' : 'Privée'} ·{' '}
+                            {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
+                          </span>
                         </span>
                       </span>
-                      <span className="flex shrink-0 gap-2">
+                      <span className="flex max-w-full flex-wrap gap-2">
                         {community.active_live && (
                           <Link
                             to={`/communities/${community.slug}/events/${community.active_live.id}/live`}

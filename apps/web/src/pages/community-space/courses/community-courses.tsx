@@ -40,7 +40,7 @@ function CommunityCourses() {
 
   return (
     <div className="community__courses">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Formations" paragraph={`Les cours de ${community.name}`} />
         {canManage && (
           <Button onClick={() => setEditing('new')}>

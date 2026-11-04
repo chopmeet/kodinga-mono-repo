@@ -45,7 +45,7 @@ function CommunityPosts() {
 
   return (
     <div className="community__posts">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Publications" paragraph={`Modération du fil de ${community.name}`} />
         <Button onClick={() => setEditing('new')}>
           <SquarePen />

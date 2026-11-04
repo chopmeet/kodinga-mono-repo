@@ -90,7 +90,7 @@ function CommunityLeaderboard() {
 
   return (
     <div className="community__leaderboard">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Classement" paragraph={`Les membres les plus actifs de ${community.name}`} />
         <div className="flex flex-wrap gap-2">
           {points.canManage && (

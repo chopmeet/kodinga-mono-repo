@@ -54,7 +54,7 @@ function CommunityMembers() {
 
   return (
     <div className="community__members">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle
           title="Membres"
           paragraph={`${(list.counts.active ?? community.members_count).toLocaleString('fr-FR')} membres actifs dans ${community.name}`}

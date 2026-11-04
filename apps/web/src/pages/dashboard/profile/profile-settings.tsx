@@ -18,7 +18,7 @@ function ProfileSettings() {
 
   return (
     <div className="profile__settings">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Mon profil" paragraph="Ces informations s’affichent sur votre profil public." />
         {user?.username && (
           <Link

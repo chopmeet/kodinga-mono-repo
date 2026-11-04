@@ -40,7 +40,7 @@ function CommunityHackathons() {
 
   return (
     <div className="community__hackathons">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Hackathons" paragraph={`Défis, équipes et projets de ${community.name}`} />
         {canManage && (
           <Button asChild>
