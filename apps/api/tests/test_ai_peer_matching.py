@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -9,6 +12,8 @@ from apps.communities.models.community import (
     CommunityPricing,
     CommunityPrivacy,
 )
+from apps.hackathons.models.application import HackathonApplication
+from apps.hackathons.models.hackathon import Hackathon
 from apps.memberships.models.member import (
     CommunityMember,
     CommunityRole,
@@ -115,3 +120,54 @@ def test_hackathon_teammate_suggestions_api(api_client, users, community_with_me
     res = api_client.post(url, {"desired_skills": ["react", "typescript"], "limit": 2}, format="json")
     assert res.status_code == status.HTTP_200_OK
     assert isinstance(res.data, list)
+
+
+@pytest.mark.django_db
+def test_hackathon_teammate_suggestions_api_with_hackathon_id(api_client, users, community_with_members):
+    u1, _ = users
+    comm, _, _ = community_with_members
+
+    now = timezone.now()
+    hackathon = Hackathon.objects.create(
+        community=comm,
+        organizer=u1,
+        title="Web3 Innovation Hackathon",
+        slug="web3-hackathon",
+        description="Grand hackathon.",
+        registration_start=now - timedelta(days=5),
+        registration_end=now + timedelta(days=2),
+        start_time=now + timedelta(days=3),
+        submission_deadline=now + timedelta(days=5),
+        judging_end=now + timedelta(days=7),
+    )
+
+    participant = User.objects.create_user(
+        email="participant_hack@kodinga.com",
+        username="participant_hack",
+        password="SecurePassword123!",
+    )
+    CommunityMember.objects.create(
+        community=comm,
+        user=participant,
+        role=CommunityRole.MEMBER,
+        status=MembershipStatus.ACTIVE,
+    )
+    HackathonApplication.objects.create(
+        hackathon=hackathon,
+        applicant=participant,
+        status="accepted",
+    )
+
+    api_client.force_authenticate(user=u1)
+    url = f"/api/v1/communities/{comm.slug}/ai/hackathon-suggestions/"
+
+    payload = {
+        "hackathon_id": str(hackathon.id),
+        "desired_skills": ["solidity"],
+        "limit": 5,
+    }
+    res = api_client.post(url, payload, format="json")
+    assert res.status_code == status.HTTP_200_OK
+    assert len(res.data) >= 1
+    # Verify participant is in returned suggestions
+    assert any(item["user_id"] == str(participant.id) for item in res.data)

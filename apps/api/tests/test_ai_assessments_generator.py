@@ -130,3 +130,53 @@ def test_apply_assessment_api(api_client, course_and_lesson):
     lesson.refresh_from_db()
     assert lesson.lesson_type == LessonType.QUIZ
     assert "questions" in lesson.quiz_data
+
+
+@pytest.mark.django_db
+def test_assessment_endpoints_reject_lesson_from_another_course(api_client, course_and_lesson):
+    comm, course, _, _, instructor = course_and_lesson
+
+    # Create a separate, foreign course and lesson in the same or another community
+    foreign_course = Course.objects.create(
+        community=comm,
+        author=instructor,
+        title="Cours de JavaScript Moderne",
+        slug="js-moderne",
+    )
+    foreign_module = CourseModule.objects.create(
+        course=foreign_course,
+        title="Module JS",
+        order=1,
+    )
+    foreign_lesson = Lesson.objects.create(
+        module=foreign_module,
+        title="Les Promises en JavaScript",
+        slug="promises-js",
+        content="Une Promise représente une opération asynchrone.",
+        lesson_type=LessonType.TEXT,
+    )
+
+    api_client.force_authenticate(user=instructor)
+
+    # 1. generate-quiz should return 404 because foreign_lesson does not belong to course
+    url_quiz = f"/api/v1/courses/{course.slug}/ai/generate-quiz/"
+    res_quiz = api_client.post(url_quiz, {"lesson_id": str(foreign_lesson.id)}, format="json")
+    assert res_quiz.status_code == status.HTTP_404_NOT_FOUND
+
+    # 2. generate-exercise should return 404
+    url_ex = f"/api/v1/courses/{course.slug}/ai/generate-exercise/"
+    res_ex = api_client.post(url_ex, {"lesson_id": str(foreign_lesson.id), "language": "javascript"}, format="json")
+    assert res_ex.status_code == status.HTTP_404_NOT_FOUND
+
+    # 3. apply-assessment should return 404 and NOT modify foreign_lesson
+    url_apply = f"/api/v1/courses/{course.slug}/ai/apply-assessment/"
+    payload = {
+        "lesson_id": str(foreign_lesson.id),
+        "assessment_type": "quiz",
+        "payload": {"questions": []},
+    }
+    res_apply = api_client.post(url_apply, payload, format="json")
+    assert res_apply.status_code == status.HTTP_404_NOT_FOUND
+
+    foreign_lesson.refresh_from_db()
+    assert foreign_lesson.lesson_type == LessonType.TEXT  # Not modified!

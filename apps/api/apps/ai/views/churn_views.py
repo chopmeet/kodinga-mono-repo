@@ -52,10 +52,11 @@ class SendSmartNudgeView(APIView):
 
     permission_classes = [permissions.IsAuthenticated, IsCommunityAdmin]
 
-    def post(self, request, pk: str):
+    def post(self, request, pk: str | None = None, churn_id: str | None = None):
+        target_id = pk or churn_id
         churn_risk = get_object_or_404(
             MemberChurnRisk.objects.select_related("member__community", "member__user"),
-            id=pk,
+            id=target_id,
         )
         self.check_object_permissions(request, churn_risk.member.community)
 
@@ -64,7 +65,7 @@ class SendSmartNudgeView(APIView):
 
         custom_message = serializer.validated_data.get("custom_message")
         updated = ChurnPredictionService.send_smart_nudge(
-            churn_risk_id=str(pk),
+            churn_risk_id=str(target_id),
             custom_message=custom_message,
         )
 

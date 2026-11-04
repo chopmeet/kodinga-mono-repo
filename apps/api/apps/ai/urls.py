@@ -1,71 +1,75 @@
 from django.urls import path
 
-from apps.ai.views import (
+from apps.ai.views.assessment_views import (
+    ApplyAssessmentView,
+    GenerateCodeExerciseView,
+    GenerateQuizView,
+)
+from apps.ai.views.assistant_views import (
     AIAssistantAnalyzeCommunityView,
     AIAssistantChatView,
     AIAssistantConversationClearView,
     AIAssistantConversationDetailView,
     AIAssistantConversationListView,
-    AIAssistantPlanCommunityView,
-    AIAssistantRecommendCommunitiesView,
-    AIAssistantSuggestContentView,
-    AILanguageListView,
-    AIModerationAuditListView,
-    AIProviderHealthView,
-    AITranslateView,
-    ApplyAssessmentView,
-    CheckDuplicatePostsView,
-    CommunityAISettingsView,
+)
+from apps.ai.views.churn_views import (
     CommunityChurnDashboardView,
-    CommunityDigestCurrentView,
-    CommunityDigestTriggerView,
-    CommunityPeerMatchView,
-    GenerateCodeExerciseView,
-    GenerateQuizView,
-    GlobalAIProviderSettingsView,
-    HackathonTeammateSuggestionView,
-    PeerMatchRespondView,
-    PingMentorsView,
-    PostHelpAssistanceView,
-    SemanticSearchView,
     SendSmartNudgeView,
 )
+from apps.ai.views.digest_views import (
+    CommunityDigestCurrentView,
+    CommunityDigestTriggerView,
+)
+from apps.ai.views.health_views import AIProviderHealthView
+from apps.ai.views.help_views import PingMentorsView, PostHelpAssistanceView
+from apps.ai.views.moderation_views import AIModerationAuditListView
+from apps.ai.views.peer_match_views import (
+    CommunityPeerMatchView,
+    HackathonTeammateSuggestionView,
+    PeerMatchRespondView,
+)
+from apps.ai.views.search_views import (
+    CheckDuplicatePostsView,
+    SemanticSearchView,
+)
+from apps.ai.views.settings_views import (
+    GlobalAISettingsView,
+    WorkspaceAISettingsView,
+)
+from apps.ai.views.translation_views import ContentTranslationView
 
 app_name = "ai"
 
 urlpatterns = [
-    # Supported Languages Directory
-    path("ai/languages/", AILanguageListView.as_view(), name="ai-languages"),
-    # Multilingual Translation
-    path("ai/translate/", AITranslateView.as_view(), name="ai-translate"),
-    # Observability & Health
-    path("admin/ai/health/", AIProviderHealthView.as_view(), name="ai-provider-health"),
-    # Global AI Provider Routing Strategy (Superadmin)
-    path("admin/ai/settings/", GlobalAIProviderSettingsView.as_view(), name="admin-ai-settings"),
-    # Moderation Audit Logs
-    path("ai/moderation/logs/", AIModerationAuditListView.as_view(), name="ai-moderation-logs"),
-    # Community Owner AI Settings
+    # Global AI Health & Multi-Provider Monitoring
+    path(
+        "health/",
+        AIProviderHealthView.as_view(),
+        name="ai-health-check",
+    ),
+    path(
+        "admin/ai/health/",
+        AIProviderHealthView.as_view(),
+        name="ai-provider-health",
+    ),
+    # Global Platform Multi-Provider Settings (Superadmin only)
+    path(
+        "settings/",
+        GlobalAISettingsView.as_view(),
+        name="global-ai-settings",
+    ),
+    path(
+        "admin/ai/settings/",
+        GlobalAISettingsView.as_view(),
+        name="admin-ai-settings",
+    ),
+    # Community-level AI Model & Provider Strategy (Community Admin / Owner)
     path(
         "communities/<slug:slug>/ai-settings/",
-        CommunityAISettingsView.as_view(),
+        WorkspaceAISettingsView.as_view(),
         name="community-ai-settings",
     ),
-    # AI Community Assistant Endpoints
-    path(
-        "ai-assistant/recommend-communities/",
-        AIAssistantRecommendCommunitiesView.as_view(),
-        name="ai-assistant-recommend-communities",
-    ),
-    path(
-        "ai-assistant/plan-community/",
-        AIAssistantPlanCommunityView.as_view(),
-        name="ai-assistant-plan-community",
-    ),
-    path(
-        "ai-assistant/suggest-content/",
-        AIAssistantSuggestContentView.as_view(),
-        name="ai-assistant-suggest-content",
-    ),
+    # Multi-turn Interactive AI Community Assistant (Conversational RAG)
     path(
         "ai-assistant/analyze-community/",
         AIAssistantAnalyzeCommunityView.as_view(),
@@ -98,6 +102,11 @@ urlpatterns = [
         name="community-posts-check-duplicates",
     ),
     path(
+        "communities/<slug:slug>/ai/check-duplicates/",
+        CheckDuplicatePostsView.as_view(),
+        name="community-ai-check-duplicates",
+    ),
+    path(
         "communities/<slug:slug>/ai/semantic-search/",
         SemanticSearchView.as_view(),
         name="community-ai-semantic-search",
@@ -116,20 +125,9 @@ urlpatterns = [
     path(
         "ai/peer-matches/<uuid:pk>/respond/",
         PeerMatchRespondView.as_view(),
-        name="ai-peer-match-respond",
+        name="peer-match-respond",
     ),
-    # 3. Community Help Facilitator & Expert Mentor Tagging
-    path(
-        "posts/<uuid:post_id>/help-assistance/",
-        PostHelpAssistanceView.as_view(),
-        name="post-help-assistance",
-    ),
-    path(
-        "posts/<uuid:post_id>/help-assistance/ping-mentors/",
-        PingMentorsView.as_view(),
-        name="post-help-ping-mentors",
-    ),
-    # 4. Automated Quiz & Code Exercise Generator for Instructors
+    # 3. Dynamic Educational Assessment Generator (Quizzes & Code Exercises)
     path(
         "courses/<slug:course_slug>/ai/generate-quiz/",
         GenerateQuizView.as_view(),
@@ -145,18 +143,18 @@ urlpatterns = [
         ApplyAssessmentView.as_view(),
         name="course-ai-apply-assessment",
     ),
-    # 5. Predictive Churn Detection & Creator Smart Nudges
+    # 4. Post Assistance & Mentor Discovery
     path(
-        "communities/<slug:slug>/ai/churn-dashboard/",
-        CommunityChurnDashboardView.as_view(),
-        name="community-ai-churn-dashboard",
+        "posts/<uuid:post_id>/help-assistance/",
+        PostHelpAssistanceView.as_view(),
+        name="post-help-assistance",
     ),
     path(
-        "ai/churn-risks/<uuid:pk>/send-nudge/",
-        SendSmartNudgeView.as_view(),
-        name="ai-churn-risk-send-nudge",
+        "posts/<uuid:post_id>/help-assistance/ping-mentors/",
+        PingMentorsView.as_view(),
+        name="post-help-ping-mentors",
     ),
-    # 6. Weekly Community Digest ("Community Pulse")
+    # 5. Community Pulse & Weekly AI Digest
     path(
         "communities/<slug:slug>/ai/weekly-digest/",
         CommunityDigestCurrentView.as_view(),
@@ -166,5 +164,37 @@ urlpatterns = [
         "communities/<slug:slug>/ai/weekly-digest/trigger/",
         CommunityDigestTriggerView.as_view(),
         name="community-ai-weekly-digest-trigger",
+    ),
+    # 6. Retention & Predictive Member Churn Prevention
+    path(
+        "communities/<slug:slug>/ai/churn-dashboard/",
+        CommunityChurnDashboardView.as_view(),
+        name="community-ai-churn-dashboard",
+    ),
+    path(
+        "ai/churn-risks/<uuid:churn_id>/send-nudge/",
+        SendSmartNudgeView.as_view(),
+        name="churn-risk-send-nudge",
+    ),
+    path(
+        "ai/churn-risks/<uuid:pk>/send-nudge/",
+        SendSmartNudgeView.as_view(),
+        name="ai-churn-risk-send-nudge",
+    ),
+    # Core Utilities
+    path(
+        "moderation/audit-logs/",
+        AIModerationAuditListView.as_view(),
+        name="ai-moderation-audit-logs",
+    ),
+    path(
+        "ai/moderation/logs/",
+        AIModerationAuditListView.as_view(),
+        name="ai-moderation-logs",
+    ),
+    path(
+        "translate/",
+        ContentTranslationView.as_view(),
+        name="ai-content-translation",
     ),
 ]

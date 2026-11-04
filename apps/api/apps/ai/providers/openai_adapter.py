@@ -46,6 +46,7 @@ class OpenAIAdapter(BaseAIProvider):
         moderation_model: Optional[str] = None,
         timeout_ms: Optional[int] = None,
     ):
+        self._explicit_key = api_key is not None
         self.api_key = api_key or getattr(settings, "OPENAI_API_KEY", "")
         self.model_name = model_name or getattr(settings, "OPENAI_TEXT_MODEL", "gpt-4o-mini")
         self.moderation_model = moderation_model or getattr(
@@ -60,14 +61,15 @@ class OpenAIAdapter(BaseAIProvider):
 
     def _get_client(self):
         if not self._client:
-            if not self.api_key:
+            effective_key = self.api_key if self._explicit_key else getattr(settings, "OPENAI_API_KEY", "")
+            if not effective_key:
                 raise ConfigurationError(
                     "OPENAI_API_KEY is not configured.", provider=self.provider_name
                 )
             try:
                 from openai import OpenAI
                 timeout_sec = self.timeout_ms / 1000.0
-                self._client = OpenAI(api_key=self.api_key, timeout=timeout_sec)
+                self._client = OpenAI(api_key=effective_key, timeout=timeout_sec)
             except Exception as e:
                 logger.error(f"[OpenAI] Failed to initialize OpenAI client: {e}")
                 raise ConfigurationError(
@@ -585,6 +587,8 @@ class OpenAIAdapter(BaseAIProvider):
         )
 
     def generate_embedding(self, text: str) -> list[float]:
+        if getattr(settings, "IS_TESTING", False):
+            return self._deterministic_embedding(text)
         try:
             client = self._get_client()
             res = client.embeddings.create(

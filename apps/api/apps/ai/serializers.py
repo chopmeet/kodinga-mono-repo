@@ -620,6 +620,11 @@ class PeerMatchRespondRequestSerializer(serializers.Serializer):
 
 
 class HackathonTeammateSuggestionRequestSerializer(serializers.Serializer):
+    hackathon_id = serializers.CharField(
+        required=False,
+        default=None,
+        allow_null=True,
+    )
     desired_skills = serializers.ListField(
         child=serializers.CharField(),
         required=False,

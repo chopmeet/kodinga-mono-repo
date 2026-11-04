@@ -484,6 +484,14 @@ class ProviderRouter:
 
 
 
+    def generate_text(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        **kwargs,
+    ) -> str:
+        return self._execute_with_fallback("_generate", "_generate", prompt, system_instruction, **kwargs)
+
     def generate_embedding(self, text: str, **kwargs) -> list[float]:
         return self._execute_with_fallback("generate_embedding", "generate_embedding", text, **kwargs)
 

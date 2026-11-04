@@ -17,6 +17,7 @@ from apps.classroom.permissions import IsCommunityClassroomManager
 class GenerateQuizView(APIView):
     """
     Generates QCM multiple choice questions from a lesson's content or video transcript.
+    Strictly verifies that the lesson belongs to the specified course.
     """
 
     permission_classes = [permissions.IsAuthenticated, IsCommunityClassroomManager]
@@ -29,7 +30,11 @@ class GenerateQuizView(APIView):
         serializer.is_valid(raise_exception=True)
 
         lesson_id = serializer.validated_data["lesson_id"]
-        lesson = get_object_or_404(Lesson.objects.select_related("module__course__community"), id=lesson_id)
+        lesson = get_object_or_404(
+            Lesson.objects.select_related("module__course__community"),
+            id=lesson_id,
+            module__course=course,
+        )
 
         questions = AssessmentGeneratorService.generate_quiz(
             lesson=lesson,
@@ -51,6 +56,7 @@ class GenerateQuizView(APIView):
 class GenerateCodeExerciseView(APIView):
     """
     Generates a coding challenge with starter code, unit tests, and solution.
+    Strictly verifies that the lesson belongs to the specified course.
     """
 
     permission_classes = [permissions.IsAuthenticated, IsCommunityClassroomManager]
@@ -63,7 +69,11 @@ class GenerateCodeExerciseView(APIView):
         serializer.is_valid(raise_exception=True)
 
         lesson_id = serializer.validated_data["lesson_id"]
-        lesson = get_object_or_404(Lesson.objects.select_related("module__course__community"), id=lesson_id)
+        lesson = get_object_or_404(
+            Lesson.objects.select_related("module__course__community"),
+            id=lesson_id,
+            module__course=course,
+        )
 
         exercise = AssessmentGeneratorService.generate_code_exercise(
             lesson=lesson,
@@ -84,6 +94,7 @@ class GenerateCodeExerciseView(APIView):
 class ApplyAssessmentView(APIView):
     """
     Applies and saves generated assessment (quiz or code exercise) to the lesson.
+    Strictly verifies that the lesson belongs to the specified course.
     """
 
     permission_classes = [permissions.IsAuthenticated, IsCommunityClassroomManager]
@@ -99,7 +110,11 @@ class ApplyAssessmentView(APIView):
         assessment_type = serializer.validated_data["assessment_type"]
         payload = serializer.validated_data["payload"]
 
-        lesson = get_object_or_404(Lesson.objects.select_related("module__course__community"), id=lesson_id)
+        lesson = get_object_or_404(
+            Lesson.objects.select_related("module__course__community"),
+            id=lesson_id,
+            module__course=course,
+        )
 
         if assessment_type == "quiz":
             updated_lesson = AssessmentGeneratorService.apply_quiz_to_lesson(
@@ -120,4 +135,3 @@ class ApplyAssessmentView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-

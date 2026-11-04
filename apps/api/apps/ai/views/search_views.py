@@ -35,11 +35,17 @@ class CheckDuplicatePostsView(APIView):
             threshold=threshold,
         )
 
+        count = result.get("count", 0)
+        has_dups = result.get("has_duplicates", False)
+        used_thresh = result.get("threshold", threshold)
         return Response(
             {
-                "has_potential_duplicates": result.get("has_duplicates", False),
-                "count": result.get("count", 0),
-                "threshold_used": result.get("threshold", threshold),
+                "has_potential_duplicates": has_dups,
+                "has_duplicates": has_dups,
+                "count": count,
+                "duplicates_count": count,
+                "threshold_used": used_thresh,
+                "threshold": used_thresh,
                 "duplicates": result.get("duplicates", []),
             },
             status=status.HTTP_200_OK,

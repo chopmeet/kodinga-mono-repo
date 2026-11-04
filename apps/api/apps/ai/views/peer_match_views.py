@@ -78,7 +78,7 @@ class HackathonTeammateSuggestionView(APIView):
         limit = serializer.validated_data.get("limit", 3)
 
         if hackathon_id:
-            hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+            hackathon = get_object_or_404(Hackathon, id=hackathon_id, community=community)
             suggestions = PeerMatchService.suggest_hackathon_teammates(
                 user=request.user,
                 hackathon=hackathon,
