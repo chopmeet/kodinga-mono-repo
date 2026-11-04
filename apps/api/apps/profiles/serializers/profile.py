@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -8,6 +10,8 @@ from apps.profiles.serializers.experience import DeveloperExperienceSerializer
 from apps.profiles.serializers.portfolio import DeveloperPortfolioProjectSerializer
 from apps.profiles.serializers.skill import DeveloperSkillSerializer
 from common.serializers.base import BaseModelSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class DeveloperProfileDetailSerializer(BaseModelSerializer):
@@ -118,21 +122,41 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
                 {
                     'id': str(ub.badge.id),
                     'name': ub.badge.name,
+                    'slug': getattr(ub.badge, 'slug', ''),
+                    'description': getattr(ub.badge, 'description', ''),
                     'icon_url': getattr(ub.badge, 'icon_url', ''),
-                    'earned_at': ub.earned_at,
+                    'awarded_at': ub.awarded_at,
+                    'earned_at': ub.awarded_at,
                 }
                 for ub in ub_qs[:5]
             ]
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(f'Error fetching user badges in profile contributions: {exc}')
 
         recent_posts = list(
             Post.objects.filter(author=obj.user, community__privacy_type='public')
             .order_by('-created_at')[:3]
-            .values('id', 'title', 'post_type', 'created_at', 'reactions_count', 'comments_count')
+            .values(
+                'id',
+                'title',
+                'post_type',
+                'created_at',
+                'reactions_count',
+                'comments_count',
+                'community__slug',
+                'community__name',
+            )
         )
         for p in recent_posts:
             p['id'] = str(p['id'])
+            community_slug = p.pop('community__slug', '')
+            community_name = p.pop('community__name', '')
+            p['community_slug'] = community_slug
+            p['community_name'] = community_name
+            p['community'] = {
+                'slug': community_slug,
+                'name': community_name,
+            }
 
         recent_projects = list(
             Project.objects.filter(owner=obj.user, status=ProjectStatus.PUBLISHED)

@@ -39,7 +39,7 @@ class PeerMatchService:
                 status=MembershipStatus.ACTIVE,
             )
             .exclude(user=user)
-            .select_related("user", "user__profile")[:30]
+            .select_related("user", "user__profile")[:60]
         )
 
         user_skills = set()
@@ -61,6 +61,10 @@ class PeerMatchService:
         for mem in members:
             target_user = mem.user
             rec = existing_map.get(target_user.id)
+
+            # Exclude peers that the user has previously ignored or rejected
+            if rec and rec.status in [MatchStatus.DECLINED, "declined", "ignored"]:
+                continue
 
             if not rec:
                 target_skills = set()

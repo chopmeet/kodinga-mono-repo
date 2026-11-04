@@ -31,6 +31,8 @@ def configure_test_settings(settings):
     settings.PAYDUNYA_PRIVATE_KEY = "test_private_key"
     settings.PAYDUNYA_PUBLIC_KEY = "test_public_key"
     settings.PAYDUNYA_TOKEN = "test_token"
+    settings.GEMINI_API_KEY = ""
+    settings.OPENAI_API_KEY = ""
 
 
 @pytest.fixture(autouse=True)

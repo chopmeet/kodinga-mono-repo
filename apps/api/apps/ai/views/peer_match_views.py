@@ -10,6 +10,7 @@ from apps.ai.serializers import (
     PeerMatchResponseSerializer,
 )
 from apps.ai.services.peer_match_service import PeerMatchService
+from apps.ai.views.base import ai_success_response
 from apps.communities.models.community import Community
 from apps.hackathons.models.hackathon import Hackathon
 from apps.memberships.models.member import CommunityMember, MembershipStatus
@@ -18,6 +19,8 @@ from apps.memberships.models.member import CommunityMember, MembershipStatus
 class CommunityPeerMatchView(APIView):
     """
     Retrieves or triggers AI peer matching recommendations for the authenticated member.
+    Excludes previously ignored or declined matches from the returned suggestions.
+    Returns list directly to maintain array contract with React/RTK Query list consumers.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -78,7 +81,7 @@ class HackathonTeammateSuggestionView(APIView):
         limit = serializer.validated_data.get("limit", 3)
 
         if hackathon_id:
-            hackathon = get_object_or_404(Hackathon, id=hackathon_id)
+            hackathon = get_object_or_404(Hackathon, id=hackathon_id, community=community)
             suggestions = PeerMatchService.suggest_hackathon_teammates(
                 user=request.user,
                 hackathon=hackathon,
@@ -116,10 +119,12 @@ class PeerMatchRespondView(APIView):
             action=action,
         )
 
-        return Response(
-            {
-                "id": str(updated.id),
-                "status": updated.status,
-            },
-            status=status.HTTP_200_OK,
+        resp_data = {
+            "id": str(updated.id),
+            "status": updated.status,
+        }
+        return ai_success_response(
+            resp_data,
+            message=f"Action '{action}' enregistrée avec succès.",
+            status_code=status.HTTP_200_OK,
         )

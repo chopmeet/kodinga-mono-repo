@@ -438,3 +438,117 @@ class TestWorkspaceInvitations:
         fresh_invite.refresh_from_db()
         assert outdated_invite.status == InvitationStatus.EXPIRED
         assert fresh_invite.status == InvitationStatus.PENDING
+
+    def test_banned_member_cannot_accept_invitation_or_shareable_link(
+        self, api_client, workspace, workspace_admin, stranger_user
+    ):
+        # 1. Ban the stranger_user in this workspace
+        member = CommunityMember.objects.create(
+            community=workspace,
+            user=stranger_user,
+            role=CommunityRole.MEMBER,
+            status=MembershipStatus.BANNED,
+        )
+
+        # 2. Admin generates a shareable invitation link
+        api_client.force_authenticate(user=workspace_admin)
+        res_link = api_client.get(
+            f"/api/v1/communities/{workspace.slug}/invitations/share-link/"
+        )
+        assert res_link.status_code == status.HTTP_200_OK
+        token = res_link.json()["data"]["token"]
+
+        # 3. Banned user attempts to accept the shareable invitation
+        api_client.force_authenticate(user=stranger_user)
+        res_accept = api_client.post(
+            f"/api/v1/invitations/{token}/accept/",
+            format="json",
+        )
+        assert res_accept.status_code == status.HTTP_403_FORBIDDEN
+        assert "banni" in res_accept.json().get("message", "").lower()
+
+        # 4. Verify user status remains BANNED (never reactivated to ACTIVE)
+        member.refresh_from_db()
+        assert member.status == MembershipStatus.BANNED
+
+    def test_shareable_link_cannot_be_declined_by_any_user(
+        self, api_client, workspace, workspace_admin, stranger_user, invited_user
+    ):
+        # 1. Admin generates a shareable link
+        api_client.force_authenticate(user=workspace_admin)
+        res_link = api_client.get(
+            f"/api/v1/communities/{workspace.slug}/invitations/share-link/"
+        )
+        assert res_link.status_code == status.HTTP_200_OK
+        token = res_link.json()["data"]["token"]
+
+        invitation = CommunityInvitation.objects.get(invite_code=token)
+        assert invitation.status == InvitationStatus.PENDING
+
+        # 2. Stranger user attempts to decline this shareable link
+        api_client.force_authenticate(user=stranger_user)
+        res_decline = api_client.post(
+            f"/api/v1/invitations/{token}/decline/",
+            format="json",
+        )
+        assert res_decline.status_code == status.HTTP_400_BAD_REQUEST
+        error_code = res_decline.json().get("code") or res_decline.json().get("error", {}).get("code")
+        assert error_code == "shareable_link_cannot_be_declined"
+
+        # 3. Verify link is STILL PENDING and valid for everyone
+        invitation.refresh_from_db()
+        assert invitation.status == InvitationStatus.PENDING
+        assert invitation.is_valid is True
+
+        # 4. Another user can still join using the link without any issue
+        api_client.force_authenticate(user=invited_user)
+        res_accept = api_client.post(
+            f"/api/v1/invitations/{token}/accept/",
+            format="json",
+        )
+        assert res_accept.status_code == status.HTTP_200_OK
+        new_member = CommunityMember.objects.get(community=workspace, user=invited_user)
+        assert new_member.status == MembershipStatus.ACTIVE
+
+    def test_already_active_member_accepting_shareable_link_does_not_close_it(
+        self, api_client, workspace, workspace_admin, workspace_member, stranger_user
+    ):
+        # 1. Admin generates a shareable link (unlimited uses, max_uses=0)
+        api_client.force_authenticate(user=workspace_admin)
+        res_link = api_client.get(
+            f"/api/v1/communities/{workspace.slug}/invitations/share-link/"
+        )
+        assert res_link.status_code == status.HTTP_200_OK
+        token = res_link.json()["data"]["token"]
+
+        invitation = CommunityInvitation.objects.get(invite_code=token)
+        assert invitation.status == InvitationStatus.PENDING
+        assert invitation.uses_count == 0
+
+        # 2. Already active member accepts the shareable link
+        api_client.force_authenticate(user=workspace_member)
+        res_accept_member = api_client.post(
+            f"/api/v1/invitations/{token}/accept/",
+            format="json",
+        )
+        assert res_accept_member.status_code == status.HTTP_200_OK
+
+        # 3. Verify link was NOT closed and uses_count was NOT incremented
+        invitation.refresh_from_db()
+        assert invitation.status == InvitationStatus.PENDING
+        assert invitation.uses_count == 0
+        assert invitation.is_valid is True
+
+        # 4. A new member uses the shareable link to join
+        api_client.force_authenticate(user=stranger_user)
+        res_accept_stranger = api_client.post(
+            f"/api/v1/invitations/{token}/accept/",
+            format="json",
+        )
+        assert res_accept_stranger.status_code == status.HTTP_200_OK
+
+        invitation.refresh_from_db()
+        # For unlimited link, status remains PENDING and uses_count is incremented by 1
+        assert invitation.status == InvitationStatus.PENDING
+        assert invitation.uses_count == 1
+        assert invitation.is_valid is True

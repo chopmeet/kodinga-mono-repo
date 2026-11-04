@@ -156,7 +156,8 @@ class MembershipService:
             if invitation:
                 new_uses = (invitation.uses_count or 0) + 1
                 update_kwargs = {'uses_count': F('uses_count') + 1}
-                if not invitation.max_uses or new_uses >= invitation.max_uses or invitation.email:
+                has_max_uses = bool(invitation.max_uses and invitation.max_uses > 0)
+                if invitation.email or (has_max_uses and new_uses >= invitation.max_uses):
                     update_kwargs['status'] = InvitationStatus.ACCEPTED
                     update_kwargs['accepted_at'] = timezone.now()
                 CommunityInvitation.objects.filter(id=invitation.id).update(**update_kwargs)

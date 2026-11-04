@@ -75,7 +75,7 @@ class AssessmentGeneratorService:
             data = json.loads(clean)
             questions = data.get("questions", [])
             if questions:
-                return questions
+                return questions, True
         except Exception as err:
             logger.warning(f"[generate_quiz] AI generation or parsing failed: {err}. Returning structured fallback.")
 
@@ -91,7 +91,7 @@ class AssessmentGeneratorService:
                 "correct_index": 0,
                 "explanation": f"La leçon '{lesson.title}' introduit les fondamentaux de ce concept.",
             }
-        ]
+        ], False
 
     @classmethod
     def generate_code_exercise(
@@ -148,7 +148,7 @@ class AssessmentGeneratorService:
                 "solution_code": data.get("solution_code", "def solution():\n    return True\n"),
                 "test_cases": data.get("test_cases", [{"input": "test", "expected_output": "True"}]),
                 "language": data.get("language", language_code),
-            }
+            }, True
         except Exception as err:
             logger.warning(f"[generate_code_exercise] AI generation or parsing failed: {err}. Returning fallback.")
             return {
@@ -158,7 +158,7 @@ class AssessmentGeneratorService:
                 "solution_code": f"# Solution : {lesson.title}\ndef solve():\n    return True\n",
                 "test_cases": [{"input": "example", "expected_output": "True"}],
                 "language": language_code,
-            }
+            }, False
 
     @classmethod
     @transaction.atomic

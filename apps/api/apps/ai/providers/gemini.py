@@ -45,6 +45,7 @@ class GeminiAdapter(BaseAIProvider):
         model_name: Optional[str] = None,
         timeout_ms: Optional[int] = None,
     ):
+        self._explicit_key = api_key is not None
         self.api_key = api_key or getattr(settings, "GEMINI_API_KEY", "")
         self.model_name = model_name or getattr(settings, "GEMINI_TEXT_MODEL", "gemini-2.5-flash")
         self.timeout_ms = timeout_ms or getattr(settings, "AI_PROVIDER_TIMEOUT_MS", 15000)
@@ -56,13 +57,14 @@ class GeminiAdapter(BaseAIProvider):
 
     def _get_client(self):
         if not self._client:
-            if not self.api_key:
+            effective_key = self.api_key if self._explicit_key else getattr(settings, "GEMINI_API_KEY", "")
+            if not effective_key:
                 raise ConfigurationError(
                     "GEMINI_API_KEY is not configured.", provider=self.provider_name
                 )
             try:
                 from google import genai
-                self._client = genai.Client(api_key=self.api_key)
+                self._client = genai.Client(api_key=effective_key)
             except Exception as e:
                 logger.error(f"[Gemini] Failed to initialize genai.Client: {e}")
                 raise ConfigurationError(
@@ -630,6 +632,8 @@ class GeminiAdapter(BaseAIProvider):
             raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
 
     def generate_embedding(self, text: str) -> list[float]:
+        if getattr(settings, "IS_TESTING", False):
+            return self._deterministic_embedding(text)
         try:
             client = self._get_client()
             resp = client.models.embed_content(
