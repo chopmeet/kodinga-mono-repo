@@ -19,3 +19,4 @@ def ai_success_response(data: dict, message: str = None, status_code=status.HTTP
             if k not in payload:
                 payload[k] = v
     return Response(payload, status=status_code)
+
