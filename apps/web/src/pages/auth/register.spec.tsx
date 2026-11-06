@@ -110,6 +110,16 @@ describe('Register', () => {
     await waitFor(() => expect(leaveTo).toHaveBeenCalledWith('https://accounts.google.com/o/oauth2?x=1'));
     expect(new URL(calls[0].url).searchParams.get('redirect_uri')).toBe(`${window.location.origin}/auth/callback/google`);
     expect(sessionStorage.getItem('oauth_state_google')).toBe('st4te');
+    expect(sessionStorage.getItem('oauth_next_google')).toBeNull();
+  });
+
+  it('keeps where the user was going through the provider', async () => {
+    stubApi({ 'auth/google/start/': { body: { success: true, data: { url: 'https://accounts.google.com/o/oauth2?x=1', state: 'st4te' } } } });
+    renderAppAt('/auth/register?next=%2Finvite%2FTOKEN');
+    fireEvent.click(await screen.findByRole('button', { name: 'Continuer avec Google' }, SLOW));
+    await waitFor(() => expect(leaveTo).toHaveBeenCalled());
+    expect(sessionStorage.getItem('oauth_next_google')).toBe('/invite/TOKEN');
+    expect(screen.getByRole('link', { name: 'Se connecter' }).getAttribute('href')).toBe('/auth/login?next=%2Finvite%2FTOKEN');
   });
 });
 
@@ -135,6 +145,36 @@ describe('OAuth callback', () => {
     const { where } = renderAppAt('/auth/callback/github?code=abc&state=st4te');
     await waitFor(() => expect(where()).toBe('/'), SLOW);
     expect(calls[0].body).toEqual({ code: 'abc', state: 'st4te', redirect_uri: `${window.location.origin}/auth/callback/github` });
+  });
+});
+
+describe('OAuth callback, where it goes', () => {
+  const signedIn = { 'auth/github/callback/': { body: { success: true, data: { access: 'a', refresh: 'r', session_id: 's', user: { id: 'u1', first_name: 'Kofi', email: 'kofi@example.com' } } } } };
+
+  it('goes back to the page the user was going to', async () => {
+    stubApi(signedIn);
+    sessionStorage.setItem('oauth_state_github', 'st4te');
+    sessionStorage.setItem('oauth_next_github', '/invite/TOKEN');
+    const { where } = renderAppAt('/auth/callback/github?code=abc&state=st4te');
+    await waitFor(() => expect(where()).toBe('/invite/TOKEN'), SLOW);
+    expect(sessionStorage.getItem('oauth_next_github')).toBeNull();
+  });
+
+  it('never leaves the app', async () => {
+    stubApi(signedIn);
+    sessionStorage.setItem('oauth_state_github', 'st4te');
+    sessionStorage.setItem('oauth_next_github', '//evil.example.com');
+    const { where } = renderAppAt('/auth/callback/github?code=abc&state=st4te');
+    await waitFor(() => expect(where()).toBe('/'), SLOW);
+  });
+
+  it('says a misconfigured provider in french, and keeps the destination to retry', async () => {
+    stubApi({ 'auth/github/callback/': { status: 400, body: { success: false, code: 'redirect_uri_mismatch', message: "Erreur redirect_uri_mismatch : l'URI…" } } });
+    sessionStorage.setItem('oauth_state_github', 'st4te');
+    sessionStorage.setItem('oauth_next_github', '/invite/TOKEN');
+    renderAppAt('/auth/callback/github?code=abc&state=st4te');
+    expect(await screen.findByText(/mal configuré/, {}, SLOW)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Retour à la connexion' }).getAttribute('href')).toBe('/auth/login?next=%2Finvite%2FTOKEN');
   });
 });
 

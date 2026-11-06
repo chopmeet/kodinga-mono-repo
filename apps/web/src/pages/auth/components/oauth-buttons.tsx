@@ -1,5 +1,6 @@
 import { LoaderCircle } from 'lucide-react';
 import { type ReactElement, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useOauthStartMutation } from '@/utils/api/auth/auth.api';
 import type { OAuthProvider } from '@/utils/api/auth/auth.type';
@@ -33,6 +34,7 @@ const providers: { id: OAuthProvider; label: string; logo: () => ReactElement }[
 
 /** Asks the api for the provider url, keeps the state, then leaves for the provider */
 export function OAuthButtons() {
+  const [params] = useSearchParams();
   const [oauthStart] = useOauthStartMutation();
   const [pending, setPending] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function OAuthButtons() {
     setPending(provider);
     try {
       const { url, state } = await oauthStart({ provider, redirect_uri: oauthRedirectUri(provider) }).unwrap();
-      saveOAuthState(provider, state);
+      saveOAuthState(provider, state, params.get('next'));
       leaveTo(url);
     } catch (err) {
       setError(parseApiError(err).message);
@@ -65,6 +67,17 @@ export function OAuthButtons() {
           {label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/** Between the buttons of the providers and the form with an email */
+export function EmailSeparator() {
+  return (
+    <div className="my-6 flex items-center gap-3 text-sm text-slate-400" role="separator">
+      <span className="h-px flex-1 bg-slate-200" />
+      ou avec votre email
+      <span className="h-px flex-1 bg-slate-200" />
     </div>
   );
 }

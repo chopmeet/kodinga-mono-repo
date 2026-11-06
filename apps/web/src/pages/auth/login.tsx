@@ -1,10 +1,11 @@
 import { Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { Button, Input, InputPassword } from '@kodinga-mono-repo/ui';
 
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';
+import { EmailSeparator, OAuthButtons } from './components/oauth-buttons';
 import UseLoginForm from './hooks/UseLoginForm';
 import { GoKey } from "react-icons/go";
 
@@ -17,6 +18,8 @@ function Login() {
     onSubmit, 
     isLoading 
   } = UseLoginForm();
+  const [params] = useSearchParams();
+  const next = params.get('next');
 
   return (
     <AuthWrapper
@@ -26,7 +29,7 @@ function Login() {
         <>
           <p className="mb-4 text-[15px]">
             Pas encore de compte ?{' '}
-            <Link to="/auth/register" className="font-semibold text-brand hover:text-brand-hover hover:underline">
+            <Link to={next ? `/auth/register?next=${encodeURIComponent(next)}` : '/auth/register'} className="font-semibold text-brand hover:text-brand-hover hover:underline">
               S'inscrire
             </Link>
           </p>
@@ -36,6 +39,9 @@ function Login() {
         </>
       }
     >
+      <OAuthButtons />
+      <EmailSeparator />
+
       <form onSubmit={onSubmit} noValidate>
         <div className="form-content flex flex-col gap-2">
           {formError && <FormAlert>{formError}</FormAlert>}

@@ -94,6 +94,7 @@ describe('Invitation link', () => {
     expect(await screen.findByRole('heading', { name: 'Abidjan React' }, SLOW)).toBeTruthy();
     expect(screen.getByText('240 membres')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Se connecter pour rejoindre' }).getAttribute('href')).toBe(`/auth/login?next=${encodeURIComponent(URL_PATH)}`);
+    expect(screen.getByRole('link', { name: 'Créez-le' }).getAttribute('href')).toBe(`/auth/register?next=${encodeURIComponent(URL_PATH)}`);
   });
 
   it('joins the community with the code, then opens it', async () => {

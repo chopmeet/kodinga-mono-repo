@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { onLogout } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
 import { renderAppAt, SLOW, stubApi } from '@/test-utils';
+import * as oauthState from './hooks/oauth-state';
 
 // Full app tree + network stubs: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
@@ -23,6 +24,19 @@ const submit = (email: string, password: string) => {
 };
 
 describe('Login', () => {
+  it('offers Google and GitHub, and keeps where the user was going', async () => {
+    const calls = stubApi({ 'auth/github/start/': { body: { success: true, data: { url: 'https://github.com/login/oauth/authorize?x=1', state: 'st4te' } } } });
+    const leave = vi.spyOn(oauthState, 'leaveTo').mockImplementation(() => undefined);
+    renderAppAt('/auth/login?next=%2Finvite%2FTOKEN');
+    expect(await screen.findByRole('button', { name: 'Continuer avec Google' }, SLOW)).toBeTruthy();
+    expect(screen.getByRole('link', { name: "S'inscrire" }).getAttribute('href')).toBe('/auth/register?next=%2Finvite%2FTOKEN');
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer avec GitHub' }));
+    await waitFor(() => expect(leave).toHaveBeenCalledWith('https://github.com/login/oauth/authorize?x=1'), SLOW);
+    expect(new URL(calls[0].url).searchParams.get('redirect_uri')).toBe(`${window.location.origin}/auth/callback/github`);
+    expect(sessionStorage.getItem('oauth_next_github')).toBe('/invite/TOKEN');
+    sessionStorage.clear();
+  });
+
   it('shows the api error when the credentials are wrong', async () => {
     stubApi({
       'auth/login/': { status: 401, body: { success: false, code: 'invalid_credentials', message: 'Invalid credentials.' } },

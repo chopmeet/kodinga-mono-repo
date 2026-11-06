@@ -1,27 +1,28 @@
 import { AtSign, Mail, MailCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { Input, InputPassword } from '@kodinga-mono-repo/ui';
 
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';
-import { OAuthButtons } from './components/oauth-buttons';
+import { EmailSeparator, OAuthButtons } from './components/oauth-buttons';
 import { PasswordCheck } from './components/password-check';
 import { SubmitButton } from './components/submit-button';
 import UseRegisterForm from './hooks/UseRegisterForm';
 
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
-const loginFooter = (
-  <>
-    Déjà un compte ?{' '}
-    <Link to="/auth/login" className={linkClassName}>
-      Se connecter
-    </Link>
-  </>
-);
-
 function Register() {
+  const [params] = useSearchParams();
+  const next = params.get('next');
+  const loginFooter = (
+    <>
+      Déjà un compte ?{' '}
+      <Link to={next ? `/auth/login?next=${encodeURIComponent(next)}` : '/auth/login'} className={linkClassName}>
+        Se connecter
+      </Link>
+    </>
+  );
   const {
     register,
     errors,
@@ -75,11 +76,7 @@ function Register() {
     <AuthWrapper title="Créer un compte" subtitle="Rejoignez les communautés tech d'Afrique, gratuitement." footer={loginFooter}>
       <OAuthButtons />
 
-      <div className="my-6 flex items-center gap-3 text-sm text-slate-400" role="separator">
-        <span className="h-px flex-1 bg-slate-200" />
-        ou avec votre email
-        <span className="h-px flex-1 bg-slate-200" />
-      </div>
+      <EmailSeparator />
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
         {formError && <FormAlert>{formError}</FormAlert>}
