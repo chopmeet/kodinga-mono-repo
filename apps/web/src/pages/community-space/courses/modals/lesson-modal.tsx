@@ -90,7 +90,7 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
                 />
               </div>
             )}
-            {(isCode || isQuiz) && <LessonAIPanel courseSlug={courseSlug} form={form} />}
+            {(isCode || isQuiz) && <LessonAIPanel slug={slug} courseSlug={courseSlug} form={form} />}
             {isCode ? (
               <CodeExerciseFields value={form.exercise} onChange={form.setExercise} />
             ) : (

@@ -1,0 +1,389 @@
+KODINGA - CORRECTIONS A FAIRE COTE API
+Etat du code verifie : commit 0781446 (main), le 06/11/2026.
+
+COMMENT C'EST VERIFIE
+- Chaque point a ete relu dans le code actuel. Les numeros de ligne correspondent a ce commit.
+- Executes sans toucher a la base : signature de GeminiAdapter._generate, absence de
+  OpenAIAdapter._generate, FieldError sur filter(is_admin=True), absence de User.reputation_score
+  et de profile.avatar, type absent de NotificationType.
+- NON execute : pytest (il applique des migrations sur la base de test), un vrai appel a Gemini ou
+  OpenAI, un vrai aller-retour Google ou GitHub. Ces comportements sont deduits de la lecture du code.
+- Les chemins sont relatifs a apps/api/apps/.
+- Les routes front citees dans les corrections existent dans apps/web/src/routes/router.tsx.
+
+RESUME
+A. Securite, a corriger avant la prod ......... A1 a A4
+B. Argent et abonnements ....................... B1 a B5
+C. Fonctions IA ................................ C1 a C9
+D. Formations .................................. D1 a D4
+E. Connexion Google / GitHub (hors securite) ... E1 a E6
+F. Invitations ................................. F1 a F3
+G. Evenements .................................. G1 a G2
+H. Details de qualite .......................... H1 a H2
+I. Endpoints manquants pour le front ........... I1 a I5
+
+
+================================================================================
+A. SECURITE - A CORRIGER AVANT LA PROD
+================================================================================
+
+A1. Google/GitHub : prise de controle d'un compte avec une adresse non verifiee
+Fichier : accounts/services/oauth.py, handle_callback, lignes 339 et 361
+Probleme : l'identite OAuth est rattachee au compte qui a la meme adresse, meme si le fournisseur
+  ne dit pas que cette adresse est verifiee. email_verified n'est lu que pour mettre a jour
+  email_verified_at, jamais pour refuser le rattachement.
+Scenario : une personne se connecte avec un compte Google portant l'adresse non verifiee d'une
+  victime. Elle obtient des jetons JWT sur le compte Kodinga de la victime.
+Correction :
+  - Si le compte existe deja et que le fournisseur ne confirme pas l'adresse, refuser avec une erreur
+    (par exemple code "oauth_email_not_verified") et ne pas creer de OAuthIdentity.
+  - A tester : compte existant + email_verified=False => erreur, aucune identite, aucun jeton.
+
+A2. GitHub : toute adresse renvoyee est consideree comme verifiee
+Fichier : accounts/services/oauth.py, ligne 299
+Code : 'email_verified': email_verified or bool(email)
+Probleme : quand GET /user renvoie une adresse publique, on ne passe pas par /user/emails, et
+  bool(email) vaut True. La verification n'a donc jamais lieu dans ce cas.
+Correction : toujours appeler /user/emails, prendre l'adresse primary et verified, et retourner
+  uniquement ce resultat. Sans adresse primaire verifiee, renvoyer "oauth_missing_email".
+
+A3. Compte prepare a l'avance par un tiers
+Fichier : accounts/services/oauth.py, lignes 356-366, et accounts/services/authentication.py
+Probleme : l'inscription par mot de passe ne verifie pas l'adresse avant de permettre la connexion
+  (login_user ne controle pas email_verified_at). Le rattachement OAuth marque ensuite le compte
+  comme verifie sans toucher au mot de passe existant.
+Scenario : une personne cree un compte avec l'adresse d'une victime et un mot de passe. La victime
+  arrive plus tard par Google : le compte est rattache et verifie, et la premiere personne peut
+  toujours se connecter avec son mot de passe.
+Correction : quand on rattache une identite a un compte dont l'adresse n'etait pas verifiee, appeler
+  set_unusable_password() et revoquer ses sessions actives. La victime pourra redefinir son mot de
+  passe par "mot de passe oublie".
+A tester : apres le rattachement, l'ancien mot de passe echoue et les anciens refresh sont refuses.
+
+A4. Recherche semantique et doublons : contenu prive lisible par tout compte connecte
+Fichier : ai/views/search_views.py, CheckDuplicatePostsView (ligne 14) et SemanticSearchView (ligne 53)
+Probleme : la seule permission est IsAuthenticated, sans controle sur la communaute. Tout compte
+  connecte peut interroger une communaute privee ou secrete et lire les titres et les 240 premiers
+  caracteres du contenu.
+  S'ajoute un second probleme : ai/signals.py (on_lesson_saved, ligne 54 et suivantes) indexe aussi
+  les lecons des cours non publies (Course.is_published=False), et semantic_search ne les filtre pas.
+Correction :
+  - Reprendre le controle de digest_views.py : refuser les non-membres sur les communautes privees et
+    secretes. Pour eviter le cout d'embedding, reserver idealement ces routes aux membres actifs.
+  - Ne pas indexer, ou filtrer a la lecture, les lecons d'un cours non publie.
+  - Pour une communaute payante, decider si un non-abonne peut voir les extraits des lecons.
+A tester : non-membre sur communaute privee => 403 ; lecon d'un cours non publie => absente.
+
+
+================================================================================
+B. ARGENT ET ABONNEMENTS
+================================================================================
+
+B1. Affiliation : 50 % reverses alors que Kodinga ne garde que 10 %  [DECISION PRODUIT]
+Fichiers : billing/services/affiliate_service.py, lignes 78-79 ;
+           billing/services/billing_service.py, lignes 241-256 et 323-325
+Probleme : sur un abonnement a une communaute, le createur est credite de 90 % et Kodinga garde 10 %.
+  La commission d'affiliation est appelee sur tout premier paiement, sans distinguer le type de
+  formule, et vaut 50 % du montant total.
+Exemple : premier abonnement de 10 000 FCFA, 9 000 au createur + 5 000 a l'affilie = 14 000 engages,
+  soit une perte de 4 000 pour Kodinga. Sur une formule Pro (sans communaute), Kodinga garde 100 %,
+  donc les 50 % restent couverts.
+A decider : limiter l'affiliation aux formules Pro, ou calculer la commission sur platform_fee.
+
+B2. Un membre suspendu par moderation est reactive en payant
+Fichier : billing/services/billing_service.py, ligne 316
+Code : elif member.status not in [MembershipStatus.ACTIVE, MembershipStatus.BANNED]: ... ACTIVE
+Probleme : SUSPENDED sert a deux choses, la sanction de moderation
+  (memberships/services/membership_service.py, ligne 425) et l'abonnement expire (billing/tasks.py,
+  ligne 65). Le paiement reactive les deux, ce qui annule la sanction. L'initiation du paiement ne
+  bloque que BANNED (lignes 155-163).
+Correction : verifier une MemberSanction de suspension active avant de reactiver, et refuser
+  l'initiation du paiement dans ce cas.
+A noter : depuis e18c969, accept_invitation refuse tout SUSPENDED, y compris un membre suspendu pour
+  simple non-paiement. A distinguer avec le meme controle.
+
+B3. Rappels de renouvellement jamais envoyes
+Fichier : billing/tasks.py, send_subscription_expiry_reminders, lignes 100-103
+Probleme : la boucle ne fait qu'ecrire un log et incrementer un compteur. L'abonne ne recoit rien.
+Correction : creer une notification et/ou envoyer un email, sans doublon si la tache passe deux fois.
+
+B4. Reversements : pas de cycle de vie, et refus sans remboursement du solde
+Fichiers : billing/views/community_billing.py (post, le solde est debite a la demande) ;
+           billing/models/wallet.py ; billing/admin.py, lignes 65-68
+Probleme : aucun code ne fait passer un reversement a approved, processed ou rejected. Le statut ne
+  peut changer qu'a la main dans l'admin Django, sans recredit de available_balance en cas de refus.
+Correction : ajouter les actions d'approbation, de traitement et de refus, avec recredit du solde
+  dans une transaction lors d'un refus. Notifier le createur a chaque changement.
+
+B5. Lien d'affiliation sur le domaine de l'API
+Fichier : billing/serializers/affiliate.py, ligne 44
+Code : base_url = request.build_absolute_uri('/')
+Probleme : le lien partage pointe vers https://api.kodinga..., pas vers le site.
+Correction : construire le lien a partir de settings.FRONTEND_URL.
+
+
+================================================================================
+C. FONCTIONS IA
+================================================================================
+
+C1. Aucun texte n'est reellement genere par l'IA pour le resume, les relances et l'aide
+Fichiers : ai/router.py, ligne 487 (generate_text) ; ai/providers/gemini.py, ligne 156 ;
+           appels dans ai/services/digest_service.py:177, churn_service.py:196,
+           help_assistance_service.py:63
+Probleme, verifie a l'execution :
+  - La signature est GeminiAdapter._generate(self, prompt, system_instruction=None).
+  - generate_text lui transmet tous les autres parametres. Les trois appels envoient max_tokens,
+    max_output_tokens, temperature ou response_format, ce qui provoque un TypeError.
+  - OpenAIAdapter n'a pas de methode _generate (son equivalent est _chat_completion), donc le repli
+    echoue aussi avec un AttributeError.
+Consequence : les appelants attrapent l'exception et utilisent leur modele fixe, sans le signaler.
+  Chaque essai compte aussi comme erreur dans le circuit breaker (consecutive_errors).
+  Les tests ne le voient pas s'ils remplacent generate_text par un mock.
+Correction :
+  - Faire accepter ces parametres par _generate sur les deux fournisseurs, avec un seul nom pour la
+    limite de jetons (aujourd'hui max_tokens et max_output_tokens coexistent).
+  - Ajouter _generate a OpenAIAdapter.
+  - Ajouter un test sans mock de generate_text, qui ne remplace que le client du fournisseur.
+
+C2. Resume de la semaine : lecture de .content sur une chaine
+Fichier : ai/services/digest_service.py, ligne 184
+Code : raw = ai_response.content.strip()
+Probleme : generate_text renvoie un str. Meme apres C1, cette ligne leve une exception et le resume
+  reste le modele fixe.
+Correction : raw = ai_response.strip()
+
+C3. Le message de relance reste un modele fixe
+Fichier : ai/services/churn_service.py
+Probleme : generate_ai_nudge vaut False par defaut, et aucun appel ne passe True. generate_smart_nudge
+  n'est jamais atteint.
+Correction : c'est un choix a expliciter. Generer le message a la demande pour un membre (par exemple
+  a l'ouverture ou via une route dediee), pas pendant l'analyse des 50 membres.
+
+C4. Liens de notification qui n'aboutissent pas
+Fichiers et valeur attendue :
+  - ai/services/churn_service.py, ligne 249 : /c/<slug> => /communities/<slug>
+    Un simple membre n'a pas acces a /c/ et serait renvoye vers /dashboard/communities avec un refus.
+  - ai/services/help_assistance_service.py, ligne 188 : /c/<slug>/posts/<id>
+    => /communities/<slug>/posts/<id>  (la route /c/<slug>/posts/<id> n'existe pas)
+
+C5. Recherche semantique : URL fausses et contenu existant jamais indexe
+Fichiers : ai/signals.py, lignes 23 et 62 ; ai/services/semantic_search_service.py, lignes 101 et 147
+Probleme 1 : les URL renvoyees commencent par /c/ et ne correspondent a aucune route du front.
+  Attendu : post => /communities/<slug>/posts/<id> ;
+            lecon => /communities/<slug>/courses/<course_slug>?lesson=<id>
+Probleme 2 : l'indexation ne se declenche qu'a l'enregistrement. Les publications et lecons deja en
+  base restent absentes tant qu'elles ne sont pas reenregistrees, et aucune commande de reprise n'existe.
+Correction : corriger les URL, et ajouter une commande de management du type reindex_content.
+Prerequis : A4 corrige avant d'ouvrir ces routes au front.
+
+C6. Mentors proposes sans competence correspondante, et score de reputation fictif
+Fichier : ai/services/help_assistance_service.py, lignes 102-113, 129 et 138
+Probleme 1 : les membres sans aucune competence correspondante restent classes et selectionnes
+  (les 4 premiers scores).
+Probleme 2 : en l'absence de correspondance, matching_skills affiche d'autres competences du membre,
+  voire celles detectees dans la publication. On peut croire a une expertise qu'il n'a pas.
+Probleme 3 : getattr(expert, "reputation_score", 100) lit un champ que User n'a pas (verifie a
+  l'execution). La valeur renvoyee est donc toujours 100.
+Correction :
+  - Ne garder que les membres avec au moins une competence correspondante (liste vide sinon).
+  - Dans matching_skills du mentor, ne renvoyer que les competences reellement communes.
+  - Lire la reputation sur CommunityMember.
+
+C7. Coequipiers de hackathon : des personnes deja en equipe sont proposees
+Fichier : ai/services/peer_match_service.py, suggest_hackathon_teammates, ligne 140
+Probleme : on prend tous les candidats acceptes, sans exclure ceux qui ont deja une equipe sur ce
+  hackathon. Les inviter echouera.
+Correction : exclure les membres ayant une HackathonTeamMember au statut accepted sur ce hackathon.
+
+C8. Membres a rencontrer : avatar toujours vide
+Fichier : ai/services/peer_match_service.py, lignes 104-105
+Probleme : le code cherche profile.avatar, qui n'existe pas (verifie a l'execution). Le bon champ est
+  profile.avatar_url. Le champ avatar_url de la reponse vaut donc toujours null.
+Correction : avatar_url = getattr(target_user.profile, "avatar_url", None)
+
+C9. Erreurs 500 et cout IA
+  a) ai/views/assessment_views.py, ligne 45 : filter(is_admin=True) leve un FieldError (verifie a
+     l'execution), car is_admin est une propriete. L'ancienne route /courses/<slug>/ai/... renvoie donc
+     une erreur 500 quand deux cours partagent ce slug, au lieu du message prevu. A remplacer par un
+     filtre sur role, en reprenant la definition de la propriete dans memberships/models/member.py.
+  b) ai/services/peer_match_service.py, ligne 191 : raise PermissionError (exception Python) donne une
+     erreur 500 via le handler global. A remplacer par la PermissionDenied de DRF pour obtenir un 403.
+  c) ai/views/help_views.py : sur une communaute publique, _check_access laisse passer les non-membres
+     et le premier GET genere le brouillon. Une fois C1 corrige, n'importe quel compte connecte pourra
+     declencher un appel payant. A reserver aux membres actifs.
+  d) "peer_help_requested" (help_assistance_service.py) n'est pas dans NotificationType (verifie a
+     l'execution). Rien ne casse a l'enregistrement, mais le type est hors des choices. A ajouter.
+
+
+================================================================================
+D. FORMATIONS
+================================================================================
+
+D1. xp_awarded annonce des points deja attribues
+Fichiers : classroom/services/progress_service.py, lignes 178, 180 et 187 ;
+           gamification/services/gamification_service.py, award_points (idempotence)
+Probleme : quand les points ont deja ete donnes, award_points renvoie la transaction existante, et son
+  montant est ajoute a xp_awarded.
+Consequences :
+  - Decocher puis recocher une lecon annonce "+10 points" sans rien crediter.
+  - Le bloc "if is_course_completed:" (ligne 180) n'est pas limite au moment de la fin : toute mise a
+    jour de progression dans une formation terminee ajoute les points de la formation.
+Correction : ne compter que les transactions creees par cet appel, par exemple en faisant renvoyer un
+  indicateur "cree" par award_points.
+
+D2. Felicitations et notification repetees
+Fichier : classroom/services/progress_service.py, lignes 160 et 166
+Probleme : decocher une lecon efface enrollment.completed_at (ligne 166). Recocher renvoie donc
+  just_completed_course=True, et la notification "Formation terminee" repart.
+Correction : memoriser la premiere fin. Un champ first_completed_at est le plus simple
+  (changement de modele, donc migration a generer de votre cote).
+
+D3. Quiz reussi : points non renvoyes en cours de formation
+Fichier : classroom/services/progress_service.py, lignes 433-446
+Probleme : submit_quiz ne renvoie pas xp_awarded a la racine. Les points n'apparaissent que dans
+  congratulations, qui vaut null tant que la formation n'est pas terminee.
+Correction : ajouter "xp_awarded": getattr(updated_progress, "xp_awarded", 0).
+
+D4. Solutions accessibles aux apprenants
+  a) Exercices : classroom/serializers/lesson.py, ligne 78. code_blocks est renvoye tel quel, y compris
+     le bloc id="solution" et les cas de test, alors que quiz_data est bien filtre juste en dessous.
+     Le front ne propose la solution que sur demande, mais elle est dans la reponse de l'API.
+     [DECISION PRODUIT] Si la solution doit rester libre, rien a faire. Sinon, la filtrer pour les
+     non-gestionnaires, comme get_quiz_data.
+  b) Quiz : classroom/services/progress_service.py, ligne 382. correct_option_ids est renvoye a chaque
+     tentative, meme ratee, et aucune limite de tentatives n'existe. On peut donc reussir au second essai
+     en recopiant les reponses.
+     [DECISION PRODUIT] Ne renvoyer la correction qu'apres reussite, et/ou limiter les tentatives.
+
+
+================================================================================
+E. CONNEXION GOOGLE / GITHUB (HORS SECURITE)
+================================================================================
+
+E1. Consentement aux CGU non enregistre
+Fichier : accounts/services/oauth.py, ligne 349
+Probleme : l'inscription par email enregistre le consentement (accounts/services/registration.py,
+  lignes 49-53) ; la creation par Google ou GitHub non.
+Correction : enregistrer le consentement via ConsentService. Le front affiche deja la mention des
+  conditions sur la page de connexion ; a confirmer pour la valeur legale.
+
+E2. Le state n'est pas controle par l'API
+Fichier : accounts/services/oauth.py, ligne 135
+Probleme : il n'est mis en cache que pour retrouver l'URL de retour. Le callback ne verifie ni qu'il
+  existe, ni qu'il n'a pas deja servi. Seul le front le compare aujourd'hui.
+Correction : refuser un state inconnu ou expire, et le supprimer du cache apres usage.
+
+E3. Erreurs reseau non gerees
+Fichier : accounts/services/oauth.py, lignes 179, 211, 243, 271 et 285
+Probleme : un delai depasse ou une coupure sur requests.post/get remonte en erreur 500 generique.
+Correction : attraper requests.RequestException et renvoyer ApplicationError avec le code
+  "oauth_exchange_failed" (deja traduit cote front).
+
+E4. Identifiants absents non signales
+Fichier : accounts/services/oauth.py, get_authorization_url, lignes 138 et 152
+Probleme : sans GOOGLE_CLIENT_ID ou GITHUB_CLIENT_ID, l'API renvoie une URL avec client_id vide et un
+  200. L'utilisateur tombe sur une page d'erreur du fournisseur. Constate sur l'API locale.
+Correction : renvoyer une erreur explicite, par exemple le code "oauth_not_configured".
+
+E5. Connexion OAuth differente de la connexion par mot de passe
+Fichier : accounts/services/oauth.py, ligne 372 ; a comparer a authentication.py
+Probleme : last_login n'est pas mis a jour (update_last_login), et le refresh ne contient pas les
+  claims username et email. L'analyse des membres inactifs trie justement sur last_login : un membre
+  qui ne passe que par Google parait donc inactif.
+Correction : factoriser l'emission des jetons avec login_user.
+
+E6. Documentation de configuration
+Fichiers : apps/api/.env.example, lignes 40, 43 et 44
+Probleme : l'exemple indique /auth/google/callback, alors que le front utilise /auth/callback/google.
+Sans incidence aujourd'hui, car le front envoie sa propre URL, mais trompeur pour la configuration.
+Correction : aligner les exemples sur /auth/callback/<provider>.
+
+
+================================================================================
+F. INVITATIONS
+================================================================================
+
+F1. Invitations d'equipe : titre du hackathon et inviteur absents
+Fichier : hackathons/serializers/team.py, HackathonTeamMemberSerializer, ligne 22
+Probleme : GET hackathons/teams/my-invitations/ renvoie le slug du hackathon et le nom de l'equipe, mais
+  ni le titre du hackathon ni qui invite. Le front ne peut afficher que "Rejoindre l'equipe X".
+Correction : ajouter hackathon_title (team.hackathon.title) et leader (team.leader, en prenant soin de
+  ne pas alourdir les autres usages de ce serializer).
+
+F2. GET share-link cree une invitation
+Fichier : memberships/views/invitation.py, CommunityShareableInviteLinkView.get, ligne 495
+Probleme : un GET ecrit en base s'il n'existe pas de lien actif. Le front n'utilise que le POST.
+Correction : le GET ne devrait que lire (404 ou null s'il n'y a pas de lien).
+
+F3. Liste des invitations sans compteur d'utilisations
+Fichier : memberships/serializers/invitation.py, WorkspaceInvitationSerializer, ligne 21
+Probleme : max_uses et uses_count ne sont renvoyes qu'a la creation. Le front ne peut pas afficher
+  "utilise 3 fois sur 10" dans la liste.
+Correction : ajouter max_uses et uses_count aux champs.
+
+
+================================================================================
+G. EVENEMENTS
+================================================================================
+
+G1. Lien des emails d'evenement
+Fichier : events/tasks.py, lignes 31-32 et 87
+Probleme : le lien /c/<slug>/events/<slug ou id> mene a l'espace de gestion. Un simple membre n'y a pas
+  acces, et cette route du front attend un id.
+Correction : /communities/<slug>?tab=events pour les membres.
+
+G2. Heure affichee en UTC avec le libelle du fuseau de l'evenement
+Fichier : events/tasks.py, lignes 40-42, 96-98 et 111
+Probleme : start_time est stocke en UTC (USE_TZ=True) et formate sans conversion, puis affiche a cote de
+  event.timezone. Pour un evenement a Lagos ou Douala (UTC+1), l'email annonce une heure de moins.
+  Abidjan et Dakar (UTC+0) ne voient pas le probleme.
+Correction : convertir avec start_time.astimezone(ZoneInfo(event.timezone)) avant strftime.
+
+
+================================================================================
+H. DETAILS DE QUALITE
+================================================================================
+
+H1. GET revenue cree un portefeuille
+Fichier : billing/selectors/billing_selector.py, ligne 96
+Probleme : get_or_create dans une lecture. Sans gravite, mais un GET ne devrait pas ecrire.
+
+H2. __import__ en ligne
+Fichiers : billing/views/plans.py:64 ; communities/serializers/community.py:402 et 410
+Correction : import normal (ou local a la fonction en cas d'import circulaire).
+
+
+================================================================================
+I. ENDPOINTS MANQUANTS POUR LE FRONT
+================================================================================
+Ce ne sont pas des bugs : ces ecrans affichent "Bientot" faute d'API.
+
+I1. "En ligne" (onglet Membres) : aucune information de presence sur les membres. La session a un
+    last_seen_at, mais rien n'est expose. Besoin : un champ is_online ou un filtre online=true sur
+    GET communities/<slug>/members/.
+I2. "Verrouillees" (/c/<slug>/posts) : le fil accepte type, q, pinned, sort, bookmarked, author, tag et
+    since, mais pas de filtre sur is_locked. Besoin : locked=true sur le fil.
+I3. Abonnes et abonnements sur le profil public : aucune API.
+I4. Historique d'activite jour par jour du profil public : aucune API. Besoin : le nombre de
+    contributions par jour sur 12 mois.
+I5. "Retirer de la communaute" sur un projet : la modification est reservee au proprietaire et au staff
+    (projects/services/project_service.py, ligne 62), et community_id=null est ignore
+    (projects/views/project_views.py). Besoin : une action reservee au proprietaire et aux admins de la
+    communaute.
+
+
+================================================================================
+POUR INFORMATION : VERIFIE ET CORRECT, RIEN A REFAIRE
+================================================================================
+- Invitations : membre banni ou suspendu refuse ; lien partageable non fermable par un refus ou par un
+  membre actif ; invitations/accept/ ne consomme plus un lien a usage illimite.
+- Cloche : ne cree plus d'adhesion.
+- Profil public : badges corriges (awarded_at) ; slug de communaute dans recent_posts.
+- ping-mentors : reserve a l'auteur et a l'equipe, cibles limitees aux membres actifs.
+- Generation de quiz et d'exercices : la lecon doit appartenir au cours ; routes
+  communities/<slug>/courses/<course>/ai/... ajoutees ; contenu de secours signale par is_ai_generated.
+- Resume de la semaine : protege sur les communautes privees et secretes.
+- Coequipiers : hackathon_id enfin lu par le serializer.
+- Relance : une vraie notification part ; plus d'appel IA par membre pendant l'analyse.
+- Membres a rencontrer : les membres ignores ne reviennent plus.
+- Indexation : les signaux sont bien enregistres (voir C5 pour le contenu existant et A4 pour l'acces).

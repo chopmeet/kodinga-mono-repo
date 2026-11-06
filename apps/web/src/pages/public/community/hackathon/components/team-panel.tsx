@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { Button } from '@kodinga-mono-repo/ui';
 import type { HackathonPage } from '../form/UseHackathonPage';
+import { TeammateSuggestions } from './teammate-suggestions';
 import { getName } from '@/utils/Utils';
 
 /** Team of the participant: answer an invitation, create a team, invite teammates, leave */
@@ -133,6 +134,8 @@ function TeamPanel({ page }: { page: HackathonPage }) {
           </Button>
         </form>
       )}
+
+      {page.isLeader && !full && <TeammateSuggestions page={page} hackathonId={h.id} />}
 
       <div className="mt-5 border-t border-slate-100 pt-4">
         {!confirmLeave ? (

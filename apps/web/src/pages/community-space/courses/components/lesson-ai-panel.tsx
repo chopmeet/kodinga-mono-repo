@@ -16,10 +16,11 @@ const COUNTS = [3, 5, 10];
 const selectClass = 'h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700';
 
 /** Asks the AI for a quiz or an exercise; a lesson not saved yet has no content for it to read */
-export function LessonAIPanel({ courseSlug, form }: { courseSlug: string; form: LessonForm }) {
+export function LessonAIPanel({ slug, courseSlug, form }: { slug: string; courseSlug: string; form: LessonForm }) {
   const [difficulty, setDifficulty] = useState<AIDifficulty>('intermediate');
   const [count, setCount] = useState(3);
   const ai = UseLessonAI({
+    slug,
     courseSlug,
     lessonId: form.editing?.id ?? '',
     addQuestions: (questions) => form.setQuiz({ ...form.quiz, questions: [...form.quiz.questions, ...questions] }),
@@ -66,6 +67,11 @@ export function LessonAIPanel({ courseSlug, form }: { courseSlug: string; form: 
               {form.isQuiz ? 'Ajouter les questions' : hasExercise ? 'Remplacer l’exercice' : 'Proposer l’exercice'}
             </Button>
           </div>
+          {ai.unavailable && (
+            <p role="alert" className="mt-2 text-sm text-amber-800">
+              {ai.unavailable}
+            </p>
+          )}
         </>
       )}
     </section>

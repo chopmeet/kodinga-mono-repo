@@ -54,8 +54,8 @@ export type ProfileContributions = {
   projects_count: number;
   badges_count: number;
   reputation_points: number;
-  /** The 3 latest, in public communities (no community slug: no link to them) */
-  recent_posts: { id: string; title: string; post_type: string; created_at: string; reactions_count: number; comments_count: number }[];
+  /** The 3 latest, in public communities */
+  recent_posts: { id: string; title: string; post_type: string; created_at: string; reactions_count: number; comments_count: number; community_slug: string; community_name: string }[];
   recent_projects: { id: string; title: string; slug: string; cover_image_url: string; upvotes_count: number; is_featured: boolean }[];
 };
 

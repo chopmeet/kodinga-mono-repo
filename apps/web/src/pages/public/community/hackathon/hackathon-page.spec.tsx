@@ -14,10 +14,10 @@ const at = (days: number) => new Date(Date.now() + days * DAY).toISOString();
 const person = (id: string, username: string, first_name: string) => ({ id, username, first_name, last_name: '', email: `${username}@example.com` });
 
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
-type Options = { member?: boolean; application?: 'accepted' | 'pending' | null; invitedBy?: boolean; results?: boolean; requireRepo?: boolean };
+type Options = { member?: boolean; application?: 'accepted' | 'pending' | null; invitedBy?: boolean; results?: boolean; requireRepo?: boolean; suggests?: boolean };
 
 /** A hackathon of abidjan-react, running: registrations and submissions open */
-function stubHackathonApi({ member = true, application = null, invitedBy = false, results = false, requireRepo = true }: Options = {}) {
+function stubHackathonApi({ member = true, application = null, invitedBy = false, results = false, requireRepo = true, suggests = false }: Options = {}) {
   const calls: Call[] = [];
   let status = application;
   let team: Record<string, unknown> | null = null;
@@ -64,6 +64,11 @@ function stubHackathonApi({ member = true, application = null, invitedBy = false
     if (path.endsWith(`${base}apply/`)) {
       status = 'accepted';
       return json({ success: true, data: { id: 'a1', status: 'accepted', participation_mode: body?.participation_mode } }, 201);
+    }
+    if (path.endsWith('/communities/abidjan-react/ai/hackathon-suggestions/')) {
+      const candidate = (id: string, username: string, first_name: string) => ({ id, user_id: id, username, first_name, last_name: 'Sow', avatar_url: null, match_type: 'hackathon_team', compatibility_score: 0.9, match_reasons: ['Maîtrise les compétences recherchées : React'], status: 'suggested' });
+      // u9 already leads Les Baobabs
+      return json(suggests ? [candidate('u9', 'yao', 'Yao'), candidate('u2', 'awa', 'Awa'), candidate('u3', 'kofi', 'Kofi')] : []);
     }
     if (path.endsWith(`${base}teams/`) && request.method === 'POST') {
       team = { id: 't1', name: body?.name, slug: 'team', tagline: body?.tagline ?? '', leader: person('u1', 'fatou', 'Fatou'), members: [{ id: 'tm1', user: person('u1', 'fatou', 'Fatou'), role: 'leader', status: 'accepted' }], active_members_count: 1 };
@@ -195,6 +200,27 @@ describe('Hackathon page (participants)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Inviter/ }));
     await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/teams/t1/invite/'))?.body).toEqual({ identifier: 'awa' }), SLOW);
     expect(await screen.findByText('Invitation envoyée', { selector: 'span' }, SLOW)).toBeTruthy();
+  });
+
+  it('suggests teammates to the captain, without those who already have a team', async () => {
+    signIn();
+    const calls = stubHackathonApi({ application: 'accepted', suggests: true });
+    renderAppAt(`${URL_PATH}?tab=space`);
+    fireEvent.change(await screen.findByLabelText('Nom de l’équipe', {}, SLOW), { target: { value: 'Les Lions' } });
+    expect(screen.queryByRole('list', { name: 'Coéquipiers suggérés' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’équipe' }));
+    const list = await screen.findByRole('list', { name: 'Coéquipiers suggérés' }, SLOW);
+    expect(within(list).getByRole('link', { name: 'Awa Sow' }).getAttribute('href')).toBe('/profiles/awa');
+    expect(within(list).getAllByText('Maîtrise les compétences recherchées : React')).toHaveLength(2);
+    expect(within(list).queryByText('Yao Sow')).toBeNull();
+    expect(calls.find((c) => c.url.pathname.endsWith('/ai/hackathon-suggestions/'))?.body).toMatchObject({ limit: 10 });
+    expect(calls.find((c) => c.url.pathname.endsWith('/ai/hackathon-suggestions/'))?.body?.hackathon_id).toBeTruthy();
+
+    fireEvent.click(within(list).getByRole('button', { name: 'Inviter Awa Sow' }));
+    await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/teams/t1/invite/'))?.body).toEqual({ identifier: 'awa' }), SLOW);
+    // Invited: no longer a suggestion
+    await waitFor(() => expect(within(list).queryByRole('link', { name: 'Awa Sow' })).toBeNull(), SLOW);
+    expect(within(list).getByRole('link', { name: 'Kofi Sow' })).toBeTruthy();
   });
 
   it('joins the team of a captain who invited the participant', async () => {

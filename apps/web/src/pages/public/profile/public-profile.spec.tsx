@@ -101,7 +101,7 @@ describe('Public profile', () => {
   it('shows the figures, the communities and the contributions of the profile', async () => {
     const contributions = {
       posts_count: 12, projects_count: 3, badges_count: 2, reputation_points: 1240,
-      recent_posts: [{ id: 'p1', title: 'Retour sur React 19', post_type: 'discussion', created_at: '2026-10-30T10:00:00Z', reactions_count: 4, comments_count: 2 }],
+      recent_posts: [{ id: 'p1', title: 'Retour sur React 19', post_type: 'discussion', created_at: '2026-10-30T10:00:00Z', reactions_count: 4, comments_count: 2, community_slug: 'abidjan-react', community_name: 'Abidjan React' }],
       recent_projects: [{ id: 'pr1', title: 'Wari Pay', slug: 'wari-pay', cover_image_url: '', upvotes_count: 7, is_featured: false }],
     };
     const communities = [{ id: 'c1', name: 'Abidjan React', slug: 'abidjan-react', avatar_url: '', role: 'moderator', members_count: 240 }];
@@ -117,7 +117,8 @@ describe('Public profile', () => {
     expect(within(list).getByText(/Modérateur · 240 membres/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('tab', { name: /Contributions/ }));
-    expect(screen.getByText('Retour sur React 19')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Retour sur React 19' }).getAttribute('href')).toBe('/communities/abidjan-react/posts/p1');
+    expect(screen.getByRole('region', { name: 'Dernières publications' }).textContent).toContain('Abidjan React · ');
     expect(screen.getByRole('link', { name: 'Wari Pay' }).getAttribute('href')).toBe('/projects/wari-pay');
     expect(screen.getByText('2 badges obtenus')).toBeTruthy();
   });
