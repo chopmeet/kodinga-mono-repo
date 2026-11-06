@@ -48,7 +48,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
       <div className="overflow-x-auto pb-1">
         <div className="inline-grid min-w-full grid-cols-[2.5rem_1fr] gap-x-2" role="img" aria-label={`Contributions sur 12 mois jusqu'en ${year}`}>
           <span />
-          <div className="grid grid-flow-col auto-cols-fr gap-1 text-xs text-slate-500">
+          <div className="grid grid-flow-col auto-cols-[minmax(0.625rem,1fr)] gap-1 text-xs text-slate-500">
             {monthLabels.map((label, i) => (
               <span key={i} className="whitespace-nowrap">
                 {label}
@@ -62,7 +62,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
               </span>
             ))}
           </div>
-          <div className="mt-2 grid grid-flow-col auto-cols-fr gap-1">
+          <div className="mt-2 grid grid-flow-col auto-cols-[minmax(0.625rem,1fr)] gap-1">
             {weeks.map((week, w) => (
               <div key={w} className="grid grid-rows-7 gap-1">
                 {week.map((day, d) =>
@@ -70,7 +70,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
                     <span
                       key={d}
                       title={`${day.toLocaleDateString('fr-FR')} : ${counts[iso(day)] ?? 0} contribution(s)`}
-                      className={cn('h-3.5 min-w-3 rounded-[3px]', LEVELS[level(counts[iso(day)] ?? 0)])}
+                      className={cn('h-3.5 rounded-[3px]', LEVELS[level(counts[iso(day)] ?? 0)])}
                     />
                   ) : (
                     <span key={d} className="h-3.5" />
@@ -81,7 +81,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
           </div>
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <span className="flex items-center gap-1.5">
           <Activity className="size-4" aria-hidden />
           Les contributions au fil du temps
