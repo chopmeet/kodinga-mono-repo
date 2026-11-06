@@ -204,3 +204,8 @@ class GlobalAIProviderSettingsView(APIView):
 
         # Return updated snapshot
         return self.get(request)
+
+
+# Backwards-compatible aliases
+GlobalAISettingsView = GlobalAIProviderSettingsView
+WorkspaceAISettingsView = CommunityAISettingsView

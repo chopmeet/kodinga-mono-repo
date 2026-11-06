@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.ai.serializers import (
@@ -8,6 +7,7 @@ from apps.ai.serializers import (
     SemanticSearchQuerySerializer,
 )
 from apps.ai.services.semantic_search_service import SemanticSearchService
+from apps.ai.views.base import ai_success_response
 from apps.communities.models.community import Community
 
 
@@ -35,15 +35,19 @@ class CheckDuplicatePostsView(APIView):
             threshold=threshold,
         )
 
-        return Response(
-            {
-                "has_potential_duplicates": result.get("has_duplicates", False),
-                "count": result.get("count", 0),
-                "threshold_used": result.get("threshold", threshold),
-                "duplicates": result.get("duplicates", []),
-            },
-            status=status.HTTP_200_OK,
-        )
+        count = result.get("count", 0)
+        has_dups = result.get("has_duplicates", False)
+        used_thresh = result.get("threshold", threshold)
+        resp_data = {
+            "has_potential_duplicates": has_dups,
+            "has_duplicates": has_dups,
+            "count": count,
+            "duplicates_count": count,
+            "threshold_used": used_thresh,
+            "threshold": used_thresh,
+            "duplicates": result.get("duplicates", []),
+        }
+        return ai_success_response(resp_data, status_code=status.HTTP_200_OK)
 
 
 class SemanticSearchView(APIView):
@@ -70,11 +74,9 @@ class SemanticSearchView(APIView):
             limit=limit,
         )
 
-        return Response(
-            {
-                "query": query,
-                "count": len(results),
-                "results": results,
-            },
-            status=status.HTTP_200_OK,
-        )
+        resp_data = {
+            "query": query,
+            "count": len(results),
+            "results": results,
+        }
+        return ai_success_response(resp_data, status_code=status.HTTP_200_OK)

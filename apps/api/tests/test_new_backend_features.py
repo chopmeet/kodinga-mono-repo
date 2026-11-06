@@ -273,6 +273,19 @@ class TestNewBackendFeatures:
         count_after = Notification.objects.filter(recipient=member_user).count()
         assert count_after == count_before  # member was excluded because notifications_enabled=False
 
+    def test_community_notifications_bell_non_member_cannot_toggle_and_no_side_effects(
+        self, api_client, community, outsider_user
+    ):
+        api_client.force_authenticate(user=outsider_user)
+        initial_members_count = community.members_count
+
+        res_toggle = api_client.post(f"/api/v1/communities/{community.slug}/notifications/toggle/")
+        assert res_toggle.status_code == status.HTTP_403_FORBIDDEN
+        assert not CommunityMember.objects.filter(community=community, user=outsider_user).exists()
+
+        community.refresh_from_db()
+        assert community.members_count == initial_members_count
+
     # -------------------------------------------------------------------------
     # 5. Shareable Invite Link
     # -------------------------------------------------------------------------

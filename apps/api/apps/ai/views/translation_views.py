@@ -92,3 +92,7 @@ class AITranslateView(APIView):
         }
         return success_response(data=response_data, status_code=status.HTTP_200_OK)
 
+
+
+# Backwards-compatible alias
+ContentTranslationView = AITranslateView

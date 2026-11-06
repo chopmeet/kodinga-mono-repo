@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 from typing import Any, Optional
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
@@ -13,6 +14,7 @@ from apps.posts.models.comment import Comment
 from apps.posts.models.post import Post
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 class ChurnPredictionService:
@@ -26,6 +28,7 @@ class ChurnPredictionService:
         cls,
         member: CommunityMember,
         force_refresh: bool = False,
+        generate_ai_nudge: bool = False,
     ) -> MemberChurnRisk:
         """
         Calculates churn risk metrics and creates or updates a MemberChurnRisk record.
@@ -142,11 +145,28 @@ class ChurnPredictionService:
                 risk_level in [ChurnRiskLevel.MEDIUM, ChurnRiskLevel.HIGH, ChurnRiskLevel.CRITICAL]
                 and (not churn_risk.suggested_nudge or force_refresh)
             ):
+                if generate_ai_nudge:
                     nudge = cls.generate_smart_nudge(churn_risk)
-                    churn_risk.suggested_nudge = nudge
-                    churn_risk.save(update_fields=["suggested_nudge"])
+                else:
+                    nudge = cls.get_default_nudge_template(churn_risk)
+                churn_risk.suggested_nudge = nudge
+                churn_risk.save(update_fields=["suggested_nudge"])
 
         return churn_risk
+
+    @classmethod
+    def get_default_nudge_template(
+        cls,
+        churn_risk: MemberChurnRisk,
+    ) -> str:
+        member = churn_risk.member
+        community_name = member.community.name
+        username = member.user.username
+        return (
+            f"Bonjour {username} ! On a remarqué que tu n'étais pas passé sur {community_name} ces derniers temps. "
+            f"Est-ce que tu avances bien sur tes projets en cours, ou as-tu un point bloquant où la communauté "
+            f"pourrait t'aider ? N'hésite pas à partager tes questions, on est là pour s'entraider !"
+        )
 
     @classmethod
     def generate_smart_nudge(
@@ -180,7 +200,7 @@ class ChurnPredictionService:
                 max_tokens=250,
                 temperature=0.7,
             )
-            nudge = response.content.strip()
+            nudge = response.strip() if isinstance(response, str) else getattr(response, "content", "").strip()
             if nudge:
                 return nudge
         except Exception as exc:
@@ -198,9 +218,10 @@ class ChurnPredictionService:
         cls,
         churn_risk_id: str,
         custom_message: Optional[str] = None,
+        sender: Optional[User] = None,
     ) -> MemberChurnRisk:
         """
-        Marks nudge as sent and records the custom or suggested message.
+        Marks nudge as sent, records the message, and dispatches in-app notification.
         """
         churn_risk = MemberChurnRisk.objects.select_related("member__user", "member__community").get(id=churn_risk_id)
         if custom_message:
@@ -209,6 +230,33 @@ class ChurnPredictionService:
         churn_risk.nudge_sent_at = timezone.now()
         churn_risk.status = "nudge_sent"
         churn_risk.save(update_fields=["suggested_nudge", "nudge_sent_at", "status"])
+
+        # Dispatch real notification to the inactive member
+        actor = sender or churn_risk.member.community.owner
+        message_body = custom_message or churn_risk.suggested_nudge or "Votre communauté prend de vos nouvelles !"
+        try:
+            from apps.notifications.models.notification import NotificationType
+            from apps.notifications.services.notification_service import (
+                NotificationService,
+            )
+
+            NotificationService.create_notification(
+                recipient=churn_risk.member.user,
+                actor=actor,
+                title=f"Message de votre communauté {churn_risk.member.community.name}",
+                body=message_body[:280],
+                notification_type=NotificationType.SYSTEM,
+                action_url=f"/c/{churn_risk.member.community.slug}",
+                target_type="community",
+                target_id=str(churn_risk.member.community_id),
+                metadata={
+                    "type": "smart_nudge",
+                    "churn_risk_id": str(churn_risk.id),
+                    "community_slug": churn_risk.member.community.slug,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Failed to dispatch in-app notification for smart nudge: %s", exc)
 
         logger.info(
             "Smart nudge sent to user %s in community %s",
@@ -225,19 +273,25 @@ class ChurnPredictionService:
     ) -> list[MemberChurnRisk]:
         """
         Scans community members and returns the highest churn risks.
+        Prioritizes inactive members and those without recent logins.
         """
+        from django.db.models import F
+
         members = (
             CommunityMember.objects.filter(
                 community=community,
                 status=MembershipStatus.ACTIVE,
             )
             .select_related("user", "community")
-            .order_by("joined_at")[:limit]
+            .order_by(
+                F("user__last_login").asc(nulls_first=True),
+                "-joined_at",
+            )[:limit]
         )
 
         results = []
         for m in members:
-            risk = cls.evaluate_member_churn_risk(m)
+            risk = cls.evaluate_member_churn_risk(m, generate_ai_nudge=False)
             results.append(risk)
 
         results.sort(key=lambda x: x.risk_score, reverse=True)

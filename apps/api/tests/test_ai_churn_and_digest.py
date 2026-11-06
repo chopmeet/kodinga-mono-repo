@@ -95,6 +95,13 @@ def test_churn_dashboard_and_nudge_api(api_client, setup_community):
     churn_risk.refresh_from_db()
     assert churn_risk.status == "nudge_sent"
 
+    # Verify real in-app notification was dispatched
+    from apps.notifications.models.notification import Notification
+    assert Notification.objects.filter(
+        recipient=m_inactive.user,
+        metadata__type="smart_nudge",
+    ).exists()
+
 
 @pytest.mark.django_db
 def test_weekly_digest_api(api_client, setup_community):
@@ -130,3 +137,79 @@ def test_churn_and_digest_celery_tasks(setup_community):
     assert risk.status == "nudge_sent"
 
     generate_community_weekly_digest_task(str(comm.id), force_refresh=True)
+
+
+@pytest.mark.django_db
+def test_weekly_digest_private_community_access_control(api_client, setup_community):
+    _, owner, _, _, _ = setup_community
+
+    stranger = User.objects.create_user(
+        email="stranger_digest@kodinga.com",
+        username="stranger_digest",
+        password="SecurePassword123!",
+    )
+    private_comm = Community.objects.create(
+        name="Confidential Elite",
+        slug="confidential-elite",
+        owner=owner,
+        privacy_type=CommunityPrivacy.PRIVATE,
+        pricing_type=CommunityPricing.FREE,
+    )
+    CommunityMember.objects.create(
+        community=private_comm,
+        user=owner,
+        role=CommunityRole.OWNER,
+        status=MembershipStatus.ACTIVE,
+    )
+
+    # 1. Stranger user cannot read weekly digest of a private community
+    api_client.force_authenticate(user=stranger)
+    url_current = f"/api/v1/communities/{private_comm.slug}/ai/weekly-digest/"
+    res = api_client.get(url_current)
+    assert res.status_code == status.HTTP_403_FORBIDDEN
+
+    # 2. Stranger cannot trigger weekly digest of a private community
+    url_trigger = f"/api/v1/communities/{private_comm.slug}/ai/weekly-digest/trigger/"
+    res_trig = api_client.post(url_trigger, {"async": False}, format="json")
+    assert res_trig.status_code == status.HTTP_403_FORBIDDEN
+
+    # 3. Community owner can access and generate the digest
+    api_client.force_authenticate(user=owner)
+    res_owner = api_client.get(url_current)
+    assert res_owner.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_weekly_digest_non_member_cannot_trigger_ai_on_public_community(api_client, setup_community):
+    _, owner, _, _, _ = setup_community
+
+    stranger = User.objects.create_user(
+        email="stranger_pub@kodinga.com",
+        username="stranger_pub",
+        password="SecurePassword123!",
+    )
+    new_public_comm = Community.objects.create(
+        name="Brand New Public Space",
+        slug="brand-new-public-space",
+        owner=owner,
+        privacy_type=CommunityPrivacy.PUBLIC,
+        pricing_type=CommunityPricing.FREE,
+    )
+    CommunityMember.objects.create(
+        community=new_public_comm,
+        user=owner,
+        role=CommunityRole.OWNER,
+        status=MembershipStatus.ACTIVE,
+    )
+
+    # Stranger calls GET before any digest has been created
+    # Must NOT trigger AI generation on-the-fly; should return 404
+    api_client.force_authenticate(user=stranger)
+    url_current = f"/api/v1/communities/{new_public_comm.slug}/ai/weekly-digest/"
+    res_stranger = api_client.get(url_current)
+    assert res_stranger.status_code == status.HTTP_404_NOT_FOUND
+
+    # Owner calls GET -> triggers generation -> returns 200
+    api_client.force_authenticate(user=owner)
+    res_owner = api_client.get(url_current)
+    assert res_owner.status_code == status.HTTP_200_OK
