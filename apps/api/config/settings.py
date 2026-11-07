@@ -24,8 +24,12 @@ env = environ.Env(
     CORS_ALLOW_ALL_ORIGINS=(bool, True),
 )
 
-# Load .env file if present
-environ.Env.read_env(BASE_DIR / '.env')
+# Testing check
+IS_TESTING = 'pytest' in sys.modules or 'test' in sys.argv or any('pytest' in arg for arg in sys.argv)
+
+# Load .env file if present (skip during unit tests for strict CI parity)
+if not IS_TESTING:
+    environ.Env.read_env(BASE_DIR / '.env')
 
 # Core Security Settings
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-kodinga-dev-secret-key-replace-in-prod')

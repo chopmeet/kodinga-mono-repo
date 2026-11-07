@@ -31,6 +31,10 @@ def configure_test_settings(settings):
     settings.PAYDUNYA_PRIVATE_KEY = "test_private_key"
     settings.PAYDUNYA_PUBLIC_KEY = "test_public_key"
     settings.PAYDUNYA_TOKEN = "test_token"
+    settings.GOOGLE_CLIENT_ID = "test_google_client_id"
+    settings.GOOGLE_CLIENT_SECRET = "test_google_client_secret"
+    settings.GITHUB_CLIENT_ID = "test_github_client_id"
+    settings.GITHUB_CLIENT_SECRET = "test_github_client_secret"
     settings.GEMINI_API_KEY = ""
     settings.OPENAI_API_KEY = ""
 
