@@ -61,6 +61,10 @@ function stubFeedApi() {
       posts = posts.filter((p) => p.id !== id);
       return json({ success: true });
     }
+    if (url.pathname.endsWith('/ai/check-duplicates/')) {
+      const similar = String(body?.title).toLowerCase().includes('hook');
+      return json({ success: true, data: { has_duplicates: similar, count: similar ? 1 : 0, duplicates: similar ? [{ id: 'p2', title: 'Comment typer un hook générique ?', similarity_score: 0.91, url: '/communities/frontend-francophone/posts/p2', snippet: '', is_solved: true }] : [] } });
+    }
     if (url.pathname.endsWith('/feed/') && request.method === 'POST') {
       const created = post('p9', String(body?.title ?? ''), body?.post_type, { content: String(body?.content), created_at: '2026-10-17T10:00:00Z' });
       posts = [created, ...posts];
@@ -77,6 +81,7 @@ function stubFeedApi() {
         (x) =>
           (!p.get('type') || x.post_type === p.get('type')) &&
           (p.get('pinned') !== 'true' || x.is_pinned) &&
+          (p.get('locked') !== 'true' || x.is_locked) &&
           (!q || `${x.title} ${x.content}`.toLowerCase().includes(q)),
       );
       const size = Number(p.get('page_size') ?? 20);
@@ -116,8 +121,11 @@ describe('Community space: posts', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Épinglées 1/ }, SLOW));
     await waitFor(() => expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(2), SLOW);
     expect(calls.some((c) => c.url.searchParams.get('pinned') === 'true' && c.url.searchParams.get('page_size') === '10')).toBe(true);
-    // Not a filter of the api yet
-    expect(screen.getByRole('button', { name: /Verrouillées/ })).toHaveProperty('disabled', true);
+    // The posts whose comments are closed, filtered by the api
+    fireEvent.click(screen.getByRole('button', { name: /Verrouillées 1/ }));
+    expect(await within(screen.getByRole('table')).findByText('Mon portfolio en React 19', {}, SLOW)).toBeTruthy();
+    await waitFor(() => expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(2), SLOW);
+    expect(calls.some((c) => c.url.searchParams.get('locked') === 'true' && c.url.searchParams.get('page_size') === '10')).toBe(true);
   });
 
   it('filters on the post type and searches through the api', async () => {
@@ -153,6 +161,28 @@ describe('Community space: posts', () => {
     expect(await screen.findByText('Publication supprimée.', {}, SLOW)).toBeTruthy();
     expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/posts/p3/'))).toBe(true);
     await waitFor(() => expect(within(screen.getByRole('table')).queryByText('Mon portfolio en React 19')).toBeNull(), SLOW);
+  });
+
+  it('shows the questions already asked, close to a new one, without blocking it', async () => {
+    const calls = stubFeedApi();
+    renderAppAt('/c/frontend-francophone/posts');
+    fireEvent.click(await screen.findByRole('button', { name: /Nouvelle publication/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    const checks = () => calls.filter((c) => c.url.pathname.endsWith('/ai/check-duplicates/'));
+    // An announcement is not compared
+    fireEvent.change(within(dialog).getByLabelText(/^Titre/), { target: { value: 'Comment typer un hook en TypeScript ?' } });
+    await new Promise((r) => setTimeout(r, 900));
+    expect(checks()).toHaveLength(0);
+
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Question/ }));
+    const similar = await within(dialog).findByRole('list', { name: 'Questions proches' }, SLOW);
+    const link = within(similar).getByRole('link', { name: 'Comment typer un hook générique ?' });
+    expect(link.getAttribute('href')).toBe('/communities/frontend-francophone/posts/p2');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(within(similar).getByText('Résolue')).toBeTruthy();
+    expect(checks()[0].body).toMatchObject({ title: 'Comment typer un hook en TypeScript ?', limit: 3 });
+    // Publishing stays possible
+    expect(within(dialog).getByRole('button', { name: 'Publier' })).toHaveProperty('disabled', false);
   });
 
   it('publishes an announcement: the title is required', async () => {

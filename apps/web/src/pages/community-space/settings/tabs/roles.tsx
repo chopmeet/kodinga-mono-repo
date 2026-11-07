@@ -50,10 +50,16 @@ interface CategoryDefinition {
 }
 
 /**
- * The permissions the api checks today (has_community_permission in EventService and
- * ClassroomService); the others are saved and will apply as the api checks them
+ * The permissions the api checks today (has_community_permission: events, courses, lives,
+ * invitations, join requests); the others are saved and will apply as the api checks them
  */
-const ENFORCED_PERMISSIONS: RolePermissionKey[] = ['can_manage_events', 'can_manage_courses', 'can_start_live'];
+const ENFORCED_PERMISSIONS: RolePermissionKey[] = [
+  'can_manage_events', 
+  'can_manage_courses', 
+  'can_start_live', 
+  'can_invite_members', 
+  'can_review_requests',
+];
 
 const PERMISSION_CATEGORIES: CategoryDefinition[] = [
   {

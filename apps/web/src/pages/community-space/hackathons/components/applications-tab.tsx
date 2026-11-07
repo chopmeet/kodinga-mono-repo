@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { CircleCheck, Clock, XCircle } from 'lucide-react';
+import { CircleCheck, Clock, Download, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -21,6 +21,7 @@ import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actio
 import { useGetHackathonApplicationsQuery, useReviewHackathonApplicationMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { ApplicationStatus, HackathonApplication } from '@/utils/api/hackathon/hackathon.type';
+import UseApplicationsExport from '../form/UseApplicationsExport';
 import { applicationStatusStyle } from '../hackathon-labels';
 
 const FILTERS: { id: ApplicationStatus | 'all'; label: string }[] = [
@@ -48,6 +49,7 @@ export function ApplicationsTab({ slug, hackathonSlug, canManage }: { slug: stri
     page_size: size,
   });
   const [review, { isLoading: reviewing }] = useReviewHackathonApplicationMutation();
+  const { exportCsv, isExporting } = UseApplicationsExport(slug, hackathonSlug);
 
   const decide = async (a: HackathonApplication, status: 'accepted' | 'rejected' | 'waitlisted', why = '') => {
     try {
@@ -129,7 +131,8 @@ export function ApplicationsTab({ slug, hackathonSlug, canManage }: { slug: stri
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer les candidatures">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer les candidatures">
         {FILTERS.map((f) => (
           <FilterChip
             key={f.id}
@@ -142,6 +145,13 @@ export function ApplicationsTab({ slug, hackathonSlug, canManage }: { slug: stri
             {f.label}
           </FilterChip>
         ))}
+      </div>
+        {canManage && (
+          <Button variant="outline" size="sm" onClick={() => exportCsv(filter === 'all' ? undefined : filter)} isLoading={isExporting} disabled={total === 0}>
+            <Download />
+            Exporter en CSV
+          </Button>
+        )}
       </div>
       {error && !data ? (
         <EmptyAlert text={parseApiError(error).message} />

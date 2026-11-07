@@ -71,6 +71,7 @@ const CHURN = [risk('r1', 'Fatou', 'high', 'Bonjour Fatou, tout va bien ?'), ris
 function stubDashboardApi() {
   const calls: URL[] = [];
   let nudged = false;
+  let rewritten = false;
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const url = new URL((input as Request).url);
     calls.push(url);
@@ -83,7 +84,11 @@ function stubDashboardApi() {
     }
     if (url.pathname.endsWith('/ai/weekly-digest/')) return json({ success: true, data: DIGEST });
     if (url.pathname.endsWith('/ai/weekly-digest/trigger/')) return json({ success: true, data: { ...DIGEST, headline: 'Une semaine réécrite' } });
-    if (url.pathname.endsWith('/ai/churn-dashboard/')) return json({ success: true, data: { community: 'dakar-devops', total_at_risk: 2, members: CHURN.map((m) => ({ ...m, nudge_sent_at: nudged && m.id === 'r1' ? daysAgo(0) : null })) } });
+    if (url.pathname.endsWith('/ai/churn-dashboard/')) return json({ success: true, data: { community: 'dakar-devops', total_at_risk: 2, members: CHURN.map((m) => ({ ...m, ...(rewritten && m.id === 'r1' ? { suggested_nudge: 'Salut Fatou, on prépare un atelier : tu viens ?' } : {}), nudge_sent_at: nudged && m.id === 'r1' ? daysAgo(0) : null })) } });
+    if (url.pathname.endsWith('/ai/churn-risks/r1/generate-nudge/')) {
+      rewritten = true;
+      return json({ success: true, data: { suggested_nudge: 'Salut Fatou, on prépare un atelier : tu viens ?' } });
+    }
     if (url.pathname.endsWith('/ai/churn-risks/r1/send-nudge/')) {
       nudged = true;
       return json({ message: 'ok', churn_risk: CHURN[0] });
@@ -176,6 +181,11 @@ describe('Community space: dashboard', () => {
     expect(within(list).getByText('Inactif depuis 21 j · aucune activité sur 14 j · activité en baisse')).toBeTruthy();
     expect(within(list).getByText('Bonjour Fatou, tout va bien ?')).toBeTruthy();
     expect(within(list).queryByText('Kofi Sow')).toBeNull();
+
+    // The AI writes the message again, for this member
+    fireEvent.click(within(list).getByRole('button', { name: 'Réécrire le message pour Fatou Sow avec l’IA' }));
+    expect(await within(list).findByText('Salut Fatou, on prépare un atelier : tu viens ?', {}, SLOW)).toBeTruthy();
+    expect(calls.some((u) => u.pathname.endsWith('/ai/churn-risks/r1/generate-nudge/'))).toBe(true);
 
     // It reaches the member: nothing leaves before the confirmation
     const nudges = () => calls.filter((u) => u.pathname.endsWith('/ai/churn-risks/r1/send-nudge/'));

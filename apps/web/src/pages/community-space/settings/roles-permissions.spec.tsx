@@ -70,6 +70,10 @@ describe('Community space: roles and permissions', () => {
     const badges = (label: string) => screen.getByText(label, { selector: 'label' }).parentElement as HTMLElement;
     expect(within(badges('Modifier et annuler les événements')).getByText('Active')).toBeTruthy();
     expect(within(badges('Épingler des publications')).getByText('Bientôt')).toBeTruthy();
+    expect(within(badges('Inviter de nouveaux membres')).getByText('Active')).toBeTruthy();
+    expect(within(badges('Valider les demandes d’adhésion')).getByText('Active')).toBeTruthy();
+    // Checked by the api under another name (can_ban_members): not applied yet
+    expect(within(badges('Sanctionner des membres')).getByText('Bientôt')).toBeTruthy();
 
     // Admins can manage the events by default: the owner takes it away
     expect((events as HTMLInputElement).checked).toBe(true);

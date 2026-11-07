@@ -47,7 +47,22 @@ export type PublicProfile = {
   /** Its public communities */
   communities?: { id: string; name: string; slug: string; avatar_url: string; role: CommunityRole; members_count: number }[];
   contributions?: ProfileContributions;
+  followers_count?: number;
+  following_count?: number;
 };
+
+/** GET profiles/<username>/followers/ and following/ (paginated) */
+export type ProfileFollow = {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string;
+  headline: string;
+  followed_at: string;
+};
+
+/** GET profiles/<username>/activity/?year=: contributions per day (yyyy-mm-dd) */
+export type ProfileActivity = { username: string; year: number; total_contributions: number; counts: Record<string, number> };
 
 export type ProfileContributions = {
   posts_count: number;

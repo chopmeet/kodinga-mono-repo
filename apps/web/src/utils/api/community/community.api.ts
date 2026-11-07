@@ -30,7 +30,8 @@ import type {
   RsvpStatus,
   VideoUploadTarget,
 } from '../event/event.type';
-import type { AIDifficulty, ChurnDashboard, GeneratedExerciseResult, GeneratedQuiz, PeerMatch, TeammateSuggestion, WeeklyDigest } from '../ai/ai.type';
+import type { DiscoverySearch, DiscoveryTrending, DiscoveryType } from '../discovery/discovery.type';
+import type { AIDifficulty, ChurnDashboard, DuplicateCheck, HelpAssistance, SemanticSearchResult, GeneratedExerciseResult, GeneratedQuiz, PeerMatch, TeammateSuggestion, WeeklyDigest } from '../ai/ai.type';
 import type { Course, CourseLesson, CourseModule, CourseWriteData, LessonProgressResult, LessonWriteData, ModuleWriteData, QuizResult } from '../course/course.type';
 import type {
   ApplicationStatus,
@@ -1298,6 +1299,14 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<HackathonDashboard>,
       providesTags: ['hackathons'],
     }),
+    // The CSV file made by the api (organizers): a text, its errors in json
+    exportHackathonApplications: builder.mutation<string, { slug: string; hackathonSlug: string; status?: ApplicationStatus }>({
+      query: ({ slug, hackathonSlug, status }) => ({
+        url: `communities/${slug}/hackathons/${hackathonSlug}/applications/export/`,
+        params: cleanParams({ status }),
+        responseHandler: (response) => (response.ok ? response.text() : response.json()),
+      }),
+    }),
     getHackathonApplications: builder.query<
       ApiPaginated<HackathonApplication>,
       { slug: string; hackathonSlug: string; status?: ApplicationStatus; page?: number; page_size?: number }
@@ -1803,6 +1812,42 @@ export const CommunityApi = createApi({
       query: (id) => ({ url: `ai/churn-risks/${id}/send-nudge/`, method: 'POST', body: {} }),
       invalidatesTags: ['churn-risks'],
     }),
+    // Writes (or writes again) the message proposed for the member with the AI
+    generateChurnNudge: builder.mutation<{ suggested_nudge: string }, string>({
+      query: (id) => ({ url: `ai/churn-risks/${id}/generate-nudge/`, method: 'POST', body: {} }),
+      transformResponse: unwrap<{ suggested_nudge: string }>,
+      invalidatesTags: ['churn-risks'],
+    }),
+    // On demand: each search computes the embedding of the query
+    semanticSearch: builder.mutation<SemanticSearchResult, { slug: string; query: string }>({
+      query: ({ slug, query }) => ({ url: `communities/${slug}/ai/semantic-search/`, method: 'POST', body: { query, content_types: ['post', 'lesson'], limit: 8 } }),
+      transformResponse: unwrap<SemanticSearchResult>,
+    }),
+    // A read in POST: kept by title and content, asked again only when they change
+    checkDuplicates: builder.query<DuplicateCheck, { slug: string; title: string; content: string }>({
+      query: ({ slug, ...body }) => ({ url: `communities/${slug}/ai/check-duplicates/`, method: 'POST', body: { ...body, limit: 3 } }),
+      transformResponse: unwrap<DuplicateCheck>,
+    }),
+    // Written by the api at the first reading (the author and the team of the community)
+    getHelpAssistance: builder.query<HelpAssistance, string>({
+      query: (postId) => `posts/${postId}/help-assistance/`,
+      transformResponse: unwrap<HelpAssistance>,
+      providesTags: (_result, _error, postId) => [{ type: 'posts', id: `help-${postId}` }],
+    }),
+    pingMentors: builder.mutation<{ notified_count: number }, { postId: string; mentor_ids: string[]; custom_message?: string }>({
+      query: ({ postId, ...body }) => ({ url: `posts/${postId}/help-assistance/ping-mentors/`, method: 'POST', body }),
+      transformResponse: unwrap<{ notified_count: number }>,
+      invalidatesTags: (_result, _error, { postId }) => [{ type: 'posts', id: `help-${postId}` }],
+    }),
+    // The whole platform, for everyone: by type, or a few of each
+    globalSearch: builder.query<DiscoverySearch, { q: string; type?: DiscoveryType; limit: number }>({
+      query: (params) => ({ url: 'discovery/search/', params: cleanParams(params) }),
+      transformResponse: unwrap<DiscoverySearch>,
+    }),
+    getTrending: builder.query<DiscoveryTrending, number>({
+      query: (limit) => ({ url: 'discovery/trending/', params: { limit } }),
+      transformResponse: unwrap<DiscoveryTrending>,
+    }),
     getPeerMatches: builder.query<PeerMatch[], string>({
       query: (slug) => `communities/${slug}/ai/peer-matches/`,
       providesTags: ['peer-matches'],
@@ -1900,6 +1945,13 @@ export const {
   useRegenerateWeeklyDigestMutation,
   useLazyGetChurnDashboardQuery,
   useSendChurnNudgeMutation,
+  useGenerateChurnNudgeMutation,
+  useSemanticSearchMutation,
+  useCheckDuplicatesQuery,
+  useGetHelpAssistanceQuery,
+  usePingMentorsMutation,
+  useGlobalSearchQuery,
+  useGetTrendingQuery,
   useGetPeerMatchesQuery,
   useRespondPeerMatchMutation,
   useGenerateQuizMutation,
@@ -1969,6 +2021,7 @@ export const {
   useTransitionHackathonMutation,
   useGetHackathonDashboardQuery,
   useGetHackathonApplicationsQuery,
+  useExportHackathonApplicationsMutation,
   useReviewHackathonApplicationMutation,
   useGetHackathonTeamsQuery,
   useGetHackathonSubmissionsQuery,

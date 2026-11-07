@@ -277,11 +277,14 @@ export type HackathonResult = {
   won_prizes: HackathonPrize[];
 };
 
-/** GET hackathons/teams/my-invitations/ (HackathonTeamMemberSerializer): neither the title of the hackathon nor who invites */
+/** GET hackathons/teams/my-invitations/ (HackathonTeamMemberSerializer) */
 export type MyTeamInvitation = {
   id: string;
   team_id: string;
   team_name: string;
+  hackathon_title?: string;
+  /** The captain, who invited */
+  leader?: HackathonPerson;
   hackathon_slug: string;
   community_slug: string;
   invited_at: string;

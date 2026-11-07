@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { customToast } from '@kodinga-mono-repo/ui';
 import { copyText } from '@/pages/community-space/members/form/UseInvitationForm';
 import type { ChurnRisk } from '@/utils/api/ai/ai.type';
-import { useLazyGetChurnDashboardQuery, useSendChurnNudgeMutation } from '@/utils/api/community/community.api';
+import { useGenerateChurnNudgeMutation, useLazyGetChurnDashboardQuery, useSendChurnNudgeMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import { useUser } from '@/utils/Utils';
 
@@ -15,6 +15,7 @@ function UseChurnRisks(slug: string) {
   const me = useUser();
   const [load, { data, isFetching, error }] = useLazyGetChurnDashboardQuery();
   const [sendNudge, { isLoading: isSending }] = useSendChurnNudgeMutation();
+  const [generateNudge, { isLoading: isWriting, originalArgs: writing }] = useGenerateChurnNudgeMutation();
   /** The member whose nudge waits for its confirmation */
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
@@ -25,6 +26,17 @@ function UseChurnRisks(slug: string) {
     loadError: error ? parseApiError(error).message : null,
     analyze: () => void load({ slug }),
     refresh: () => void load({ slug, refresh: true }),
+    /** The member whose message the AI is writing */
+    writingId: isWriting ? writing : undefined,
+    /** Replaces the template of the analysis with a message written for this member */
+    write: async (risk: ChurnRisk) => {
+      try {
+        await generateNudge(risk.id).unwrap();
+        customToast.success({ message: 'Message réécrit par l’IA : relisez-le avant de l’envoyer.' });
+      } catch (err) {
+        customToast.error({ message: parseApiError(err).message });
+      }
+    },
     confirmingId,
     isSending,
     askToSend: (risk: ChurnRisk) => setConfirmingId(risk.id),

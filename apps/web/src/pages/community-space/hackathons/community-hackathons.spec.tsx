@@ -126,6 +126,9 @@ function stubHackathonsApi(status: Hackathon['status'] = 'draft') {
     const slug = path.match(/hackathons\/([^/]+)\//)?.[1];
     const find = () => items.find((h) => h.slug === slug);
 
+    if (path.endsWith('/applications/export/')) {
+      return new Response('ID,Username,Status\na1,awa,accepted\n', { headers: { 'Content-Type': 'text/csv; charset=utf-8' } });
+    }
     if (path.endsWith('/applications/')) return json({ success: true, pagination: { count: 1 }, results: [application] });
     if (path.endsWith('/teams/')) return json({ success: true, pagination: { count: 1 }, results: [team] });
     if (path.endsWith('/submissions/')) return json({ success: true, pagination: { count: 1 }, results: [submission] });
@@ -227,6 +230,38 @@ describe('Community space: hackathons', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Refuser' }));
     await waitFor(() => expect(calls.some((c) => c.method === 'PATCH')).toBe(true), SLOW);
     expect(calls.find((c) => c.method === 'PATCH')?.body).toEqual({ status: 'rejected', reason: 'Équipe complète' });
+  });
+
+  it('exports the applications shown in a CSV file made by the api', async () => {
+    const calls = stubHackathonsApi();
+    const saved: Blob[] = [];
+    // jsdom has no object urls: the file given to the link is kept, the functions put back after
+    const { createObjectURL, revokeObjectURL } = URL;
+    onTestFinished(() => {
+      URL.createObjectURL = createObjectURL;
+      URL.revokeObjectURL = revokeObjectURL;
+    });
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      saved.push(blob);
+      return 'blob:csv';
+    });
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    renderAppAt('/c/dakar-devops/hackathons/agri-ia?tab=applications');
+    await screen.findByRole('button', { name: 'Actions pour Awa Ndiaye' }, SLOW);
+    fireEvent.click(screen.getByRole('button', { name: /Acceptées/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Exporter en CSV/ }));
+    await waitFor(() => expect(click).toHaveBeenCalled(), SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/applications/export/'))?.url.searchParams.get('status')).toBe('accepted');
+    // The raw bytes: a decoder would drop the BOM the spreadsheets need
+    const bytes = await new Promise<Uint8Array>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
+      reader.readAsArrayBuffer(saved[0]);
+    });
+    expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    expect(new TextDecoder().decode(bytes.slice(3))).toBe('ID,Username,Status\na1,awa,accepted\n');
+    expect((click.mock.contexts[0] as HTMLAnchorElement).download).toBe('agri-ia-candidatures-accepted.csv');
   });
 
   it('keeps moderators out of creating hackathons', async () => {

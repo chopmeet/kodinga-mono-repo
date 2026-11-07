@@ -93,6 +93,12 @@ function stubCommunityApi(o: Options = {}) {
     }
     if (path.endsWith('/posts/p1/react/')) return json({ success: true, data: { reacted: true } });
     if (path.endsWith('/posts/p1/bookmark/')) return json({ success: true, data: { is_bookmarked: true } });
+    if (path.endsWith('/ai/semantic-search/')) {
+      return json({ success: true, data: { query: body?.query, count: 2, results: [
+        { id: 'p1', content_type: 'post', title: 'Mémoïser un composant', similarity_score: 0.8, url: '/communities/abidjan-react/posts/p1', snippet: 'useMemo et React.memo' },
+        { id: 'l1', content_type: 'lesson', title: 'Les hooks en pratique', similarity_score: 0.7, url: '/communities/abidjan-react/courses/react-19?lesson=l1', snippet: '' },
+      ] } });
+    }
     if (path.endsWith('/ai/weekly-digest/')) return json({ id: 'd1', week_identifier: '2026-W45', headline: 'La semaine de la communauté', summary_markdown: 'Un résumé.', top_debates: [], highlighted_project: null, upcoming_events: [], kpis_snapshot: {}, created_at: '2026-11-03T10:00:00Z' });
     if (path.endsWith('/ai/peer-matches/pm1/respond/')) {
       peerDeclined = true;
@@ -103,8 +109,10 @@ function stubCommunityApi(o: Options = {}) {
     }
     if (path.endsWith('/communities/abidjan-react/notifications/toggle/')) return json({ success: true, data: { notifications_enabled: body?.notifications_enabled } });
     if (path.endsWith('/communities/abidjan-react/members/')) {
-      const m = (id: string, first_name: string, role: string) => ({ id, user: { id, username: first_name.toLowerCase(), first_name, last_name: 'Diop', avatar_url: '' }, role, status: 'active', custom_title: '', joined_at: '2026-01-15T10:00:00Z', reputation_score: 0, created_at: '' });
-      return json({ success: true, pagination: { count: 2 }, results: [m('m1', 'Awa', 'admin'), m('m2', 'Kofi', 'member')] });
+      const m = (id: string, first_name: string, role: string, is_online = false) => ({ id, user: { id, username: first_name.toLowerCase(), first_name, last_name: 'Diop', avatar_url: '' }, role, status: 'active', custom_title: '', joined_at: '2026-01-15T10:00:00Z', reputation_score: 0, created_at: '', is_online });
+      const all = [m('m1', 'Awa', 'admin'), m('m2', 'Kofi', 'member', true)];
+      const found = url.searchParams.get('online') === 'true' ? all.filter((x) => x.is_online) : all;
+      return json({ success: true, pagination: { count: found.length }, results: found });
     }
     if (path.endsWith('/posts/p1/comments/')) {
       if (o.commentsFail) return json({ success: false, code: 'error', message: 'Les commentaires sont indisponibles.' }, 500);
@@ -429,5 +437,50 @@ describe('Public community page', () => {
     renderAppAt('/communities/abidjan-react?tab=members');
     await screen.findByRole('heading', { name: 'Membres actifs' }, SLOW);
     expect(calls.some((c) => c.url.pathname.includes('/ai/'))).toBe(false);
+  });
+
+  it('filters the members online through the api, and shows who is', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    renderAppAt('/communities/abidjan-react?tab=members');
+    const list = await screen.findByRole('list', { name: 'Membres' }, SLOW);
+    expect(within(list).getAllByText('· En ligne')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'En ligne' }));
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/members/') && c.url.searchParams.get('online') === 'true')).toBe(true), SLOW);
+    await waitFor(() => expect(within(screen.getByRole('list', { name: 'Membres' })).queryByText('Awa Diop')).toBeNull(), SLOW);
+    expect(within(screen.getByRole('list', { name: 'Membres' })).getByText('Kofi Diop')).toBeTruthy();
+  });
+
+  it('keeps the online filter for the members', async () => {
+    stubCommunityApi();
+    renderAppAt('/communities/abidjan-react?tab=members');
+    await screen.findByRole('heading', { name: 'Membres actifs' }, SLOW);
+    expect(screen.getByRole('button', { name: 'En ligne' })).toHaveProperty('disabled', true);
+  });
+
+  it('searches by meaning with the AI, on purpose, for a member', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    renderAppAt('/communities/abidjan-react');
+    await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    fireEvent.change(screen.getByPlaceholderText('Rechercher une discussion…'), { target: { value: 'éviter les re-rendus' } });
+    // Not at each letter: on a click
+    expect(calls.some((c) => c.url.pathname.endsWith('/ai/semantic-search/'))).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: /Chercher « éviter les re-rendus » avec l’IA/ }));
+    const results = await screen.findByRole('list', { name: 'Résultats de l’IA' }, SLOW);
+    expect(calls.find((c) => c.url.pathname.endsWith('/ai/semantic-search/'))?.body).toEqual({ query: 'éviter les re-rendus', content_types: ['post', 'lesson'], limit: 8 });
+    expect(within(results).getByRole('link', { name: 'Mémoïser un composant' }).getAttribute('href')).toBe('/communities/abidjan-react/posts/p1');
+    expect(within(results).getByRole('link', { name: 'Les hooks en pratique' }).getAttribute('href')).toBe('/communities/abidjan-react/courses/react-19?lesson=l1');
+    expect(within(results).getByText('Leçon')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer les résultats de l’IA' }));
+    expect(screen.queryByRole('list', { name: 'Résultats de l’IA' })).toBeNull();
+  });
+
+  it('offers no AI search to a visitor', async () => {
+    const calls = stubCommunityApi();
+    renderAppAt('/communities/abidjan-react');
+    await screen.findByRole('heading', { level: 1, name: 'Abidjan React' }, SLOW);
+    expect(screen.queryByRole('button', { name: /avec l’IA/ })).toBeNull();
+    expect(calls.some((c) => c.url.pathname.includes('/ai/semantic-search/'))).toBe(false);
   });
 });

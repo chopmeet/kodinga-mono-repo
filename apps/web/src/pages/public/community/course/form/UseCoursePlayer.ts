@@ -108,7 +108,9 @@ function UseCoursePlayer() {
     /** A quiz was graded: the course is read again (unlocked lesson), and maybe done */
     quizGraded: async (result: QuizResult) => {
       await course.refetch();
-      if (result.just_completed_course) congratulate(result.congratulations?.xp_awarded ?? 0);
+      if (result.just_completed_course) return congratulate(result.congratulations?.xp_awarded ?? result.xp_awarded ?? 0);
+      const points = result.passed ? (result.xp_awarded ?? 0) : 0;
+      if (points > 0) customToast.success({ message: `Quiz réussi : +${points} point${points > 1 ? 's' : ''}` });
     },
     closeCongratulations: () => setJustFinished(false),
     /**

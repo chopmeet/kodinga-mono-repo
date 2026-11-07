@@ -160,6 +160,13 @@ describe('OAuth callback, where it goes', () => {
     expect(sessionStorage.getItem('oauth_next_github')).toBeNull();
   });
 
+  it('says in french when the provider has not verified the address', async () => {
+    stubApi({ 'auth/github/callback/': { status: 400, body: { success: false, code: 'oauth_email_not_verified', message: "Cette adresse email n'est pas vérifiée par le fournisseur OAuth." } } });
+    sessionStorage.setItem('oauth_state_github', 'st4te');
+    renderAppAt('/auth/callback/github?code=abc&state=st4te');
+    expect(await screen.findByText(/Cette adresse n’est pas vérifiée chez le fournisseur/, {}, SLOW)).toBeTruthy();
+  });
+
   it('never leaves the app', async () => {
     stubApi(signedIn);
     sessionStorage.setItem('oauth_state_github', 'st4te');

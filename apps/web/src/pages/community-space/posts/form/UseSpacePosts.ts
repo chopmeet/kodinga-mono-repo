@@ -10,8 +10,7 @@ import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 import { getName } from '@/utils/Utils';
 
-/** "locked" is not a filter of the api feed yet */
-export type PostStateFilter = 'all' | 'pinned';
+export type PostStateFilter = 'all' | 'pinned' | 'locked';
 export type PostTypeFilter = PostType | 'all';
 
 /** A post of the feed with its author's display name */
@@ -19,7 +18,7 @@ export type SpacePost = Omit<CommunityPostItem, 'author'> & { author: string; au
 
 /**
  * Feed of the community for moderation (GET communities/<slug>/feed/, pinned posts first): type,
- * search and "pinned" are filtered by the api. Pin, lock and delete are open to moderators and
+ * search, "pinned" and "locked" are filtered by the api. Pin, lock and delete are open to moderators and
  * above (POST posts/<id>/pin/, posts/<id>/lock/, DELETE posts/<id>/).
  */
 function UseSpacePosts(slug: string, query: { search: string; state: PostStateFilter; type: PostTypeFilter; page: number; size: number }) {
@@ -29,12 +28,14 @@ function UseSpacePosts(slug: string, query: { search: string; state: PostStateFi
     type: query.type === 'all' ? undefined : query.type,
     q: q || undefined,
     pinned: query.state === 'pinned' ? true : undefined,
+    locked: query.state === 'locked' ? true : undefined,
     page: query.page,
     page_size: query.size,
   });
   // Totals of the chips: page_size=1 is enough, the api gives the count
   const all = useGetCommunityFeedQuery({ slug, page: 1, page_size: 1 }).data?.pagination.count;
   const pinned = useGetCommunityFeedQuery({ slug, pinned: true, page: 1, page_size: 1 }).data?.pagination.count;
+  const locked = useGetCommunityFeedQuery({ slug, locked: true, page: 1, page_size: 1 }).data?.pagination.count;
 
   const [togglePin] = useTogglePostPinMutation();
   const [toggleLock] = useTogglePostLockMutation();
@@ -61,7 +62,7 @@ function UseSpacePosts(slug: string, query: { search: string; state: PostStateFi
   return {
     posts,
     total: data?.pagination.count ?? 0,
-    counts: { all, pinned } satisfies Record<PostStateFilter, number | undefined>,
+    counts: { all, pinned, locked } satisfies Record<PostStateFilter, number | undefined>,
     isLoading,
     isFetching,
     error: data ? undefined : error,

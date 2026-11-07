@@ -56,6 +56,10 @@ function stubProjectsApi() {
     const slug = path.match(/projects\/([^/]+)\//)?.[1];
 
     if (path.endsWith('/feature/')) return json({ success: true, data: {} });
+    if (slug && request.method === 'PATCH' && body && 'community_id' in body && body.community_id === null) {
+      projects = projects.filter((p) => p.slug !== slug);
+      return json({ success: true, data: {} });
+    }
     if (path.endsWith('/projects/')) {
       if (request.method === 'POST') {
         const created = project('new-project', String(body?.title), { ...body, owner: me, technologies: [] });
@@ -124,6 +128,27 @@ describe('Community space: projects', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Supprimer' })).toBeNull();
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Ne plus mettre en avant/ }));
     await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/projects/irrigo/feature/'))?.body).toEqual({ is_featured: false }), SLOW);
+  });
+
+  it('takes the project of someone else out of the community, once confirmed', async () => {
+    const calls = stubProjectsApi();
+    renderAppAt('/c/dakar-devops/projects');
+    const trigger = await screen.findByRole('button', { name: 'Actions pour Irrigo' }, SLOW);
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    fireEvent.click(within(await screen.findByRole('menu', {}, SLOW)).getByRole('menuitem', { name: /Retirer de la communauté/ }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    expect(within(dialog).getByText(/Le projet n’est pas supprimé/)).toBeTruthy();
+    expect(calls.some((c) => c.method === 'PATCH')).toBe(false);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Retirer' }));
+    await waitFor(() => expect(calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/projects/irrigo/'))?.body).toEqual({ community_id: null }), SLOW);
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Actions pour Irrigo' })).toBeNull(), SLOW);
+
+    // Its own project: not in the menu
+    const own = screen.getByRole('button', { name: 'Actions pour Kube Dash' });
+    own.focus();
+    fireEvent.keyDown(own, { key: 'Enter' });
+    expect(within(await screen.findByRole('menu', {}, SLOW)).queryByRole('menuitem', { name: /Retirer de la communauté/ })).toBeNull();
   });
 
   it('shares a project with the community: a repository or a demo is required', async () => {

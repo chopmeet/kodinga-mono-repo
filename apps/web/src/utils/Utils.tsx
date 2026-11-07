@@ -66,18 +66,23 @@ export const slugify = (value: string) =>
     .slice(0, 160);
 
 /** Builds a CSV (";" separator and BOM, so Excel in French opens it with accents) and downloads it */
+/** Saves a text as a file of the device (a click on a temporary link) */
+export function downloadText(filename: string, text: string, type: string) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function downloadCsv(filename: string, header: string[], rows: (string | number)[][]) {
   const escape = (value: string | number) => {
     const text = String(value);
     return /[";\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
   };
   const csv = '﻿' + [header, ...rows].map((row) => row.map(escape).join(';')).join('\n');
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadText(filename, csv, 'text/csv;charset=utf-8');
 }
 
 const relative = new Intl.RelativeTimeFormat('fr-FR', { numeric: 'auto' });

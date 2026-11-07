@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, SearchInput } from '@kodinga-mono-repo/ui';
-import { SoonBadge } from '@/pages/shared/row-actions';
 import { useGetCommunityLeaderboardQuery, useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { useDebounced } from '@/utils/hooks/useDebounced';
@@ -23,6 +22,7 @@ type Card = {
   team: boolean;
   level?: number;
   line: string;
+  online?: boolean;
 };
 
 const since = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
@@ -43,8 +43,11 @@ const PAGE_SIZE = 60;
  * People of the community. Its active members read the directory (GET .../members/: searched and
  * sorted by the api); visitors see the contributors of the public leaderboard.
  */
-function useMemberCards(slug: string, canList: boolean, search: string, ordering: Ordering, size: number) {
-  const members = useGetCommunityMembersQuery({ slug, status: 'active', search: search || undefined, ordering, page: 1, page_size: size }, { skip: !canList });
+function useMemberCards(slug: string, canList: boolean, search: string, ordering: Ordering, size: number, online: boolean) {
+  const members = useGetCommunityMembersQuery(
+    { slug, status: 'active', search: search || undefined, online: online || undefined, ordering, page: 1, page_size: size },
+    { skip: !canList },
+  );
   const ranking = useGetCommunityLeaderboardQuery({ slug, limit: 100 }, { skip: canList });
 
   const cards = useMemo<Card[]>(() => {
@@ -58,6 +61,7 @@ function useMemberCards(slug: string, canList: boolean, search: string, ordering
         badge: m.custom_title || memberRoleLabel[m.role],
         team: m.role !== 'member',
         line: `Membre depuis ${since.format(new Date(m.joined_at))}`,
+        online: m.is_online,
       }));
     }
     return (ranking.data ?? []).map((e) => ({
@@ -77,19 +81,19 @@ function useMemberCards(slug: string, canList: boolean, search: string, ordering
 }
 
 export function MembersTab({ community, isTeam }: { community: CommunityDetail; isTeam: boolean }) {
-  const [filter, setFilter] = useState<'all' | 'team'>('all');
+  const [filter, setFilter] = useState<'all' | 'online' | 'team'>('all');
   const [search, setSearch] = useState('');
   const [ordering, setOrdering] = useState<Ordering>('reputation');
   const [size, setSize] = useState(PAGE_SIZE);
   const membership = community.user_membership;
   const canList = isTeam || (!!membership?.is_member && membership.status === 'active');
   const query = useDebounced(search.trim(), 300);
-  const { cards, total, isLoading, isFetching } = useMemberCards(community.slug, canList, query, ordering, size);
+  const { cards, total, isLoading, isFetching } = useMemberCards(community.slug, canList, query, ordering, size, filter === 'online');
   const n = community.members_count;
 
   const needle = normalize(search.trim());
   // The directory is searched by the api, the leaderboard here
-  const shown = cards.filter((c) => (filter === 'all' || c.team) && (canList || !needle || normalize(`${c.name} ${c.username} ${c.badge}`).includes(needle)));
+  const shown = cards.filter((c) => (filter !== 'team' || c.team) && (canList || !needle || normalize(`${c.name} ${c.username} ${c.badge}`).includes(needle)));
 
   return (
     <section>
@@ -126,8 +130,17 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
           <Pill active={filter === 'all'} onClick={() => setFilter('all')}>
             Tous
           </Pill>
-          <Pill active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
-            En ligne <SoonBadge />
+          {/* Who is online is only in the directory, filtered by the api */}
+          <Pill
+            active={filter === 'online'}
+            disabled={!canList}
+            title={canList ? undefined : 'Visible par les membres'}
+            onClick={() => {
+              setFilter('online');
+              setSize(PAGE_SIZE);
+            }}
+          >
+            En ligne
           </Pill>
           {/* Roles are only in the directory */}
           <Pill active={filter === 'team'} disabled={!canList} title={canList ? undefined : 'Visible par les membres'} onClick={() => setFilter('team')}>
@@ -181,8 +194,9 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
           {shown.map((c, i) => (
             <li key={c.id} className="flex flex-col rounded-xl border border-slate-200 bg-white p-6">
               <div className="flex items-start justify-between gap-2">
-                <Avatar className="size-14">
-                  {c.avatar && <AvatarImage src={c.avatar} alt="" />}
+                <Avatar className="relative size-14 overflow-visible">
+                  {c.online && <span className="absolute right-0 bottom-0 z-10 size-3.5 rounded-full border-2 border-white bg-emerald-500" title="En ligne" />}
+                  {c.avatar && <AvatarImage src={c.avatar} alt="" className="rounded-full" />}
                   <AvatarFallback className={cn('text-lg font-semibold', AVATAR_TONES[i % AVATAR_TONES.length])}>{nameInitials(c.name)}</AvatarFallback>
                 </Avatar>
                 <span className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600">{c.badge}</span>
@@ -195,7 +209,10 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
                   </span>
                 )}
               </p>
-              <p className="text-sm text-slate-500">@{c.username}</p>
+              <p className="text-sm text-slate-500">
+                @{c.username}
+                {c.online && <span className="ml-2 font-medium text-emerald-700">· En ligne</span>}
+              </p>
               <p className="mt-4 flex items-center gap-2 text-sm text-slate-600">
                 {canList ? <CalendarDays className="size-4 text-slate-400" /> : <Sparkles className="size-4 text-slate-400" />}
                 {c.line}

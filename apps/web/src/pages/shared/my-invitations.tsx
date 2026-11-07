@@ -52,7 +52,9 @@ export function MyInvitations({ className }: { className?: string }) {
             <div className="min-w-0 flex-1 text-sm">
               <p className="text-slate-900">
                 Rejoindre l’équipe <strong>{t.team_name}</strong>
+                {t.hackathon_title && <> · {t.hackathon_title}</>}
               </p>
+              {t.leader && <p className="text-xs text-slate-500">Invitation de {getName(t.leader) || t.leader.username}</p>}
               <Link to={`/communities/${t.community_slug}/hackathons/${t.hackathon_slug}`} className="text-xs font-semibold text-blue-900 hover:underline">
                 Voir le hackathon
               </Link>

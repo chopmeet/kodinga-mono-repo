@@ -7,12 +7,13 @@ import { CodeBlock } from '@/pages/shared/code-block';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { ago, getName, nameInitials, plain, postTypeLabel } from '@/utils/Utils';
+import { ago, getName, nameInitials, plain, postTypeLabel, useUser } from '@/utils/Utils';
 import { PollCard } from '../components/poll-card';
 import UsePostDetails, { type PostDetailsPage } from '../form/UsePostDetails';
 import { CommentForm } from './comment-form';
 import { CommentItem } from './comment-item';
 import { DeleteCommentDialog } from './delete-comment-dialog';
+import { HelpPanel } from './help-panel';
 
 function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetailsPage }) {
   const author = getName(post.author) || post.author.username;
@@ -76,6 +77,7 @@ function PostDetails() {
   const page = UsePostDetails();
   const { community, post, comments, slug } = page;
   const [toDelete, setToDelete] = useState<PostComment | null>(null);
+  const me = useUser();
   const back = `/communities/${slug}?tab=feed`;
 
   if (page.isLoading) {
@@ -126,6 +128,10 @@ function PostDetails() {
         </div>
 
         <PostArticle post={post} page={page} />
+        {/* The author and the team alone may ask mentors (the api writes the help at the first reading) */}
+        {page.isQuestion && !post.is_resolved && page.isMember && (post.author.id === me?.id || ['owner', 'admin', 'moderator'].includes(community.user_membership?.role ?? '')) && (
+          <HelpPanel postId={post.id} />
+        )}
 
         <section aria-labelledby="answers-title" className="mt-8">
           <h2 id="answers-title" className="text-lg font-semibold text-slate-900">

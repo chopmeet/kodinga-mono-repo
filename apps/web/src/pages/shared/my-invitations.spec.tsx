@@ -29,7 +29,7 @@ const invitation = (id: string, community_name: string, is_valid = true) => ({
 function stubApi() {
   const calls: Call[] = [];
   let received = [invitation('i1', 'Abidjan React'), invitation('i2', 'Dakar DevOps'), invitation('i3', 'Vieille Invitation', false)];
-  let teams = [{ id: 't1', team_id: 'team-1', team_name: 'Les Baobabs', hackathon_slug: 'devfest', community_slug: 'abidjan-react', invited_at: '2026-11-01T10:00:00Z' }];
+  let teams = [{ id: 't1', team_id: 'team-1', team_name: 'Les Baobabs', hackathon_title: 'DevFest Abidjan', leader: { id: 'u9', username: 'yao', first_name: 'Yao', last_name: 'Kouassi' }, hackathon_slug: 'devfest', community_slug: 'abidjan-react', invited_at: '2026-11-01T10:00:00Z' }];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
     const path = new URL(request.url).pathname;
@@ -75,6 +75,8 @@ describe('My invitations', () => {
     renderAppAt('/dashboard/communities');
     const list = await screen.findByRole('list', { name: 'Mes invitations' }, SLOW);
     await within(list).findByText('Les Baobabs', {}, SLOW);
+    expect(within(list).getByText(/DevFest Abidjan/)).toBeTruthy();
+    expect(within(list).getByText('Invitation de Yao Kouassi')).toBeTruthy();
     expect(within(list).getByRole('link', { name: 'Abidjan React' }).getAttribute('href')).toBe('/invite/i1');
     expect(within(list).getAllByText(/Modérateur · invité par Yao Kouassi/)).toHaveLength(2);
     expect(within(list).getByRole('link', { name: 'Voir le hackathon' }).getAttribute('href')).toBe('/communities/abidjan-react/hackathons/devfest');

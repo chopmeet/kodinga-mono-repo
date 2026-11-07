@@ -8,6 +8,8 @@ import type {
   MyProfile,
   PortfolioWriteData,
   ProfileWriteData,
+  ProfileActivity,
+  ProfileFollow,
   PublicProfile,
   SkillWriteData,
   UserSession,
@@ -48,6 +50,15 @@ export const UserApi = createApi({
       query: (username) => `profiles/${encodeURIComponent(username)}/`,
       transformResponse: unwrap<PublicProfile>,
       providesTags: (_result, _error, username) => [{ type: 'profile', id: username }],
+    }),
+    // Who follows a profile, or whom it follows, most recent first
+    getProfileFollows: builder.query<ApiPaginated<ProfileFollow>, { username: string; list: 'followers' | 'following'; page_size: number }>({
+      query: ({ username, list, page_size }) => ({ url: `profiles/${encodeURIComponent(username)}/${list}/`, params: { page: 1, page_size } }),
+    }),
+    // Posts, comments, lessons done, reactions and points of each day of a year
+    getProfileActivity: builder.query<ProfileActivity, { username: string; year: number }>({
+      query: ({ username, year }) => ({ url: `profiles/${encodeURIComponent(username)}/activity/`, params: { year } }),
+      transformResponse: unwrap<ProfileActivity>,
     }),
     updateMe: builder.mutation<User, UserFormData>({
       query: (body) => ({ url: 'users/me/', method: 'PATCH', body }),
@@ -135,6 +146,8 @@ export const {
   useUpdateMeMutation,
   useGetUsersQuery,
   useGetPublicProfileQuery,
+  useGetProfileFollowsQuery,
+  useGetProfileActivityQuery,
   useToggleUserAdminMutation,
   useToggleUserStatusMutation,
   useGetMyProfileQuery,

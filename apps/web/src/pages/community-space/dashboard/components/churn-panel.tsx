@@ -1,4 +1,4 @@
-import { Check, Copy, RefreshCw, Send, UserRoundSearch } from 'lucide-react';
+import { Check, Copy, RefreshCw, Send, Sparkles, UserRoundSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { Button, cn, ColgateWrapper } from '@kodinga-mono-repo/ui';
@@ -67,6 +67,19 @@ export function ChurnPanel({ slug }: { slug: string }) {
                   {r.suggested_nudge && (
                     <Button type="button" variant="outline" size="sm" onClick={() => churn.copy(r)} aria-label={`Copier le message pour ${name}`}>
                       <Copy /> Copier le message
+                    </Button>
+                  )}
+                  {!r.nudge_sent_at && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      isLoading={churn.writingId === r.id}
+                      disabled={!!churn.writingId}
+                      onClick={() => churn.write(r)}
+                      aria-label={`Réécrire le message pour ${name} avec l’IA`}
+                    >
+                      <Sparkles /> Réécrire avec l’IA
                     </Button>
                   )}
                   <MessageButton userId={r.user_id} label="Écrire" size="sm" variant="outline" />

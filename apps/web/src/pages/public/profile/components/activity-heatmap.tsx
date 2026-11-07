@@ -1,4 +1,5 @@
 import { Activity } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 import { cn } from '@kodinga-mono-repo/ui';
 
@@ -23,12 +24,17 @@ function buildWeeks(end: Date) {
 
 type Props = {
   year: number;
-  /** Contributions per ISO day (yyyy-mm-dd); empty until the api exposes the activity */
+  /** Contributions per ISO day (yyyy-mm-dd) */
   counts?: Record<string, number>;
 };
 
 /** GitHub-like contribution grid over the last 12 months of `year` */
 export function ActivityHeatmap({ year, counts = {} }: Props) {
+  // A narrow screen scrolls the grid: it opens on the latest weeks
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollLeft = scroller.current.scrollWidth;
+  }, [year]);
   const now = new Date();
   const end = year >= now.getFullYear() ? now : new Date(year, 11, 31);
   const weeks = buildWeeks(end);
@@ -45,7 +51,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
 
   return (
     <div>
-      <div className="overflow-x-auto pb-1">
+      <div ref={scroller} className="overflow-x-auto pb-1">
         <div className="inline-grid min-w-full grid-cols-[2.5rem_1fr] gap-x-2" role="img" aria-label={`Contributions sur 12 mois jusqu'en ${year}`}>
           <span />
           <div className="grid grid-flow-col auto-cols-[minmax(0.625rem,1fr)] gap-1 text-xs text-slate-500">

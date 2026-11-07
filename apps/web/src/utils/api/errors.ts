@@ -13,6 +13,10 @@ const messagesByCode: Record<string, string> = {
   redirect_uri_mismatch: 'Ce mode de connexion est mal configuré. Réessayez plus tard ou utilisez votre email.',
   disallowed_redirect_uri: 'Ce mode de connexion n’est pas autorisé depuis ce site. Utilisez votre email.',
   invalid_redirect_uri: 'Ce mode de connexion est mal configuré. Réessayez plus tard ou utilisez votre email.',
+  oauth_email_not_verified:
+    'Cette adresse n’est pas vérifiée chez le fournisseur : vérifiez-la chez lui, ou connectez-vous avec votre email et votre mot de passe.',
+  oauth_invalid_state: 'Ce lien de connexion a expiré. Recommencez depuis Kodinga.',
+  oauth_not_configured: 'Ce mode de connexion n’est pas encore disponible. Utilisez votre email.',
   oauth_missing_email: 'Votre compte ne fournit pas d’adresse email vérifiée.',
 };
 

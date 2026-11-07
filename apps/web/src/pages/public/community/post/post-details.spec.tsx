@@ -24,6 +24,7 @@ type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 /** A question of Awa in abidjan-react, with two answers; comment / accept / delete like the api */
 function stubPostApi({ privacy = 'public', member = true }: Options = {}) {
   let resolved = false;
+  let notified = false;
   let comments = [comment('c1', KOFI, 'Utilise `useMemo` pour éviter le recalcul.'), comment('c2', YAO, 'Regarde du côté de React Compiler.')];
   const calls: Call[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -57,6 +58,19 @@ function stubPostApi({ privacy = 'public', member = true }: Options = {}) {
     if (deleteId && request.method === 'DELETE') {
       comments = comments.filter((c) => c.id !== deleteId);
       return json({ success: true });
+    }
+    if (path.endsWith('/posts/q1/help-assistance/ping-mentors/')) {
+      notified = true;
+      return json({ success: true, data: { notified_count: (body?.mentor_ids as string[]).length } });
+    }
+    if (path.endsWith('/posts/q1/help-assistance/')) {
+      return json({ success: true, data: {
+        post_id: 'q1', matching_skills: ['React'], ai_comment_draft: 'Pouvez-vous partager le composant et la version de React ?', status: notified ? 'notified' : 'pending',
+        suggested_mentors: [
+          { user_id: 'u-kofi', username: 'kofi', first_name: 'Kofi', last_name: 'Mensah', avatar_url: null, matching_skills: ['React'], reputation_score: 120 },
+          { user_id: 'u-yao', username: 'yao', first_name: 'Yao', last_name: 'Kouassi', avatar_url: null, matching_skills: ['React', 'TypeScript'], reputation_score: 80 },
+        ],
+      } });
     }
     if (path.endsWith('/posts/q1/comments/')) {
       if (request.method === 'POST') {
@@ -163,5 +177,30 @@ describe('Post details: answers of a question', () => {
     renderAppAt(URL_PATH);
     expect(await screen.findByRole('heading', { name: 'Réservé aux membres' }, SLOW)).toBeTruthy();
     expect(calls.some((c) => c.url.pathname.endsWith('/posts/q1/'))).toBe(false);
+  });
+
+  it('helps the author of an unsolved question: what it lacks, and mentors to ask', async () => {
+    signInAs(AWA);
+    const calls = stubPostApi();
+    renderAppAt(URL_PATH);
+    const help = await screen.findByRole('region', { name: 'Obtenir de l’aide plus vite' }, SLOW);
+    expect(within(help).getByText('Pouvez-vous partager le composant et la version de React ?')).toBeTruthy();
+    const mentors = within(help).getByRole('list', { name: 'Mentors suggérés' });
+    expect(within(mentors).getByText('React · TypeScript')).toBeTruthy();
+    // All asked by default: Yao left out
+    fireEvent.click(within(mentors).getByRole('checkbox', { name: /Yao Kouassi/ }));
+    fireEvent.change(within(help).getByLabelText(/Message/), { target: { value: 'Je bloque depuis hier' } });
+    fireEvent.click(within(help).getByRole('button', { name: 'Prévenir le mentor' }));
+    await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/help-assistance/ping-mentors/'))?.body).toEqual({ mentor_ids: ['u-kofi'], custom_message: 'Je bloque depuis hier' }), SLOW);
+    expect(await within(help).findByText('Mentors prévenus', {}, SLOW)).toBeTruthy();
+  });
+
+  it('asks nothing of the AI for another member', async () => {
+    signInAs(KOFI);
+    const calls = stubPostApi();
+    renderAppAt(URL_PATH);
+    await screen.findByRole('list', { name: 'Réponses' }, SLOW);
+    expect(screen.queryByRole('region', { name: 'Obtenir de l’aide plus vite' })).toBeNull();
+    expect(calls.some((c) => c.url.pathname.includes('help-assistance'))).toBe(false);
   });
 });

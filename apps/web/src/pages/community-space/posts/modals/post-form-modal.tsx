@@ -19,6 +19,7 @@ import { postTypeLabel } from '@/utils/Utils';
 import { SoonBadge } from '@/pages/shared/row-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { PostType } from '@/utils/api/community/community.type';
+import UseDuplicateCheck from '../form/UseDuplicateCheck';
 import UsePostForm, { MAX_POLL_OPTIONS } from '../form/UsePostForm';
 import type { SpacePost } from '../form/UseSpacePosts';
 import { CODE_LANGUAGE_OPTIONS, CodeBlock } from '@/pages/shared/code-block';
@@ -53,6 +54,8 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
   const { form, options, type, withCode, titleOptional, onSubmit } = UsePostForm({ slug, post, open, onDone: onClose, defaultType });
   const codePreview = form.watch('code_snippet');
   const codeLanguagePreview = form.watch('code_language');
+  // A new question: the ones already asked, close to it
+  const duplicates = UseDuplicateCheck({ slug, enabled: !post && type === 'question', title: form.watch('title') ?? '', content: form.watch('content') ?? '' });
   const {
     register,
     control,
@@ -110,6 +113,25 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
             error={errors.content?.message}
             {...register('content')}
           />
+
+          {duplicates.length > 0 && (
+            <section aria-labelledby="post-duplicates-title" className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <p id="post-duplicates-title" className="text-sm font-semibold text-amber-900">
+                Des questions proches existent déjà
+              </p>
+              <p className="mt-0.5 text-xs text-amber-900/80">La réponse s’y trouve peut-être. Vous pouvez publier quand même.</p>
+              <ul className="mt-2 flex flex-col gap-1.5" aria-label="Questions proches">
+                {duplicates.map((d) => (
+                  <li key={d.id} className="text-sm">
+                    <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-blue-900 hover:underline">
+                      {d.title || 'Question sans titre'}
+                    </a>
+                    {d.is_solved && <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Résolue</span>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {type === 'poll' && !post && (
             <fieldset className="mb-4 rounded-xl border border-slate-200 p-4">

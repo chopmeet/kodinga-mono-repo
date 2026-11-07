@@ -37,7 +37,7 @@ function stubMembersApi() {
   // WorkspaceInvitationSerializer: the code of a link is never listed
   let invitations = [
     { id: 'i2', email: 'awa@example.com', role: 'member', status: 'pending', expires_at: '2026-11-20T10:00:00Z', accepted_at: null, is_valid: true, invited_by: MEMBERS[0].user, created_at: '2026-10-20T10:00:00Z' },
-    { id: 'i1', email: '', role: 'member', status: 'pending', expires_at: '2026-11-21T10:00:00Z', accepted_at: null, is_valid: true, invited_by: MEMBERS[0].user, created_at: '2026-10-01T10:00:00Z' },
+    { id: 'i1', email: '', max_uses: 10, uses_count: 3, role: 'member', status: 'pending', expires_at: '2026-11-21T10:00:00Z', accepted_at: null, is_valid: true, invited_by: MEMBERS[0].user, created_at: '2026-10-01T10:00:00Z' },
     { id: 'i0', email: 'kofi@example.com', role: 'member', status: 'accepted', expires_at: '2026-10-08T10:00:00Z', accepted_at: '2026-10-02T10:00:00Z', is_valid: false, invited_by: MEMBERS[0].user, created_at: '2026-09-01T10:00:00Z' },
   ];
   const calls: Call[] = [];
@@ -236,6 +236,7 @@ describe('Community space: members', () => {
     const pending = await within(dialog).findByRole('list', { name: 'Invitations en attente' }, SLOW);
     expect(within(pending).getAllByRole('listitem')).toHaveLength(2);
     expect(within(pending).getByText('Lien partageable')).toBeTruthy();
+    expect(within(pending).getByText('utilisé 3 fois sur 10')).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: /Voir les invitations passées \(1\)/ }));
     expect(within(within(dialog).getByRole('list', { name: 'Invitations passées' })).getByText('Acceptée')).toBeTruthy();
 

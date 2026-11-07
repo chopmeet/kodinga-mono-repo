@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import store from '@/redux/store';
 import { renderAppAt, SLOW, stubApi } from '@/test-utils';
@@ -121,6 +121,41 @@ describe('Public profile', () => {
     expect(screen.getByRole('region', { name: 'Dernières publications' }).textContent).toContain('Abidjan React · ');
     expect(screen.getByRole('link', { name: 'Wari Pay' }).getAttribute('href')).toBe('/projects/wari-pay');
     expect(screen.getByText('2 badges obtenus')).toBeTruthy();
+  });
+
+  it('shows the followers and followings of the profile, and its activity day by day', async () => {
+    const year = new Date().getFullYear();
+    const today = new Date();
+    const iso = `${year}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const follower = { id: 'u2', username: 'awa', display_name: 'Awa Diop', avatar_url: '', headline: 'Data à Abidjan', is_following: false, followed_at: '2026-11-01T10:00:00Z' };
+    const calls = stubApi({
+      'profiles/ousmane-sidi-diallo/': { body: { success: true, data: { ...profile, user: { ...profile.user, date_joined: `${year - 1}-03-01T10:00:00Z` }, followers_count: 12, following_count: 1, is_following: false } } },
+      'profiles/ousmane-sidi-diallo/followers/': { body: { success: true, pagination: { count: 12 }, results: [follower] } },
+      'profiles/ousmane-sidi-diallo/following/': { body: { success: true, pagination: { count: 0 }, results: [] } },
+      'profiles/ousmane-sidi-diallo/activity/': { body: { success: true, data: { username: 'ousmane-sidi-diallo', year, total_contributions: 7, counts: { [iso]: 7 } } } },
+    });
+    renderAppAt('/profiles/ousmane-sidi-diallo');
+    await screen.findByRole('heading', { level: 1, name: 'Ousmane Sidi Diallo' }, SLOW);
+
+    // The activity of the year, from the api
+    expect(await screen.findByText(`7 contributions en ${year}`, {}, SLOW)).toBeTruthy();
+    expect(screen.getByTitle(`${today.toLocaleDateString('fr-FR')} : 7 contribution(s)`)).toBeTruthy();
+    const years = screen.getByLabelText('Année');
+    expect(within(years).getAllByRole('option').map((o) => o.textContent)).toEqual([String(year), String(year - 1)]);
+    fireEvent.change(years, { target: { value: String(year - 1) } });
+    await waitFor(() => expect(calls.some((c) => c.url.includes(`/activity/?year=${year - 1}`))).toBe(true), SLOW);
+
+    // Followers: the count, then the people
+    fireEvent.click(screen.getByRole('button', { name: '12 abonnés' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    const list = await within(dialog).findByRole('list', { name: 'Abonnés de Ousmane Sidi Diallo' }, SLOW);
+    expect(within(list).getByRole('link', { name: /Awa Diop/ }).getAttribute('href')).toBe('/profiles/awa');
+    expect(within(dialog).getByRole('button', { name: 'Afficher plus' })).toBeTruthy();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), SLOW);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 abonnement' }));
+    expect(await screen.findByText('Ousmane Sidi Diallo ne suit personne pour l’instant.', {}, SLOW)).toBeTruthy();
   });
 
   it('says when a section is still empty', async () => {

@@ -77,3 +77,34 @@ export type TeammateSuggestion = {
   last_name: string;
   match_reasons: string[];
 };
+
+/** POST communities/<slug>/ai/semantic-search/: posts and lessons close in meaning to the query */
+export type SemanticSearchResult = {
+  query: string;
+  count: number;
+  results: { 
+    id: string; 
+    content_type: 'post' | 'lesson' | 'event'; 
+    title: string; 
+    similarity_score: number; 
+    url: string; 
+    snippet: string; 
+  }[];
+};
+
+/** POST communities/<slug>/ai/check-duplicates/: questions already asked, close to a draft */
+export type DuplicateCheck = {
+  has_duplicates: boolean;
+  count: number;
+  duplicates: { id: string; title: string; similarity_score: number; url: string; snippet: string; is_solved: boolean }[];
+};
+
+/** GET posts/<id>/help-assistance/: what the question lacks, and members who know its subject */
+export type HelpAssistance = {
+  post_id: string;
+  matching_skills: string[];
+  ai_comment_draft: string;
+  suggested_mentors: { user_id: string; username: string; first_name: string; last_name: string; avatar_url: string | null; matching_skills: string[]; reputation_score: number }[];
+  /** "notified" once mentors were told */
+  status: string;
+};

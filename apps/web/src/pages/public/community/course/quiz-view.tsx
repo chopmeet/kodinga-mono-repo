@@ -6,9 +6,13 @@ import UseQuizPlayer from './form/UseQuizPlayer';
 
 const percent = (n: number) => `${Math.round(n * 10) / 10} %`;
 
-/** The score, and each question with the answers given and the right ones */
+/**
+ * The score, and each question with the answers given. The api gives the right answers and the
+ * explanations only once the quiz is passed: before, each question only says right or wrong.
+ */
 function QuizResultView({ result, questions, onRestart }: { result: QuizResult; questions: QuizQuestion[]; onRestart: () => void }) {
   const optionsOf = (id: string) => questions.find((q) => q.id === id)?.options ?? [];
+  const correctionHidden = !result.passed && result.question_results.every((r) => r.correct_option_ids.length === 0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -29,7 +33,13 @@ function QuizResultView({ result, questions, onRestart }: { result: QuizResult; 
         </Button>
       </section>
 
-      <ol className="flex flex-col gap-4" aria-label="Correction">
+      {correctionHidden && (
+        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          Les bonnes réponses et les explications s’afficheront une fois le quiz réussi. Revoyez les questions marquées d’une croix, puis recommencez.
+        </p>
+      )}
+
+      <ol className="flex flex-col gap-4" aria-label={correctionHidden ? 'Vos réponses' : 'Correction'}>
         {result.question_results.map((r, i) => (
           <li key={r.question_id} className="rounded-xl border border-slate-200 p-4">
             <p className="flex items-start gap-2 font-medium text-slate-900">

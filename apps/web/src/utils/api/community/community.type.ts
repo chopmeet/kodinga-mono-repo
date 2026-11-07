@@ -215,6 +215,8 @@ export type CommunityMemberItem = {
   joined_at: string;
   reputation_score: number;
   created_at: string;
+  /** A session seen in the last 15 minutes */
+  is_online?: boolean;
 };
 
 export type CommunityMembersQuery = {
@@ -222,6 +224,8 @@ export type CommunityMembersQuery = {
   status?: MembershipStatus;
   role?: CommunityRole;
   search?: string;
+  /** Only those seen in the last 15 minutes */
+  online?: boolean;
   /** joined_at, -joined_at, reputation, username, role… */
   ordering?: string;
   page?: number;
@@ -310,6 +314,8 @@ export type CommunityFeedQuery = {
   sort?: 'popular';
   /** Only the posts saved by the signed-in user */
   bookmarked?: boolean;
+  /** Only the posts whose comments are closed */
+  locked?: boolean;
   page?: number;
   page_size?: number;
 };
@@ -450,10 +456,13 @@ export type CommunityInvitation = {
   is_valid: boolean;
   invited_by: User;
   created_at: string;
+  /** 0: unlimited (a shareable link) */
+  max_uses?: number;
+  uses_count?: number;
 };
 
 /** POST communities/<slug>/invitations/ (CommunityInvitationSerializer): the invitation and the code of its link */
-export type CreatedInvitation = CommunityInvitation & { invite_code: string; max_uses?: number; uses_count?: number };
+export type CreatedInvitation = CommunityInvitation & { invite_code: string };
 
 /** GET invitations/my/ (WorkspaceInvitationSerializer): invitations by email to the address of the user */
 export type MyInvitation = Omit<CommunityInvitation, 'invited_by'> & {

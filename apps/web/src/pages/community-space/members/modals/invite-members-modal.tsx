@@ -107,6 +107,9 @@ function InvitationRow({ i, list, slug }: { i: CommunityInvitation; list: Invita
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         <span className="font-semibold text-slate-800">{who}</span>
         <span>{memberRoleLabel[i.role] ?? i.role}</span>
+        {!i.email && i.uses_count !== undefined && (
+          <span>{i.max_uses ? `utilisé ${i.uses_count} fois sur ${i.max_uses}` : `utilisé ${i.uses_count} fois`}</span>
+        )}
         {status === 'pending' && i.expires_at && <span>expire le {dateFormat.format(new Date(i.expires_at))}</span>}
         {i.accepted_at && <span>acceptée le {dateFormat.format(new Date(i.accepted_at))}</span>}
         <span>par {getName(i.invited_by) || i.invited_by.username}</span>

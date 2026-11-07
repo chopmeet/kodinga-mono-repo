@@ -68,12 +68,17 @@ function stubCourseApi({ member = true, slowCourse = false, video = '', finished
     }
     if (path.endsWith('/lessons/l2/quiz/submit/')) {
       const right = body?.answers?.q1?.[0] === 'a' && [...(body?.answers?.q2 ?? [])].sort().join() === 'a,b';
+      const wasDone = done.has('l2');
       if (right) done.add('l2');
-      const results = [
+      const graded = [
         { question_id: 'q1', question: 'Un hook commence par ?', question_type: 'single_choice', selected_option_ids: body?.answers?.q1, correct_option_ids: ['a'], is_correct: body?.answers?.q1?.[0] === 'a', points_earned: 1, points_possible: 1, explanation: 'C’est la convention de React.' },
         { question_id: 'q2', question: 'Quels hooks existent ?', question_type: 'multiple_choice', selected_option_ids: body?.answers?.q2, correct_option_ids: ['a', 'b'], is_correct: right, points_earned: 1, points_possible: 1, explanation: '' },
       ];
-      return json({ success: true, data: { score_percent: right ? 100 : 50, passing_score: 70, passed: right, earned_points: right ? 2 : 1, total_points: 2, correct_questions_count: right ? 2 : 1, total_questions_count: 2, submitted_at: '2026-11-04T10:00:00Z', question_results: results, just_completed_course: right, congratulations: right ? { xp_awarded: 35 } : null } });
+      // Like the api: the right answers and the explanations only once passed
+      const results = right ? graded : graded.map((r) => ({ ...r, correct_option_ids: [], explanation: '' }));
+      // Passed again later: the course is already done, the quiz gives points of its own
+      const justCompleted = right && !wasDone;
+      return json({ success: true, data: { score_percent: right ? 100 : 50, passing_score: 70, passed: right, earned_points: right ? 2 : 1, total_points: 2, correct_questions_count: right ? 2 : 1, total_questions_count: 2, submitted_at: '2026-11-04T10:00:00Z', question_results: results, just_completed_course: justCompleted, congratulations: justCompleted ? { xp_awarded: 35 } : null, xp_awarded: right ? (justCompleted ? 35 : 10) : 0 } });
     }
     const lessonId = path.match(/courses\/react-19\/lessons\/([^/]+)\/$/)?.[1];
     if (lessonId) {
@@ -263,16 +268,19 @@ describe('Course player (member)', () => {
     expect(within(quiz).getByRole('alert').textContent).toBe('Répondez à la question 2 avant de valider.');
     expect(calls.some((c) => c.url.pathname.endsWith('/quiz/submit/'))).toBe(false);
 
-    // Failed: the score, the correction, start again
+    // Failed: the score and what was right or wrong, not the right answers yet; start again
     fireEvent.click(within(quiz).getByRole('checkbox', { name: 'useState' }));
     fireEvent.click(within(quiz).getByRole('button', { name: /Valider mes réponses/ }));
     const score = await screen.findByRole('region', { name: 'Résultat du quiz' }, SLOW);
     expect(score.textContent).toMatch(/50 %/);
     expect(score.textContent).toMatch(/Il faut 70 % pour réussir/);
     expect(calls.find((c) => c.url.pathname.endsWith('/quiz/submit/'))?.body).toEqual({ answers: { q1: ['a'], q2: ['a'] } });
-    const correction = screen.getByRole('list', { name: 'Correction' });
-    expect(within(correction).getByText('C’est la convention de React.')).toBeTruthy();
-    expect(within(correction).getAllByText('Bonne réponse').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('list', { name: 'Correction' })).toBeNull();
+    const answers = screen.getByRole('list', { name: 'Vos réponses' });
+    expect(within(answers).getAllByLabelText('Bonne réponse')).toHaveLength(1);
+    expect(within(answers).queryByText('Bonne réponse')).toBeNull();
+    expect(within(answers).queryByText('C’est la convention de React.')).toBeNull();
+    expect(screen.getByText(/s’afficheront une fois le quiz réussi/)).toBeTruthy();
 
     // Passed: the course is done
     fireEvent.click(within(score).getByRole('button', { name: /Recommencer/ }));
@@ -285,6 +293,22 @@ describe('Course player (member)', () => {
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     expect(within(dialog).getByRole('heading', { name: 'Félicitations !' })).toBeTruthy();
     expect(within(within(dialog).getByRole('group', { name: 'Ce que vous avez accompli' })).getByText('+35')).toBeTruthy();
+    // Passed: the correction is given
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Revoir la formation' }));
+    const correction = await screen.findByRole('list', { name: 'Correction' }, SLOW);
+    expect(within(correction).getByText('C’est la convention de React.')).toBeTruthy();
+    expect(within(correction).getAllByText(/Bonne réponse/).length).toBeGreaterThan(0);
+
+    // Passed again, the course already done: its points, without the congratulations
+    fireEvent.click(screen.getByRole('button', { name: /Recommencer/ }));
+    const last = await screen.findByRole('region', { name: 'Quiz' }, SLOW);
+    fireEvent.click(within(last).getByRole('radio', { name: 'use' }));
+    fireEvent.click(within(last).getByRole('button', { name: /Question suivante/ }));
+    fireEvent.click(within(last).getByRole('checkbox', { name: 'useState' }));
+    fireEvent.click(within(last).getByRole('checkbox', { name: 'useEffect' }));
+    fireEvent.click(within(last).getByRole('button', { name: /Valider mes réponses/ }));
+    expect(await screen.findByText('Quiz réussi : +10 points', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('plays a video of a platform in its own player', async () => {

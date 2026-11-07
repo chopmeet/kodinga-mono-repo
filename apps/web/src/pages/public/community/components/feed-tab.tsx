@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
 import { WeeklyDigest } from '@/pages/shared/weekly-digest';
+import { SemanticSearch } from './semantic-search';
 import { CodeBlock } from '@/pages/shared/code-block';
 import { useGetCommunityFeedQuery, useToggleBookmarkMutation, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
@@ -259,6 +260,8 @@ export function FeedTab({ page }: { page: CommunityPage }) {
           </select>
         </label>
       </div>
+
+      {isMember && <SemanticSearch slug={page.slug} query={search} />}
 
       {isLoading ? (
         <p className="py-12 text-center text-sm text-slate-500">Chargement du fil…</p>

@@ -9,6 +9,8 @@ import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
 import { formatCompact, nameInitials, useUser } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
+import { ProfileFollows } from './components/profile-follows';
+import UseProfileActivity from './form/UseProfileActivity';
 import { ProfileAbout, ProfileAvailability, ProfileCareer, ProfileCommunities, ProfileContributions, ProfileLinks, ProfilePortfolio } from './components/profile-details';
 
 type TabId = 'about' | 'career' | 'portfolio' | 'communities' | 'contributions';
@@ -37,7 +39,7 @@ function PublicProfile() {
   const { data: profile, isLoading, error } = useGetPublicProfileQuery(username, { skip: !username });
   const me = useUser();
   const [tab, setTab] = useState<TabId>('about');
-  const year = new Date().getFullYear();
+  const activity = UseProfileActivity(username, profile?.user.date_joined);
 
   if (isLoading) {
     return (
@@ -119,6 +121,7 @@ function PublicProfile() {
               Inscrit le {joinedFormat.format(new Date(profile.user.date_joined))}
             </li>
           </ul>
+          <ProfileFollows profile={profile} name={name} />
           <ProfileLinks profile={profile} />
 
           <dl className="mt-8 grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-5 text-center">
@@ -164,23 +167,33 @@ function PublicProfile() {
               <h2 id="activity-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
                 Activité
               </h2>
-              <p className="mt-4 text-slate-600">L'historique jour par jour arrive bientôt.</p>
+              <p className="mt-4 text-slate-600" aria-live="polite">
+                {activity.failed
+                  ? 'Impossible de charger l’activité pour le moment.'
+                  : activity.total === undefined
+                    ? 'Chargement de l’activité…'
+                    : `${formatCompact(activity.total)} contribution${activity.total > 1 ? 's' : ''} en ${activity.year}`}
+              </p>
             </div>
             <label className="sr-only" htmlFor="activity-year">
               Année
             </label>
             <select
               id="activity-year"
-              value={year}
-              onChange={() => undefined}
+              value={activity.year}
+              onChange={(e) => activity.setYear(Number(e.target.value))}
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900"
             >
-              <option value={year}>{year}</option>
+              {activity.years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="mt-8">
-            <ActivityHeatmap year={year} />
+            <ActivityHeatmap year={activity.year} counts={activity.counts} />
           </div>
 
           <div className="no-scrollbar mt-12 flex gap-2 overflow-x-auto border-b border-slate-200" role="tablist">

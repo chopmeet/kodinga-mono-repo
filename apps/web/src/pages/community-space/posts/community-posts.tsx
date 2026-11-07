@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 
 import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, SelectInput, TopTitle } from '@kodinga-mono-repo/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
-import { SoonBadge } from '@/pages/shared/row-actions';
 import type { PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { postTypeLabel, useUser } from '@/utils/Utils';
@@ -17,6 +16,7 @@ import PostsTable from './tables/posts-table';
 const stateFilters: { value: PostStateFilter; label: string }[] = [
   { value: 'all', label: 'Toutes' },
   { value: 'pinned', label: 'Épinglées' },
+  { value: 'locked', label: 'Verrouillées' },
 ];
 
 const typeOptions = [
@@ -31,7 +31,6 @@ function CommunityPosts() {
   const { community } = useCommunitySpace();
   const [params, setParams] = useSearchParams();
   const stateParam = params.get('filter');
-  // ?filter=locked (dashboard link) is not a filter of the api yet: all posts then
   const state: PostStateFilter = isState(stateParam) ? stateParam : 'all';
   const [type, setType] = useState<PostTypeFilter>('all');
   const [search, setSearch] = useState('');
@@ -95,9 +94,6 @@ function CommunityPosts() {
               {f.label} {list.counts[f.value] !== undefined && <span className="tabular-nums opacity-70">{list.counts[f.value]}</span>}
             </FilterChip>
           ))}
-          <FilterChip active={false} disabled title="Bientôt disponible" onClick={() => undefined}>
-            Verrouillées <SoonBadge />
-          </FilterChip>
         </div>
 
         <div className="mt-5" aria-busy={list.isFetching}>

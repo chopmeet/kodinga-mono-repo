@@ -43,6 +43,8 @@ export type QuizResult = {
   just_completed_course?: boolean;
   /** Answer of the submit only, when the course is done */
   congratulations?: { xp_awarded: number } | null;
+  /** Answer of the submit only: the points this attempt gave (0 when already given) */
+  xp_awarded?: number;
 };
 
 /** LessonProgressSerializer (POST .../progress/): what the lesson changed in the course */

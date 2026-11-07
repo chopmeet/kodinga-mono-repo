@@ -11,6 +11,7 @@ import HackathonPageView from '@/pages/public/community/hackathon/hackathon-page
 import LiveRoomPage from '@/pages/public/community/live/live-room';
 import Messages from '@/pages/public/messages/messages';
 import Notifications from '@/pages/public/notifications/notifications';
+import GlobalSearchPage from '@/pages/public/search/search';
 import OpportunityPageView from '@/pages/public/opportunity/opportunity-page';
 import ProjectPageView from '@/pages/public/project/project-page';
 import Dashboard, { LegacyAccountRedirect, LegacyCommunitiesRedirect } from '@/pages/dashboard/dashboard';
@@ -171,6 +172,10 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'notifications',
         element: <Notifications />,
+      },
+      {
+        path: 'search',
+        element: <GlobalSearchPage />,
       },
       {
         path: 'messages',
