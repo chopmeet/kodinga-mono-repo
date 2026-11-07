@@ -393,7 +393,15 @@ class InvitationService:
                     raise PermissionDenied("Vous êtes banni de cette communauté.")
 
                 if member.status == MembershipStatus.SUSPENDED:
-                    raise PermissionDenied("Votre compte est actuellement suspendu dans cette communauté.")
+                    # B2 Note: Block if member has an active disciplinary suspension sanction.
+                    # Members suspended solely due to subscription expiry can be reinvited.
+                    has_active_suspension = MemberSanction.objects.filter(
+                        member=member,
+                        sanction_type=SanctionType.SUSPENSION,
+                        is_active=True
+                    ).exists()
+                    if has_active_suspension:
+                        raise PermissionDenied("Votre compte fait l'objet d'une suspension disciplinaire dans cette communauté.")
 
                 if member.status == MembershipStatus.ACTIVE:
                     # Idempotent return if already active member
@@ -742,6 +750,29 @@ class InvitationService:
 
         return invitation
 
+    @classmethod
+    def get_active_shareable_link(
+        cls,
+        actor_user: User,
+        workspace: Community,
+        role: str = 'member',
+    ) -> tuple[CommunityInvitation, str] | None:
+        """
+        Retrieves an active shareable invitation link for a workspace without creating one (read-only).
+        """
+        target_role = cls.normalize_role(role)
+        now = timezone.now()
+        existing = CommunityInvitation.objects.filter(
+            community=workspace,
+            email='',
+            role=target_role,
+            status=InvitationStatus.PENDING,
+            expires_at__gt=now,
+        ).order_by('-created_at').first()
+
+        if existing and existing.invite_code:
+            return existing, existing.invite_code
+        return None
 
     @classmethod
     def get_or_create_shareable_link(

@@ -93,7 +93,7 @@ class BillingSelector:
 
     @classmethod
     def get_community_revenue_overview(cls, community: Community) -> dict:
-        wallet, _ = CommunityWallet.objects.get_or_create(community=community)
+        wallet = CommunityWallet.objects.filter(community=community).first()
 
         # Count current active subscribers
         now = timezone.now()
@@ -132,12 +132,12 @@ class BillingSelector:
         ]
 
         return {
-            'total_gross': wallet.total_gross,
-            'total_platform_fees': wallet.total_platform_fees,
-            'total_net': wallet.total_net,
-            'available_balance': wallet.available_balance,
-            'withdrawn_amount': wallet.withdrawn_amount,
-            'currency': wallet.currency,
+            'total_gross': wallet.total_gross if wallet else Decimal('0.00'),
+            'total_platform_fees': wallet.total_platform_fees if wallet else Decimal('0.00'),
+            'total_net': wallet.total_net if wallet else Decimal('0.00'),
+            'available_balance': wallet.available_balance if wallet else Decimal('0.00'),
+            'withdrawn_amount': wallet.withdrawn_amount if wallet else Decimal('0.00'),
+            'currency': wallet.currency if wallet else 'XOF',
             'active_subscribers_count': active_subscribers_count,
             'monthly_revenue': monthly_revenue
         }

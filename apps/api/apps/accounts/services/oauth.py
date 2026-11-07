@@ -5,6 +5,7 @@ from urllib.parse import urlencode, urlparse
 
 import requests
 from django.conf import settings
+from django.contrib.auth.models import update_last_login
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
@@ -134,8 +135,13 @@ class OAuthService:
         with contextlib.suppress(Exception):
             cache.set(f"oauth_redirect_uri:{state}", cb_url, timeout=900)
 
+        with contextlib.suppress(Exception):
+            cache.set(f"oauth_state:{state}", {"redirect_uri": cb_url, "provider": provider}, timeout=900)
+
         if provider == OAuthIdentity.PROVIDER_GOOGLE:
             client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
+            if not client_id:
+                raise ApplicationError("Google OAuth is not configured.", code="oauth_not_configured", status_code=503)
             params = {
                 'client_id': client_id,
                 'redirect_uri': cb_url,
@@ -150,6 +156,8 @@ class OAuthService:
 
         elif provider == OAuthIdentity.PROVIDER_GITHUB:
             client_id = getattr(settings, 'GITHUB_CLIENT_ID', '')
+            if not client_id:
+                raise ApplicationError("GitHub OAuth is not configured.", code="oauth_not_configured", status_code=503)
             params = {
                 'client_id': client_id,
                 'redirect_uri': cb_url,
@@ -176,17 +184,21 @@ class OAuthService:
         client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
         client_secret = getattr(settings, 'GOOGLE_CLIENT_SECRET', '')
 
-        token_resp = requests.post(
-            cls.GOOGLE_TOKEN_URL,
-            data={
-                'code': code,
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'redirect_uri': cb_url,
-                'grant_type': 'authorization_code',
-            },
-            timeout=10
-        )
+        try:
+            token_resp = requests.post(
+                cls.GOOGLE_TOKEN_URL,
+                data={
+                    'code': code,
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                    'redirect_uri': cb_url,
+                    'grant_type': 'authorization_code',
+                },
+                timeout=10
+            )
+        except requests.RequestException as e:
+            logger.error(f"Google token request network failure: {e}")
+            raise ApplicationError(f"OAuth network error contacting Google: {e}", code="oauth_exchange_failed", status_code=502) from e
         if not token_resp.ok:
             error_data = token_resp.text
             logger.error(f"Google token error (redirect_uri={cb_url}): {error_data}")
@@ -208,11 +220,15 @@ class OAuthService:
         tokens = token_resp.json()
         access_token = tokens.get('access_token')
 
-        user_resp = requests.get(
-            cls.GOOGLE_USERINFO_URL,
-            headers={'Authorization': f'Bearer {access_token}'},
-            timeout=10
-        )
+        try:
+            user_resp = requests.get(
+                cls.GOOGLE_USERINFO_URL,
+                headers={'Authorization': f'Bearer {access_token}'},
+                timeout=10
+            )
+        except requests.RequestException as e:
+            logger.error(f"Google userinfo request network failure: {e}")
+            raise ApplicationError(f"OAuth network error fetching Google userinfo: {e}", code="oauth_exchange_failed", status_code=502) from e
         if not user_resp.ok:
             raise ApplicationError("Failed to fetch Google profile.", code="oauth_userinfo_failed")
 
@@ -240,17 +256,21 @@ class OAuthService:
         client_id = getattr(settings, 'GITHUB_CLIENT_ID', '')
         client_secret = getattr(settings, 'GITHUB_CLIENT_SECRET', '')
 
-        token_resp = requests.post(
-            cls.GITHUB_TOKEN_URL,
-            data={
-                'code': code,
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'redirect_uri': cb_url,
-            },
-            headers={'Accept': 'application/json'},
-            timeout=10
-        )
+        try:
+            token_resp = requests.post(
+                cls.GITHUB_TOKEN_URL,
+                data={
+                    'code': code,
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                    'redirect_uri': cb_url,
+                },
+                headers={'Accept': 'application/json'},
+                timeout=10
+            )
+        except requests.RequestException as e:
+            logger.error(f"GitHub token request network failure: {e}")
+            raise ApplicationError(f"OAuth network error contacting GitHub: {e}", code="oauth_exchange_failed", status_code=502) from e
         if not token_resp.ok:
             logger.error(f"GitHub token error: {token_resp.text}")
             raise ApplicationError(f"Failed to exchange code with GitHub: {token_resp.text}", code="oauth_exchange_failed")
@@ -268,7 +288,12 @@ class OAuthService:
             'Authorization': f'Bearer {access_token}',
             'Accept': 'application/vnd.github.v3+json',
         }
-        user_resp = requests.get(cls.GITHUB_USERINFO_URL, headers=headers, timeout=10)
+        try:
+            user_resp = requests.get(cls.GITHUB_USERINFO_URL, headers=headers, timeout=10)
+        except requests.RequestException as e:
+            logger.error(f"GitHub userinfo network error: {e}")
+            raise ApplicationError(f"OAuth network error fetching GitHub profile: {e}", code="oauth_exchange_failed", status_code=502) from e
+
         if not user_resp.ok:
             raise ApplicationError("Failed to fetch GitHub profile.", code="oauth_userinfo_failed")
 
@@ -279,9 +304,10 @@ class OAuthService:
         first_name = parts[0]
         last_name = parts[1] if len(parts) > 1 else ""
 
-        email = userinfo.get('email')
+        # A2: Always call /user/emails to extract strictly primary AND verified email
+        email = None
         email_verified = False
-        if not email:
+        try:
             emails_resp = requests.get(cls.GITHUB_EMAILS_URL, headers=headers, timeout=10)
             if emails_resp.ok:
                 for entry in emails_resp.json():
@@ -289,6 +315,16 @@ class OAuthService:
                         email = entry.get('email')
                         email_verified = True
                         break
+        except requests.RequestException as e:
+            logger.error(f"GitHub emails fetch network error: {e}")
+            raise ApplicationError(f"OAuth network error fetching GitHub emails: {e}", code="oauth_exchange_failed", status_code=502) from e
+
+        if not email or not email_verified:
+            raise ApplicationError(
+                "Could not obtain a verified primary email address from GitHub.",
+                code="oauth_missing_email",
+                status_code=400
+            )
 
         return {
             'provider_user_id': provider_user_id,
@@ -296,7 +332,7 @@ class OAuthService:
             'first_name': first_name,
             'last_name': last_name,
             'username_suggestion': userinfo.get('login'),
-            'email_verified': email_verified or bool(email),
+            'email_verified': email_verified,
         }
 
     @classmethod
@@ -317,6 +353,19 @@ class OAuthService:
 
         provider_user_id = profile['provider_user_id']
         email = profile.get('email')
+
+        # E2: Verify state in cache to prevent CSRF / replay attacks
+        if state:
+            cached_info = cache.get(f"oauth_state:{state}")
+            cached_uri = cache.get(f"oauth_redirect_uri:{state}")
+            if not cached_info and not cached_uri:
+                raise ApplicationError(
+                    "State OAuth invalide ou expiré.",
+                    code="oauth_invalid_state",
+                    status_code=400,
+                )
+            cache.delete(f"oauth_state:{state}")
+            cache.delete(f"oauth_redirect_uri:{state}")
 
         with transaction.atomic():
             identity = OAuthIdentity.objects.filter(
@@ -353,9 +402,39 @@ class OAuthService:
                         last_name=profile.get('last_name', ''),
                         email_verified_at=timezone.now() if profile.get('email_verified') else None
                     )
-                elif profile.get('email_verified') and not user.email_verified_at:
-                    user.email_verified_at = timezone.now()
-                    user.save(update_fields=['email_verified_at', 'updated_at'])
+
+                    # E1: Record Terms of Service consent for newly registered OAuth user
+                    try:
+                        from apps.accounts.models.consent import UserConsent
+                        from apps.accounts.services.consent import ConsentService
+                        ConsentService.record_consent(
+                            user=user,
+                            consent_type=getattr(UserConsent, 'CONSENT_TOS', 'terms_of_service'),
+                            policy_version="1.0",
+                            granted=True
+                        )
+                    except Exception as exc:
+                        logger.warning(f"Could not record TOS consent for OAuth user {user.id}: {exc}")
+                else:
+                    # Account already exists!
+                    # A1: If provider does not confirm email is verified, reject linking
+                    if not profile.get('email_verified'):
+                        raise ApplicationError(
+                            "Cette adresse email n'est pas vérifiée par le fournisseur OAuth. Rattachement refusé.",
+                            code="oauth_email_not_verified",
+                            status_code=400,
+                        )
+
+                    # A3: If existing account had an unverified email (potentially pre-created by a third party),
+                    # disable password and revoke active sessions to protect legitimate account owner
+                    if not user.email_verified_at:
+                        user.set_unusable_password()
+                        user.email_verified_at = timezone.now()
+                        user.save(update_fields=['password', 'email_verified_at', 'updated_at'])
+                        try:
+                            SessionService.revoke_all_sessions(user)
+                        except Exception as exc:
+                            logger.warning(f"Error revoking sessions during OAuth link for user {user.id}: {exc}")
 
                 # Link OAuth Identity
                 OAuthIdentity.objects.create(
@@ -368,8 +447,13 @@ class OAuthService:
             if not user.is_active:
                 raise ApplicationError("Account disabled.", code="account_inactive", status_code=403)
 
-            # Issue JWT and Session
+            # E5: Update last_login and inject claims into JWT token
+            update_last_login(None, user)
+
             refresh = RefreshToken.for_user(user)
+            refresh['username'] = user.username
+            refresh['email'] = user.email
+
             session = SessionService.create_session(
                 user=user,
                 refresh_token_str=str(refresh),

@@ -59,6 +59,11 @@ class CommunityFeedView(APIView):
         pinned_param = request.query_params.get('pinned')
         is_pinned = pinned_param.lower() in ['true', '1'] if pinned_param else None
 
+        locked_param = request.query_params.get('locked') or request.query_params.get('is_locked')
+        is_locked = None
+        if locked_param is not None:
+            is_locked = locked_param.lower() in ['true', '1', 'yes']
+
         sort = request.query_params.get('sort') or request.query_params.get('ordering')
         bookmarked_param = request.query_params.get('bookmarked') or request.query_params.get('saved')
         bookmarked = bookmarked_param.lower() in ['true', '1'] if bookmarked_param else None
@@ -87,6 +92,7 @@ class CommunityFeedView(APIView):
             bookmarked=bookmarked,
             author=author,
             tag=tag,
+            is_locked=is_locked,
         )
 
         paginator = self.pagination_class()

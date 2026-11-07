@@ -161,6 +161,17 @@ class BillingService:
             if is_banned:
                 raise ValidationError("Vous êtes banni de cette communauté et ne pouvez pas souscrire à son abonnement.")
 
+            # B2: Check for active disciplinary suspension sanction
+            from apps.memberships.models.sanction import MemberSanction, SanctionType
+            has_active_suspension = MemberSanction.objects.filter(
+                member__community=plan.community,
+                member__user=user,
+                sanction_type=SanctionType.SUSPENSION,
+                is_active=True
+            ).exists()
+            if has_active_suspension:
+                raise ValidationError("Votre compte fait l'objet d'une suspension disciplinaire active dans cette communauté.")
+
         with transaction.atomic():
             # Create local pending payment
             payment = Payment.objects.create(
@@ -314,11 +325,26 @@ class BillingService:
                             members_count=F('members_count') + 1
                         )
                     elif member.status not in [MembershipStatus.ACTIVE, MembershipStatus.BANNED]:
-                        member.status = MembershipStatus.ACTIVE
-                        member.save(update_fields=['status', 'updated_at'])
-                        Community.objects.filter(id=plan.community_id).update(
-                            members_count=F('members_count') + 1
+                        # B2: Check if member has an active disciplinary suspension sanction before reactivating to ACTIVE
+                        from apps.memberships.models.sanction import (
+                            MemberSanction,
+                            SanctionType,
                         )
+                        has_active_suspension = MemberSanction.objects.filter(
+                            member=member,
+                            sanction_type=SanctionType.SUSPENSION,
+                            is_active=True
+                        ).exists()
+                        if not has_active_suspension:
+                            member.status = MembershipStatus.ACTIVE
+                            member.save(update_fields=['status', 'updated_at'])
+                            Community.objects.filter(id=plan.community_id).update(
+                                members_count=F('members_count') + 1
+                            )
+                        else:
+                            logger.info(
+                                f"[Billing] Member {member.id} renewed subscription but remains SUSPENDED due to active disciplinary sanction."
+                            )
 
                 # Process 50% affiliate commission on first paid subscription
                 ref_code = payment.referral_code or custom_data.get('referral_code')

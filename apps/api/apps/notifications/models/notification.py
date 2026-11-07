@@ -22,6 +22,7 @@ class NotificationType(models.TextChoices):
     JOIN_REQUEST = "join_request", "Demande d'adhésion"
     JOIN_REQUEST_APPROVED = "join_request_approved", "Demande d'adhésion acceptée"
     JOIN_REQUEST_REJECTED = "join_request_rejected", "Demande d'adhésion refusée"
+    PEER_HELP_REQUESTED = "peer_help_requested", "Demande d'aide entre pairs"
 
 
 class Notification(BaseModel):

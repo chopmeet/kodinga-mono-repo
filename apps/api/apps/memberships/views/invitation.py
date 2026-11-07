@@ -498,12 +498,24 @@ class CommunityShareableInviteLinkView(APIView):
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
         role = request.query_params.get('role', 'member')
-        invitation, raw_token = InvitationService.get_or_create_shareable_link(
+        result = InvitationService.get_active_shareable_link(
             actor_user=request.user,
             workspace=community,
             role=role,
-            request=request,
         )
+        if not result:
+            return success_response(
+                data={
+                    "community_id": str(community.id),
+                    "community_slug": community.slug,
+                    "share_url": None,
+                    "token": None,
+                    "role": role,
+                    "expires_at": None,
+                    "uses_count": 0,
+                }
+            )
+        invitation, raw_token = result
 
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
         share_url = f"{frontend_url}/invite/{raw_token}"

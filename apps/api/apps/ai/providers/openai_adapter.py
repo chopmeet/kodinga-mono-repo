@@ -160,6 +160,41 @@ class OpenAIAdapter(BaseAIProvider):
         except Exception as e:
             self._handle_openai_error(e)
 
+    def _generate(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        response_format: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ) -> str:
+        client = self._get_client()
+        limit = max_tokens or max_output_tokens
+        temp = temperature if temperature is not None else 0.2
+
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        create_kwargs: dict[str, Any] = {
+            "model": self.model_name,
+            "messages": messages,
+            "temperature": temp,
+        }
+        if limit:
+            create_kwargs["max_tokens"] = limit
+        if response_format:
+            create_kwargs["response_format"] = response_format
+
+        try:
+            response = client.chat.completions.create(**create_kwargs)
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            self._handle_openai_error(e)
+
     def detect_language(self, text: str) -> LanguageDetectionResult:
         system = (
             "You are a professional linguistic classifier. Identify the language of the provided text. "
@@ -594,6 +629,7 @@ class OpenAIAdapter(BaseAIProvider):
             res = client.embeddings.create(
                 model="text-embedding-3-small",
                 input=text,
+                dimensions=768,
             )
             if res.data and len(res.data) > 0:
                 return [float(x) for x in res.data[0].embedding]
@@ -602,7 +638,7 @@ class OpenAIAdapter(BaseAIProvider):
         
         return self._deterministic_embedding(text)
 
-    def _deterministic_embedding(self, text: str, dim: int = 128) -> list[float]:
+    def _deterministic_embedding(self, text: str, dim: int = 768) -> list[float]:
         words = text.lower().split()
         vec = [0.0] * dim
         for _i, word in enumerate(words):

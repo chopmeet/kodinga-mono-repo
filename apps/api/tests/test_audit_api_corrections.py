@@ -1,14 +1,17 @@
 from datetime import timedelta
 from decimal import Decimal
-from zoneinfo import ZoneInfo
+
 import pytest
-from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
 
 from apps.accounts.models.session import UserSession
 from apps.accounts.models.user import User
-from apps.billing.models.affiliate import Affiliate, AffiliateCommission, CommissionStatus
+from apps.billing.models.affiliate import (
+    Affiliate,
+    AffiliateCommission,
+    CommissionStatus,
+)
 from apps.billing.models.payment import Payment, PaymentStatus
 from apps.billing.models.plan import BillingInterval, Plan
 from apps.billing.models.subscription import Subscription, SubscriptionStatus
@@ -17,10 +20,10 @@ from apps.billing.selectors.billing_selector import BillingSelector
 from apps.billing.services.affiliate_service import AffiliateService
 from apps.billing.services.payout_service import PayoutService
 from apps.billing.tasks import send_subscription_expiry_reminders
-from apps.classroom.models.course import Course, CourseLevel
+from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson, LessonType
 from apps.classroom.models.module import CourseModule
-from apps.classroom.models.progress import CourseEnrollment, LessonProgress
+from apps.classroom.models.progress import CourseEnrollment
 from apps.classroom.services.progress_service import ProgressService
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.attendee import AttendeeStatus, EventAttendee
@@ -30,13 +33,16 @@ from apps.hackathons.models.hackathon import Hackathon
 from apps.hackathons.models.team import HackathonTeam, HackathonTeamMember
 from apps.hackathons.serializers.team import HackathonTeamMemberSerializer
 from apps.memberships.models.invitation import CommunityInvitation
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from apps.memberships.models.sanction import MemberSanction, SanctionType
 from apps.memberships.serializers.invitation import WorkspaceInvitationSerializer
 from apps.notifications.models.notification import Notification
 from apps.posts.models.post import Post, PostType
 from apps.posts.selectors.post_selector import PostSelector
-from apps.profiles.models.follow import UserFollow
 from apps.projects.models.project import Project, ProjectStatus
 from apps.projects.services.project_service import ProjectService
 
@@ -82,7 +88,7 @@ class TestBillingAndWalletAuditCorrections:
 
     def test_b1_affiliate_commission_strictly_pro_plans(self, user_a, user_b, community):
         # 1. Setup affiliate user
-        affiliate = Affiliate.objects.create(
+        Affiliate.objects.create(
             user=user_a,
             referral_code="REFA123",
             commission_rate=Decimal("0.50"),
@@ -144,8 +150,9 @@ class TestBillingAndWalletAuditCorrections:
         assert pro_commission.status == CommissionStatus.APPROVED
 
     def test_b2_disciplinary_suspended_member_cannot_pay_and_remains_suspended(self, user_a, user_b, community):
-        from apps.billing.services.billing_service import BillingService
         from rest_framework.exceptions import ValidationError
+
+        from apps.billing.services.billing_service import BillingService
 
         member = CommunityMember.objects.create(
             community=community,
@@ -187,7 +194,7 @@ class TestBillingAndWalletAuditCorrections:
             billing_interval=BillingInterval.MONTH,
         )
         now = timezone.now()
-        sub = Subscription.objects.create(
+        Subscription.objects.create(
             user=user_b,
             community=community,
             plan=plan,
@@ -254,7 +261,7 @@ class TestClassroomAndEventsAuditCorrections:
     """Tests for D1, D2, D3, D4, G1, G2"""
 
     def test_d1_d2_d3_d4_classroom_completion_xp_and_quiz(self, user_a, user_b, community):
-        member_student = CommunityMember.objects.create(
+        CommunityMember.objects.create(
             community=community,
             user=user_b,
             role=CommunityRole.MEMBER,
@@ -333,7 +340,7 @@ class TestClassroomAndEventsAuditCorrections:
         assert quiz_pass_res["question_results"][0]["explanation"] == "2+2 equals 4."
 
         # D1 & D2: Complete lesson 1 -> course reaches 100%
-        prog1 = ProgressService.update_progress(user=user_b, lesson=lesson1, is_completed=True)
+        ProgressService.update_progress(user=user_b, lesson=lesson1, is_completed=True)
         enrollment = CourseEnrollment.objects.get(course=course, user=user_b)
         assert enrollment.first_completed_at is not None
         assert enrollment.completed_at is not None

@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from apps.ai.models.embedding import ContentEmbedding
 from apps.ai.tasks import index_content_embedding_task
+from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson
 from apps.posts.models.post import Post
 
@@ -20,7 +21,7 @@ def on_post_saved(sender, instance: Post, created: bool, **kwargs):
         return
 
     try:
-        url = f"/c/{instance.community.slug}/posts/{instance.id}" if instance.community else ""
+        url = f"/communities/{instance.community.slug}/posts/{instance.id}" if instance.community else ""
         index_content_embedding_task.delay(
             content_type="post",
             object_id=str(instance.id),
@@ -52,14 +53,20 @@ def on_post_deleted(sender, instance: Post, **kwargs):
 def on_lesson_saved(sender, instance: Lesson, created: bool, **kwargs):
     """
     Automatically indexes lesson embeddings asynchronously upon creation or update.
+    Excludes unpublished courses from being indexed.
     """
     module = getattr(instance, "module", None)
     course = getattr(module, "course", None) if module else None
     if not course or not course.community_id:
         return
 
+    if not course.is_published:
+        # Unpublished course lessons must not be indexed
+        ContentEmbedding.objects.filter(content_type="lesson", object_id=str(instance.id)).delete()
+        return
+
     try:
-        url = f"/c/{course.community.slug}/courses/{course.slug}/lessons/{instance.id}"
+        url = f"/communities/{course.community.slug}/courses/{course.slug}?lesson={instance.id}"
         index_content_embedding_task.delay(
             content_type="lesson",
             object_id=str(instance.id),
@@ -86,3 +93,24 @@ def on_lesson_deleted(sender, instance: Lesson, **kwargs):
     except Exception as exc:
         logger.warning(f"[on_lesson_deleted] Error cleaning embedding for lesson {instance.id}: {exc}")
 
+
+@receiver(post_save, sender=Course)
+def on_course_saved(sender, instance: Course, created: bool, **kwargs):
+    """
+    Synchronizes lesson embeddings when course publication status changes.
+    """
+    if not instance.community_id:
+        return
+
+    try:
+        lessons = Lesson.objects.filter(module__course=instance).select_related("module__course__community")
+        if not instance.is_published:
+            # Course was unpublished: delete all its lesson embeddings
+            lesson_ids = [str(les.id) for les in lessons]
+            ContentEmbedding.objects.filter(content_type="lesson", object_id__in=lesson_ids).delete()
+        else:
+            # Course is published: trigger indexing for all lessons
+            for lesson in lessons:
+                on_lesson_saved(Lesson, lesson, created=False)
+    except Exception as exc:
+        logger.warning(f"[on_course_saved] Error syncing lesson embeddings for course {instance.id}: {exc}")

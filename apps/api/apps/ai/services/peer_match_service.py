@@ -101,8 +101,8 @@ class PeerMatchService:
                 )
 
             avatar_url = None
-            if hasattr(target_user, "profile") and target_user.profile and hasattr(target_user.profile, "avatar"):
-                avatar_url = getattr(target_user.profile.avatar, "url", None)
+            if hasattr(target_user, "profile") and target_user.profile:
+                avatar_url = getattr(target_user.profile, "avatar_url", None)
 
             matches.append({
                 "id": str(rec.id),
@@ -133,6 +133,16 @@ class PeerMatchService:
         """
         desired = set(s.lower() for s in (desired_skills or []))
 
+        from apps.hackathons.models.team import HackathonTeamMember
+
+        # Exclude candidates already in an accepted team for this hackathon
+        assigned_user_ids = set(
+            HackathonTeamMember.objects.filter(
+                team__hackathon=hackathon,
+                status="accepted",
+            ).values_list("user_id", flat=True)
+        )
+
         # Participants of this hackathon
         participants = (
             User.objects.filter(
@@ -140,7 +150,8 @@ class PeerMatchService:
                 hackathon_applications__status="accepted",
             )
             .exclude(id=user.id)
-            .distinct()[:25]
+            .exclude(id__in=assigned_user_ids)
+            .distinct()[:50]
         )
 
         matches = []
@@ -186,9 +197,11 @@ class PeerMatchService:
         """
         Accepts or declines a peer match proposal.
         """
+        from rest_framework.exceptions import PermissionDenied
+
         rec = PeerMatchRecommendation.objects.select_for_update().get(id=match_id)
         if rec.source_user_id != user.id and rec.target_user_id != user.id:
-            raise PermissionError("Vous n'êtes pas autorisé à modifier cette recommandation.")
+            raise PermissionDenied("Vous n'êtes pas autorisé à modifier cette recommandation.")
 
         if action == "accept":
             rec.status = MatchStatus.ACCEPTED

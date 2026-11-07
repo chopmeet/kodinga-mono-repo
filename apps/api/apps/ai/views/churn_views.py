@@ -78,3 +78,30 @@ class SendSmartNudgeView(APIView):
             message="Nudge de réengagement envoyé avec succès.",
             status_code=status.HTTP_200_OK,
         )
+
+
+class GenerateSmartNudgeView(APIView):
+    """
+    Generates or refreshes a personalized AI nudge on-demand for an at-risk member.
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsCommunityAdmin]
+
+    def post(self, request, pk: str | None = None, churn_id: str | None = None):
+        target_id = pk or churn_id
+        churn_risk = get_object_or_404(
+            MemberChurnRisk.objects.select_related("member__community", "member__user"),
+            id=target_id,
+        )
+        self.check_object_permissions(request, churn_risk.member.community)
+
+        nudge = ChurnPredictionService.generate_or_refresh_nudge(churn_risk_id=str(target_id))
+        resp_data = {
+            "suggested_nudge": nudge,
+            "churn_risk_id": str(target_id),
+        }
+        return ai_success_response(
+            resp_data,
+            message="Message de relance IA généré avec succès.",
+            status_code=status.HTTP_200_OK,
+        )

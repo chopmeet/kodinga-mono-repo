@@ -130,7 +130,6 @@ class ProgressService:
                 course=course,
                 user=user
             )
-            was_already_completed = enrollment.completed_at is not None
 
             ordered_lessons = list(
                 Lesson.objects.filter(module__course=course)
@@ -156,58 +155,84 @@ class ProgressService:
             else:
                 progress_pct = 0.0
 
+            now = timezone.now()
             is_course_completed = total_lessons > 0 and completed_count >= total_lessons
-            just_completed_course = is_course_completed and not was_already_completed
+            is_first_time_course_completed = is_course_completed and (enrollment.first_completed_at is None)
+            just_completed_course = is_first_time_course_completed
 
             enrollment.progress_percent = progress_pct
             if is_course_completed and not enrollment.completed_at:
-                enrollment.completed_at = timezone.now()
+                enrollment.completed_at = now
             elif not is_course_completed:
                 enrollment.completed_at = None
 
-            enrollment.save(update_fields=['progress_percent', 'completed_at', 'updated_at'])
+            if is_first_time_course_completed:
+                enrollment.first_completed_at = now
+
+            enrollment.save(update_fields=['progress_percent', 'completed_at', 'first_completed_at', 'updated_at'])
 
             xp_awarded = 0
             if is_completed:
+                from apps.gamification.models.reputation import (
+                    ReputationAction,
+                    ReputationTransaction,
+                )
                 from apps.gamification.services.gamification_service import (
                     GamificationService,
                 )
+
+                has_prior_lesson_tx = ReputationTransaction.objects.filter(
+                    user=user,
+                    community=community,
+                    action=ReputationAction.LESSON_COMPLETED,
+                    reference_id=str(lesson.id),
+                ).exists()
 
                 _rep, lesson_tx = GamificationService.award_lesson_completed(user=user, lesson=lesson)
-                if lesson_tx:
+                if lesson_tx and not has_prior_lesson_tx:
                     xp_awarded += lesson_tx.points
 
-            if is_course_completed:
+            if is_first_time_course_completed:
+                from apps.gamification.models.reputation import (
+                    ReputationAction,
+                    ReputationTransaction,
+                )
                 from apps.gamification.services.gamification_service import (
                     GamificationService,
                 )
 
+                has_prior_course_tx = ReputationTransaction.objects.filter(
+                    user=user,
+                    community=community,
+                    action=ReputationAction.COURSE_COMPLETED,
+                    reference_id=str(course.id),
+                ).exists()
+
                 _rep, course_tx = GamificationService.award_course_completed(user=user, course=course)
-                if course_tx:
+                if course_tx and not has_prior_course_tx:
                     xp_awarded += course_tx.points
 
-                if just_completed_course:
-                    NotificationService.create_notification(
-                        recipient=user,
-                        actor=None,
-                        title=f"Formation terminée : {course.title} 🎉",
-                        body=(
-                            f"Félicitations ! Vous avez terminé 100% de la formation « {course.title} » "
-                            f"dans la communauté {community.name}."
-                        ),
-                        notification_type=NotificationType.SYSTEM,
-                        action_url=f"/communities/{community.slug}/classroom/{course.slug}",
-                        target_type="course_completion",
-                        target_id=f"{course.id}:{user.id}",
-                        metadata={
-                            "course_id": str(course.id),
-                            "course_slug": course.slug,
-                            "course_title": course.title,
-                            "community_slug": community.slug,
-                            "completed_at": enrollment.completed_at.isoformat() if enrollment.completed_at else None,
-                            "xp_awarded": xp_awarded,
-                        },
-                    )
+                NotificationService.create_notification(
+                    recipient=user,
+                    actor=None,
+                    title=f"Formation terminée : {course.title} 🎉",
+                    body=(
+                        f"Félicitations ! Vous avez terminé 100% de la formation « {course.title} » "
+                        f"dans la communauté {community.name}."
+                    ),
+                    notification_type=NotificationType.SYSTEM,
+                    action_url=f"/communities/{community.slug}/classroom/{course.slug}",
+                    target_type="course_completion",
+                    target_id=f"{course.id}:{user.id}",
+                    metadata={
+                        "course_id": str(course.id),
+                        "course_slug": course.slug,
+                        "course_title": course.title,
+                        "community_slug": community.slug,
+                        "completed_at": enrollment.completed_at.isoformat() if enrollment.completed_at else None,
+                        "xp_awarded": xp_awarded,
+                    },
+                )
 
             next_lesson = None
             for les in ordered_lessons:
@@ -391,6 +416,15 @@ class ProgressService:
         passed = score_percent >= passing_score
         submitted_at = timezone.now()
 
+        # D4: Hide solution and explanations from learners until they pass the quiz
+        final_question_results = []
+        for qr in question_results:
+            item = dict(qr)
+            if not passed:
+                item["correct_option_ids"] = []
+                item["explanation"] = ""
+            final_question_results.append(item)
+
         with transaction.atomic():
             progress, _ = LessonProgress.objects.get_or_create(lesson=lesson, user=user)
             progress.quiz_attempts_count = (progress.quiz_attempts_count or 0) + 1
@@ -410,7 +444,7 @@ class ProgressService:
                 "total_questions_count": len(questions),
                 "attempt_number": progress.quiz_attempts_count,
                 "submitted_at": submitted_at.isoformat(),
-                "question_results": question_results,
+                "question_results": final_question_results,
             }
             progress.quiz_last_submission = submission_summary
             progress.save(
@@ -433,6 +467,7 @@ class ProgressService:
         return {
             **submission_summary,
             "is_lesson_completed": updated_progress.is_completed,
+            "xp_awarded": getattr(updated_progress, "xp_awarded", 0),
             "course_progress_percent": getattr(updated_progress, "course_progress_percent", 0.0),
             "completed_lessons_count": getattr(updated_progress, "completed_lessons_count", 0),
             "total_lessons_count": getattr(updated_progress, "total_lessons_count", 0),

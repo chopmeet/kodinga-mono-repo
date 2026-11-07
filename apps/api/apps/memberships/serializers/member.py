@@ -75,6 +75,7 @@ class ManagerMemberUserSerializer(UserSerializer):
 
 class CommunityMemberSerializer(BaseModelSerializer):
     user = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
 
     class Meta:
         model = CommunityMember
@@ -87,9 +88,29 @@ class CommunityMemberSerializer(BaseModelSerializer):
             'joined_at',
             'reputation_score',
             'notifications_enabled',
+            'is_online',
             'created_at',
         ]
-        read_only_fields = ['id', 'user', 'joined_at', 'reputation_score', 'created_at']
+        read_only_fields = ['id', 'user', 'joined_at', 'reputation_score', 'is_online', 'created_at']
+
+    def get_is_online(self, obj) -> bool:
+        user = getattr(obj, 'user', None)
+        if not user:
+            return False
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.accounts.models.session import UserSession
+
+        now = timezone.now()
+        threshold = now - timedelta(minutes=15)
+        return UserSession.objects.filter(
+            user=user,
+            revoked_at__isnull=True,
+            expires_at__gt=now,
+            last_seen_at__gte=threshold,
+        ).exists()
 
     def get_user(self, obj) -> dict:
         is_manager = self.context.get('is_manager', True)

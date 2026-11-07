@@ -67,6 +67,7 @@ class LessonSerializer(BaseModelSerializer):
 class LessonDetailSerializer(LessonSerializer):
     video_asset = VideoAssetSerializer(read_only=True)
     quiz_data = serializers.SerializerMethodField()
+    code_blocks = serializers.SerializerMethodField()
     user_quiz_result = serializers.SerializerMethodField()
 
     class Meta(LessonSerializer.Meta):
@@ -79,6 +80,32 @@ class LessonDetailSerializer(LessonSerializer):
             'quiz_data',
             'user_quiz_result',
             'attachments',
+        ]
+
+    def get_code_blocks(self, obj: Lesson) -> list:
+        raw_blocks = obj.code_blocks if isinstance(obj.code_blocks, list) else []
+        if not raw_blocks:
+            return []
+
+        is_mgr = getattr(obj, '_viewer_is_manager', None)
+        if is_mgr is None:
+            request = self.context.get('request')
+            user = getattr(request, 'user', None)
+            if user and user.is_authenticated:
+                from apps.classroom.selectors.classroom_selector import (
+                    ClassroomSelector,
+                )
+                is_mgr = ClassroomSelector.is_manager(obj.module.course.community, user)
+            else:
+                is_mgr = False
+
+        if is_mgr:
+            return raw_blocks
+
+        # D4: Hide solution code blocks from non-manager learners
+        return [
+            b for b in raw_blocks
+            if isinstance(b, dict) and b.get('id') != 'solution' and b.get('type') != 'solution'
         ]
 
     def get_quiz_data(self, obj: Lesson) -> dict:

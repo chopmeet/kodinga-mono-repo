@@ -1,3 +1,4 @@
+from django.db.models import F
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -40,7 +41,7 @@ class PostDetailView(APIView):
         check_community_read_permission(request.user, post.community)
 
         # Increment view counter asynchronously / atomic
-        Post.objects.filter(id=post.id).update(views_count=post.views_count + 1)
+        Post.objects.filter(id=post.id).update(views_count=F('views_count') + 1)
         post.views_count += 1
 
         serializer = PostDetailSerializer(post, context={'request': request})

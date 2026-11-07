@@ -223,17 +223,21 @@ class ProjectDetailView(APIView):
         serializer = CreateProjectSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         tech_ids = serializer.validated_data.pop("technology_ids", None)
-        community_id = serializer.validated_data.pop("community_id", None)
-        if community_id is not None:
-            community = Community.objects.filter(id=community_id).first()
-            if not community:
-                return error_response(
-                    "Communauté introuvable.",
-                    code="resource_not_found",
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-            check_community_membership(request.user, community, "associer ce projet à cette communauté")
-            serializer.validated_data["community"] = community
+        serializer.validated_data.pop("community_id", None)
+        if "community_id" in request.data:
+            c_id = request.data.get("community_id")
+            if c_id is None or c_id == "":
+                serializer.validated_data["community"] = None
+            else:
+                community = Community.objects.filter(id=c_id).first()
+                if not community:
+                    return error_response(
+                        "Communauté introuvable.",
+                        code="resource_not_found",
+                        status_code=status.HTTP_404_NOT_FOUND,
+                    )
+                check_community_membership(request.user, community, "associer ce projet à cette communauté")
+                serializer.validated_data["community"] = community
 
         updated_project = ProjectService.update_project(
             project=project,

@@ -25,6 +25,14 @@ app.conf.beat_schedule = {
         'task': 'apps.billing.tasks.send_subscription_expiry_reminders',
         'schedule': 86400.0,  # Run daily for 72h renewal reminders
     },
+    'evaluate-all-communities-churn-daily': {
+        'task': 'apps.ai.tasks.evaluate_all_communities_churn_periodic_task',
+        'schedule': 86400.0,  # Run daily to evaluate retention and churn risks
+    },
+    'generate-all-communities-weekly-digest-weekly': {
+        'task': 'apps.ai.tasks.generate_all_communities_weekly_digest_periodic_task',
+        'schedule': 604800.0,  # Run weekly for community pulse digest
+    },
 }
 
 

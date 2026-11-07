@@ -1,5 +1,6 @@
 from apps.profiles.models.education import DeveloperEducation
 from apps.profiles.models.experience import DeveloperExperience, EmploymentType
+from apps.profiles.models.follow import UserFollow
 from apps.profiles.models.portfolio import DeveloperPortfolioProject
 from apps.profiles.models.profile import AvailabilityStatus, DeveloperProfile
 from apps.profiles.models.skill import DeveloperSkill, SkillLevel
@@ -16,4 +17,5 @@ __all__ = [
     'EmploymentType',
     'DeveloperEducation',
     'DeveloperPortfolioProject',
+    'UserFollow',
 ]

@@ -5,6 +5,7 @@ from apps.billing.models.payment import Payment
 from apps.billing.models.plan import Plan
 from apps.billing.models.subscription import Subscription
 from apps.billing.models.wallet import CommunityPayout, CommunityWallet
+from apps.billing.services.payout_service import PayoutService
 from common.permissions.base import is_superadmin_user
 
 
@@ -66,6 +67,47 @@ class CommunityPayoutAdmin(admin.ModelAdmin):
     list_display = ('id', 'community', 'requested_by', 'amount', 'currency', 'status', 'payment_method', 'account_identifier', 'created_at')
     list_filter = ('status', 'payment_method', 'currency', 'created_at')
     search_fields = ('community__name', 'requested_by__username', 'account_identifier', 'reference')
+    actions = ['approve_payouts', 'process_payouts', 'reject_payouts']
+
+    @admin.action(description="Approuver les reversements sélectionnés")
+    def approve_payouts(self, request, queryset):
+        success_count = 0
+        for payout in queryset:
+            try:
+                PayoutService.approve_payout(payout, admin_user=request.user)
+                success_count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur approbation {payout.id}: {e}", level='error')
+        if success_count:
+            self.message_user(request, f"{success_count} reversement(s) approuvé(s).")
+
+    @admin.action(description="Marquer comme effectués (décaissés)")
+    def process_payouts(self, request, queryset):
+        success_count = 0
+        for payout in queryset:
+            try:
+                PayoutService.process_payout(payout, admin_user=request.user)
+                success_count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur traitement {payout.id}: {e}", level='error')
+        if success_count:
+            self.message_user(request, f"{success_count} reversement(s) marqué(s) comme effectués.")
+
+    @admin.action(description="Rejeter et rembourser le solde au portefeuille")
+    def reject_payouts(self, request, queryset):
+        success_count = 0
+        for payout in queryset:
+            try:
+                PayoutService.reject_payout(
+                    payout,
+                    rejection_reason="Rejeté via console d'administration.",
+                    admin_user=request.user
+                )
+                success_count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur rejet {payout.id}: {e}", level='error')
+        if success_count:
+            self.message_user(request, f"{success_count} reversement(s) rejeté(s) et remboursé(s) au solde.")
 
 
 @admin.register(Affiliate)

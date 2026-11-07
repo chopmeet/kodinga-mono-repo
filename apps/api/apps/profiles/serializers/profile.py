@@ -28,6 +28,9 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
     portfolio_projects = DeveloperPortfolioProjectSerializer(many=True, read_only=True)
     communities = serializers.SerializerMethodField()
     contributions = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = DeveloperProfile
@@ -62,6 +65,9 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
             'views_count',
             'reputation_points',
             'completion_percentage',
+            'followers_count',
+            'following_count',
+            'is_following',
             'skills',
             'experiences',
             'educations',
@@ -78,11 +84,30 @@ class DeveloperProfileDetailSerializer(BaseModelSerializer):
             'views_count',
             'reputation_points',
             'completion_percentage',
+            'followers_count',
+            'following_count',
+            'is_following',
             'communities',
             'contributions',
             'created_at',
             'updated_at',
         ]
+
+    def get_followers_count(self, obj) -> int:
+        from apps.profiles.models.follow import UserFollow
+        return UserFollow.objects.filter(following=obj.user).count()
+
+    def get_following_count(self, obj) -> int:
+        from apps.profiles.models.follow import UserFollow
+        return UserFollow.objects.filter(follower=obj.user).count()
+
+    def get_is_following(self, obj) -> bool:
+        request = self.context.get('request')
+        viewer = getattr(request, 'user', None)
+        if not viewer or not viewer.is_authenticated or viewer.id == obj.user_id:
+            return False
+        from apps.profiles.models.follow import UserFollow
+        return UserFollow.objects.filter(follower=viewer, following=obj.user).exists()
 
     def get_communities(self, obj) -> list[dict]:
         from apps.communities.models.community import CommunityPrivacy

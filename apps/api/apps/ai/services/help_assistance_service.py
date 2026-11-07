@@ -99,7 +99,10 @@ class HelpAssistanceService:
                         u.profile.skills.values_list("technology__name", flat=True)
                     )
                 matched = [s for s in user_skills if s.lower() in lower_extracted]
-                score = len(matched) * 10 + (getattr(m, "reputation_score", 0) or 0) / 100.0
+                if not matched:
+                    continue
+                rep = getattr(m, "reputation_score", 0) or 0
+                score = len(matched) * 10 + rep / 100.0
                 scored_mentors.append({
                     "user": u,
                     "matched_skills": matched,
@@ -109,11 +112,18 @@ class HelpAssistanceService:
 
             scored_mentors.sort(key=lambda x: x["score"], reverse=True)
             selected_experts = [item["user"] for item in scored_mentors[:4]]
-            if selected_experts:
-                assistance.suggested_experts.set(selected_experts)
+            assistance.suggested_experts.set(selected_experts)
 
         mentors_data = []
         lower_extracted = [s.lower() for s in (assistance.matching_skills or [])]
+
+        expert_ids = list(assistance.suggested_experts.values_list("id", flat=True))
+        member_rep_map = dict(
+            CommunityMember.objects.filter(
+                community=post.community,
+                user_id__in=expert_ids,
+            ).values_list("user_id", "reputation_score")
+        )
 
         for expert in assistance.suggested_experts.all().prefetch_related("profile__skills__technology"):
             avatar_url = None
@@ -124,9 +134,8 @@ class HelpAssistanceService:
                     expert.profile.skills.values_list("technology__name", flat=True)
                 )
 
-            # Display the mentor's actual matching skills
+            # Display only the mentor's actual matching skills
             matching = [s for s in expert_skills if s.lower() in lower_extracted]
-            displayed_skills = matching if matching else (expert_skills[:3] if expert_skills else assistance.matching_skills[:3])
 
             mentors_data.append({
                 "user_id": str(expert.id),
@@ -134,8 +143,8 @@ class HelpAssistanceService:
                 "first_name": expert.first_name,
                 "last_name": expert.last_name,
                 "avatar_url": avatar_url,
-                "matching_skills": displayed_skills,
-                "reputation_score": getattr(expert, "reputation_score", 100),
+                "matching_skills": matching,
+                "reputation_score": member_rep_map.get(expert.id, 0),
             })
 
         return {
@@ -185,7 +194,7 @@ class HelpAssistanceService:
                     custom_message
                     or f"{author.username} a sollicité votre expertise technique sur la question '{post.title}'."
                 ),
-                action_url=f"/c/{post.community.slug}/posts/{post.id}",
+                action_url=f"/communities/{post.community.slug}/posts/{post.id}",
                 target_type="post",
                 target_id=str(post.id),
             )

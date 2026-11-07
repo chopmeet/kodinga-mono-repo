@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from django.core.cache import cache
@@ -15,7 +15,11 @@ from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson
 from apps.classroom.models.module import CourseModule
 from apps.communities.models.community import Community, CommunityPrivacy
-from apps.memberships.models.member import CommunityMember, CommunityRole, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 from common.exceptions.handler import ApplicationError
 
 
@@ -60,6 +64,7 @@ class TestOAuthSecurityA1A3AndCompliance:
         assert user.has_usable_password()
 
         from datetime import timedelta
+
         from django.utils import timezone
 
         session = UserSession.objects.create(

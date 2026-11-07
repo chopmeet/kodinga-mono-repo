@@ -246,7 +246,7 @@ class ChurnPredictionService:
                 title=f"Message de votre communauté {churn_risk.member.community.name}",
                 body=message_body[:280],
                 notification_type=NotificationType.SYSTEM,
-                action_url=f"/c/{churn_risk.member.community.slug}",
+                action_url=f"/communities/{churn_risk.member.community.slug}",
                 target_type="community",
                 target_id=str(churn_risk.member.community_id),
                 metadata={
@@ -264,6 +264,17 @@ class ChurnPredictionService:
             churn_risk.member.community.slug,
         )
         return churn_risk
+
+    @classmethod
+    def generate_or_refresh_nudge(cls, churn_risk_id: str) -> str:
+        """
+        Generates or refreshes a personalized AI nudge on-demand for a specific at-risk member.
+        """
+        churn_risk = MemberChurnRisk.objects.select_related("member__user", "member__community").get(id=churn_risk_id)
+        nudge = cls.generate_smart_nudge(churn_risk.member)
+        churn_risk.suggested_nudge = nudge
+        churn_risk.save(update_fields=["suggested_nudge", "updated_at"])
+        return nudge
 
     @classmethod
     def evaluate_community_churn(

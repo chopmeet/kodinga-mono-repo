@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 from apps.ai.serializers import PingMentorsSerializer
 from apps.ai.services.help_assistance_service import HelpAssistanceService
 from apps.ai.views.base import ai_success_response
-from apps.communities.models.community import CommunityPrivacy
 from apps.memberships.models.member import CommunityMember, MembershipStatus
 from apps.posts.models.post import Post
 from common.permissions.base import is_superadmin_user
@@ -21,14 +20,17 @@ class PostHelpAssistanceView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def _check_access(self, request, post: Post):
-        if post.community.privacy_type in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET]:
-            is_member = CommunityMember.objects.filter(
+        is_member = (
+            post.community.owner_id == request.user.id
+            or is_superadmin_user(request.user)
+            or CommunityMember.objects.filter(
                 community=post.community,
                 user=request.user,
                 status=MembershipStatus.ACTIVE,
-            ).exists() or is_superadmin_user(request.user) or post.community.owner_id == request.user.id
-            if not is_member:
-                raise PermissionDenied("Cette publication appartient à une communauté privée.")
+            ).exists()
+        )
+        if not is_member:
+            raise PermissionDenied("Vous devez être membre actif de la communauté pour accéder à l'assistance IA.")
 
     def get(self, request, post_id: str):
         post = get_object_or_404(Post.objects.select_related("community", "author"), id=post_id)

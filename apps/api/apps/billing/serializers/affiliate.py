@@ -40,6 +40,7 @@ class AffiliateSerializer(BaseModelSerializer):
         read_only_fields = fields
 
     def get_referral_link(self, obj) -> str:
-        request = self.context.get('request')
-        base_url = request.build_absolute_uri('/') if request else 'https://kodinga.com/'
-        return f"{base_url}?ref={obj.referral_code}"
+        from django.conf import settings
+
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://kodinga.me').rstrip('/')
+        return f"{frontend_url}/register?ref={obj.referral_code}"

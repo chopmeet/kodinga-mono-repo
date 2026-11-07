@@ -452,7 +452,7 @@ class TestWorkspaceInvitations:
 
         # 2. Admin generates a shareable invitation link
         api_client.force_authenticate(user=workspace_admin)
-        res_link = api_client.get(
+        res_link = api_client.post(
             f"/api/v1/communities/{workspace.slug}/invitations/share-link/"
         )
         assert res_link.status_code == status.HTTP_200_OK
@@ -476,7 +476,7 @@ class TestWorkspaceInvitations:
     ):
         # 1. Admin generates a shareable link
         api_client.force_authenticate(user=workspace_admin)
-        res_link = api_client.get(
+        res_link = api_client.post(
             f"/api/v1/communities/{workspace.slug}/invitations/share-link/"
         )
         assert res_link.status_code == status.HTTP_200_OK
@@ -515,7 +515,7 @@ class TestWorkspaceInvitations:
     ):
         # 1. Admin generates a shareable link (unlimited uses, max_uses=0)
         api_client.force_authenticate(user=workspace_admin)
-        res_link = api_client.get(
+        res_link = api_client.post(
             f"/api/v1/communities/{workspace.slug}/invitations/share-link/"
         )
         assert res_link.status_code == status.HTTP_200_OK

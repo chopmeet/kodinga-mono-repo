@@ -13,7 +13,11 @@ from apps.ai.views.base import ai_success_response
 from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson
 from apps.classroom.permissions import IsCommunityClassroomManager
-from apps.memberships.models.member import CommunityMember, MembershipStatus
+from apps.memberships.models.member import (
+    CommunityMember,
+    CommunityRole,
+    MembershipStatus,
+)
 
 
 def resolve_course(request, course_slug: str, community_slug: str = None) -> Course:
@@ -42,7 +46,7 @@ def resolve_course(request, course_slug: str, community_slug: str = None) -> Cou
         CommunityMember.objects.filter(
             user=request.user,
             status=MembershipStatus.ACTIVE,
-            is_admin=True,
+            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN],
         ).values_list("community_id", flat=True)
     )
     user_managed_ids.update(

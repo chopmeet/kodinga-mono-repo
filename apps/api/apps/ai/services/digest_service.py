@@ -181,7 +181,7 @@ class CommunityDigestService:
                 response_format={"type": "json_object"},
                 max_tokens=1000,
             )
-            raw = ai_response.content.strip()
+            raw = (ai_response.content if hasattr(ai_response, "content") else str(ai_response)).strip()
             if raw.startswith("```json"):
                 raw = raw[7:]
             if raw.startswith("```"):

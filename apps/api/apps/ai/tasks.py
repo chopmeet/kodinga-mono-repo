@@ -133,3 +133,39 @@ def send_smart_nudge_task(self, churn_risk_id: str, custom_message: str = None):
     except Exception as exc:
         logger.warning(f"[send_smart_nudge_task] Failed for churn risk {churn_risk_id}: {exc}")
 
+
+@shared_task(bind=True, max_retries=1)
+def generate_all_communities_weekly_digest_periodic_task(self):
+    """
+    Scheduled task (weekly via Celery Beat) triggering weekly digests
+    for all active communities.
+    """
+    from apps.communities.models.community import Community
+
+    active_community_ids = list(
+        Community.objects.filter(is_active=True).values_list("id", flat=True)
+    )
+    for cid in active_community_ids:
+        try:
+            generate_community_weekly_digest_task.delay(str(cid))
+        except Exception as exc:
+            logger.warning(f"[generate_all_communities_weekly_digest_periodic_task] Error dispatching for {cid}: {exc}")
+
+
+@shared_task(bind=True, max_retries=1)
+def evaluate_all_communities_churn_periodic_task(self):
+    """
+    Scheduled task (daily via Celery Beat) evaluating retention/churn risks
+    across all active communities.
+    """
+    from apps.communities.models.community import Community
+
+    active_community_ids = list(
+        Community.objects.filter(is_active=True).values_list("id", flat=True)
+    )
+    for cid in active_community_ids:
+        try:
+            evaluate_community_churn_task.delay(str(cid))
+        except Exception as exc:
+            logger.warning(f"[evaluate_all_communities_churn_periodic_task] Error dispatching for {cid}: {exc}")
+

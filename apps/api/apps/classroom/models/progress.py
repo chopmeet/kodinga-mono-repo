@@ -79,6 +79,7 @@ class CourseEnrollment(BaseModel):
     progress_percent = models.FloatField(default=0.0, db_index=True)
     enrolled_at = models.DateTimeField(auto_now_add=True, db_index=True)
     completed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    first_completed_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = 'classroom_course_enrollments'

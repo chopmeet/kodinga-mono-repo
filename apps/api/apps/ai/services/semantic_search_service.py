@@ -14,6 +14,12 @@ def compute_cosine_similarity(v1: list[float], v2: list[float]) -> float:
     if not v1 or not v2:
         return 0.0
 
+    if len(v1) != len(v2):
+        logger.warning(
+            f"[compute_cosine_similarity] Vector dimension mismatch ({len(v1)} vs {len(v2)}). "
+            "Vectors originated from different embedding models; similarity may be degraded."
+        )
+
     length = min(len(v1), len(v2))
     dot = sum(v1[i] * v2[i] for i in range(length))
     norm1 = math.sqrt(sum(v1[i] * v1[i] for i in range(length)))
@@ -51,6 +57,7 @@ class SemanticSearchService:
 
         meta = metadata or {}
         meta.setdefault("snippet", text[:240].strip())
+        meta["dimensions"] = len(embedding_vec)
 
         embedding_obj, _ = ContentEmbedding.objects.update_or_create(
             community=community,
@@ -94,11 +101,12 @@ class SemanticSearchService:
             sim = compute_cosine_similarity(query_vec, cand.embedding)
             if sim >= threshold:
                 meta = cand.metadata if isinstance(cand.metadata, dict) else {}
+                url = meta.get("url") or f"/communities/{community.slug}/posts/{cand.object_id}"
                 matches.append({
                     "id": cand.object_id,
                     "title": cand.title,
                     "similarity_score": round(sim, 3),
-                    "url": meta.get("url", f"/c/{community.slug}/posts/{cand.object_id}"),
+                    "url": url,
                     "snippet": meta.get("snippet", ""),
                     "is_solved": bool(meta.get("is_solved", False)),
                 })
@@ -124,6 +132,7 @@ class SemanticSearchService:
     ) -> list[dict[str, Any]]:
         """
         Performs global natural-language semantic search across posts, lessons, and event replays.
+        Filters out unpublished courses for lessons.
         """
         if not query or len(query.strip()) < 2:
             return []
@@ -134,17 +143,34 @@ class SemanticSearchService:
         if content_types:
             qs = qs.filter(content_type__in=content_types)
 
+        # A4: Identify unpublished courses to exclude their lesson embeddings from search results
+        from apps.classroom.models.course import Course
+        unpublished_course_ids = set(
+            str(cid)
+            for cid in Course.objects.filter(community=community, is_published=False).values_list("id", flat=True)
+        )
+
         results = []
         for item in qs:
+            meta = item.metadata if isinstance(item.metadata, dict) else {}
+
+            # Filter out lessons belonging to unpublished courses
+            if item.content_type == "lesson" and meta.get("course_id") in unpublished_course_ids:
+                continue
+
             sim = compute_cosine_similarity(query_vec, item.embedding)
             if sim >= min_similarity:
-                meta = item.metadata if isinstance(item.metadata, dict) else {}
+                default_url = (
+                    f"/communities/{community.slug}/posts/{item.object_id}"
+                    if item.content_type == "post"
+                    else f"/communities/{community.slug}/courses"
+                )
                 results.append({
                     "id": item.object_id,
                     "content_type": item.content_type,
                     "title": item.title,
                     "similarity_score": round(sim, 3),
-                    "url": meta.get("url", f"/c/{community.slug}/{item.content_type}s/{item.object_id}"),
+                    "url": meta.get("url") or default_url,
                     "snippet": meta.get("snippet", ""),
                 })
 

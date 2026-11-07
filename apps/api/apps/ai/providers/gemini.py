@@ -153,17 +153,31 @@ class GeminiAdapter(BaseAIProvider):
             f"Gemini operation failed: {e}", provider=self.provider_name
         )
 
-    def _generate(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+    def _generate(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        **kwargs,
+    ) -> str:
         client = self._get_client()
+        limit = max_tokens or max_output_tokens
+        temp = temperature if temperature is not None else 0.1
         try:
             from google.genai import types
 
-            config = types.GenerateContentConfig(
-                temperature=0.1,
-                top_p=0.95,
-            )
+            config_kwargs = {
+                "temperature": temp,
+                "top_p": 0.95,
+            }
+            if limit:
+                config_kwargs["max_output_tokens"] = limit
             if system_instruction:
-                config.system_instruction = system_instruction
+                config_kwargs["system_instruction"] = system_instruction
+
+            config = types.GenerateContentConfig(**config_kwargs)
 
             response = client.models.generate_content(
                 model=self.model_name,
@@ -650,7 +664,7 @@ class GeminiAdapter(BaseAIProvider):
         # Deterministic normalized embedding fallback for hermetic testing and offline mode
         return self._deterministic_embedding(text)
 
-    def _deterministic_embedding(self, text: str, dim: int = 128) -> list[float]:
+    def _deterministic_embedding(self, text: str, dim: int = 768) -> list[float]:
         words = text.lower().split()
         vec = [0.0] * dim
         for _i, word in enumerate(words):

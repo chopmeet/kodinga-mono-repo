@@ -10,6 +10,7 @@ from apps.billing.serializers.plan import (
     CommunityPlanCreateUpdateSerializer,
     PlanSerializer,
 )
+from apps.billing.services.billing_service import BillingService
 from apps.communities.models.community import Community, CommunityPricing
 from apps.memberships.models.member import (
     CommunityMember,
@@ -61,7 +62,7 @@ class PlansListView(APIView):
         user = request.user
         if not (is_superadmin_user(user) or user.is_pro):
             raise PermissionDenied(
-                f"Seuls les utilisateurs avec un abonnement Pro actif ({ __import__('apps.billing.services.billing_service', fromlist=['BillingService']).BillingService.get_pro_monthly_price_label() }) peuvent créer des formules de paiement."
+                f"Seuls les utilisateurs avec un abonnement Pro actif ({BillingService.get_pro_monthly_price_label()}) peuvent créer des formules de paiement."
             )
 
         community_id = serializer.validated_data['community_id']

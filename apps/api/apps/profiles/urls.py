@@ -1,5 +1,11 @@
 from django.urls import path
 
+from apps.profiles.views.activity import DeveloperActivityHeatmapView
+from apps.profiles.views.follow import (
+    FollowersListView,
+    FollowingListView,
+    FollowToggleView,
+)
 from apps.profiles.views.profile import (
     MeProfileView,
     PublicProfileDetailView,
@@ -45,4 +51,8 @@ urlpatterns = [
     # Public Developer Directory & Public Profile by username
     path('profiles/', PublicProfileListView.as_view(), name='public_profiles_list'),
     path('profiles/<str:username>/', PublicProfileDetailView.as_view(), name='public_profile_detail'),
+    path('profiles/<str:username>/follow/', FollowToggleView.as_view(), name='profile_follow_toggle'),
+    path('profiles/<str:username>/followers/', FollowersListView.as_view(), name='profile_followers_list'),
+    path('profiles/<str:username>/following/', FollowingListView.as_view(), name='profile_following_list'),
+    path('profiles/<str:username>/activity/', DeveloperActivityHeatmapView.as_view(), name='profile_activity_heatmap'),
 ]

@@ -83,8 +83,18 @@ def send_event_reminders_task(self, minutes_before: int = 30) -> int:
             reminder_sent=False,
         ).select_related("user")
 
-        action_path = f"/communities/{event.community.slug}/events/{event.slug or event.id}"
-        event_url = f"{frontend_url}/c/{event.community.slug}/events/{event.slug or event.id}"
+        from zoneinfo import ZoneInfo
+
+        try:
+            tz = ZoneInfo(event.timezone) if event.timezone else ZoneInfo("UTC")
+        except Exception:
+            tz = ZoneInfo("UTC")
+        local_start = event.start_time.astimezone(tz)
+        event_time_str = local_start.strftime("%H:%M")
+        event_date_str = local_start.strftime("%d/%m/%Y")
+
+        action_path = f"/c/{event.community.slug}?tab=events"
+        event_url = f"{frontend_url}/c/{event.community.slug}?tab=events"
 
         for attendee in attendees:
             user = attendee.user
@@ -93,8 +103,8 @@ def send_event_reminders_task(self, minutes_before: int = 30) -> int:
                 "username": user.username,
                 "event_title": event.title,
                 "community_name": event.community.name,
-                "event_date": event.start_time.strftime("%d/%m/%Y"),
-                "event_time": event.start_time.strftime("%H:%M"),
+                "event_date": event_date_str,
+                "event_time": event_time_str,
                 "timezone": event.timezone,
                 "event_format": event.get_format_display(),
                 "event_url": event_url,
@@ -108,7 +118,7 @@ def send_event_reminders_task(self, minutes_before: int = 30) -> int:
                     title=f"Rappel : {event.title} commence dans 30 minutes",
                     body=(
                         f"L'événement « {event.title} » de la communauté "
-                        f"{event.community.name} débute à {event.start_time.strftime('%H:%M')} ({event.timezone})."
+                        f"{event.community.name} débute à {event_time_str} ({event.timezone or 'UTC'})."
                     ),
                     notification_type=NotificationType.EVENT_REMINDER,
                     action_url=action_path,

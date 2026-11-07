@@ -50,6 +50,7 @@ class PostSelector:
         bookmarked: Optional[bool] = None,
         author: Optional[str] = None,
         tag: Optional[str] = None,
+        is_locked: Optional[bool] = None,
     ) -> QuerySet[Post]:
         if user is not None:
             check_community_read_permission(user, community)
@@ -63,6 +64,9 @@ class PostSelector:
 
         if is_pinned is not None:
             qs = qs.filter(is_pinned=is_pinned)
+
+        if is_locked is not None:
+            qs = qs.filter(is_locked=is_locked)
 
         if since is not None:
             qs = qs.filter(updated_at__gt=since)

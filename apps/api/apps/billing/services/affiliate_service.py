@@ -64,6 +64,14 @@ class AffiliateService:
             logger.warning(f"[Affiliate] User {payment.user.id} attempted self-referral.")
             return None
 
+        # B1: Option A - Affiliate commissions strictly apply to platform Pro subscriptions (no community)
+        if payment.plan and payment.plan.community is not None:
+            logger.info(
+                f"[Affiliate] Payment {payment.id} is for community {payment.plan.community_id}. "
+                "Affiliate commission is strictly reserved for platform Pro plans."
+            )
+            return None
+
         # Ensure this is the first successful payment by this user
         prior_paid_count = Payment.objects.filter(
             user=payment.user,

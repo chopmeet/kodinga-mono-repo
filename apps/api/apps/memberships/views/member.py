@@ -234,6 +234,19 @@ class CommunityMemberListView(APIView):
             ordering=ordering,
         )
 
+        online_filter = request.query_params.get('online') or request.query_params.get('is_online')
+        if online_filter and online_filter.lower() in ['true', '1', 'yes']:
+            from datetime import timedelta
+
+            from django.utils import timezone
+            now = timezone.now()
+            threshold = now - timedelta(minutes=15)
+            queryset = queryset.filter(
+                user__sessions__revoked_at__isnull=True,
+                user__sessions__expires_at__gt=now,
+                user__sessions__last_seen_at__gte=threshold,
+            ).distinct()
+
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
         serializer = CommunityMemberSerializer(

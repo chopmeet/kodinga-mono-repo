@@ -11,9 +11,13 @@ from apps.ai.views.assistant_views import (
     AIAssistantConversationClearView,
     AIAssistantConversationDetailView,
     AIAssistantConversationListView,
+    AIAssistantPlanCommunityView,
+    AIAssistantRecommendCommunitiesView,
+    AIAssistantSuggestContentView,
 )
 from apps.ai.views.churn_views import (
     CommunityChurnDashboardView,
+    GenerateSmartNudgeView,
     SendSmartNudgeView,
 )
 from apps.ai.views.digest_views import (
@@ -36,7 +40,10 @@ from apps.ai.views.settings_views import (
     GlobalAISettingsView,
     WorkspaceAISettingsView,
 )
-from apps.ai.views.translation_views import ContentTranslationView
+from apps.ai.views.translation_views import (
+    AILanguageListView,
+    ContentTranslationView,
+)
 
 app_name = "ai"
 
@@ -69,7 +76,22 @@ urlpatterns = [
         WorkspaceAISettingsView.as_view(),
         name="community-ai-settings",
     ),
-    # Multi-turn Interactive AI Community Assistant (Conversational RAG)
+    # Multi-turn Interactive AI Community Assistant (Conversational RAG & Discovery)
+    path(
+        "ai-assistant/recommend-communities/",
+        AIAssistantRecommendCommunitiesView.as_view(),
+        name="ai-assistant-recommend-communities",
+    ),
+    path(
+        "ai-assistant/plan-community/",
+        AIAssistantPlanCommunityView.as_view(),
+        name="ai-assistant-plan-community",
+    ),
+    path(
+        "ai-assistant/suggest-content/",
+        AIAssistantSuggestContentView.as_view(),
+        name="ai-assistant-suggest-content",
+    ),
     path(
         "ai-assistant/analyze-community/",
         AIAssistantAnalyzeCommunityView.as_view(),
@@ -196,6 +218,16 @@ urlpatterns = [
         SendSmartNudgeView.as_view(),
         name="ai-churn-risk-send-nudge",
     ),
+    path(
+        "ai/churn-risks/<uuid:churn_id>/generate-nudge/",
+        GenerateSmartNudgeView.as_view(),
+        name="churn-risk-generate-nudge",
+    ),
+    path(
+        "ai/churn-risks/<uuid:pk>/generate-nudge/",
+        GenerateSmartNudgeView.as_view(),
+        name="ai-churn-risk-generate-nudge",
+    ),
     # Core Utilities
     path(
         "moderation/audit-logs/",
@@ -211,5 +243,15 @@ urlpatterns = [
         "translate/",
         ContentTranslationView.as_view(),
         name="ai-content-translation",
+    ),
+    path(
+        "languages/",
+        AILanguageListView.as_view(),
+        name="ai-languages-list",
+    ),
+    path(
+        "ai/languages/",
+        AILanguageListView.as_view(),
+        name="ai-languages-list-alias",
     ),
 ]

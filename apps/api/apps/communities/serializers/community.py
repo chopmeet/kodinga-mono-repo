@@ -392,6 +392,8 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = getattr(request, 'user', None)
 
+        from apps.billing.services.billing_service import BillingService
+
         # 1. Check platform setting: is community creation open to Hobby or restricted to Pro only?
         if not self.instance and user and user.is_authenticated:
             from apps.administration.services.admin_service import AdministrationService
@@ -399,7 +401,7 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
             tier = raw_setting.get('tier') if isinstance(raw_setting, dict) else str(raw_setting).lower()
             if tier == 'pro_only' and not user.is_pro:
                 raise serializers.ValidationError(
-                    f"La création de communauté est actuellement réservée aux abonnés Pro ({ __import__('apps.billing.services.billing_service', fromlist=['BillingService']).BillingService.get_pro_monthly_price_label() }). Veuillez passer au forfait Pro pour créer un espace."
+                    f"La création de communauté est actuellement réservée aux abonnés Pro ({BillingService.get_pro_monthly_price_label()}). Veuillez passer au forfait Pro pour créer un espace."
                 )
 
         # 2. Check monetization: Only Pro users can create or configure paid communities
@@ -407,7 +409,7 @@ class CommunityCreateUpdateSerializer(serializers.ModelSerializer):
         if pricing_type == CommunityPricing.PAID:
             if user and user.is_authenticated and not user.is_pro:
                 raise serializers.ValidationError({
-                    'pricing_type': f"Seuls les utilisateurs avec un abonnement Pro actif ({ __import__('apps.billing.services.billing_service', fromlist=['BillingService']).BillingService.get_pro_monthly_price_label() }) peuvent créer ou configurer une communauté payante."
+                    'pricing_type': f"Seuls les utilisateurs avec un abonnement Pro actif ({BillingService.get_pro_monthly_price_label()}) peuvent créer ou configurer une communauté payante."
                 })
             price = attrs.get('membership_price')
             if price is not None and price < 500:

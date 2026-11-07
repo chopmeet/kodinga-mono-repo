@@ -21,9 +21,11 @@ class TeamUserSerializer(serializers.ModelSerializer):
 
 class HackathonTeamMemberSerializer(serializers.ModelSerializer):
     user = TeamUserSerializer(read_only=True)
+    leader = TeamUserSerializer(source="team.leader", read_only=True)
     team_id = serializers.UUIDField(source="team.id", read_only=True)
     team_name = serializers.CharField(source="team.name", read_only=True)
     hackathon_slug = serializers.CharField(source="team.hackathon.slug", read_only=True)
+    hackathon_title = serializers.CharField(source="team.hackathon.title", read_only=True)
     community_slug = serializers.CharField(source="team.hackathon.community.slug", read_only=True)
 
     class Meta:
@@ -32,7 +34,9 @@ class HackathonTeamMemberSerializer(serializers.ModelSerializer):
             "id",
             "team_id",
             "team_name",
+            "leader",
             "hackathon_slug",
+            "hackathon_title",
             "community_slug",
             "user",
             "role",

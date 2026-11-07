@@ -59,8 +59,41 @@ class ProjectService:
     @classmethod
     @transaction.atomic
     def update_project(cls, project, user, validated_data, technology_ids=None):
-        if project.owner_id != user.id and not (user.is_staff or is_superadmin_user(user)):
+        is_owner = (project.owner_id == user.id)
+        is_platform_admin = bool(user.is_staff or is_superadmin_user(user))
+
+        is_community_manager = False
+        if project.community:
+            from apps.memberships.models.member import (
+                CommunityMember,
+                CommunityRole,
+                MembershipStatus,
+            )
+            is_community_manager = (
+                project.community.owner_id == user.id
+                or CommunityMember.objects.filter(
+                    community=project.community,
+                    user=user,
+                    status=MembershipStatus.ACTIVE,
+                    role__in=[CommunityRole.OWNER, CommunityRole.ADMIN],
+                ).exists()
+            )
+
+        # Allow community managers to dissociate a project from their community (community=None)
+        is_dissociating_only = (
+            is_community_manager
+            and "community" in validated_data
+            and validated_data.get("community") is None
+            and all(k in ["community"] for k in validated_data)
+        )
+
+        if not (is_owner or is_platform_admin or is_dissociating_only):
             raise PermissionDenied("Vous n'êtes pas autorisé à modifier ce projet.")
+
+        if is_dissociating_only:
+            project.community = None
+            project.save(update_fields=["community", "updated_at"])
+            return project
 
         community = validated_data.get("community")
         if community:
