@@ -40,6 +40,7 @@ function UseAcceptInvitation() {
 
   const alreadyMember = !!community?.user_membership?.is_member && community.user_membership.status === 'active';
   const loginUrl = `/auth/login?next=${encodeURIComponent(pathname + search)}`;
+  const registerUrl = `/auth/register?next=${encodeURIComponent(pathname + search)}`;
   const closed = declined ? 'Vous avez refusé cette invitation.' : invitation && !invitation.is_valid ? (closedLabel[invitation.status] ?? closedLabel.expired) : null;
   // The api masks an empty address as "***": a shareable link, addressed to nobody
   const invitedEmail = invitation?.masked_email && invitation.masked_email !== '***' ? invitation.masked_email : '';
@@ -79,6 +80,7 @@ function UseAcceptInvitation() {
     isSignedIn,
     alreadyMember,
     loginUrl,
+    registerUrl,
     memberUrl: destination(community?.user_membership?.role),
     isJoining: isJoiningWithCode || isJoiningWithToken,
     accept,

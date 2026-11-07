@@ -10,6 +10,9 @@ const messagesByCode: Record<string, string> = {
   invalid_provider: 'Ce mode de connexion n’est pas disponible.',
   oauth_exchange_failed: 'La connexion avec ce compte a échoué. Réessayez.',
   oauth_userinfo_failed: 'Impossible de récupérer votre profil. Réessayez.',
+  redirect_uri_mismatch: 'Ce mode de connexion est mal configuré. Réessayez plus tard ou utilisez votre email.',
+  disallowed_redirect_uri: 'Ce mode de connexion n’est pas autorisé depuis ce site. Utilisez votre email.',
+  invalid_redirect_uri: 'Ce mode de connexion est mal configuré. Réessayez plus tard ou utilisez votre email.',
   oauth_missing_email: 'Votre compte ne fournit pas d’adresse email vérifiée.',
 };
 

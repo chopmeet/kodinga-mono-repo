@@ -8,6 +8,7 @@ import { useAppDispatch } from '@/redux/hook';
 import { onSetUserToken } from '@/redux/slice/User.slice';
 import { useLoginUserMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
+import { safeNext } from './safe-next';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Saisissez votre email').email('Adresse email invalide'),
@@ -15,9 +16,6 @@ const loginSchema = z.object({
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
-
-/** Only same-app paths: "?next=https://evil.com" or "//evil.com" must not redirect away */
-const safeNext = (next: string | null) => (next?.startsWith('/') && !next.startsWith('//') ? next : '/');
 
 function UseLoginForm() {
   const [params] = useSearchParams();

@@ -81,9 +81,9 @@ function stubDashboardApi() {
       const found = status === 'pending' ? [{ ...MEMBERS[0], id: 'm-p', status: 'pending' }, { ...MEMBERS[1], id: 'm-q', status: 'pending' }] : MEMBERS;
       return json({ success: true, pagination: { count: found.length }, results: found.slice(0, Number(p.get('page_size') ?? 20)) });
     }
-    if (url.pathname.endsWith('/ai/weekly-digest/')) return json(DIGEST);
-    if (url.pathname.endsWith('/ai/weekly-digest/trigger/')) return json({ ...DIGEST, headline: 'Une semaine réécrite' });
-    if (url.pathname.endsWith('/ai/churn-dashboard/')) return json({ community: 'dakar-devops', total_at_risk: 3, members: CHURN.map((m) => ({ ...m, nudge_sent_at: nudged && m.id === 'r1' ? daysAgo(0) : null })) });
+    if (url.pathname.endsWith('/ai/weekly-digest/')) return json({ success: true, data: DIGEST });
+    if (url.pathname.endsWith('/ai/weekly-digest/trigger/')) return json({ success: true, data: { ...DIGEST, headline: 'Une semaine réécrite' } });
+    if (url.pathname.endsWith('/ai/churn-dashboard/')) return json({ success: true, data: { community: 'dakar-devops', total_at_risk: 2, members: CHURN.map((m) => ({ ...m, nudge_sent_at: nudged && m.id === 'r1' ? daysAgo(0) : null })) } });
     if (url.pathname.endsWith('/ai/churn-risks/r1/send-nudge/')) {
       nudged = true;
       return json({ message: 'ok', churn_risk: CHURN[0] });
@@ -162,7 +162,7 @@ describe('Community space: dashboard', () => {
     expect(screen.queryByRole('button', { name: /Analyser les membres/ })).toBeNull();
   });
 
-  it('analyzes the members only on demand, leaves out the low risks, records a nudge', async () => {
+  it('analyzes the members only on demand, leaves out the low risks, sends a confirmed nudge', async () => {
     const calls = stubDashboardApi();
     renderAppAt('/c/dakar-devops/dashboard');
     const analyze = await screen.findByRole('button', { name: /Analyser les membres/ }, SLOW);
@@ -177,7 +177,18 @@ describe('Community space: dashboard', () => {
     expect(within(list).getByText('Bonjour Fatou, tout va bien ?')).toBeTruthy();
     expect(within(list).queryByText('Kofi Sow')).toBeNull();
 
-    fireEvent.click(within(list).getByRole('button', { name: 'Noter Fatou Sow comme relancé' }));
+    // It reaches the member: nothing leaves before the confirmation
+    const nudges = () => calls.filter((u) => u.pathname.endsWith('/ai/churn-risks/r1/send-nudge/'));
+    fireEvent.click(within(list).getByRole('button', { name: 'Envoyer la relance à Fatou Sow' }));
+    const confirm = within(list).getByRole('group', { name: 'Confirmer la relance à Fatou Sow' });
+    expect(within(confirm).getByText('Fatou Sow recevra ce message en notification.')).toBeTruthy();
+    expect(nudges()).toHaveLength(0);
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Annuler' }));
+    expect(within(list).queryByRole('group', { name: 'Confirmer la relance à Fatou Sow' })).toBeNull();
+    expect(nudges()).toHaveLength(0);
+
+    fireEvent.click(within(list).getByRole('button', { name: 'Envoyer la relance à Fatou Sow' }));
+    fireEvent.click(within(list).getByRole('button', { name: 'Confirmer l’envoi' }));
     await waitFor(() => expect(calls.some((u) => u.pathname.endsWith('/ai/churn-risks/r1/send-nudge/'))).toBe(true), SLOW);
     expect(await within(list).findByText(/Relancé le/, {}, SLOW)).toBeTruthy();
 

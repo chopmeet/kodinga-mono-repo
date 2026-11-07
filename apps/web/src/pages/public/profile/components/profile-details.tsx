@@ -259,8 +259,17 @@ export function ProfileContributions({ profile, name }: { profile: PublicProfile
             {c.recent_posts.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                 <span className="min-w-0">
-                  <span className="block truncate font-medium text-slate-900">{plain(p.title) || 'Publication sans titre'}</span>
-                  <span className="text-xs text-slate-500">{ago(p.created_at)}</span>
+                  {p.community_slug ? (
+                    <Link to={`/communities/${p.community_slug}/posts/${p.id}`} className="block truncate font-medium text-slate-900 hover:text-primary">
+                      {plain(p.title) || 'Publication sans titre'}
+                    </Link>
+                  ) : (
+                    <span className="block truncate font-medium text-slate-900">{plain(p.title) || 'Publication sans titre'}</span>
+                  )}
+                  <span className="text-xs text-slate-500">
+                    {p.community_name ? `${p.community_name} · ` : ''}
+                    {ago(p.created_at)}
+                  </span>
                 </span>
                 <span className="flex items-center gap-3 text-xs text-slate-500">
                   <span className="flex items-center gap-1" aria-label={`${p.reactions_count} réactions`}>

@@ -25,7 +25,7 @@ function Banner({ imageUrl }: { imageUrl?: string }) {
           <ArrowLeft className="size-4" />
           Explorer les communautés
         </Link>
-        <p className="self-end pb-6 text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase">Les personnes derrière le code</p>
+        <p className="hidden self-end pb-6 text-xs font-semibold sm:block tracking-[0.2em] text-slate-600 uppercase">Les personnes derrière le code</p>
       </div>
     </div>
   );
@@ -84,7 +84,7 @@ function PublicProfile() {
     <div className="bg-slate-50 pb-16">
       <Banner imageUrl={profile.banner_url || undefined} />
 
-      <div className="mx-auto grid max-w-[1440px] gap-12 px-4 sm:px-6 lg:grid-cols-[22rem_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-[1440px] grid-cols-[minmax(0,1fr)] gap-12 px-4 sm:px-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:px-8">
         {/* Identity */}
         <aside>
           {profile.avatar_url ? (

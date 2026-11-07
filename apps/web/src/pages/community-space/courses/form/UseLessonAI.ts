@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { customToast } from '@kodinga-mono-repo/ui';
 import type { CodeExercise } from '@/pages/shared/code-exercise';
 import type { AIDifficulty } from '@/utils/api/ai/ai.type';
@@ -5,7 +7,10 @@ import { useGenerateExerciseMutation, useGenerateQuizMutation } from '@/utils/ap
 import { parseApiError } from '@/utils/api/errors';
 import { generatedToQuestions, type QuizQuestionDraft } from './quiz-draft';
 
+const UNAVAILABLE = 'L’IA n’est pas disponible pour le moment : rien n’a été ajouté à la leçon. Réessayez plus tard.';
+
 type Options = {
+  slug: string;
   courseSlug: string;
   lessonId: string;
   addQuestions: (questions: QuizQuestionDraft[]) => void;
@@ -16,16 +21,21 @@ type Options = {
 /**
  * A proposal of the AI, written from the saved content of the lesson, goes in the form: the author
  * reads it, and it is saved with the lesson like the rest (never directly, by apply-assessment).
+ * When its AI fails, the api answers a generic template: it is left out, and the author told.
  */
-function UseLessonAI({ courseSlug, lessonId, addQuestions, exercise, setExercise }: Options) {
+function UseLessonAI({ slug, courseSlug, lessonId, addQuestions, exercise, setExercise }: Options) {
   const [askQuiz, { isLoading: isQuizLoading }] = useGenerateQuizMutation();
   const [askExercise, { isLoading: isExerciseLoading }] = useGenerateExerciseMutation();
+  const [unavailable, setUnavailable] = useState<string | null>(null);
 
   return {
     isGenerating: isQuizLoading || isExerciseLoading,
+    unavailable,
     generateQuiz: async (question_count: number, difficulty: AIDifficulty) => {
+      setUnavailable(null);
       try {
-        const { questions } = await askQuiz({ courseSlug, lesson_id: lessonId, question_count, difficulty }).unwrap();
+        const { questions, is_ai_generated } = await askQuiz({ slug, courseSlug, lesson_id: lessonId, question_count, difficulty }).unwrap();
+        if (!is_ai_generated) return setUnavailable(UNAVAILABLE);
         const drafts = generatedToQuestions(questions);
         if (drafts.length === 0) return customToast.error({ message: 'L’IA n’a proposé aucune question exploitable : réessayez.' });
         addQuestions(drafts);
@@ -35,9 +45,11 @@ function UseLessonAI({ courseSlug, lessonId, addQuestions, exercise, setExercise
       }
     },
     generateExercise: async (difficulty: AIDifficulty) => {
+      setUnavailable(null);
       try {
         const language = exercise.language === 'autre' ? undefined : exercise.language;
-        const { exercise: e } = await askExercise({ courseSlug, lesson_id: lessonId, difficulty, language }).unwrap();
+        const { exercise: e, is_ai_generated } = await askExercise({ slug, courseSlug, lesson_id: lessonId, difficulty, language }).unwrap();
+        if (!is_ai_generated) return setUnavailable(UNAVAILABLE);
         setExercise({
           statement: e.instructions_markdown,
           language: e.language || exercise.language,

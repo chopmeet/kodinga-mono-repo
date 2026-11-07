@@ -8,7 +8,7 @@ import { useOauthCallbackMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';
-import { isOAuthProvider, oauthRedirectUri, takeOAuthState } from './hooks/oauth-state';
+import { isOAuthProvider, oauthRedirectUri, takeOAuthNext, takeOAuthState } from './hooks/oauth-state';
 
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
@@ -20,6 +20,7 @@ function OAuthCallback() {
   const dispatch = useAppDispatch();
   const [oauthCallback] = useOauthCallbackMutation();
   const [error, setError] = useState<string | null>(null);
+  const [loginUrl, setLoginUrl] = useState('/auth/login');
   // StrictMode runs effects twice in dev: a code can only be exchanged once
   const started = useRef(false);
 
@@ -32,6 +33,8 @@ function OAuthCallback() {
       return;
     }
     const expectedState = takeOAuthState(provider);
+    const next = takeOAuthNext(provider);
+    if (next !== '/') setLoginUrl(`/auth/login?next=${encodeURIComponent(next)}`);
     const code = params.get('code');
     const state = params.get('state') ?? '';
     if (params.get('error')) {
@@ -47,7 +50,7 @@ function OAuthCallback() {
       .unwrap()
       .then((result) => {
         dispatch(onSetUserToken({ user: result.user, token: result.access, refresh: result.refresh }));
-        navigate('/', { replace: true });
+        navigate(next, { replace: true });
       })
       .catch((err) => setError(parseApiError(err).message));
   }, [provider, params, oauthCallback, dispatch, navigate]);
@@ -57,7 +60,7 @@ function OAuthCallback() {
       <AuthWrapper
         title="Connexion impossible"
         footer={
-          <Link to="/auth/login" className={linkClassName}>
+          <Link to={loginUrl} className={linkClassName}>
             Retour à la connexion
           </Link>
         }

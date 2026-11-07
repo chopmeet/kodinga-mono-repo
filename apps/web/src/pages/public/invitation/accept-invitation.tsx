@@ -7,7 +7,7 @@ import UseAcceptInvitation from './form/UseAcceptInvitation';
 
 /** /invitations/:code and /invite/:code (sent by email) — join a community with an invitation */
 function AcceptInvitation() {
-  const { community, invitedTo, invitedEmail, closed, isLoading, isSignedIn, alreadyMember, loginUrl, memberUrl, isJoining, accept, canDecline, isDeclining, decline } = UseAcceptInvitation();
+  const { community, invitedTo, invitedEmail, closed, isLoading, isSignedIn, alreadyMember, loginUrl, registerUrl, memberUrl, isJoining, accept, canDecline, isDeclining, decline } = UseAcceptInvitation();
   const name = community?.name ?? invitedTo?.name;
 
   return (
@@ -56,7 +56,7 @@ function AcceptInvitation() {
                   </Button>
                   <p className="mt-4 text-sm text-slate-600">
                     Pas encore de compte ?{' '}
-                    <Link to="/auth/register" className="font-semibold text-brand hover:underline">
+                    <Link to={registerUrl} className="font-semibold text-brand hover:underline">
                       Créez-le
                     </Link>
                     , puis rouvrez ce lien.

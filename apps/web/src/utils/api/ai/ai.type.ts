@@ -1,4 +1,4 @@
-// Community AI (apps/ai): these endpoints answer without the { success, data } envelope
+// Community AI (apps/ai)
 
 /** CommunityWeeklyDigestSerializer (GET communities/<slug>/ai/weekly-digest/) */
 export type WeeklyDigest = {
@@ -54,6 +54,9 @@ export type AIDifficulty = 'beginner' | 'intermediate' | 'advanced';
 /** QuizQuestionItemSerializer: one right answer, by its position */
 export type GeneratedQuizQuestion = { question: string; options: string[]; correct_index: number; explanation: string };
 
+/** false: a template of the api because its AI failed, not a proposal for this lesson */
+export type GeneratedQuiz = { questions: GeneratedQuizQuestion[]; is_ai_generated: boolean };
+
 /** CodeExerciseGeneratedSerializer */
 export type GeneratedExercise = {
   title: string;
@@ -62,4 +65,15 @@ export type GeneratedExercise = {
   solution_code: string;
   test_cases: { input: string; expected_output: string }[];
   language: string;
+};
+
+export type GeneratedExerciseResult = { exercise: GeneratedExercise; is_ai_generated: boolean };
+
+/** POST communities/<slug>/ai/hackathon-suggestions/ (a list, without the envelope) */
+export type TeammateSuggestion = {
+  user_id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  match_reasons: string[];
 };

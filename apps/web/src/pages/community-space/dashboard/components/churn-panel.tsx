@@ -1,4 +1,4 @@
-import { Check, Copy, RefreshCw, UserRoundSearch } from 'lucide-react';
+import { Check, Copy, RefreshCw, Send, UserRoundSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { Button, cn, ColgateWrapper } from '@kodinga-mono-repo/ui';
@@ -75,11 +75,24 @@ export function ChurnPanel({ slug }: { slug: string }) {
                       <Check className="size-3.5" aria-hidden /> Relancé le {dateFormat.format(new Date(r.nudge_sent_at))}
                     </span>
                   ) : (
-                    <Button type="button" variant="ghost" size="sm" isLoading={churn.markingId === r.id} onClick={() => churn.markSent(r)} aria-label={`Noter ${name} comme relancé`}>
-                      Noter comme relancé
-                    </Button>
+                    churn.confirmingId !== r.id && (
+                      <Button type="button" size="sm" onClick={() => churn.askToSend(r)} aria-label={`Envoyer la relance à ${name}`}>
+                        <Send /> Envoyer la relance
+                      </Button>
+                    )
                   )}
                 </div>
+                {!r.nudge_sent_at && churn.confirmingId === r.id && (
+                  <div role="group" aria-label={`Confirmer la relance à ${name}`} className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950">
+                    <span className="min-w-0 flex-[1_1_14rem]">{name} recevra ce message en notification.</span>
+                    <Button type="button" size="sm" isLoading={churn.isSending} onClick={() => churn.send(r, name)}>
+                      Confirmer l’envoi
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" disabled={churn.isSending} onClick={churn.cancelSend}>
+                      Annuler
+                    </Button>
+                  </div>
+                )}
               </li>
             );
           })}
