@@ -7,39 +7,42 @@ from common.models.base import BaseModel
 
 
 class CommunityPrivacy(models.TextChoices):
-    PUBLIC = 'public', 'Publique (visible et accessible à tous)'
-    PRIVATE = 'private', 'Privée (sur approbation ou invitation)'
-    SECRET = 'secret', 'Secrète (masquée de la recherche)'
+    PUBLIC = "public", "Publique (visible et accessible à tous)"
+    PRIVATE = "private", "Privée (sur approbation ou invitation)"
+    SECRET = "secret", "Secrète (masquée de la recherche)"
 
 
 class CommunityPricing(models.TextChoices):
-    FREE = 'free', 'Gratuit'
-    PAID = 'paid', 'Payant (Abonnement requis)'
+    FREE = "free", "Gratuit"
+    PAID = "paid", "Payant (Abonnement requis)"
 
 
 class Community(BaseModel):
     """
     Core multi-tenant Community / Space entity on Kodinga.
     """
+
     name = models.CharField(max_length=150, db_index=True)
     slug = models.SlugField(max_length=160, unique=True, db_index=True)
     tagline = models.CharField(max_length=255, blank=True, help_text="Accroche courte")
-    description = models.TextField(blank=True, help_text="Présentation complète au format Markdown")
+    description = models.TextField(
+        blank=True, help_text="Présentation complète au format Markdown"
+    )
 
     # Relationships
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='owned_communities',
-        db_index=True
+        related_name="owned_communities",
+        db_index=True,
     )
     category = models.ForeignKey(
         CommunityCategory,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='communities',
-        db_index=True
+        related_name="communities",
+        db_index=True,
     )
 
     # Privacy & Access
@@ -47,19 +50,19 @@ class Community(BaseModel):
         max_length=20,
         choices=CommunityPrivacy.choices,
         default=CommunityPrivacy.PUBLIC,
-        db_index=True
+        db_index=True,
     )
     pricing_type = models.CharField(
         max_length=20,
         choices=CommunityPricing.choices,
         default=CommunityPricing.FREE,
-        db_index=True
+        db_index=True,
     )
 
     # Visuals & Branding
     avatar_url = models.URLField(max_length=500, blank=True, default="")
     banner_url = models.URLField(max_length=500, blank=True, default="")
-    brand_color = models.CharField(max_length=10, default='#3B82F6')
+    brand_color = models.CharField(max_length=10, default="#3B82F6")
 
     # Socials & External Links
     website_url = models.URLField(max_length=300, blank=True, default="")
@@ -81,14 +84,29 @@ class Community(BaseModel):
     events_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        db_table = 'communities_communities'
-        verbose_name = 'Community'
-        verbose_name_plural = 'Communities'
-        ordering = ['-members_count', '-created_at']
+        db_table = "communities_communities"
+        verbose_name = "Community"
+        verbose_name_plural = "Communities"
+        ordering = ["-members_count", "-created_at"]
+
+    def clean(self):
+        super().clean()
+        # Une communauté payante ne peut pas être publique : elle est obligatoirement privée.
+        if (
+            self.pricing_type == CommunityPricing.PAID
+            and self.privacy_type == CommunityPrivacy.PUBLIC
+        ):
+            self.privacy_type = CommunityPrivacy.PRIVATE
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        # Règle métier : dès qu'une communauté est payante, elle est forcément privée.
+        if (
+            self.pricing_type == CommunityPricing.PAID
+            and self.privacy_type == CommunityPrivacy.PUBLIC
+        ):
+            self.privacy_type = CommunityPrivacy.PRIVATE
         super().save(*args, **kwargs)
 
     def __str__(self):
