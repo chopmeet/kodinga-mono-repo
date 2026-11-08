@@ -67,6 +67,11 @@ function PaidAccessCard() {
       <p className="mt-1 text-sm text-slate-500">
         Réservé aux membres Kodinga Pro. Les nouveaux membres paieront par Mobile Money ou carte via PayDunya ; les membres actuels gardent leur accès.
       </p>
+      {community.privacy_type === 'public' && (
+        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Elle deviendra privée : une communauté payante n’est visible en détail que par ses membres.
+        </p>
+      )}
       {!open ? (
         <Button variant="outline" className="mt-3" onClick={() => setOpen(true)}>
           Fixer un prix d'adhésion

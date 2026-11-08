@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { Button, cn, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
 import type { HackathonQuestion, ParticipationMode } from '@/utils/api/hackathon/hackathon.type';
+import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import type { HackathonPage } from '../form/UseHackathonPage';
 
 /** Key and wording of a question of the organizers (free-form JSON on the api) */
@@ -18,6 +19,8 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** What the api said when it refused for the closing of the applications */
+  const [closedByApi, setClosedByApi] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -26,21 +29,27 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
     setAnswers({});
     setTerms(false);
     setError(null);
+    setClosedByApi(null);
   }, [open]);
 
   if (!h) return null;
+  // Past the deadline (the page timer) or refused by the api: nothing more to send, what was typed stays
+  const closed = page.registrationClosed || !!closedByApi;
 
   const send = async () => {
     const missing = questions.findIndex((q, i) => q.required && !answers[questionKey(q, i)]?.trim());
     if (missing >= 0) return setError(`Répondez à : ${questionLabel(questions[missing], missing)}`);
     if (!terms) return setError('Acceptez le règlement pour candidater.');
-    const ok = await page.apply({
+    setError(null);
+    const outcome = await page.apply({
       participation_mode: mode,
       team_name: mode === 'team' ? teamName.trim() : '',
       answers,
       accept_terms: true,
     });
-    if (ok) onClose();
+    if (outcome.ok) return onClose();
+    if (outcome.closed) setClosedByApi(outcome.message);
+    else setError(outcome.message);
   };
 
   return (
@@ -52,15 +61,22 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
             {h.auto_accept_applications ? 'Votre inscription est confirmée dès l’envoi.' : 'Les organisateurs examinent chaque candidature et vous répondent par notification.'}
           </DialogDescription>
         </DialogHeader>
+        {closed && (
+          <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-semibold">Les candidatures ne sont plus acceptées</p>
+            <p className="mt-0.5">{closedByApi ?? `Elles étaient ouvertes jusqu’au ${formatDateTime(h.registration_end)}.`}</p>
+          </div>
+        )}
         <form
           id="apply-form"
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            send();
+            if (!closed) send();
           }}
           className="flex flex-col gap-4"
         >
+          <fieldset disabled={closed} className="contents">
           {h.allow_teams && (
             <fieldset>
               <legend className="custom-form-label mb-2">Comment participez-vous ?</legend>
@@ -133,6 +149,7 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
               .
             </span>
           </label>
+          </fieldset>
           {error && (
             <p role="alert" className="text-sm text-red-600">
               {error}
@@ -141,9 +158,9 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={page.isApplying}>
-            Annuler
+            {closed ? 'Fermer' : 'Annuler'}
           </Button>
-          <Button type="submit" form="apply-form" isLoading={page.isApplying}>
+          <Button type="submit" form="apply-form" isLoading={page.isApplying} disabled={closed}>
             Envoyer ma candidature
           </Button>
         </DialogFooter>

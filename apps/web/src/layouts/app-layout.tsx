@@ -12,7 +12,8 @@ function AppLayout() {
   return (
     <div className="flex min-h-svh flex-col">
       <Header />
-      <main className="flex-1">
+      {/* Room under the floating assistant: the end of a page can always scroll clear of it */}
+      <main className={withAssistant ? 'flex-1 pb-20 sm:pb-24' : 'flex-1'}>
         <Outlet />
       </main>
       <Footer />

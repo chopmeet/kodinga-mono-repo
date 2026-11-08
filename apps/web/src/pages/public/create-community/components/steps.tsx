@@ -122,7 +122,15 @@ export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
       <fieldset>
         <legend className="custom-form-label mb-2 block">Visibilité</legend>
         <div className="grid gap-3">
-          <OptionCard icon={Globe} title="Publique" description="Visible dans l'annuaire, tout le monde peut la rejoindre." value="public" {...register('privacy_type')} />
+          <OptionCard
+            icon={Globe}
+            title="Publique"
+            description={paid ? 'Indisponible : une communauté payante est forcément privée ou secrète.' : "Visible dans l'annuaire, tout le monde peut la rejoindre."}
+            value="public"
+            disabled={paid}
+            className={paid ? 'cursor-not-allowed opacity-60' : undefined}
+            {...register('privacy_type')}
+          />
           <OptionCard icon={Lock} title="Privée" description="Visible dans l'annuaire, vous validez chaque demande d'adhésion." value="private" {...register('privacy_type')} />
           <OptionCard icon={EyeOff} title="Secrète" description="Invisible dans l'annuaire, on n'y entre que sur invitation." value="secret" {...register('privacy_type')} />
         </div>

@@ -26,17 +26,22 @@ const privacyHelp: Record<Values['privacy_type'], string> = {
 };
 
 function AccessTab() {
-  const { access, saveAccess } = useSpaceSettings();
+  const { access, saveAccess, pricingType } = useSpaceSettings();
+  // A paid community is private or secret (rule of the api)
+  const paid = pricingType === 'paid';
   const {
     register,
     control,
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { ...access, is_read_only: access.is_read_only ?? false } });
 
   const onSubmit = async (values: Values) => {
+    // The api would make it private without a word: the choice is asked here
+    if (paid && values.privacy_type === 'public') return setError('privacy_type', { message: 'Une communauté payante ne peut pas être publique : choisissez Privée ou Secrète.' });
     if (await saveAccess(values)) reset(values);
   };
 
@@ -49,9 +54,11 @@ function AccessTab() {
         <div className="grid gap-x-4 md:grid-cols-2">
           <SelectInput
             label="Visibilité"
-            fieldHelp={privacyHelp[watch('privacy_type')]}
+            fieldHelp={paid ? `Communauté payante : privée ou secrète. ${privacyHelp[watch('privacy_type')]}` : privacyHelp[watch('privacy_type')]}
+            error={errors.privacy_type?.message}
             options={[
-              { value: 'public', label: 'Publique' },
+              // Paid: public only for a community still public from before the rule, to change
+              ...(!paid || access.privacy_type === 'public' ? [{ value: 'public', label: paid ? 'Publique (non autorisée, communauté payante)' : 'Publique' }] : []),
               { value: 'private', label: 'Privée' },
               { value: 'secret', label: 'Secrète' },
             ]}

@@ -1,4 +1,5 @@
 import { ArrowLeft, CalendarDays, Laptop, MapPin, Trophy, Users } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
@@ -15,6 +16,14 @@ import UseHackathonPage from './form/UseHackathonPage';
 /** /communities/:slug/hackathons/:hackathonSlug — discover a hackathon, apply, team up, submit */
 function HackathonPageView() {
   const page = UseHackathonPage();
+  // "Ouvrir mon espace": once the tab is shown, the page scrolls to it and the focus follows
+  const content = useRef<HTMLDivElement>(null);
+  const { spaceRequest, tab } = page;
+  useEffect(() => {
+    if (!spaceRequest || tab !== 'space' || !content.current) return;
+    content.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    content.current.focus({ preventScroll: true });
+  }, [spaceRequest, tab]);
   const h = page.hackathon;
   const back = `/communities/${page.slug}?tab=hackathons`;
 
@@ -92,7 +101,7 @@ function HackathonPageView() {
       </header>
 
       <div className="mx-auto grid max-w-285 items-start gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
-        <div className="flex min-w-0 flex-col gap-6">
+        <div ref={content} tabIndex={-1} aria-label="Contenu du hackathon" className="flex min-w-0 scroll-mt-24 flex-col gap-6 outline-none">
           {page.tab === 'overview' && <OverviewTab hackathon={h} />}
           {page.tab === 'teams' && <TeamsTab teams={page.teams} maxSize={h.max_team_size} />}
           {page.tab === 'space' && (

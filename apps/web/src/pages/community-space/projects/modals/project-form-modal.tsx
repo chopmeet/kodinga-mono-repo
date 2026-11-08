@@ -85,7 +85,7 @@ function ProjectFormModal({ communityId, open, project, onClose, onSaved }: Prop
             <BannerUploadField
               id="project-cover"
               label="Image de couverture / Bannière"
-              help="Recommandé : 1200×630 px (JPG, PNG, WebP — max 5 Mo). Hébergée sur UploadThing."
+              help="Recommandé : 1200×630 px (JPG, PNG, WebP — max 5 Mo)."
               value={coverImageUrl}
               onChange={setCoverImageUrl}
               error={errors.cover_image_url?.message}
@@ -98,7 +98,7 @@ function ProjectFormModal({ communityId, open, project, onClose, onSaved }: Prop
               id="project-demos"
               error={errors.demo_images?.message}
               label="Images de démonstration & Captures d'écran"
-              help="Ajoutez jusqu'à 6 captures d'écran de l'application (UploadThing ou URL)"
+              help="Ajoutez jusqu'à 6 captures d'écran de l'application (fichier ou lien)"
               value={demoImages}
               onChange={setDemoImages}
               maxImages={6}

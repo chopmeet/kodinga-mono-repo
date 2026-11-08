@@ -12,11 +12,12 @@ vi.setConfig({ testTimeout: 30_000 });
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** The api of lagos-ai-data: detail (with settings and rules), PATCH, settings, rules, members */
-function stubSettingsApi(slug = 'lagos-ai-data') {
+function stubSettingsApi(slug = 'lagos-ai-data', access: { privacy_type?: string; pricing_type?: string } = {}) {
   const { community } = must(getMyCommunity(slug));
   const calls: Call[] = [];
   let detail = {
     ...community,
+    ...access,
     description: 'La data à Lagos.',
     github_url: 'https://github.com/lagos-ai',
     website_url: '',
@@ -142,6 +143,33 @@ describe('Community space: settings', () => {
     await waitFor(() => expect(calls.find((c) => c.method === 'PATCH' && c.url.pathname.endsWith('/communities/dakar-devops/'))?.body).toEqual({ pricing_type: 'paid', membership_price: 10000, membership_interval: 'month' }), SLOW);
     // Read again: now paid, the card sends to the plans
     expect((await screen.findByRole('link', { name: 'Gérer les formules' }, SLOW)).getAttribute('href')).toBe('/c/dakar-devops/payments/plans');
+  });
+
+  it('keeps a paid community private or secret', async () => {
+    const api = stubSettingsApi('lagos-ai-data', { pricing_type: 'paid', privacy_type: 'private' });
+    renderAppAt('/c/lagos-ai-data/settings/access');
+    const visibility = await screen.findByLabelText('Visibilité', {}, SLOW);
+    expect(within(visibility).getAllByRole('option').map((o) => o.textContent)).toEqual(['Privée', 'Secrète']);
+    expect(screen.getByText(/Communauté payante : privée ou secrète/)).toBeTruthy();
+    // One still public from before the rule: asked to change, nothing sent
+    cleanup();
+    act(() => {
+      store.dispatch(CommunityApi.util.resetApiState());
+    });
+    const legacy = stubSettingsApi('lagos-ai-data', { pricing_type: 'paid', privacy_type: 'public' });
+    renderAppAt('/c/lagos-ai-data/settings/access');
+    fireEvent.click(await screen.findByRole('checkbox', { name: "Valider les demandes d'adhésion" }, SLOW));
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText(/ne peut pas être publique : choisissez Privée ou Secrète/, {}, SLOW)).toBeTruthy();
+    expect(legacy.calls.some((c) => c.method === 'PATCH')).toBe(false);
+    expect(api.calls.some((c) => c.method === 'PATCH')).toBe(false);
+  });
+
+  it('warns that a public community becomes private once paid', async () => {
+    stubSettingsApi('dakar-devops', { pricing_type: 'free', privacy_type: 'public' });
+    renderAppAt('/c/dakar-devops/settings/access');
+    const card = await screen.findByRole('region', { name: 'Rendre la communauté payante' }, SLOW);
+    expect(within(card).getByText(/Elle deviendra privée/)).toBeTruthy();
   });
 
   it('shows the paid offer to the owner only', async () => {

@@ -72,7 +72,7 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
       setProgress(60);
       await attach({ slug, eventId: event.id, file }).unwrap();
       setProgress(100);
-      customToast.success({ message: 'Replay vidéo stocké sur UploadThing et disponible !' });
+      customToast.success({ message: 'Replay enregistré et disponible !' });
     } catch (err) {
       const message = err instanceof Error ? err.message : parseApiError(err).message;
       setError(message);

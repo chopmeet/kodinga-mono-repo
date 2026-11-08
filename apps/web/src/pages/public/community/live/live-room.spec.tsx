@@ -114,6 +114,14 @@ describe('Live room of an event', () => {
     stubLiveApi({ status: 'completed' });
     renderAppAt('/communities/abidjan-react/events/e1/live');
     expect(await screen.findByText(/Ce live est terminé/, {}, SLOW)).toBeTruthy();
+    // Back to the events of the community, a button readable on the dark room (not the white outline)
+    const back = screen.getByRole('link', { name: 'Retour aux événements' });
+    expect(back.getAttribute('href')).toBe('/communities/abidjan-react?tab=events');
+    expect(back.className).toContain('text-white');
+    expect(back.className).not.toContain('bg-white ');
+    // The badge says it is over, nothing to invite to
+    expect(screen.getByText('Live terminé')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Copier le lien du live/ })).toBeNull();
     cleanup();
     act(() => {
       store.dispatch(CommunityApi.util.resetApiState());

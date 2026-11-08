@@ -12,7 +12,6 @@ import { isOAuthProvider, oauthRedirectUri, takeOAuthNext, takeOAuthState } from
 
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
-/** /auth/callback/:provider — where Google / GitHub send the browser back (?code=&state=) */
 function OAuthCallback() {
   const { provider } = useParams();
   const [params] = useSearchParams();
@@ -37,8 +36,11 @@ function OAuthCallback() {
     if (next !== '/') setLoginUrl(`/auth/login?next=${encodeURIComponent(next)}`);
     const code = params.get('code');
     const state = params.get('state') ?? '';
-    if (params.get('error')) {
-      setError('La connexion a été annulée.');
+    // The provider sends back an error: refused by the user, or anything else on its side
+    const providerError = params.get('error');
+    if (providerError) {
+      const name = provider === 'google' ? 'Google' : 'GitHub';
+      setError(providerError === 'access_denied' ? 'La connexion a été annulée.' : `La connexion avec ${name} a échoué. Réessayez, ou connectez-vous avec votre email.`);
       return;
     }
     if (!code || !expectedState || state !== expectedState) {

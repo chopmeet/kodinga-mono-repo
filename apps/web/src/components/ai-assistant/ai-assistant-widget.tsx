@@ -233,38 +233,42 @@ export function AIAssistantWidget() {
       {isOpen && (
         <div
           className={cn(
-            'fixed bottom-4 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl transition-all duration-300',
+            // Phones: the width of the screen less a margin on each side; larger: a panel at the bottom right
+            'fixed inset-x-3 bottom-3 z-50 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl transition-all duration-300 sm:inset-x-auto sm:right-4 sm:bottom-4',
             // Never taller than the screen (minus the margins): the header (close, expand, language) stays visible
             isExpanded
-              ? 'h-[min(85dvh,calc(100dvh-2rem))] w-[95vw] sm:w-[650px]'
-              : 'h-[min(620px,calc(100dvh-2rem))] w-[92vw] sm:w-[460px]'
+              ? 'h-[min(85dvh,calc(100dvh-1.5rem))] sm:w-[650px]'
+              : 'h-[min(620px,calc(100dvh-1.5rem))] sm:w-[460px]'
           )}
         >
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-900 px-4 py-3 text-white">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-brand/20 text-brand ring-1 ring-brand/30">
+          {/* One line on a phone: the title and the subtitle are cut rather than wrapped, the actions keep their room */}
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-900 px-3 py-3 text-white sm:px-4">
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand ring-1 ring-brand/30 max-[339px]:hidden sm:size-9">
                 <Bot className="size-5" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold tracking-tight text-white">Assistant Kodinga</h3>
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
-                    En ligne
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h3 className="truncate text-sm font-bold tracking-tight text-white">Assistant Kodinga</h3>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap text-emerald-400">
+                    <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
+                    <span className="max-[399px]:sr-only">En ligne</span>
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">Guide & Bâtisseur (Gemini / OpenAI)</p>
+                <p className="truncate text-[11px] text-slate-400">Votre guide sur Kodinga</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1">
               {/* Language Selector */}
               <div className="relative flex items-center">
-                <Globe className="mr-1 size-3.5 text-slate-400" />
+                <Globe className="mr-1 hidden size-3.5 text-slate-400 sm:block" aria-hidden />
                 <select
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
-                  className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand"
+                  aria-label="Langue des réponses"
+                  className="rounded-md border border-slate-700 bg-slate-800 px-1.5 py-1 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand sm:px-2"
                 >
                   {languageOptions.map((opt) => (
                     <option key={opt.code} value={opt.code}>
@@ -274,10 +278,11 @@ export function AIAssistantWidget() {
                 </select>
               </div>
 
-              {/* Expand Toggle */}
+              {/* Expand Toggle: a phone already gives the whole width */}
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                aria-label={isExpanded ? 'Réduire' : 'Agrandir'}
+                className="hidden rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white sm:inline-flex"
                 title={isExpanded ? 'Réduire' : 'Agrandir'}
               >
                 {isExpanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
@@ -286,6 +291,7 @@ export function AIAssistantWidget() {
               {/* Close Button */}
               <button
                 onClick={() => setIsOpen(false)}
+                aria-label="Fermer l’assistant"
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
                 title="Fermer"
               >
@@ -429,7 +435,7 @@ export function AIAssistantWidget() {
                   {/* Provider Info */}
                   {m.provider && (
                     <div className="mt-1.5 flex items-center gap-1 text-[10px] text-slate-400">
-                      <span>Généré par {m.provider === 'gemini' ? 'Google Gemini' : 'OpenAI Fallback'}</span>
+                      <span>{m.provider === 'fallback' ? 'Réponse automatique' : 'Réponse générée par l’IA'}</span>
                     </div>
                   )}
                 </div>
@@ -475,10 +481,11 @@ export function AIAssistantWidget() {
                     <button
                       key={idx}
                       onClick={() => handleSend(s.prompt)}
-                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left text-xs text-slate-700 transition hover:border-brand hover:text-brand"
+                      className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left text-xs text-slate-700 transition hover:border-brand hover:text-brand"
                     >
-                      <Icon className="size-3.5 shrink-0 text-brand" />
-                      <span className="line-clamp-1">{s.label}</span>
+                      <Icon className="mt-0.5 size-3.5 shrink-0 text-brand" />
+                      {/* Two lines: one cut the labels on a phone */}
+                      <span className="line-clamp-2">{s.label}</span>
                     </button>
                   );
                 })}

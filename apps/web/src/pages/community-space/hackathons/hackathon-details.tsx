@@ -16,6 +16,7 @@ import { ResultsTab } from './components/results-tab';
 import { TeamsTab } from './components/teams-tab';
 import UseHackathonActions from './form/UseHackathonActions';
 import { formatDateTime, hackathonFormatLabel, hackathonStatusStyle, NEXT_STEP } from './hackathon-labels';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 const TABS = [
   ['overview', 'Aperçu'],
@@ -188,7 +189,8 @@ function HackathonDetails() {
   const user = useUser();
   const tab = (TABS.find(([id]) => id === params.get('tab'))?.[0] ?? 'overview') as TabId;
   const back = `/c/${community.slug}/hackathons`;
-  const { data: h, isLoading, error } = useGetHackathonQuery({ slug: community.slug, hackathonSlug });
+  const pollingInterval = useRealtimeRegistrations(community.id);
+  const { data: h, isLoading, error } = useGetHackathonQuery({ slug: community.slug, hackathonSlug }, { pollingInterval });
   const { canManage, nextStep, actionsFor, confirmDialog } = UseHackathonActions({ afterDelete: () => navigate(back) });
 
   if (isLoading) return <DetailsPageSkeleton />;

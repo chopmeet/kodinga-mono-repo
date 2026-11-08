@@ -126,14 +126,21 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
               </li>
               <li>Date limite : {formatDateTime(h.submission_deadline)}</li>
             </ul>
-            <Button onClick={() => page.openTab('space')}>Ouvrir mon espace</Button>
+            <Button onClick={page.openSpace}>Ouvrir mon espace</Button>
             {!status?.submission_is_final && h.is_registration_open && <WithdrawButton page={page} />}
           </Card>
         );
       default:
         return (
           <Card icon={<CalendarClock className="size-5 text-slate-400" />} title={notOpenYet ? 'Candidatures bientôt ouvertes' : 'Candidatures closes'}>
-            <p>{notOpenYet ? `Ouverture le ${formatDateTime(h.registration_start)}.` : 'La période de candidature est terminée.'}</p>
+            {notOpenYet ? (
+              <p>Ouverture le {formatDateTime(h.registration_start)}.</p>
+            ) : (
+              <>
+                <p className="font-medium text-slate-900">Les candidatures ne sont plus acceptées.</p>
+                <p>Clôture le {formatDateTime(h.registration_end)}.</p>
+              </>
+            )}
           </Card>
         );
     }

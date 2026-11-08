@@ -556,3 +556,94 @@ export function useRealtimePostComments(postId: string | undefined) {
     };
   }, [postId, dispatch]);
 }
+
+/** event.registration_updated: the totals of an event after a registration or a cancellation */
+interface EventRegistrationData {
+  community_id: string;
+  event_id: string;
+  attendees_count: number;
+  max_attendees: number | null;
+  is_full: boolean;
+}
+
+/** hackathon.registration_updated: the totals of a hackathon after an application, a decision or a withdrawal */
+interface HackathonRegistrationData {
+  community_id: string;
+  hackathon_id: string;
+  hackathon_slug: string;
+  participants_count: number;
+  applications_count: number;
+  max_participants: number | null;
+  is_registration_open: boolean;
+}
+
+/** Refetch interval of the counters without the WebSocket (visitors, network cut) */
+export const COUNTERS_POLLING = 30_000;
+
+/**
+ * Registration counters of the events and hackathons of a community, live: the api sends the
+ * totals on the community topic, written as they are in every cached list and detail (no local +1:
+ * a message received twice, or one's own registration, cannot count double). After a cut, they
+ * are read again. Returns the polling interval for the screens: none while the WebSocket is up.
+ */
+export function useRealtimeRegistrations(communityId: string | undefined) {
+  const dispatch = useAppDispatch();
+  const { connected } = useRealtime();
+
+  useEffect(() => {
+    if (!communityId) return;
+    realtimeClient.subscribeCommunity(communityId);
+    const state = () => store.getState() as never;
+
+    const unsubEvent = realtimeClient.on<EventRegistrationData>('event.registration_updated', (data) => {
+      if (!data?.event_id || data.community_id !== communityId) return;
+      const totals = { attendees_count: data.attendees_count, max_attendees: data.max_attendees, is_full: data.is_full };
+      for (const args of CommunityApi.util.selectCachedArgsForQuery(state(), 'getCommunityEvents')) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityEvents', args, (page) => {
+            const event = page.results.find((e) => e.id === data.event_id);
+            if (event) Object.assign(event, totals);
+          }),
+        );
+      }
+      for (const args of CommunityApi.util.selectCachedArgsForQuery(state(), 'getCommunityEvent')) {
+        if (args.eventId !== data.event_id) continue;
+        dispatch(CommunityApi.util.updateQueryData('getCommunityEvent', args, (event) => Object.assign(event, totals)));
+      }
+    });
+
+    const unsubHackathon = realtimeClient.on<HackathonRegistrationData>('hackathon.registration_updated', (data) => {
+      if (!data?.hackathon_id || data.community_id !== communityId) return;
+      const totals = {
+        participants_count: data.participants_count,
+        applications_count: data.applications_count,
+        max_participants: data.max_participants,
+        is_registration_open: data.is_registration_open,
+      };
+      for (const args of CommunityApi.util.selectCachedArgsForQuery(state(), 'getCommunityHackathons')) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityHackathons', args, (page) => {
+            const hackathon = page.results.find((h) => h.id === data.hackathon_id);
+            if (hackathon) Object.assign(hackathon, totals);
+          }),
+        );
+      }
+      for (const args of CommunityApi.util.selectCachedArgsForQuery(state(), 'getHackathon')) {
+        if (args.hackathonSlug !== data.hackathon_slug) continue;
+        dispatch(CommunityApi.util.updateQueryData('getHackathon', args, (hackathon) => Object.assign(hackathon, totals)));
+      }
+    });
+
+    // Back after a cut: the messages missed are not sent again, the counters are read again
+    const unsubReconnected = realtimeClient.on('reconnected', () => dispatch(CommunityApi.util.invalidateTags(['events', 'hackathons'])));
+
+    return () => {
+      unsubEvent();
+      unsubHackathon();
+      unsubReconnected();
+      realtimeClient.unsubscribeCommunity(communityId);
+    };
+  }, [communityId, dispatch]);
+
+  return connected ? 0 : COUNTERS_POLLING;
+}
