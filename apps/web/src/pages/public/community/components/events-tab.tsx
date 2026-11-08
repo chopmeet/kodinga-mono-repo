@@ -14,6 +14,7 @@ import UseEventRsvp from '../form/UseEventRsvp';
 import { EventRsvpActions } from './event-rsvp';
 import { QuickLiveModal } from './quick-live-modal';
 import { Pill, SectionHeader } from './section-header';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 const PAGE_SIZE = 10;
 const day = new Intl.DateTimeFormat('fr-FR', { day: '2-digit' });
@@ -164,12 +165,15 @@ export function EventsTab({ page }: { page: CommunityPage }) {
   const canStartLive = isOwner || hasLivePermission;
   const canCreate = page.isTeam || (page.community?.user_membership?.permissions as string[] | undefined)?.includes('can_create_events');
 
+  const pollingInterval = useRealtimeRegistrations(page.community?.id);
   const { data, isLoading, isFetching } = useGetCommunityEventsQuery(
     isReplays
       ? { slug, has_replay: true, page: 1, page_size: count }
       : past
       ? { slug, status: 'completed', page: 1, page_size: count }
       : { slug, upcoming: true, page: 1, page_size: count },
+    // The registrations of the upcoming ones only move
+    { pollingInterval: isReplays || past ? 0 : pollingInterval },
   );
   const events = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
@@ -235,7 +239,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
           </p>
           <p className="mt-1 text-sm text-slate-500">
             {isReplays
-              ? 'Les replays des lives enregistrés sur UploadThing apparaîtront dans cette galerie.'
+              ? 'Les replays des lives enregistrés apparaîtront dans cette galerie.'
               : past
               ? 'Les événements terminés apparaîtront ici.'
               : 'Les lives, ateliers et rencontres apparaîtront ici.'}

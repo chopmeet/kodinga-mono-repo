@@ -11,6 +11,7 @@ import type { HackathonStatus } from '@/utils/api/hackathon/hackathon.type';
 import { useCommunitySpace } from '../community-space-context';
 import UseHackathonActions from './form/UseHackathonActions';
 import { formatDay, hackathonFormatLabel, hackathonStatusStyle } from './hackathon-labels';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 const FILTERS: { id: HackathonStatus | 'all'; label: string }[] = [
   { id: 'all', label: 'Tous' },
@@ -28,12 +29,16 @@ function CommunityHackathons() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const { canManage, actionsFor, confirmDialog } = UseHackathonActions();
-  const { data, isLoading, isFetching, error, refetch } = useGetCommunityHackathonsQuery({
-    slug: community.slug,
-    status: filter === 'all' ? undefined : filter,
-    page,
-    page_size: size,
-  });
+  const pollingInterval = useRealtimeRegistrations(community.id);
+  const { data, isLoading, isFetching, error, refetch } = useGetCommunityHackathonsQuery(
+    {
+      slug: community.slug,
+      status: filter === 'all' ? undefined : filter,
+      page,
+      page_size: size,
+    },
+    { pollingInterval },
+  );
   const hackathons = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
   const newLink = `/c/${community.slug}/hackathons/new`;

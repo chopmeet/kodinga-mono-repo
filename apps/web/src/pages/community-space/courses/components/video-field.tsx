@@ -158,7 +158,7 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
           <span className="text-xs text-slate-500">YouTube, Vimeo, Dailymotion, ou lien direct vers un fichier vidéo public (.mp4, .webm…).</span>
         </div>
       )}
-      {!platformLink && <p className="text-[11px] text-slate-400">La vidéo est encodée par Mux pour une lecture fluide : comptez quelques minutes avant qu’elle soit disponible.</p>}
+      {!platformLink && <p className="text-[11px] text-slate-400">La vidéo est préparée pour une lecture fluide : comptez quelques minutes avant qu’elle soit disponible.</p>}
       {(fileError || error) && (
         <p role="alert" className="text-sm text-red-600">
           {fileError ?? error}

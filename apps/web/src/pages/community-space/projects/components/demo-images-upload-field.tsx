@@ -180,7 +180,7 @@ export function DemoImagesUploadField({
       {isUploading && (
         <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-sm text-blue-800">
           <LoaderCircle className="size-5 animate-spin text-blue-600" />
-          <span>Téléversement des captures d'écran sur UploadThing en cours…</span>
+          <span>Téléversement des captures d'écran en cours…</span>
         </div>
       )}
 
@@ -236,7 +236,7 @@ export function DemoImagesUploadField({
               <span className="text-xs text-slate-500"> (sélection multiple supportée)</span>
             </div>
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
-              <CheckCircle2 className="size-3" /> Hébergement persistant sur UploadThing
+              <CheckCircle2 className="size-3" /> Hébergées par Kodinga
             </span>
           </label>
         )

@@ -92,7 +92,7 @@ function CommunityDetails() {
           {activeTab === 'classroom' && <ClassroomTab page={page} />}
           {activeTab === 'members' && <MembersTab community={community} isTeam={page.isTeam} />}
           {activeTab === 'events' && <EventsTab page={page} />}
-          {activeTab === 'hackathons' && <HackathonsTab slug={community.slug} />}
+          {activeTab === 'hackathons' && <HackathonsTab slug={community.slug} communityId={community.id} />}
           {activeTab === 'opportunities' && <OpportunitiesTab page={page} />}
           {activeTab === 'projects' && <ProjectsTab page={page} />}
           {activeTab === 'leaderboard' && <LeaderboardTab slug={community.slug} />}

@@ -18,6 +18,7 @@ import UseEventActions from './form/UseEventActions';
 import UseEventAttendees, { type AttendeeFilter } from './form/UseEventAttendees';
 import UseEventReplay, { REPLAY_MAX_GB, REPLAY_TYPES } from './form/UseEventReplay';
 import EventFormModal from './modals/event-form-modal';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 const rsvpLabel: Record<RsvpStatus, { label: string; className: string }> = {
   attending: { label: 'Inscrit', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
@@ -184,7 +185,7 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
       {byLink && !replay.isUploading && <ReplayLinkForm onAttach={replay.attachLink} onClose={() => setByLink(false)} />}
       {replay.isUploading && (
         <div className="mt-4" role="status">
-          <p className="text-sm text-slate-600">Envoi de la vidéo vers Mux… {replay.progress} %</p>
+          <p className="text-sm text-slate-600">Envoi de la vidéo… {replay.progress} %</p>
           <div className="mt-2 h-2 rounded-full bg-slate-100" role="progressbar" aria-label="Envoi du replay" aria-valuenow={replay.progress ?? 0} aria-valuemin={0} aria-valuemax={100}>
             <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${replay.progress ?? 0}%` }} />
           </div>
@@ -217,7 +218,11 @@ function EventDetails() {
   const back = `/c/${community.slug}/events`;
   const [preparing, setPreparing] = useState(false);
   // While Mux prepares the replay, the event is read again
-  const { data: event, isLoading, error } = useGetCommunityEventQuery({ slug: community.slug, eventId }, { skip: !eventId, pollingInterval: preparing ? 15_000 : 0 });
+  const counters = useRealtimeRegistrations(community.id);
+  const { data: event, isLoading, error } = useGetCommunityEventQuery(
+    { slug: community.slug, eventId },
+    { skip: !eventId, pollingInterval: preparing ? 15_000 : counters },
+  );
   const replayStatus = event?.replay_video_asset?.status;
   useEffect(() => setPreparing(replayStatus === 'waiting' || replayStatus === 'preparing'), [replayStatus]);
   const [editing, setEditing] = useState(false);

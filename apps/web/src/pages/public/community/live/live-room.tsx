@@ -577,9 +577,10 @@ function Lobby({ live }: { live: LiveRoom }) {
     action = <p className="text-amber-400 font-medium">Cet événement a été annulé.</p>;
   } else if (e.status === 'completed') {
     action = (
-      <div className="space-y-3">
+      <div className="flex w-full flex-col items-center gap-4">
         <p className="text-slate-300">Ce live est terminé. Merci d’avoir suivi la communauté !</p>
-        <Button asChild variant="outline" className="border-white/10 text-white hover:bg-white/10">
+        {/* On the dark room: a light outline (the outline variant has a white background) */}
+        <Button asChild size="lg" className="w-full max-w-sm border border-white/20 bg-white/10 font-semibold text-white shadow-none hover:bg-white/20">
           <Link to={live.back}>Retour aux événements</Link>
         </Button>
       </div>
@@ -651,7 +652,7 @@ function Lobby({ live }: { live: LiveRoom }) {
           </span>
         ) : (
           <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
-            Événement programmé
+            {e.status === 'completed' ? 'Live terminé' : e.status === 'cancelled' ? 'Événement annulé' : 'Événement programmé'}
           </span>
         )}
 
@@ -699,13 +700,16 @@ function Lobby({ live }: { live: LiveRoom }) {
 
       <div className="mt-2 flex w-full flex-col items-center gap-4">{action}</div>
 
-      <button
-        type="button"
-        onClick={copyLink}
-        className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
-      >
-        <Copy className="size-3.5" /> Copier le lien du live pour inviter
-      </button>
+      {/* Over or cancelled: nobody to invite any more */}
+      {e.status !== 'completed' && e.status !== 'cancelled' && (
+        <button
+          type="button"
+          onClick={copyLink}
+          className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+        >
+          <Copy className="size-3.5" /> Copier le lien du live pour inviter
+        </button>
+      )}
     </section>
   );
 }

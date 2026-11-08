@@ -1,4 +1,5 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { useEffect, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga-mono-repo/ui';
@@ -19,6 +20,7 @@ import {
 import { parseApiError } from '@/utils/api/errors';
 import type { Hackathon, HackathonApplyData } from '@/utils/api/hackathon/hackathon.type';
 import { membershipOf } from '../../form/UseCommunityPage';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 export type HackathonTabId = 'overview' | 'teams' | 'space' | 'results';
 
@@ -30,13 +32,34 @@ export type HackathonTabId = 'overview' | 'teams' | 'space' | 'results';
  */
 export type Participation = 'visitor' | 'not_member' | 'can_apply' | 'closed' | 'pending' | 'waitlisted' | 'rejected' | 'withdrawn' | 'accepted';
 
-function participationOf(hackathon: Hackathon | undefined, membership: string): Participation {
+/**
+ * True once the registration deadline is behind: a timer set to that moment closes the
+ * applications of a page left open, without waiting for a reload
+ */
+export type ApplyOutcome = { ok: true } | { ok: false; closed: boolean; message: string };
+
+function useDeadlinePassed(deadline: string | undefined) {
+  const at = deadline ? new Date(deadline).getTime() : NaN;
+  const [passed, setPassed] = useState(() => at <= Date.now());
+  useEffect(() => {
+    if (Number.isNaN(at)) return;
+    const left = at - Date.now();
+    setPassed(left <= 0);
+    if (left <= 0) return;
+    // setTimeout holds 24.8 days at most: further, it is set again by the next render
+    const timer = setTimeout(() => setPassed(true), Math.min(left, 2_147_000_000));
+    return () => clearTimeout(timer);
+  }, [at]);
+  return passed;
+}
+
+function participationOf(hackathon: Hackathon | undefined, membership: string, deadlinePassed = false): Participation {
   if (membership === 'visitor') return 'visitor';
   const status = hackathon?.user_status?.application_status ?? null;
   if (status === 'accepted' || status === 'pending' || status === 'waitlisted') return status;
   if (membership !== 'member') return 'not_member';
   // Applying again after a withdrawal or a refusal, while the registrations are open
-  if (hackathon?.is_registration_open) return 'can_apply';
+  if (hackathon?.is_registration_open && !deadlinePassed) return 'can_apply';
   return status ?? 'closed';
 }
 
@@ -67,9 +90,17 @@ function UseHackathonPage() {
 
   const community = useGetCommunityQuery(slug, { skip: !slug });
   const membership = membershipOf(community.data, signedIn);
-  const query = useGetHackathonQuery({ slug, hackathonSlug }, { skip: !slug || !hackathonSlug });
+  const pollingInterval = useRealtimeRegistrations(community.data?.id);
+  const query = useGetHackathonQuery({ slug, hackathonSlug }, { skip: !slug || !hackathonSlug, pollingInterval });
   const hackathon = query.data;
-  const participation = participationOf(hackathon, membership);
+  const deadlinePassed = useDeadlinePassed(hackathon?.registration_end);
+  const participation = participationOf(hackathon, membership, deadlinePassed);
+  // Closed here before the api said so: read it again to follow the server
+  const openOnServer = !!hackathon?.is_registration_open;
+  const { refetch } = query;
+  useEffect(() => {
+    if (deadlinePassed && openOnServer) void refetch();
+  }, [deadlinePassed, openOnServer, refetch]);
   const accepted = participation === 'accepted';
 
   const application = useGetMyHackathonApplicationQuery({ slug, hackathonSlug }, { skip: !hackathon?.user_status?.has_applied });
@@ -133,17 +164,28 @@ function UseHackathonPage() {
     isInviting,
     isResponding,
     isLeaving,
-    /** Accepted at once when the organizers accept automatically, pending otherwise */
-    apply: async (data: HackathonApplyData) => {
+    /** The applications close here (deadline behind, or closed by the api) */
+    registrationClosed: !!hackathon && (deadlinePassed || !hackathon.is_registration_open),
+    /**
+     * Accepted at once when the organizers accept automatically, pending otherwise. A refusal says
+     * why for the form (it keeps what was typed): the api names the hackathon field when the
+     * applications are closed, the hackathon is then read again.
+     */
+    apply: async (data: HackathonApplyData): Promise<ApplyOutcome> => {
       try {
         const created = await apply({ ...ids, ...data }).unwrap();
         customToast.success({
           message: created.status === 'accepted' ? 'Inscription confirmée : bienvenue dans le hackathon !' : 'Candidature envoyée : les organisateurs vont l’examiner.',
         });
-        return true;
+        return { ok: true };
       } catch (error) {
-        customToast.error({ message: parseApiError(error).message });
-        return false;
+        const { message, fields } = parseApiError(error);
+        if (fields.hackathon) {
+          void refetch();
+          return { ok: false, closed: true, message: fields.hackathon };
+        }
+        const fieldMessage = Object.values(fields)[0];
+        return { ok: false, closed: false, message: fieldMessage ?? message };
       }
     },
     withdraw: () => run(withdraw(ids).unwrap(), 'Votre candidature a été retirée.'),

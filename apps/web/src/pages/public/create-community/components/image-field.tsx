@@ -90,7 +90,7 @@ export function ImageField({
         <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
           {(
             [
-              { value: 'file', label: 'Fichier (UploadThing)', icon: Upload },
+              { value: 'file', label: 'Fichier', icon: Upload },
               { value: 'url', label: 'Lien', icon: Link2 },
             ] as const
           ).map(({ value, label: text, icon: Icon }) => (

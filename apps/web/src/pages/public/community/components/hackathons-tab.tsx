@@ -6,6 +6,7 @@ import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetCommunityHackathonsQuery } from '@/utils/api/community/community.api';
 import type { HackathonFormat, HackathonListItem } from '@/utils/api/hackathon/hackathon.type';
 import { Pill, SectionHeader } from './section-header';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 const DAY = 86_400_000;
 const formatLabel: Record<HackathonFormat, string> = { online: 'En ligne', in_person: 'Présentiel', hybrid: 'Hybride' };
@@ -26,9 +27,10 @@ function deadline(h: HackathonListItem) {
 }
 
 /** Hackathons of the community (public; drafts stay with the team) */
-export function HackathonsTab({ slug }: { slug: string }) {
+export function HackathonsTab({ slug, communityId }: { slug: string; communityId: string }) {
+  const pollingInterval = useRealtimeRegistrations(communityId);
   const [filter, setFilter] = useState<Filter>('all');
-  const { data, isLoading } = useGetCommunityHackathonsQuery({ slug, page_size: 50 });
+  const { data, isLoading } = useGetCommunityHackathonsQuery({ slug, page_size: 50 }, { pollingInterval });
   // Hybrid counts as both online and on site
   const hackathons = (data?.results ?? []).filter(
     (h) => h.status !== 'draft' && (filter === 'all' || h.format === filter || h.format === 'hybrid'),

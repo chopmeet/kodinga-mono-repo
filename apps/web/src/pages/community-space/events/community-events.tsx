@@ -11,6 +11,7 @@ import { canStartLive, useCommunitySpace } from '../community-space-context';
 import { EventRow } from './components/event-row';
 import UseEventActions from './form/UseEventActions';
 import EventFormModal from './modals/event-form-modal';
+import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 type Filter = 'upcoming' | 'live' | 'replays' | 'completed' | 'cancelled' | 'all';
 
@@ -36,7 +37,9 @@ function CommunityEvents() {
   const { canManage, actionsFor, confirmDialog } = UseEventActions({ onEdit: setEditing });
 
   const params = FILTERS.find((f) => f.id === filter)?.params ?? {};
-  const { data, isLoading, isFetching, error, refetch } = useGetCommunityEventsQuery({ slug: community.slug, ...params, page, page_size: size });
+  // Registrations of the others counted live (polled without the WebSocket)
+  const pollingInterval = useRealtimeRegistrations(community.id);
+  const { data, isLoading, isFetching, error, refetch } = useGetCommunityEventsQuery({ slug: community.slug, ...params, page, page_size: size }, { pollingInterval });
   const events = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
 

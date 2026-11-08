@@ -133,7 +133,14 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
       default:
         return (
           <Card icon={<CalendarClock className="size-5 text-slate-400" />} title={notOpenYet ? 'Candidatures bientôt ouvertes' : 'Candidatures closes'}>
-            <p>{notOpenYet ? `Ouverture le ${formatDateTime(h.registration_start)}.` : 'La période de candidature est terminée.'}</p>
+            {notOpenYet ? (
+              <p>Ouverture le {formatDateTime(h.registration_start)}.</p>
+            ) : (
+              <>
+                <p className="font-medium text-slate-900">Les candidatures ne sont plus acceptées.</p>
+                <p>Clôture le {formatDateTime(h.registration_end)}.</p>
+              </>
+            )}
           </Card>
         );
     }

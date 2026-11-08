@@ -39,7 +39,8 @@ class RealtimeClient {
   private lastDisconnectTime = 0;
 
   // Active topic subscriptions
-  private subscribedCommunities = new Set<string>();
+  /** Subscribers of each community (the feed and the counters may follow the same one) */
+  private subscribedCommunities = new Map<string, number>();
   private subscribedPosts = new Set<string>();
   private subscribedConversations = new Set<string>();
 
@@ -239,7 +240,7 @@ class RealtimeClient {
    * Re-sends all active subscriptions upon reconnection.
    */
   private resubscribeAll(): void {
-    for (const commId of this.subscribedCommunities) {
+    for (const commId of this.subscribedCommunities.keys()) {
       this.send({ action: 'subscribe_community', community_id: commId });
     }
     for (const postId of this.subscribedPosts) {
@@ -253,15 +254,23 @@ class RealtimeClient {
   // --- Subscriptions API ---
 
   public subscribeCommunity(communityId: string): void {
-    this.subscribedCommunities.add(communityId);
-    if (this.isConnected) {
+    const count = this.subscribedCommunities.get(communityId) ?? 0;
+    this.subscribedCommunities.set(communityId, count + 1);
+    // Already followed: the topic is open
+    if (count === 0 && this.isConnected) {
       this.send({ action: 'subscribe_community', community_id: communityId });
     }
   }
 
   public unsubscribeCommunity(communityId: string): void {
+    const count = this.subscribedCommunities.get(communityId) ?? 0;
+    if (count > 1) {
+      // Someone else still follows it
+      this.subscribedCommunities.set(communityId, count - 1);
+      return;
+    }
     this.subscribedCommunities.delete(communityId);
-    if (this.isConnected) {
+    if (count === 1 && this.isConnected) {
       this.send({ action: 'unsubscribe_community', community_id: communityId });
     }
   }

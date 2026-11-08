@@ -71,14 +71,14 @@ export function LiveRecordingModal({
 
       setUploadSuccess(true);
       customToast.success({
-        message: 'Replay sauvegardé sur UploadThing et publié pour la communauté !',
+        message: 'Replay enregistré et publié pour la communauté !',
       });
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err) {
       const errorMsg = parseApiError(err).message;
-      customToast.error({ message: `Échec de sauvegarde sur UploadThing : ${errorMsg}` });
+      customToast.error({ message: `Le replay n’a pas pu être enregistré : ${errorMsg}` });
     } finally {
       setIsUploading(false);
     }
@@ -142,9 +142,9 @@ export function LiveRecordingModal({
           </div>
 
           <div className="rounded-xl border border-red-500/20 bg-red-950/20 p-3 sm:p-3.5 text-xs text-slate-300 space-y-1">
-            <p className="font-semibold text-red-400">Stockage cloud UploadThing</p>
+            <p className="font-semibold text-red-400">Publier en replay</p>
             <p className="text-slate-400 leading-relaxed">
-              Cliquez ci-dessous pour téléverser cette vidéo directement sur le stockage Cloud UploadThing. Elle sera automatiquement référencée dans la base de données et accessible en replay pour les membres.
+              Envoyez cette vidéo sur Kodinga : elle sera disponible en replay pour les membres de la communauté.
             </p>
           </div>
         </div>

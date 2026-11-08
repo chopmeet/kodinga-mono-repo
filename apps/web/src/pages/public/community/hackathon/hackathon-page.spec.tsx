@@ -14,10 +14,13 @@ const at = (days: number) => new Date(Date.now() + days * DAY).toISOString();
 const person = (id: string, username: string, first_name: string) => ({ id, username, first_name, last_name: '', email: `${username}@example.com` });
 
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
-type Options = { member?: boolean; application?: 'accepted' | 'pending' | null; invitedBy?: boolean; results?: boolean; requireRepo?: boolean; suggests?: boolean };
+type Options = { member?: boolean; application?: 'accepted' | 'pending' | null; invitedBy?: boolean; results?: boolean; requireRepo?: boolean; suggests?: boolean; closesInMs?: number; applyRefusal?: 'closed' | 'other'; question?: boolean };
 
 /** A hackathon of abidjan-react, running: registrations and submissions open */
-function stubHackathonApi({ member = true, application = null, invitedBy = false, results = false, requireRepo = true, suggests = false }: Options = {}) {
+function stubHackathonApi({ member = true, application = null, invitedBy = false, results = false, requireRepo = true, suggests = false, closesInMs, applyRefusal, question = false }: Options = {}) {
+  // Set once: every read of the hackathon gives the same deadline
+  const registrationEnd = closesInMs === undefined ? at(5) : new Date(Date.now() + closesInMs).toISOString();
+  let closedByServer = false;
   const calls: Call[] = [];
   let status = application;
   let team: Record<string, unknown> | null = null;
@@ -62,6 +65,13 @@ function stubHackathonApi({ member = true, application = null, invitedBy = false
       });
     }
     if (path.endsWith(`${base}apply/`)) {
+      if (applyRefusal === 'closed') {
+        closedByServer = true;
+        return json({ success: false, code: 'invalid', message: 'Validation or processing error.', details: { hackathon: ['La date limite de candidature pour ce hackathon est dépassée.'] } }, 400);
+      }
+      if (applyRefusal === 'other') {
+        return json({ success: false, code: 'invalid', message: 'Validation or processing error.', details: { team_name: ['Ce nom d’équipe est déjà pris.'] } }, 400);
+      }
       status = 'accepted';
       return json({ success: true, data: { id: 'a1', status: 'accepted', participation_mode: body?.participation_mode } }, 201);
     }
@@ -110,11 +120,11 @@ function stubHackathonApi({ member = true, application = null, invitedBy = false
           id: 'h1', community: { id: 'c1', name: 'Abidjan React', slug: 'abidjan-react' }, title: 'DevFest Hack', slug: 'devfest', tagline: 'Construire pour l’Afrique', cover_image_url: '',
           description: '## Le défi\n\nUne app **utile**.', format: 'online', venue_name: '', venue_city: '', venue_country: '', venue_address: '', location_url: '', theme: 'Fintech', main_language: 'fr',
           target_audience: 'Développeurs', prerequisites: '', rules_url: '', terms_and_conditions: 'Soyez fair-play.',
-          registration_start: at(-5), registration_end: at(5), start_time: at(-1), submission_deadline: at(10), judging_end: at(15), results_announced_at: null, timezone: 'UTC',
-          status: results ? 'completed' : 'registration_open', is_registration_open: !results, is_submission_open: !results, results_published: results, results_published_at: null,
+          registration_start: at(-5), registration_end: closedByServer ? at(-1) : registrationEnd, start_time: at(-1), submission_deadline: at(10), judging_end: at(15), results_announced_at: null, timezone: 'UTC',
+          status: results ? 'completed' : 'registration_open', is_registration_open: !results && !closedByServer, is_submission_open: !results, results_published: results, results_published_at: null,
           is_member_only: false, allow_teams: true, min_team_size: 2, max_team_size: 4, max_participants: null, auto_accept_applications: true,
           require_demo_url: false, require_video_url: false, require_repo_url: requireRepo, allowed_file_types: [], max_file_size_mb: 25, max_files_count: 5,
-          custom_registration_questions: [], custom_submission_questions: [], prizes_count: 1, participants_count: 12,
+          custom_registration_questions: question ? [{ id: 'why', label: 'Pourquoi participer ?', required: true }] : [], custom_submission_questions: [], prizes_count: 1, participants_count: 12,
           prizes: [{ id: 'p1', title: 'Grand prix', description: '', reward_amount: '500000', reward_currency: 'XOF', reward_description: '', rank: 1 }],
           criteria: [{ id: 'k1', name: 'Impact', description: 'Utilité pour les usagers', min_score: '0', max_score: '10', weight: '2' }],
           judges: [],
@@ -183,6 +193,55 @@ describe('Hackathon page (participants)', () => {
     await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/apply/'))?.body).toEqual({ participation_mode: 'team', team_name: '', answers: {}, accept_terms: true }), SLOW);
     expect(await within(card()).findByText('Vous participez !', {}, SLOW)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mon espace' })).toBeTruthy();
+  });
+
+  it('closes the applications of a page left open when the deadline passes', async () => {
+    signIn();
+    stubHackathonApi({ closesInMs: 1500 });
+    renderAppAt(URL_PATH);
+    fireEvent.click(await within(await screen.findByRole('region', { name: 'Ma participation' }, SLOW)).findByRole('button', { name: 'Candidater' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    expect(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' })).toHaveProperty('disabled', false);
+    // The deadline passes while the form is open: closed, nothing to send
+    expect(await within(dialog).findByText('Les candidatures ne sont plus acceptées', {}, { timeout: 4000 })).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' })).toHaveProperty('disabled', true);
+    expect(within(dialog).getByRole('checkbox').matches(':disabled')).toBe(true);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Fermer' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), SLOW);
+    expect(within(card()).getByText('Les candidatures ne sont plus acceptées.')).toBeTruthy();
+    expect(within(card()).queryByRole('button', { name: 'Candidater' })).toBeNull();
+  });
+
+  it('says the closing refused by the api, keeping what was typed', async () => {
+    signIn();
+    stubHackathonApi({ applyRefusal: 'closed', question: true });
+    renderAppAt(URL_PATH);
+    fireEvent.click(await within(await screen.findByRole('region', { name: 'Ma participation' }, SLOW)).findByRole('button', { name: 'Candidater' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/Pourquoi participer/), { target: { value: 'Pour apprendre' } });
+    fireEvent.click(within(dialog).getByRole('checkbox'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' }));
+    const alert = await within(dialog).findByRole('alert', {}, SLOW);
+    expect(alert.textContent).toMatch(/Les candidatures ne sont plus acceptées/);
+    expect(alert.textContent).toMatch(/date limite de candidature pour ce hackathon est dépassée/);
+    expect(screen.queryByText('Validation or processing error.')).toBeNull();
+    expect((within(dialog).getByLabelText(/Pourquoi participer/) as HTMLTextAreaElement).value).toBe('Pour apprendre');
+    expect(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' })).toHaveProperty('disabled', true);
+    // The hackathon is read again: the card follows the server
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Fermer' }));
+    expect(await within(card()).findByText('Les candidatures ne sont plus acceptées.', {}, SLOW)).toBeTruthy();
+  });
+
+  it('keeps the form usable on another refusal of the api', async () => {
+    signIn();
+    stubHackathonApi({ applyRefusal: 'other' });
+    renderAppAt(URL_PATH);
+    fireEvent.click(await within(await screen.findByRole('region', { name: 'Ma participation' }, SLOW)).findByRole('button', { name: 'Candidater' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.click(within(dialog).getByRole('checkbox'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' }));
+    expect((await within(dialog).findByRole('alert', {}, SLOW)).textContent).toBe('Ce nom d’équipe est déjà pris.');
+    expect(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' })).toHaveProperty('disabled', false);
   });
 
   it('creates a team and invites a teammate', async () => {
