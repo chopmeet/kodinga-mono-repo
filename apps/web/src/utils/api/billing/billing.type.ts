@@ -85,7 +85,7 @@ export type BillingUser = {
   avatar_url: string | null;
 };
 
-/** CommunitySubscriberSerializer (GET billing/communities/<slug>/subscribers/, owner only) */
+/** CommunitySubscriberSerializer (GET billing/communities/<slug>/subscribers/, owner or platform admin) */
 export type CommunitySubscriber = {
   id: string;
   user: BillingUser;
@@ -100,7 +100,7 @@ export type CommunitySubscriber = {
   created_at: string;
 };
 
-/** CommunityTransactionSerializer (GET billing/communities/<slug>/transactions/, owner only) */
+/** CommunityTransactionSerializer (GET billing/communities/<slug>/transactions/, owner or platform admin) */
 export type CommunityTransaction = {
   id: string;
   user: BillingUser;
@@ -121,7 +121,7 @@ export type CommunityTransaction = {
 /** MonthlyRevenuePointSerializer: paid payments of one month (YYYY-MM) */
 export type MonthlyRevenue = { month: string; gross: string; fees: string; net: string; payments_count: number };
 
-/** CommunityRevenueOverviewSerializer (GET billing/communities/<slug>/revenue/, owner only) */
+/** CommunityRevenueOverviewSerializer (GET billing/communities/<slug>/revenue/, owner or platform admin) */
 export type CommunityRevenue = {
   total_gross: string;
   total_platform_fees: string;
@@ -136,7 +136,7 @@ export type CommunityRevenue = {
 export type PayoutStatus = 'pending' | 'approved' | 'processed' | 'rejected';
 export type PayoutMethod = 'wave' | 'orange_money' | 'bank_transfer';
 
-/** CommunityPayoutSerializer (GET / POST billing/communities/<slug>/payouts/, owner only) */
+/** CommunityPayoutSerializer (GET / POST billing/communities/<slug>/payouts/, owner or platform admin) */
 export type CommunityPayout = {
   id: string;
   amount: string;

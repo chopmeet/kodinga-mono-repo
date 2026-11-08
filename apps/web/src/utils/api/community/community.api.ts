@@ -351,7 +351,7 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<MySubscription>,
       invalidatesTags: [{ type: 'communities', id: 'my-billing' }],
     }),
-    // Billing of a community for its owner (403 for anyone else): subscribers, payments, revenue, payouts
+    // Billing of a community for its owner or a platform admin (403 for anyone else): subscribers, payments, revenue, payouts
     getCommunitySubscribers: builder.query<CommunitySubscriber[], string>({
       query: (slug) => `billing/communities/${slug}/subscribers/`,
       transformResponse: unwrap<CommunitySubscriber[]>,

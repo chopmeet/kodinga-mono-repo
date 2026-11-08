@@ -85,10 +85,53 @@ const detail = {
   rules: [{ id: 'r1', title: 'Bienveillance avant tout', description: 'Respect des membres.', order: 0 }],
 };
 
+const revenue = {
+  total_gross: '45000.00',
+  total_platform_fees: '4500.00',
+  total_net: '40500.00',
+  available_balance: '30500.00',
+  withdrawn_amount: '10000.00',
+  currency: 'XOF',
+  active_subscribers_count: 3,
+  monthly_revenue: [{ month: '2026-10', gross: '45000.00', fees: '4500.00', net: '40500.00', payments_count: 3 }],
+};
+const plan = { id: 'pl1', name: 'Mensuel', price: '15000.00', currency: 'XOF', billing_interval: 'month' };
+const transactions = [
+  {
+    id: 't1',
+    user: user('u3', 'Kofi', 'Mensah'),
+    plan_name: 'Mensuel',
+    plan_interval: 'month',
+    amount: '15000.00',
+    platform_fee: '1500.00',
+    net_amount: '13500.00',
+    currency: 'XOF',
+    status: 'PAID',
+    provider: 'paydunya',
+    provider_reference: 'pd-1',
+    paid_at: '2026-10-12T10:00:00Z',
+    created_at: '2026-10-12T09:58:00Z',
+  },
+];
+const subscribers = [
+  {
+    id: 's1',
+    user: user('u2', 'Awa', 'Ndiaye'),
+    plan,
+    status: 'active',
+    is_active: true,
+    current_period_start: '2026-10-12T10:00:00Z',
+    current_period_end: '2026-11-12T10:00:00Z',
+    cancel_at_period_end: false,
+    canceled_at: null,
+    created_at: '2026-10-12T10:00:00Z',
+  },
+];
+
 type Call = { method: string; url: URL; body: unknown };
 
 /** Fake api of the page: routes on path, method and filters */
-function stubCommunityApi() {
+function stubCommunityApi({ community: shown = detail, billingDenied = false }: { community?: typeof detail; billingDenied?: boolean } = {}) {
   const calls: Call[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
@@ -104,7 +147,13 @@ function stubCommunityApi() {
       return page(members.filter((m) => !status || m.status === status));
     }
     if (path.endsWith(`/communities/${community.slug}/feed/`)) return page(posts);
-    if (path.endsWith(`/communities/${community.slug}/`)) return json({ success: true, data: detail });
+    if (path.includes(`/billing/communities/${shown.slug}/`)) {
+      if (billingDenied) return json({ success: false, code: 'permission_denied', message: 'Seul le créateur peut consulter ses données financières.' }, 403);
+      if (path.endsWith('/revenue/')) return json({ success: true, data: revenue });
+      if (path.endsWith('/transactions/')) return json({ success: true, data: transactions });
+      if (path.endsWith('/subscribers/')) return json({ success: true, data: subscribers });
+    }
+    if (path.endsWith(`/communities/${shown.slug}/`)) return json({ success: true, data: shown });
     if (path.includes('/communities/') && request.method === 'GET') return json({ success: false, code: 'not_found', message: 'Communauté introuvable.' }, 404);
     return json({ success: true, data: {} }, request.method === 'POST' ? 201 : 200);
   });
@@ -186,10 +235,32 @@ describe('Admin community details', () => {
     expect(screen.getByText('Bienvenue !')).toBeTruthy();
   });
 
-  it('says payments are not available yet for a paid community', async () => {
-    stubCommunityApi();
+  it('shows the revenue, payments and subscribers of a paid community', async () => {
+    const calls = stubCommunityApi();
     renderAt(`/admin/communities/${community.slug}/payments`);
-    expect(await screen.findByText('Paiements bientôt disponibles', {}, SLOW)).toBeTruthy();
+    expect(await screen.findByText('30 500 FCFA', {}, SLOW)).toBeTruthy();
+    expect(screen.getAllByText('4 500 FCFA').length).toBeGreaterThan(0);
+    expect(await screen.findByText('Kofi Mensah', {}, SLOW)).toBeTruthy();
+    expect(screen.getAllByText('13 500 FCFA').length).toBeGreaterThan(0);
+    expect(await screen.findByText('Awa Ndiaye', {}, SLOW)).toBeTruthy();
+    // The creator's wording ("Net pour vous") is not shown to the admin
+    expect(screen.getByRole('columnheader', { name: 'Net pour le créateur' })).toBeTruthy();
+    expect(calls.filter((c) => c.url.pathname.includes('/billing/communities/')).length).toBe(3);
+  });
+
+  it('shows the api error when billing is refused', async () => {
+    stubCommunityApi({ billingDenied: true });
+    renderAt(`/admin/communities/${community.slug}/payments`);
+    expect(await screen.findByRole('button', { name: 'Réessayer' }, SLOW)).toBeTruthy();
+    expect(screen.getAllByText('Seul le créateur peut consulter ses données financières.').length).toBeGreaterThan(0);
+  });
+
+  it('asks nothing to the billing api for a free community', async () => {
+    const free = { ...detail, slug: 'free-one', pricing_type: 'free' as const };
+    const calls = stubCommunityApi({ community: free as typeof detail });
+    renderAt('/admin/communities/free-one/payments');
+    expect(await screen.findByText("Ses membres ne paient pas d'abonnement : aucun paiement à afficher.", {}, SLOW)).toBeTruthy();
+    expect(calls.some((c) => c.url.pathname.includes('/billing/'))).toBe(false);
   });
 
   it('handles an unknown community', async () => {

@@ -1,9 +1,9 @@
-import { FileText, Percent, UserPlus, Users, UsersRound, Wallet } from 'lucide-react';
+import { FileText, Repeat, UserPlus, Users, UsersRound, Wallet } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 import { type CardType, OverviewCardItem } from '@kodinga/ui';
-import { type DashboardKpi, dashboardKpis } from '@/data/admin-dashboard.data';
 import { formatCompact } from '@/pages/shared/chart-theme';
+import type { DashboardKpi } from '../form/UseAdminDashboard';
 
 const kpiStyle: Record<string, { icon: ReactElement; color: string }> = {
   communities: { icon: <UsersRound size={18} />, color: '#1D4ED8' },
@@ -11,17 +11,17 @@ const kpiStyle: Record<string, { icon: ReactElement; color: string }> = {
   'new-members': { icon: <UserPlus size={18} />, color: '#0f766e' },
   posts: { icon: <FileText size={18} />, color: '#c2410c' },
   revenue: { icon: <Wallet size={18} />, color: '#15803d' },
-  'paid-rate': { icon: <Percent size={18} />, color: '#b45309' },
+  subscriptions: { icon: <Repeat size={18} />, color: '#b45309' },
 };
 
 const formatKpi = (kpi: DashboardKpi) => {
+  if (kpi.value === null) return '—';
   if (kpi.unit === 'xof') return `${formatCompact(kpi.value)} FCFA`;
-  if (kpi.unit === 'percent') return `${kpi.value} %`;
   return formatCompact(kpi.value);
 };
 
-function Overview() {
-  const cards: CardType[] = dashboardKpis.map((kpi) => ({
+function Overview({ kpis }: { kpis: DashboardKpi[] }) {
+  const cards: CardType[] = kpis.map((kpi) => ({
     id: kpi.id,
     label: kpi.label,
     value: formatKpi(kpi),

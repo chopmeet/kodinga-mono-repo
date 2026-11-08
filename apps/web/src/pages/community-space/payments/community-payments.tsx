@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga/ui';
 import { useCommunitySpace } from '../community-space-context';
 import BillingOverview from './components/billing-overview';
-import RevenueChart from './components/revenue-chart';
+import RevenueChart from '@/pages/shared/billing/revenue-chart';
 import UseSpaceBilling from './form/UseSpaceBilling';
 
 const tabs: Tab[] = [

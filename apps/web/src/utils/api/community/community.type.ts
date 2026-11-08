@@ -65,6 +65,8 @@ export type CommunityListQuery = Partial<{
   privacy: CommunityPrivacy;
   pricing: CommunityPricing;
   is_featured: boolean;
+  /** popular: by members count (featured communities still come first) */
+  sort: 'popular';
   page: number;
   page_size: number;
 }>;

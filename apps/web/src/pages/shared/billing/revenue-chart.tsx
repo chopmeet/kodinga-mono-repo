@@ -23,8 +23,10 @@ function toPoints(monthly: MonthlyRevenue[]): Point[] {
   });
 }
 
+type TooltipProps = { active?: boolean; payload?: { payload?: Point }[]; label?: ReactNode; netLabel: string };
+
 /** Net in the series color; gross and commission as plain rows of the same tooltip */
-function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?: { payload?: Point }[]; label?: ReactNode }) {
+function RevenueTooltip({ active, payload, label, netLabel }: TooltipProps) {
   const point = payload?.[0]?.payload;
   if (!point) return null;
   return (
@@ -33,7 +35,7 @@ function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?
       label={label}
       format={formatXof}
       payload={[
-        { name: 'Net pour vous', value: point.net, color: SERIES[0] },
+        { name: netLabel, value: point.net, color: SERIES[0] },
         { name: 'Payé par les membres', value: point.gross, color: '#cbd5e1' },
         { name: 'Commission Kodinga', value: point.fees, color: '#cbd5e1' },
       ]}
@@ -41,15 +43,26 @@ function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?
   );
 }
 
+type Props = {
+  monthly: MonthlyRevenue[];
+  /** Who the net goes to, from the reader's point of view */
+  netLabel?: string;
+  emptyText?: string;
+};
+
 /** Magnitude over time, one measure: net revenue per month, in bars */
-function RevenueChart({ monthly }: { monthly: MonthlyRevenue[] }) {
+function RevenueChart({
+  monthly,
+  netLabel = 'Net pour vous',
+  emptyText = 'Aucun paiement reçu pour l’instant : vos revenus mois par mois s’afficheront ici.',
+}: Props) {
   const points = toPoints(monthly);
 
   if (points.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-300 px-6 py-10 text-center">
         <TrendingUp className="size-6 text-slate-400" aria-hidden />
-        <p className="mt-2 text-sm text-slate-500">Aucun paiement reçu pour l’instant : vos revenus mois par mois s’afficheront ici.</p>
+        <p className="mt-2 text-sm text-slate-500">{emptyText}</p>
       </div>
     );
   }
@@ -62,8 +75,8 @@ function RevenueChart({ monthly }: { monthly: MonthlyRevenue[] }) {
             <CartesianGrid stroke={GRID_COLOR} vertical={false} />
             <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" />
             <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={formatCompact} width={48} />
-            <Tooltip content={<RevenueTooltip />} cursor={{ fill: '#f1f5f9' }} />
-            <Bar isAnimationActive={false} dataKey="net" name="Net pour vous" fill={SERIES[0]} maxBarSize={32} radius={[4, 4, 0, 0]} />
+            <Tooltip content={<RevenueTooltip netLabel={netLabel} />} cursor={{ fill: '#f1f5f9' }} />
+            <Bar isAnimationActive={false} dataKey="net" name={netLabel} fill={SERIES[0]} maxBarSize={32} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -74,7 +87,7 @@ function RevenueChart({ monthly }: { monthly: MonthlyRevenue[] }) {
             <th>Mois</th>
             <th>Payé par les membres</th>
             <th>Commission Kodinga</th>
-            <th>Net pour vous</th>
+            <th>{netLabel}</th>
             <th>Paiements</th>
           </tr>
         </thead>

@@ -1,8 +1,19 @@
-import { ChevronDown, CreditCard, FileText, Flag, LogIn, UserPlus, UsersRound } from 'lucide-react';
+import { ChevronDown, CreditCard, FileText, Flag, LogIn, Settings, ShieldCheck, UserPlus, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 
-import { type ActivityType, type DashboardActivity, recentActivities } from '@/data/admin-dashboard.data';
 import { nameInitials } from '@/utils/Utils';
+
+export type ActivityType = 'community' | 'member' | 'post' | 'payment' | 'report' | 'login' | 'admin' | 'setting';
+
+export type DashboardActivity = {
+  id: string;
+  type: ActivityType;
+  actor: string;
+  action: string;
+  target: string | null;
+  /** ISO date */
+  at: string;
+};
 
 const ACTION_CONFIG: Record<ActivityType, { icon: typeof UserPlus; color: string; bg: string }> = {
   community: { icon: UsersRound, color: 'text-blue-700', bg: 'bg-blue-50' },
@@ -11,6 +22,8 @@ const ACTION_CONFIG: Record<ActivityType, { icon: typeof UserPlus; color: string
   payment: { icon: CreditCard, color: 'text-emerald-700', bg: 'bg-emerald-50' },
   report: { icon: Flag, color: 'text-red-600', bg: 'bg-red-50' },
   login: { icon: LogIn, color: 'text-slate-600', bg: 'bg-slate-100' },
+  admin: { icon: ShieldCheck, color: 'text-violet-700', bg: 'bg-violet-50' },
+  setting: { icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100' },
 };
 
 function formatRelativeTime(iso: string) {
@@ -23,10 +36,9 @@ function formatRelativeTime(iso: string) {
   return diffDay === 1 ? 'hier' : `il y a ${diffDay} j`;
 }
 
-
 const PAGE = 5;
 
-export default function RecentActivities({ activities = recentActivities }: { activities?: DashboardActivity[] }) {
+export default function RecentActivities({ activities }: { activities: DashboardActivity[] }) {
   const [visibleCount, setVisibleCount] = useState(PAGE);
   const visible = activities.slice(0, visibleCount);
 
