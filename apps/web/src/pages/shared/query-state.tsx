@@ -27,5 +27,5 @@ export default function QueryState({ isLoading, error, onRetry, skeleton = 'h-48
       </div>
     );
   }
-  return <>{children}</>;
+  return children;
 }

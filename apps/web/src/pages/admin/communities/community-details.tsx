@@ -22,6 +22,10 @@ import { nameInitials } from '@/utils/Utils';
 const tabs: Tab[] = [
   { id: 'members', title: 'Membres', link: 'members' },
   { id: 'posts', title: 'Publications', link: 'posts' },
+  { id: 'events', title: 'Événements', link: 'events' },
+  { id: 'opportunities', title: 'Opportunités', link: 'opportunities' },
+  { id: 'hackathons', title: 'Hackathons', link: 'hackathons' },
+  { id: 'projects', title: 'Projets', link: 'projects' },
   { id: 'payments', title: 'Paiements', link: 'payments' },
   { id: 'settings', title: 'Règles & paramètres', link: 'settings' },
 ];

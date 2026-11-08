@@ -8,9 +8,13 @@ import store from '@/redux/store';
 import { must } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import CommunityDetails from './community-details';
+import CommunityEventsTab from './tabs/events';
+import CommunityHackathonsTab from './tabs/hackathons';
 import CommunityMembersTab from './tabs/members';
+import CommunityOpportunitiesTab from './tabs/opportunities';
 import CommunityPaymentsTab from './tabs/payments';
 import CommunityPostsTab from './tabs/posts';
+import CommunityProjectsTab from './tabs/projects';
 import CommunitySettingsTab from './tabs/settings';
 
 // Network stubs + Radix menus: slow when the whole suite runs in parallel
@@ -26,6 +30,10 @@ const renderAt = (path: string) =>
             <Route index element={<Navigate to="members" replace />} />
             <Route path="members" element={<CommunityMembersTab />} />
             <Route path="posts" element={<CommunityPostsTab />} />
+            <Route path="events" element={<CommunityEventsTab />} />
+            <Route path="opportunities" element={<CommunityOpportunitiesTab />} />
+            <Route path="hackathons" element={<CommunityHackathonsTab />} />
+            <Route path="projects" element={<CommunityProjectsTab />} />
             <Route path="payments" element={<CommunityPaymentsTab />} />
             <Route path="settings" element={<CommunitySettingsTab />} />
           </Route>
@@ -128,6 +136,111 @@ const subscribers = [
   },
 ];
 
+const events = [
+  {
+    id: 'e1',
+    community: { id: community.id, name: community.name, slug: community.slug, avatar_url: '' },
+    host: { ...user('u1', 'Chidi', 'Okafor'), avatar_url: '' },
+    title: 'Atelier Terraform',
+    slug: 'atelier-terraform',
+    description: '',
+    cover_image_url: '',
+    event_type: 'workshop',
+    format: 'livekit',
+    status: 'scheduled',
+    start_time: '2026-12-01T18:00:00Z',
+    end_time: '2026-12-01T20:00:00Z',
+    timezone: 'Africa/Dakar',
+    venue_name: '',
+    location_address: '',
+    location_city: '',
+    location_country: '',
+    attendees_count: 24,
+    max_attendees: 50,
+    is_full: false,
+    is_upcoming: true,
+    is_in_progress: false,
+    is_recorded: false,
+    is_public: false,
+    duration_minutes: 120,
+  },
+];
+const opportunities = [
+  {
+    id: 'o1',
+    title: 'Ingénieur DevOps senior',
+    slug: 'ingenieur-devops-senior',
+    company_name: 'Wave',
+    company_logo_url: '',
+    company_website: '',
+    opportunity_type: 'full_time',
+    workplace_type: 'remote',
+    location: 'Dakar',
+    salary_min: '1500000.00',
+    salary_max: null,
+    currency: 'XOF',
+    experience_level: 'senior',
+    status: 'open',
+    views_count: 120,
+    applications_count: 7,
+    expires_at: null,
+    has_applied: false,
+    poster: { ...user('u1', 'Chidi', 'Okafor'), avatar_url: '' },
+    technologies: [],
+    created_at: '2026-10-20T10:00:00Z',
+  },
+];
+
+const hackathons = [
+  {
+    id: 'h1',
+    community: { id: community.id, name: community.name, slug: community.slug },
+    organizer: { id: 'u1', username: 'chidiokafor', full_name: 'Chidi Okafor' },
+    title: 'Hack the Sahel',
+    slug: 'hack-the-sahel',
+    tagline: '',
+    cover_image_url: '',
+    format: 'hybrid',
+    venue_city: 'Dakar',
+    venue_country: 'SN',
+    theme: 'Climat',
+    main_language: 'fr',
+    registration_start: '2026-11-01T00:00:00Z',
+    registration_end: '2026-11-30T00:00:00Z',
+    start_time: '2026-12-05T09:00:00Z',
+    submission_deadline: '2026-12-07T18:00:00Z',
+    judging_end: '2026-12-10T18:00:00Z',
+    results_announced_at: null,
+    timezone: 'Africa/Dakar',
+    status: 'draft',
+    is_registration_open: false,
+    is_submission_open: false,
+    results_published: false,
+    prizes_count: 3,
+    participants_count: 0,
+    created_at: '2026-10-25T10:00:00Z',
+  },
+];
+const projects = [
+  {
+    id: 'pr1',
+    title: 'AgriSense',
+    slug: 'agrisense',
+    tagline: 'Capteurs pour les maraîchers',
+    cover_image_url: '',
+    demo_url: '',
+    repository_url: '',
+    status: 'published',
+    upvotes_count: 42,
+    views_count: 300,
+    is_featured: false,
+    is_upvoted: false,
+    owner: { ...user('u3', 'Kofi', 'Mensah'), avatar_url: '', headline: '' },
+    technologies: [{ id: 't1', name: 'Python', slug: 'python', icon_url: '' }],
+    created_at: '2026-10-15T10:00:00Z',
+  },
+];
+
 type Call = { method: string; url: URL; body: unknown };
 
 /** Fake api of the page: routes on path, method and filters */
@@ -147,6 +260,13 @@ function stubCommunityApi({ community: shown = detail, billingDenied = false }: 
       return page(members.filter((m) => !status || m.status === status));
     }
     if (path.endsWith(`/communities/${community.slug}/feed/`)) return page(posts);
+    if (path.endsWith(`/communities/${community.slug}/events/`)) {
+      const status = url.searchParams.get('status');
+      return page(events.filter((e) => !status || e.status === status));
+    }
+    if (path.endsWith('/opportunities/') && request.method === 'GET') return json({ success: true, data: opportunities });
+    if (path.endsWith(`/communities/${community.slug}/hackathons/`)) return page(hackathons);
+    if (path.endsWith('/projects/') && request.method === 'GET') return json({ success: true, data: projects });
     if (path.includes(`/billing/communities/${shown.slug}/`)) {
       if (billingDenied) return json({ success: false, code: 'permission_denied', message: 'Seul le créateur peut consulter ses données financières.' }, 403);
       if (path.endsWith('/revenue/')) return json({ success: true, data: revenue });
@@ -261,6 +381,79 @@ describe('Admin community details', () => {
     renderAt('/admin/communities/free-one/payments');
     expect(await screen.findByText("Ses membres ne paient pas d'abonnement : aucun paiement à afficher.", {}, SLOW)).toBeTruthy();
     expect(calls.some((c) => c.url.pathname.includes('/billing/'))).toBe(false);
+  });
+
+  it('lists the events of the api, filters them and cancels one', async () => {
+    const calls = stubCommunityApi();
+    renderAt(`/admin/communities/${community.slug}/events`);
+    expect(await screen.findByText('Atelier Terraform', {}, SLOW)).toBeTruthy();
+    expect(screen.getByText(/réservé aux membres/)).toBeTruthy();
+    expect(screen.getByText('24 / 50')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annulés' }));
+    expect(await screen.findByText('Aucun événement avec ce statut.', {}, SLOW)).toBeTruthy();
+    expect(calls.some((c) => c.url.pathname.endsWith('/events/') && c.url.searchParams.get('status') === 'cancelled')).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tous' }));
+    const menu = await openMenu('Actions pour Atelier Terraform');
+    fireEvent.click(within(menu).getByRole('menuitem', { name: "Annuler l'événement" }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.click(within(dialog).getByRole('button', { name: "Annuler l'événement" }));
+    expect(await screen.findByText('« Atelier Terraform » est annulé.', {}, SLOW)).toBeTruthy();
+    const post = calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/events/e1/status/'));
+    expect(post?.body).toEqual({ status: 'cancelled' });
+  });
+
+  it('lists the open offers of the community and closes one', async () => {
+    const calls = stubCommunityApi();
+    renderAt(`/admin/communities/${community.slug}/opportunities`);
+    expect(await screen.findByText('Ingénieur DevOps senior', {}, SLOW)).toBeTruthy();
+    expect(screen.getByText(/À partir de 1\s500\s000 FCFA/)).toBeTruthy();
+    expect(calls.find((c) => c.url.pathname.endsWith('/opportunities/'))?.url.searchParams.get('community')).toBe(community.slug);
+
+    const menu = await openMenu('Actions pour Ingénieur DevOps senior');
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Clôturer' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Clôturer' }));
+    expect(await screen.findByText('« Ingénieur DevOps senior » est clôturée.', {}, SLOW)).toBeTruthy();
+    expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/opportunities/ingenieur-devops-senior/'))).toBe(true);
+  });
+
+  it('lists the hackathons, drafts included, and cancels one', async () => {
+    const calls = stubCommunityApi();
+    renderAt(`/admin/communities/${community.slug}/hackathons`);
+    expect(await screen.findByText('Hack the Sahel', {}, SLOW)).toBeTruthy();
+    expect(screen.getByText(/Hybride · Dakar · organisé par Chidi Okafor/)).toBeTruthy();
+
+    const menu = await openMenu('Actions pour Hack the Sahel');
+    // A draft has no public page yet
+    expect(within(menu).queryByRole('menuitem', { name: 'Voir la page publique' })).toBeNull();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Annuler le hackathon' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler le hackathon' }));
+    expect(await screen.findByText('« Hack the Sahel » est annulé.', {}, SLOW)).toBeTruthy();
+    const post = calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/hackathons/hack-the-sahel/lifecycle/'));
+    expect(post?.body).toEqual({ status: 'cancelled' });
+  });
+
+  it('lists the published projects, features and deletes one', async () => {
+    const calls = stubCommunityApi();
+    renderAt(`/admin/communities/${community.slug}/projects`);
+    expect(await screen.findByText('AgriSense', {}, SLOW)).toBeTruthy();
+    expect(screen.getByText('Python')).toBeTruthy();
+    expect(calls.find((c) => c.url.pathname.endsWith('/projects/'))?.url.searchParams.get('community')).toBe(community.slug);
+
+    let menu = await openMenu('Actions pour AgriSense');
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Mettre à la une' }));
+    expect(await screen.findByText('« AgriSense » est à la une.', {}, SLOW)).toBeTruthy();
+    expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/projects/agrisense/feature/'))?.body).toEqual({ is_featured: true });
+
+    menu = await openMenu('Actions pour AgriSense');
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Supprimer' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Supprimer' }));
+    expect(await screen.findByText('« AgriSense » a été supprimé.', {}, SLOW)).toBeTruthy();
+    expect(calls.some((c) => c.method === 'DELETE' && c.url.pathname.endsWith('/projects/agrisense/'))).toBe(true);
   });
 
   it('handles an unknown community', async () => {

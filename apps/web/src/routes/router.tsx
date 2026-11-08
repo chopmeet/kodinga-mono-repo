@@ -35,9 +35,13 @@ import PublicProfile from '@/pages/public/profile/public-profile';
 import VerifyEmail from '@/pages/auth/verify-email';
 import AdminCommunities from '@/pages/admin/communities/admin-communities';
 import AdminCommunityDetails from '@/pages/admin/communities/community-details';
+import CommunityEventsTab from '@/pages/admin/communities/tabs/events';
+import CommunityHackathonsTab from '@/pages/admin/communities/tabs/hackathons';
 import CommunityMembersTab from '@/pages/admin/communities/tabs/members';
+import CommunityOpportunitiesTab from '@/pages/admin/communities/tabs/opportunities';
 import CommunityPaymentsTab from '@/pages/admin/communities/tabs/payments';
 import CommunityPostsTab from '@/pages/admin/communities/tabs/posts';
+import CommunityProjectsTab from '@/pages/admin/communities/tabs/projects';
 import CommunitySettingsTab from '@/pages/admin/communities/tabs/settings';
 import AdminDashboard from '@/pages/admin/dashboard/admin-dashboard';
 import CommunitySpaceLayout from '@/pages/community-space/community-space-layout';
@@ -342,6 +346,22 @@ export const AppRoutes: RouteObject[] = [
           {
             path: 'posts',
             element: <CommunityPostsTab />,
+          },
+          {
+            path: 'events',
+            element: <CommunityEventsTab />,
+          },
+          {
+            path: 'opportunities',
+            element: <CommunityOpportunitiesTab />,
+          },
+          {
+            path: 'hackathons',
+            element: <CommunityHackathonsTab />,
+          },
+          {
+            path: 'projects',
+            element: <CommunityProjectsTab />,
           },
           {
             path: 'payments',
