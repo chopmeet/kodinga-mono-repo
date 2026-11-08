@@ -180,6 +180,10 @@ function UseCreateCommunity() {
   });
 
   const values = form.watch();
+  // A paid community is private (rule of the api, applied silently there): said here at once
+  useEffect(() => {
+    if (values.pricing_type === 'paid' && values.privacy_type === 'public') form.setValue('privacy_type', 'private', { shouldDirty: true });
+  }, [values.pricing_type, values.privacy_type, form]);
   const slug = slugEdited ? values.slug : slugify(values.name);
   const avatarFile = useFilePreview(images.avatar.file);
   const bannerFile = useFilePreview(images.banner.file);

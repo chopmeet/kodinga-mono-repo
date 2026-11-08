@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import { must, renderAppAt, SLOW, stubApi } from '@/test-utils';
 import { leaveTo } from './hooks/oauth-state';
@@ -165,6 +165,19 @@ describe('OAuth callback, where it goes', () => {
     sessionStorage.setItem('oauth_state_github', 'st4te');
     renderAppAt('/auth/callback/github?code=abc&state=st4te');
     expect(await screen.findByText(/Cette adresse n’est pas vérifiée chez le fournisseur/, {}, SLOW)).toBeTruthy();
+  });
+
+  it('tells a cancellation from another error of the provider', async () => {
+    const calls = stubApi({});
+    sessionStorage.setItem('oauth_state_google', 'st4te');
+    renderAppAt('/auth/callback/google?error=access_denied&state=st4te');
+    expect(await screen.findByText('La connexion a été annulée.', {}, SLOW)).toBeTruthy();
+    cleanup();
+    sessionStorage.setItem('oauth_state_google', 'st4te');
+    renderAppAt('/auth/callback/google?error=invalid_request&state=st4te');
+    expect(await screen.findByText(/La connexion avec Google a échoué/, {}, SLOW)).toBeTruthy();
+    // Nothing sent to the api: there is no code to exchange
+    expect(calls).toHaveLength(0);
   });
 
   it('never leaves the app', async () => {

@@ -180,7 +180,12 @@ describe('Create a community', () => {
     await screen.findByRole('heading', { name: 'Qui peut la rejoindre ?' }, SLOW);
     // The Pro price comes from the api (set by the superadmin)
     expect(await screen.findByText(/Réservé aux membres Kodinga Pro \(7\s000 FCFA \/ mois\)/, {}, SLOW)).toBeTruthy();
+    expect((screen.getByRole('radio', { name: /^Publique/ }) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(screen.getByRole('radio', { name: /^Payante/ }));
+    // A paid community is private: public is closed, the choice moves to private
+    await waitFor(() => expect((screen.getByRole('radio', { name: /^Privée/ }) as HTMLInputElement).checked).toBe(true), SLOW);
+    expect(screen.getByRole('radio', { name: /^Publique/ })).toHaveProperty('disabled', true);
+    expect(screen.getByText('Indisponible : une communauté payante est forcément privée ou secrète.')).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^Prix \(FCFA\)/), { target: { value: '300' } });
     fireEvent.click(continueButton());
     expect(await screen.findByText(/Prix minimum : 500 FCFA/, {}, SLOW)).toBeTruthy();
@@ -193,6 +198,7 @@ describe('Create a community', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer ma communauté/ }));
     await waitFor(() => expect(calls.some((c) => c.method === 'POST' && new URL(c.url).pathname.endsWith('/communities/'))).toBe(true), SLOW);
     expect(calls.find((c) => c.method === 'POST' && new URL(c.url).pathname.endsWith('/communities/'))?.body).toMatchObject({
+      privacy_type: 'private',
       pricing_type: 'paid',
       membership_price: 7500,
       membership_interval: 'year',

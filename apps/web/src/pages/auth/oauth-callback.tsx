@@ -37,8 +37,11 @@ function OAuthCallback() {
     if (next !== '/') setLoginUrl(`/auth/login?next=${encodeURIComponent(next)}`);
     const code = params.get('code');
     const state = params.get('state') ?? '';
-    if (params.get('error')) {
-      setError('La connexion a été annulée.');
+    // The provider sends back an error: refused by the user, or anything else on its side
+    const providerError = params.get('error');
+    if (providerError) {
+      const name = provider === 'google' ? 'Google' : 'GitHub';
+      setError(providerError === 'access_denied' ? 'La connexion a été annulée.' : `La connexion avec ${name} a échoué. Réessayez, ou connectez-vous avec votre email.`);
       return;
     }
     if (!code || !expectedState || state !== expectedState) {
