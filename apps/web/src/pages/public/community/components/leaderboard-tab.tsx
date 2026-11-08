@@ -1,7 +1,7 @@
 import { Medal, TrendingUp, Trophy } from 'lucide-react';
 import { useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga/ui';
 import { pointsFormat } from '@/pages/community-space/leaderboard/leaderboard-labels';
 import { useGetCommunityLeaderboardQuery } from '@/utils/api/community/community.api';
 import { type LeaderboardPeriod, PERIOD_LABEL } from '@/utils/api/gamification/gamification.type';

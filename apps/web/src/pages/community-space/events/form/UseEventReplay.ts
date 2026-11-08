@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useAttachEventReplayMutation, useCreateVideoUploadMutation } from '@/utils/api/community/community.api';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';

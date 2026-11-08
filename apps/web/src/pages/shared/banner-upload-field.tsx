@@ -1,7 +1,7 @@
 import { ImageOff, ImagePlus, Link2, Trash2, Upload } from 'lucide-react';
 import { type ChangeEvent, type DragEvent, useId, useState } from 'react';
 
-import { cn, Input } from '@kodinga-mono-repo/ui';
+import { cn, Input } from '@kodinga/ui';
 import { checkImage, useImageUpload } from '@/utils/Utils';
 
 type Props = {

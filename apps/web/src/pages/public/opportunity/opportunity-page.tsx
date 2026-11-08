@@ -2,7 +2,7 @@ import { ArrowLeft, Building2, CalendarClock, CheckCircle2, ExternalLink, Mail, 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Loader } from '@kodinga/ui';
 import { experienceLabel, formatSalary, opportunityTypeLabel, workplaceLabel } from '@/pages/community-space/opportunities/opportunity-labels';
 import { Markdown } from '@/pages/shared/markdown';
 import type { OpportunityApplicationStatus } from '@/utils/api/opportunity/opportunity.type';

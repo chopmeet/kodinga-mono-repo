@@ -13,7 +13,7 @@ import {
   DialogTitle,
   SelectInput,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { AdminMember } from '@/data/admin-community-details.data';
 import type { Sanction, SanctionType } from '../form/UseSpaceMembers';
 

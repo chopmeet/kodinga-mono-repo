@@ -1,6 +1,6 @@
 import { Code2, ExternalLink, Trophy } from 'lucide-react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import type { HackathonResult } from '@/utils/api/hackathon/hackathon.type';
 
 const medal = ['bg-amber-400 text-amber-950', 'bg-slate-300 text-slate-800', 'bg-orange-300 text-orange-950'];

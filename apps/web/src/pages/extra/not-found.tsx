@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 
 function NotFound() {
   return (

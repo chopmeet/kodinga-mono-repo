@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useAppDispatch } from '@/redux/hook';
 import { onLogout } from '@/redux/slice/User.slice';
 import { AuthApi } from '@/utils/api/auth/auth.api';

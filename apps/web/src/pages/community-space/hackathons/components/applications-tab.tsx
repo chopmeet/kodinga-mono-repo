@@ -15,7 +15,7 @@ import {
   DialogTitle,
   EmptyAlert,
   Pagination,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import { useGetHackathonApplicationsQuery, useReviewHackathonApplicationMutation } from '@/utils/api/community/community.api';

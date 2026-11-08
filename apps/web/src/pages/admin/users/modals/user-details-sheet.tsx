@@ -1,4 +1,4 @@
-import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kodinga-mono-repo/ui';
+import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kodinga/ui';
 import { dateFormat } from '@/pages/shared/row-actions';
 import type { User } from '@/utils/api/user/user.type';
 import { getName, nameInitials } from '@/utils/Utils';

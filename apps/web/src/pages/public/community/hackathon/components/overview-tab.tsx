@@ -1,7 +1,7 @@
 import { Award, Check, ExternalLink, Gavel, ListChecks, Medal, Target } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import { Markdown } from '@/pages/shared/markdown';
 import type { Hackathon, HackathonPerson } from '@/utils/api/hackathon/hackathon.type';

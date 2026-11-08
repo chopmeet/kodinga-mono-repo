@@ -1,7 +1,7 @@
 import { Banknote, Building2, Clock, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Badge } from '@kodinga-mono-repo/ui';
+import { Badge } from '@kodinga/ui';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import type { OpportunityListItem } from '@/utils/api/opportunity/opportunity.type';
 import { formatSalary, isExpired, opportunityTypeLabel, workplaceLabel } from '../opportunity-labels';

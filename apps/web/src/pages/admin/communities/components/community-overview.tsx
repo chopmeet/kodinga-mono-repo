@@ -1,6 +1,6 @@
 import { CalendarDays, FileText, GraduationCap, UserPlus, Users, Wallet } from 'lucide-react';
 
-import { type CardType, OverviewCardItem } from '@kodinga-mono-repo/ui';
+import { type CardType, OverviewCardItem } from '@kodinga/ui';
 import { useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
 import { formatCompact } from '@/utils/Utils';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { copyText } from '@/pages/community-space/members/form/UseInvitationForm';
 import type { ChurnRisk } from '@/utils/api/ai/ai.type';
 import { useGenerateChurnNudgeMutation, useLazyGetChurnDashboardQuery, useSendChurnNudgeMutation } from '@/utils/api/community/community.api';

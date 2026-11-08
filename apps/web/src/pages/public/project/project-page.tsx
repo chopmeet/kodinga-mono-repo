@@ -2,7 +2,7 @@ import { ArrowLeft, Code2, ExternalLink, Images, MessageCircle, Pencil } from 'l
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga/ui';
 import ProjectFormModal from '@/pages/community-space/projects/modals/project-form-modal';
 import { UpvoteButton } from '@/pages/public/community/components/projects-tab';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';

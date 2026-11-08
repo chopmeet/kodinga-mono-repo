@@ -1,4 +1,4 @@
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useCancelEventRsvpMutation, useRsvpEventMutation } from '@/utils/api/community/community.api';
 import type { CommunityEvent, RsvpStatus } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';

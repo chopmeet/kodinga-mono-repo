@@ -1,7 +1,7 @@
 import { Send } from 'lucide-react';
 import { type FormEvent, useId, useState } from 'react';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 
 type Props = {
   label: string;

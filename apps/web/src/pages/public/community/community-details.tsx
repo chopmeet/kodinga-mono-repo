@@ -1,7 +1,7 @@
 import { CircleCheck, CircleX, Clock, LoaderCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga/ui';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { AboutTab } from './components/about-tab';

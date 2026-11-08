@@ -1,4 +1,4 @@
-/* Shared theme for every app using @kodinga-mono-repo/ui */
+/* Shared theme for every app using @kodinga/ui */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";

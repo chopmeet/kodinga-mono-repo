@@ -1,7 +1,7 @@
 import { CircleCheck, FileText, LoaderCircle, Paperclip, Send, Trash2, Upload } from 'lucide-react';
 import { type ChangeEvent, useState } from 'react';
 
-import { Button, Input, Loader, TextareaInput } from '@kodinga-mono-repo/ui';
+import { Button, Input, Loader, TextareaInput } from '@kodinga/ui';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import type { Hackathon, SubmissionFileType } from '@/utils/api/hackathon/hackathon.type';
 import UseHackathonProject, { type HackathonProject } from '../form/UseHackathonProject';

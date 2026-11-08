@@ -2,7 +2,7 @@ import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { useGetTeammateSuggestionsQuery } from '@/utils/api/community/community.api';
 import { getName } from '@/utils/Utils';
 import type { HackathonPage } from '../form/UseHackathonPage';

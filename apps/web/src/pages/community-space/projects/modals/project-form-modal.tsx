@@ -8,7 +8,7 @@ import {
   DialogTitle,
   Input,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { BannerUploadField } from '@/pages/shared/banner-upload-field';
 import { TechnologyPicker } from '@/pages/shared/technology-picker';
 import type { Project } from '@/utils/api/project/project.type';

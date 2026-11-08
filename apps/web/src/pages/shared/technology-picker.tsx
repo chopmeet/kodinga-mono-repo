@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Input } from '@kodinga-mono-repo/ui';
+import { Input } from '@kodinga/ui';
 import { useGetTechnologiesQuery } from '@/utils/api/community/community.api';
 import type { Technology } from '@/utils/api/opportunity/opportunity.type';
 

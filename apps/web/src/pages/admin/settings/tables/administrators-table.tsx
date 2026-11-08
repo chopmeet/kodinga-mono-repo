@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { ShieldOff } from 'lucide-react';
 
-import { DataTable } from '@kodinga-mono-repo/ui';
+import { DataTable } from '@kodinga/ui';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import type { User } from '@/utils/api/user/user.type';
 import { getName, nameInitials } from '@/utils/Utils';

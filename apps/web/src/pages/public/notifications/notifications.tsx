@@ -2,7 +2,7 @@ import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn } from '@kodinga-mono-repo/ui';
+import { Button, cn } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { MyInvitations } from '@/pages/shared/my-invitations';
 import { useGetNotificationsQuery } from '@/utils/api/community/community.api';

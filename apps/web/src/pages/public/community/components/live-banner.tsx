@@ -1,7 +1,7 @@
 import { Globe, Lock, Radio, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, Button } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button } from '@kodinga/ui';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 import { nameInitials } from '@/utils/Utils';
 

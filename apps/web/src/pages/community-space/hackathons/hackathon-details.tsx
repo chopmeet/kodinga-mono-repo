@@ -2,7 +2,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { ArrowLeft, ArrowRight, Check, ExternalLink, Pencil, Send } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { Badge, Button, type CardType, cn, ColgateWrapper, DetailsPageSkeleton, EmptyAlert, OverviewCardItem } from '@kodinga-mono-repo/ui';
+import { Badge, Button, type CardType, cn, ColgateWrapper, DetailsPageSkeleton, EmptyAlert, OverviewCardItem } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { RowActions } from '@/pages/shared/row-actions';
 import { useGetHackathonDashboardQuery, useGetHackathonQuery } from '@/utils/api/community/community.api';

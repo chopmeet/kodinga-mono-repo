@@ -2,7 +2,7 @@ import { CreditCard, Receipt } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn, customToast, Loader } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast, Loader } from '@kodinga/ui';
 import { intervalLabel, paymentStatusStyle, subscriptionStatusStyle, xof } from '@/utils/Utils';
 import { useCancelSubscriptionMutation, useGetMyPaymentsQuery, useGetMySubscriptionsQuery } from '@/utils/api/community/community.api';
 import type { MySubscription } from '@/utils/api/billing/billing.type';

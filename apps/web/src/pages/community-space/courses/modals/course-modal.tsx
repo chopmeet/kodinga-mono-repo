@@ -11,7 +11,7 @@ import {
   Input,
   SelectInput,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { BannerUploadField } from '@/pages/shared/banner-upload-field';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { Course, CourseLevel } from '@/utils/api/course/course.type';

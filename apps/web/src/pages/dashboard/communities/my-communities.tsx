@@ -2,7 +2,7 @@ import { ArrowUpRight, Plus, Radio, RotateCw, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, TopTitle } from '@kodinga/ui';
 import { FormAlert } from '@/pages/auth/components/form-alert';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { FilterChip } from '@/pages/shared/filter-chip';

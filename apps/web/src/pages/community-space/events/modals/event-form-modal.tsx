@@ -11,7 +11,7 @@ import {
   Input,
   SelectInput,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { CommunityEvent, EventFormat, EventType } from '@/utils/api/event/event.type';
 import { eventFormatLabel, eventTypeLabel, hasLink, hasVenue } from '../event-labels';

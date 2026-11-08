@@ -1,7 +1,7 @@
 import { ExternalLink, FileText, Gauge, GitBranch, PlayCircle } from 'lucide-react';
 import { useState } from 'react';
 
-import { Badge, Button, EmptyAlert, Pagination, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kodinga-mono-repo/ui';
+import { Badge, Button, EmptyAlert, Pagination, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { useGetHackathonSubmissionQuery, useGetHackathonSubmissionsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

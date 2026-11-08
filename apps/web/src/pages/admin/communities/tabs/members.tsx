@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Ban, CircleCheck, CircleX, PauseCircle, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 
-import { Badge, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
+import { Badge, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga/ui';
 import SanctionModal, { type SanctionTarget } from '@/pages/community-space/members/modals/sanction-modal';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';

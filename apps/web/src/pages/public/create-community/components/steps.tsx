@@ -1,6 +1,6 @@
 import { Check, EyeOff, Gift, Globe, Lock, Mail, Wallet } from 'lucide-react';
 
-import { cn, Input, InputPassword, SelectInput } from '@kodinga-mono-repo/ui';
+import { cn, Input, InputPassword, SelectInput } from '@kodinga/ui';
 import { PasswordCheck } from '@/pages/auth/components/password-check';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
 import { useGetProPlansQuery } from '@/utils/api/community/community.api';

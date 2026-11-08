@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useCreateOpportunityMutation, useUpdateOpportunityMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { Opportunity, OpportunityWriteData, Technology } from '@/utils/api/opportunity/opportunity.type';

@@ -2,7 +2,7 @@ import { ArrowUpRight, BookOpen, CalendarDays, Code2, Globe, GraduationCap, Imag
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { formatCompact } from '@/utils/Utils';

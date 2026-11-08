@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import UsePaymentReturn, { PRO_SCOPE, rememberPayment } from '@/pages/public/community/form/UsePaymentReturn';
 import { useCreateCheckoutMutation, useGetMySubscriptionsQuery, useGetProPlansQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

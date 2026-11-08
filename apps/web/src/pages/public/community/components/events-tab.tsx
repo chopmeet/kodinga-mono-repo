@@ -1,7 +1,7 @@
 import { CalendarDays, CalendarPlus, CalendarX2, Clock, Film, MapPin, PlayCircle, Radio, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { EventAIReplayHub } from '@/pages/community-space/events/components/event-ai-replay-hub';
 import EventFormModal from '@/pages/community-space/events/modals/event-form-modal';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';

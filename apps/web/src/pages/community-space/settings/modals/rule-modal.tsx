@@ -13,7 +13,7 @@ import {
   DialogTitle,
   Input,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { CommunityRule } from '../form/UseSpaceSettings';
 
 const schema = z.object({

@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyAlert,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,

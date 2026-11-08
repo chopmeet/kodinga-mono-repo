@@ -1,7 +1,7 @@
 import { Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { Button, cn, Loader } from '@kodinga/ui';
 import { skillLevelLabel } from '@/utils/Utils';
 import { TechnologyPicker } from '@/pages/shared/technology-picker';
 import type { Technology } from '@/utils/api/opportunity/opportunity.type';

@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { vi } from 'vitest';
 
-import { Toaster } from '@kodinga-mono-repo/ui';
+import { Toaster } from '@kodinga/ui';
 import { getMyCommunity } from '@/data/community-space.data';
 import { onSetUserToken } from '@/redux/slice/User.slice';
 import store from '@/redux/store';

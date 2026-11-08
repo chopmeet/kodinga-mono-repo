@@ -13,7 +13,7 @@ import {
   SearchInput,
   TopTitle,
   cn,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { parseApiError } from '@/utils/api/errors';
 import { type LeaderboardEntry, type LeaderboardPeriod, PERIOD_LABEL } from '@/utils/api/gamification/gamification.type';

@@ -1,7 +1,7 @@
 import { Crown, Users } from 'lucide-react';
 import { useState } from 'react';
 
-import { Badge, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
+import { Badge, EmptyAlert, Pagination } from '@kodinga/ui';
 import { useGetHackathonTeamsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import { getName } from '@/utils/Utils';

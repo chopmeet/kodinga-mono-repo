@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { CodeBlock } from './code-block';
 
 /** Links kept: web pages and app paths (no javascript:, data:…) */

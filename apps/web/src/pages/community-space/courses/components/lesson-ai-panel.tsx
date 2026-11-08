@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import type { LessonForm } from '../form/UseLessonForm';
 import UseLessonAI from '../form/UseLessonAI';
 import type { AIDifficulty } from '@/utils/api/ai/ai.type';

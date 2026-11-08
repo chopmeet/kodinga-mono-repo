@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, BookOpen, Check, CircleCheck, Clock, Download, LoaderCircle, Lock, PartyPopper, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { Button, cn, Loader } from '@kodinga/ui';
 import { courseLevelLabel, formatDuration, lessonTypeLabel } from '@/pages/community-space/courses/course-labels';
 import { htmlToText, Markdown } from '@/pages/shared/markdown';
 import type { CourseLesson } from '@/utils/api/course/course.type';

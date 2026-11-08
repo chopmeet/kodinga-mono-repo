@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Badge, Button, Input } from '@kodinga-mono-repo/ui';
+import { Badge, Button, Input } from '@kodinga/ui';
 import { ReplayPlayer } from '@/pages/shared/replay-player';
 import {
   useChatEventTranscriptMutation,

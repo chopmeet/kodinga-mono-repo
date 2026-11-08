@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
-import { cn, Dialog, DialogContent, DialogDescription, DialogTitle } from '@kodinga-mono-repo/ui';
+import { cn, Dialog, DialogContent, DialogDescription, DialogTitle } from '@kodinga/ui';
 
 type Props = {
   images: string[];

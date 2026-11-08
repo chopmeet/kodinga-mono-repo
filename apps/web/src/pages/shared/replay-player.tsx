@@ -1,7 +1,7 @@
 import { AlertTriangle, LoaderCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import type { ReplayVideo } from '@/utils/api/event/event.type';
 
 /**

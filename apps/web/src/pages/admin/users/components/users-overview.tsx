@@ -1,6 +1,6 @@
 import { Crown, MailWarning, UserCheck, UserPlus, Users, UserX } from 'lucide-react';
 
-import { type CardType, OverviewCardItem } from '@kodinga-mono-repo/ui';
+import { type CardType, OverviewCardItem } from '@kodinga/ui';
 import { useGetUsersQuery } from '@/utils/api/user/user.api';
 import type { UsersQuery } from '@/utils/api/user/user.type';
 import { formatCompact } from '@/utils/Utils';

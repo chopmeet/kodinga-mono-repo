@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { hasSpacePermission } from '@/pages/community-space/community-space-context';
 import { isManaged, useDecideMemberMutation, useGetJoinRequestsQuery, useGetMyCommunitiesQuery } from '@/utils/api/community/community.api';
 import type { JoinRequest } from '@/utils/api/community/community.type';

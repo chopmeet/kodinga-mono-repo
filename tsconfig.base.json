@@ -18,7 +18,7 @@
     "skipDefaultLibCheck": true,
     "strict": false,
     "paths": {
-      "@kodinga-mono-repo/ui": [
+      "@kodinga/ui": [
         "./libs/ui/src/index.ts"
       ]
     }

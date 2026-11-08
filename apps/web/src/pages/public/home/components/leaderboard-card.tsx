@@ -2,12 +2,12 @@ import { Trophy, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn, Skeleton } from '@kodinga/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { useGetCommunitiesQuery } from '@/utils/api/community/community.api';
 import { formatCompact } from '@/utils/Utils';
 
-const TOP = 5;
+const TOP = 4;
 const POOL = 30;
 
 
@@ -39,12 +39,12 @@ export function LeaderboardCard() {
         <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label="Chargement du classement">
           {Array.from({ length: TOP }, (_, i) => (
             <li key={i} className="flex items-center gap-3 py-4">
-              <span className="size-7 animate-pulse rounded-full bg-slate-100" />
-              <span className="size-9 animate-pulse rounded-lg bg-slate-100" />
-              <span className="flex-1 space-y-1.5">
-                <span className="block h-3.5 w-3/4 animate-pulse rounded bg-slate-100" />
-                <span className="block h-3 w-1/2 animate-pulse rounded bg-slate-100" />
-              </span>
+              <Skeleton className="size-7 shrink-0 rounded-full" />
+              <Skeleton className="size-9 shrink-0 rounded-lg" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-3/4 rounded" />
+                <Skeleton className="h-3 w-1/2 rounded" />
+              </div>
             </li>
           ))}
         </ol>

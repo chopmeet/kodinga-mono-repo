@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, customToast } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, customToast } from '@kodinga/ui';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { useGetPeerMatchesQuery, useRespondPeerMatchMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

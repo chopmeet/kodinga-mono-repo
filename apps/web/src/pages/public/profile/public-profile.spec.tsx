@@ -1,7 +1,9 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
+import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
-import { renderAppAt, SLOW, stubApi } from '@/test-utils';
+import type { User } from '@/utils/api/user/user.type';
+import { renderAppAt, SLOW, stubApi, TEST_TOKEN } from '@/test-utils';
 import { UserApi } from '@/utils/api/user/user.api';
 
 vi.setConfig({ testTimeout: 15_000 });
@@ -23,6 +25,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   act(() => {
     store.dispatch(UserApi.util.resetApiState());
+    store.dispatch(onLogout());
   });
 });
 
@@ -156,6 +159,52 @@ describe('Public profile', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '1 abonnement' }));
     expect(await screen.findByText('Ousmane Sidi Diallo ne suit personne pour l’instant.', {}, SLOW)).toBeTruthy();
+  });
+
+  it('follows the profile, then stops following it', async () => {
+    store.dispatch(onSetUserToken({ user: { id: 'me', username: 'awa' } as User, token: TEST_TOKEN, refresh: 'r' }));
+    let following = false;
+    const counts = () => ({ followers_count: following ? 13 : 12, following_count: 1 });
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const request = input as Request;
+      const path = new URL(request.url).pathname;
+      const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
+      if (path.endsWith('profiles/ousmane-sidi-diallo/follow/') && request.method === 'POST') {
+        following = !following;
+        return json({ success: true, data: { is_following: following, ...counts() } });
+      }
+      if (path.endsWith('profiles/ousmane-sidi-diallo/')) return json({ success: true, data: { ...profile, is_following: following, ...counts() } });
+      return new Response(JSON.stringify({ success: false, code: 'not_found', message: 'Not found' }), { status: 404 });
+    });
+    renderAppAt('/profiles/ousmane-sidi-diallo');
+    await screen.findByRole('heading', { level: 1, name: 'Ousmane Sidi Diallo' }, SLOW);
+
+    const follow = screen.getByRole('button', { name: 'Suivre' });
+    expect(follow.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(follow);
+    const followed = await screen.findByRole('button', { name: 'Abonné' }, SLOW);
+    expect(followed.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: '13 abonnés' })).toBeTruthy();
+
+    fireEvent.click(followed);
+    expect(await screen.findByRole('button', { name: 'Suivre' }, SLOW)).toBeTruthy();
+    expect(screen.getByRole('button', { name: '12 abonnés' })).toBeTruthy();
+  });
+
+  it('asks a visitor to sign in to follow, and shows nothing on one’s own profile', async () => {
+    stubApi({ 'profiles/ousmane-sidi-diallo/': { body: { success: true, data: { ...profile, is_following: false } } } });
+    renderAppAt('/profiles/ousmane-sidi-diallo');
+    const link = await screen.findByRole('link', { name: 'Suivre' }, SLOW);
+    expect(link.getAttribute('href')).toBe('/auth/login?next=%2Fprofiles%2Fousmane-sidi-diallo');
+    cleanup();
+
+    act(() => {
+      store.dispatch(onSetUserToken({ user: { id: 'u1', username: 'ousmane-sidi-diallo' } as User, token: TEST_TOKEN, refresh: 'r' }));
+    });
+    renderAppAt('/profiles/ousmane-sidi-diallo');
+    await screen.findByRole('link', { name: /Modifier mon profil/ }, SLOW);
+    expect(screen.queryByRole('button', { name: 'Suivre' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Suivre' })).toBeNull();
   });
 
   it('says when a section is still empty', async () => {

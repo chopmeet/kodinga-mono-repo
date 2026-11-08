@@ -14,7 +14,7 @@ import {
   Input,
   SelectInput,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { intervalLabel, xof } from '@/utils/Utils';
 import type { CommunityPlan } from '@/utils/api/billing/billing.type';
 import { MIN_PRICE, type PlanInput } from '../form/UseSpaceBilling';

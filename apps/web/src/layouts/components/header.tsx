@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   SearchInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { languages } from '@/utils/i18n';

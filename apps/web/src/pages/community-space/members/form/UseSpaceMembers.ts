@@ -1,4 +1,4 @@
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import {
   useChangeMemberRoleMutation,
   useDecideMemberMutation,

@@ -13,7 +13,7 @@
       "@/*": [
         "./src/*"
       ],
-      "@kodinga-mono-repo/ui": [
+      "@kodinga/ui": [
         "../../libs/ui/src/index.ts"
       ]
     }

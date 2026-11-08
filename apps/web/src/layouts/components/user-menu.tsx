@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { getInitials, getName, isAdmin, useUser } from '@/utils/Utils';
 

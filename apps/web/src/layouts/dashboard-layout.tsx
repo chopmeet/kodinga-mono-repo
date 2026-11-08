@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import { SidebarInset, SidebarProvider } from '@kodinga-mono-repo/ui';
+import { SidebarInset, SidebarProvider } from '@kodinga/ui';
 import DashboardFooter from './components/dashboard-footer';
 import DashboardHeader from './components/dashboard-header';
 import { DashboardSidebar } from './components/dashboard-sidebar';

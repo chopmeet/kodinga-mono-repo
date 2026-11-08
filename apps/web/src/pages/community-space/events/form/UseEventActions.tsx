@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { RowAction } from '@/pages/shared/row-actions';
 import { useDeleteEventMutation, useUpdateEventStatusMutation } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventStatus } from '@/utils/api/event/event.type';

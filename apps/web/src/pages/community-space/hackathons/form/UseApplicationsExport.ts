@@ -1,4 +1,4 @@
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useExportHackathonApplicationsMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { ApplicationStatus } from '@/utils/api/hackathon/hackathon.type';

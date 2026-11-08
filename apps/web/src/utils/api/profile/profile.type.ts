@@ -52,6 +52,9 @@ export type PublicProfile = {
   is_following?: boolean;
 };
 
+/** POST profiles/<username>/follow/ (toggles) */
+export type FollowState = { is_following: boolean; followers_count: number; following_count: number };
+
 /** GET profiles/<username>/followers/ and following/ (paginated) */
 export type ProfileFollow = {
   id: string;

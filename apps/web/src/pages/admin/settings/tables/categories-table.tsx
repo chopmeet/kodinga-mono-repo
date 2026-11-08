@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 
-import { Badge, DataTable } from '@kodinga-mono-repo/ui';
+import { Badge, DataTable } from '@kodinga/ui';
 import type { AdminCategoryItem } from '@/utils/api/community/community.type';
 import { type RowAction, RowActions } from '@/pages/shared/row-actions';
 

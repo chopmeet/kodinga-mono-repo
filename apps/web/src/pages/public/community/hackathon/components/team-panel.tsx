@@ -1,7 +1,7 @@
 import { Crown, Mail, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import type { HackathonPage } from '../form/UseHackathonPage';
 import { TeammateSuggestions } from './teammate-suggestions';
 import { getName } from '@/utils/Utils';

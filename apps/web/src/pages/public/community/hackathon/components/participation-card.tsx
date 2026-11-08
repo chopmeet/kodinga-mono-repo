@@ -2,7 +2,7 @@ import { CalendarClock, CircleCheck, Clock, Hourglass, LogIn, Settings, Users, X
 import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import type { HackathonPage } from '../form/UseHackathonPage';
 import ApplyModal from './apply-modal';

@@ -1,7 +1,7 @@
 import { CalendarPlus, Radio, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga/ui';
 import { QuickLiveModal } from '@/pages/public/community/components/quick-live-modal';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';

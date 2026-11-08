@@ -1,7 +1,7 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { isExpired } from '@/pages/community-space/opportunities/opportunity-labels';
 import { useAppSelector } from '@/redux/hook';
 import { useApplyToOpportunityMutation, useGetMyOpportunityApplicationsQuery, useGetOpportunityQuery } from '@/utils/api/community/community.api';

@@ -1,4 +1,4 @@
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 
 /** Save / cancel bar shared by the settings forms: only active when something changed */
 function FormActions({ isDirty, isSaving, onReset }: { isDirty: boolean; isSaving: boolean; onReset: () => void }) {

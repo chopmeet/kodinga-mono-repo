@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
 
 type Props = {

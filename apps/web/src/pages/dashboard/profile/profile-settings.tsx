@@ -1,7 +1,7 @@
 import { ArrowUpRight, BriefcaseBusiness, Code, FolderKanban, ShieldCheck, UserRound } from 'lucide-react';
 import { Link, Outlet } from 'react-router-dom';
 
-import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga/ui';
 import { useUser } from '@/utils/Utils';
 
 const tabs: Tab[] = [

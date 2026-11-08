@@ -1,6 +1,6 @@
 import { useOutletContext } from 'react-router-dom';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import type { CommunityPlan, PayoutRequest, PlanWriteData } from '@/utils/api/billing/billing.type';
 import {
   useCreatePlanMutation,

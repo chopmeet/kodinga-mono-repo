@@ -2,7 +2,7 @@ import { ArrowLeft, CalendarDays, Laptop, MapPin, Trophy, Users } from 'lucide-r
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { Button, cn, Loader } from '@kodinga/ui';
 import { formatDay, hackathonFormatLabel, hackathonStatusStyle } from '@/pages/community-space/hackathons/hackathon-labels';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import OverviewTab from './components/overview-tab';

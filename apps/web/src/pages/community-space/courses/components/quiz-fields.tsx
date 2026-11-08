@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { emptyOption, emptyQuestion, type QuizDraft, type QuizOptionDraft, type QuizQuestionDraft } from '../form/quiz-draft';
 
 type Props = { value: QuizDraft; onChange: (value: QuizDraft) => void };

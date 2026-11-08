@@ -14,7 +14,7 @@ import {
   DialogTitle,
   Input,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useCreateEventMutation, useUpdateEventStatusMutation } from '@/utils/api/community/community.api';
 import type { EventWriteData } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';

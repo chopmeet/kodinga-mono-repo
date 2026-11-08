@@ -6,7 +6,7 @@ Plateforme de communautés tech pour l'Afrique francophone. Monorepo Nx :
 |---|---|
 | `apps/web` | Front React (Vite, Tailwind, RTK Query) |
 | `apps/api` | API Django REST (PostgreSQL, Redis, Celery, Channels) |
-| `libs/ui` | Kit UI partagé, importé via `@kodinga-mono-repo/ui` |
+| `libs/ui` | Kit UI partagé, importé via `@kodinga/ui` |
 | `deploy` | Stack du VPS et procédure de déploiement |
 
 ## Installation

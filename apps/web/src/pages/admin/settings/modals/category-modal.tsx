@@ -13,7 +13,7 @@ import {
   DialogTitle,
   Input,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { AdminCategoryItem } from '@/utils/api/community/community.type';
 import { slugify } from '@/utils/Utils';
 

@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { User } from '@/utils/api/user/user.type';
 import { getName } from '@/utils/Utils';
 

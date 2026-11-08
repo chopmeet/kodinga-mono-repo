@@ -12,7 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { ChatMessage } from '@/utils/api/messaging/messaging.type';
 import { nameInitials } from '@/utils/Utils';
 import { conversationName, otherPerson, type MessagesPage } from '../form/UseMessages';

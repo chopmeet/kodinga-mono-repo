@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetCommunityLeaderboardQuery, useGetCommunityPlansQuery } from '@/utils/api/community/community.api';
 import type { BillingInterval, CommunityPlan } from '@/utils/api/billing/billing.type';

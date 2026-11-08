@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle, Sparkles } from 'lucide-rea
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { Logo } from '@/layouts/components/header';
 import { FormAlert } from '@/pages/auth/components/form-alert';
 import { useGetCommunityCategoriesQuery } from '@/utils/api/community/community.api';

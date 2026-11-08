@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation, useRoutes } from 'react-router-dom';
 
-import { Toaster } from '@kodinga-mono-repo/ui';
+import { Toaster } from '@kodinga/ui';
 
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Input, SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
+import { Input, SelectInput, TextareaInput } from '@kodinga/ui';
 import FormActions from '@/pages/shared/form-actions';
 import { useGetCategoriesQuery } from '@/utils/api/community/community.api';
 import { useCommunitySpace } from '../../community-space-context';

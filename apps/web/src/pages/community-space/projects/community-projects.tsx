@@ -2,7 +2,7 @@ import { FolderPlus, RotateCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { useGetCommunityProjectsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

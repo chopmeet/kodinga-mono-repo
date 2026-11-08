@@ -2,7 +2,7 @@ import { RotateCw, SquarePen } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, SelectInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, SelectInput, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import type { PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';

@@ -1,7 +1,7 @@
 import { User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Button, cn, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
+import { Button, cn, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga/ui';
 import type { HackathonQuestion, ParticipationMode } from '@/utils/api/hackathon/hackathon.type';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import type { HackathonPage } from '../form/UseHackathonPage';

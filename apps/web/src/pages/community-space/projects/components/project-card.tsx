@@ -1,7 +1,7 @@
 import { ArrowBigUp, Eye, Images, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { getName } from '@/utils/Utils';
 import { type RowAction, RowActions } from '@/pages/shared/row-actions';

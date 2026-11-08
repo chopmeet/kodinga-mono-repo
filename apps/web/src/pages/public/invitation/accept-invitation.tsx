@@ -1,7 +1,7 @@
 import { MailOpen, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import UseAcceptInvitation from './form/UseAcceptInvitation';
 

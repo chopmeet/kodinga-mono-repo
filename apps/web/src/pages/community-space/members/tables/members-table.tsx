@@ -3,7 +3,7 @@ import { Ban, Check, PauseCircle, PlayCircle, Shield, ShieldCheck, TriangleAlert
 
 import type { ReactNode } from 'react';
 
-import { Badge, Button, DataTable } from '@kodinga-mono-repo/ui';
+import { Badge, Button, DataTable } from '@kodinga/ui';
 import type { SpaceRole } from '@/data/community-space.data';
 import type { CommunityRole } from '@/utils/api/community/community.type';
 import { memberRoleLabel, memberStatusStyle } from '@/utils/Utils';

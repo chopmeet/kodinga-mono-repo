@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { RowAction } from '@/pages/shared/row-actions';
 import { useDeleteCourseMutation, useUpdateCourseMutation } from '@/utils/api/community/community.api';
 import type { Course } from '@/utils/api/course/course.type';

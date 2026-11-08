@@ -2,7 +2,7 @@ import { Briefcase, Building2, CheckCircle2, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Loader } from '@kodinga-mono-repo/ui';
+import { Loader } from '@kodinga/ui';
 import { formatSalary, opportunityTypeLabel, workplaceLabel } from '@/pages/community-space/opportunities/opportunity-labels';
 import { useGetCommunityOpportunitiesQuery } from '@/utils/api/community/community.api';
 import type { OpportunityType } from '@/utils/api/opportunity/opportunity.type';

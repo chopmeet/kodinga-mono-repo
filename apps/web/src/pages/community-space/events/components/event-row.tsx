@@ -1,7 +1,7 @@
 import { Clock, Film, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Badge } from '@kodinga-mono-repo/ui';
+import { Badge } from '@kodinga/ui';
 import { type RowAction, RowActions } from '@/pages/shared/row-actions';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
 import { eventStatusStyle, eventTypeLabel, formatEventPlace, formatEventWhen } from '../event-labels';

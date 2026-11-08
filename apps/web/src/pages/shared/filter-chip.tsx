@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 /** Toggle chip used in the list filters (put several in a role="group" with an aria-label) */
 type Props = {

@@ -1,7 +1,7 @@
 import { Briefcase, GraduationCap, Pencil, Plus, Trash2 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
-import { Button, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga/ui';
 import type { ProfileEducation, ProfileExperience } from '@/utils/api/profile/profile.type';
 import { employmentLabel, period } from '@/utils/Utils';
 import UseProfileEntries from '../form/UseProfileEntries';

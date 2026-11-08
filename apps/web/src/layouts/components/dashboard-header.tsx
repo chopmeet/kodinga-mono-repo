@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
   Separator,
   SidebarTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { getInitials, getName, useUser } from '@/utils/Utils';
 

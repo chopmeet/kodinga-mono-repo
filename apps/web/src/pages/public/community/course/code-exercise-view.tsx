@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { CodeBlock } from '@/pages/shared/code-block';
 import type { CodeExercise } from '@/pages/shared/code-exercise';
 import { Markdown } from '@/pages/shared/markdown';

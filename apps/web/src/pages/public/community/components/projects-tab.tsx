@@ -2,7 +2,7 @@ import { ChevronUp, FolderKanban, Images, MessageCircle, Plus } from 'lucide-rea
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn, customToast, Loader } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast, Loader } from '@kodinga/ui';
 import ProjectFormModal from '@/pages/community-space/projects/modals/project-form-modal';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetCommunityProjectsQuery, useToggleProjectUpvoteMutation } from '@/utils/api/community/community.api';

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { languages } from '@/utils/i18n';
 import { scrollToResults, useUser } from '@/utils/Utils';

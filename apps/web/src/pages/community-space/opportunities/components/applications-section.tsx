@@ -1,7 +1,7 @@
 import { FileText, Link2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage, Badge, Button, ColgateWrapper, customToast, EmptyAlert } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Badge, Button, ColgateWrapper, customToast, EmptyAlert } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { dateFormat } from '@/pages/shared/row-actions';
 import { useGetOpportunityApplicationsQuery, useUpdateOpportunityApplicationStatusMutation } from '@/utils/api/community/community.api';

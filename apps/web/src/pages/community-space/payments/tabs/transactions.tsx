@@ -1,4 +1,4 @@
-import { cn, Loader } from '@kodinga-mono-repo/ui';
+import { cn, Loader } from '@kodinga/ui';
 import { paymentStatusStyle, xof } from '@/utils/Utils';
 import { parseApiError } from '@/utils/api/errors';
 import { useSpaceBilling } from '../form/UseSpaceBilling';

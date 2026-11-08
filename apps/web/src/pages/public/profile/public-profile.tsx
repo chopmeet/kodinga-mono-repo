@@ -3,12 +3,13 @@ import { ArrowLeft, Briefcase, CalendarDays, Copy, FolderKanban, MapPin, Message
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
 import { formatCompact, nameInitials, useUser } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
+import { FollowButton } from './components/follow-button';
 import { ProfileFollows } from './components/profile-follows';
 import UseProfileActivity from './form/UseProfileActivity';
 import { ProfileAbout, ProfileAvailability, ProfileCareer, ProfileCommunities, ProfileContributions, ProfileLinks, ProfilePortfolio } from './components/profile-details';
@@ -141,6 +142,7 @@ function PublicProfile() {
 
           <div className="mt-8 flex flex-col gap-3">
             <MessageButton userId={profile.user.id} size="lg" className="h-13 w-full text-base" />
+            <FollowButton profile={profile} name={name} />
             {me?.id === profile.user.id && (
               <Button asChild size="lg" className="h-13 w-full text-base">
                 <Link to="/dashboard/profile">

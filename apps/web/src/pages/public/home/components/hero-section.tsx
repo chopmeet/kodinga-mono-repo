@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
+import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { type StackId, stacks } from '@/data/home.data';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
@@ -98,7 +98,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
     <section className="relative isolate overflow-hidden px-4 pt-16 pb-14 sm:px-6 sm:pt-20 sm:pb-16 lg:px-8">
       <GlassBackdrop className="-z-10" />
       <div className="mx-auto flex max-w-[1440px] flex-col items-center text-center">
-        <p className="flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase">
+        <p className="md:flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase hidden">
           <span className="size-1.5 rounded-full bg-primary" aria-hidden />
           Les bonnes personnes. Les bonnes connexions.
         </p>

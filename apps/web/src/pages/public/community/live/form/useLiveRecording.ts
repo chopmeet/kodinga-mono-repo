@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 
 export function formatRecordingTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);

@@ -1,7 +1,7 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useLocation, useParams } from 'react-router-dom';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { useGetCommunityQuery, useGetPostQuery, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

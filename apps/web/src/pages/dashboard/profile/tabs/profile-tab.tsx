@@ -2,7 +2,7 @@ import { ExternalLink } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 
-import { Button, Input, Loader, TextareaInput } from '@kodinga-mono-repo/ui';
+import { Button, Input, Loader, TextareaInput } from '@kodinga/ui';
 import { ImageField } from '@/pages/public/create-community/components/image-field';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { AvailabilityStatus } from '@/utils/api/profile/profile.type';

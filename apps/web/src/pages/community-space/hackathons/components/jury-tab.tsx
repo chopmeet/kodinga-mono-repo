@@ -1,7 +1,7 @@
 import { Search, ShieldCheck, UserMinus } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, customToast, EmptyAlert } from '@kodinga-mono-repo/ui';
+import { Button, customToast, EmptyAlert } from '@kodinga/ui';
 import {
   useAssignHackathonJudgesMutation,
   useGetCommunityMembersQuery,

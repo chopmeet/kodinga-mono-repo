@@ -35,7 +35,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast, Loader } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast, Loader } from '@kodinga/ui';
 import { formatEventWhen } from '@/pages/community-space/events/event-labels';
 import { nameInitials } from '@/utils/Utils';
 import UseLiveRoom, { type LiveRoom } from './form/UseLiveRoom';

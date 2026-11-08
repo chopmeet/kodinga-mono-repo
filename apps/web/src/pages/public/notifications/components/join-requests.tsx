@@ -1,7 +1,7 @@
 import { UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { getName } from '@/utils/Utils';
 import type { JoinRequest } from '@/utils/api/community/community.type';
 import type { JoinRequests } from '../form/UseJoinRequests';

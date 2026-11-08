@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { type CodeExercise, composeExercise, EMPTY_EXERCISE, exerciseFields, exerciseOfLesson, parseExercise } from '@/pages/shared/code-exercise';
 import { useCreateLessonMutation, useGetLessonQuery, useUpdateLessonMutation, useUploadLessonVideoMutation } from '@/utils/api/community/community.api';
 import type { CourseLesson, LessonType } from '@/utils/api/course/course.type';

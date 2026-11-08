@@ -1,7 +1,7 @@
 import { Check, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga/ui';
 import type { CommunityPlan } from '@/utils/api/billing/billing.type';
 import { intervalLabel, xof } from '@/utils/Utils';
 import { useSpaceBilling } from '../form/UseSpaceBilling';

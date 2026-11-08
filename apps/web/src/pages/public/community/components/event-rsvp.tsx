@@ -1,7 +1,7 @@
 import { CalendarPlus, Check, ExternalLink, Radio, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { hasLink } from '@/pages/community-space/events/event-labels';
 import { useGetCommunityEventQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent } from '@/utils/api/event/event.type';

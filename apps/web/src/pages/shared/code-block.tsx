@@ -19,7 +19,7 @@ import 'highlight.js/styles/github-dark.css';
 import { Check, Copy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 // Only the languages of the post form (and of the code blocks of the lessons): a small bundle
 const LANGUAGES = { bash, css, dart, go, java, javascript, json, kotlin, php, python, rust, sql, swift, typescript, xml, yaml };
