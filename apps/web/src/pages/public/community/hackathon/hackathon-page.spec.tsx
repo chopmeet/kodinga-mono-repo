@@ -244,6 +244,28 @@ describe('Hackathon page (participants)', () => {
     expect(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' })).toHaveProperty('disabled', false);
   });
 
+  it('opens the space of a participant and brings it into view, at every click', async () => {
+    signIn();
+    stubHackathonApi({ application: 'accepted' });
+    // jsdom does not scroll: the call is what tells
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    onTestFinished(() => {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    });
+    const { where } = renderAppAt(URL_PATH);
+    const open = await within(await screen.findByRole('region', { name: 'Ma participation' }, SLOW)).findByRole('button', { name: 'Ouvrir mon espace' });
+    fireEvent.click(open);
+    await waitFor(() => expect(where()).toBe(`${URL_PATH}?tab=space`), SLOW);
+    expect(await screen.findByRole('heading', { name: /Mon équipe/ }, SLOW)).toBeTruthy();
+    await waitFor(() => expect(scrolled).toHaveBeenCalledTimes(1), SLOW);
+    // The focus follows, for the keyboard and the screen readers
+    expect(document.activeElement).toBe(screen.getByLabelText('Contenu du hackathon'));
+    // Already on the tab: it scrolls again instead of doing nothing
+    fireEvent.click(open);
+    await waitFor(() => expect(scrolled).toHaveBeenCalledTimes(2), SLOW);
+  });
+
   it('creates a team and invites a teammate', async () => {
     signIn();
     const calls = stubHackathonApi({ application: 'accepted' });

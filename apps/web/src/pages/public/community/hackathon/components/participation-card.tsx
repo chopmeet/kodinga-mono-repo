@@ -126,7 +126,7 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
               </li>
               <li>Date limite : {formatDateTime(h.submission_deadline)}</li>
             </ul>
-            <Button onClick={() => page.openTab('space')}>Ouvrir mon espace</Button>
+            <Button onClick={page.openSpace}>Ouvrir mon espace</Button>
             {!status?.submission_is_final && h.is_registration_open && <WithdrawButton page={page} />}
           </Card>
         );

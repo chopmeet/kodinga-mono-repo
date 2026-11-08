@@ -94,6 +94,7 @@ function UseHackathonPage() {
   const query = useGetHackathonQuery({ slug, hackathonSlug }, { skip: !slug || !hackathonSlug, pollingInterval });
   const hackathon = query.data;
   const deadlinePassed = useDeadlinePassed(hackathon?.registration_end);
+  const [spaceRequest, setSpaceRequest] = useState(0);
   const participation = participationOf(hackathon, membership, deadlinePassed);
   // Closed here before the api said so: read it again to follow the server
   const openOnServer = !!hackathon?.is_registration_open;
@@ -153,6 +154,13 @@ function UseHackathonPage() {
     tabs,
     tab,
     openTab: (id: HackathonTabId) => setParams(id === 'overview' ? {} : { tab: id }),
+    /** Asks the page to bring the space into view (counted: a second click scrolls again) */
+    spaceRequest,
+    /** "Ouvrir mon espace": its tab, then the page scrolls to it (on a phone it is under the card) */
+    openSpace: () => {
+      setParams({ tab: 'space' });
+      setSpaceRequest((n) => n + 1);
+    },
     teams: teamList,
     myTeam,
     isLeader: !!myTeam && myTeam.leader.id === meId,

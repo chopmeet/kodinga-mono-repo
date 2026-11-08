@@ -131,7 +131,8 @@ function Header() {
           <Logo compact={showSearch} />
         </div>
 
-        <div role={showSearch ? 'search' : undefined} className={cn('min-w-0', showSearch && 'lg:w-[34rem]')}>
+        {/* Phones: the search icon is enough, the field would crowd the header */}
+        <div role={showSearch ? 'search' : undefined} className={cn('min-w-0', showSearch && 'max-md:invisible lg:w-[26rem] 2xl:w-[34rem]')}>
           {showSearch ? (
             <SearchInput
               id="header-search"

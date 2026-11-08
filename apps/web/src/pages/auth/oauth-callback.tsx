@@ -12,7 +12,6 @@ import { isOAuthProvider, oauthRedirectUri, takeOAuthNext, takeOAuthState } from
 
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
-/** /auth/callback/:provider — where Google / GitHub send the browser back (?code=&state=) */
 function OAuthCallback() {
   const { provider } = useParams();
   const [params] = useSearchParams();
