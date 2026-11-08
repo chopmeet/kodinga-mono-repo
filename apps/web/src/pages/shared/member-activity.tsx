@@ -2,7 +2,7 @@ import { BookOpen, Briefcase, CalendarDays, Trophy } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import type { ActivityCommunity, HackathonResult, MemberActivity } from '@/utils/api/analytics/member-activity.type';
 
 const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });

@@ -3,7 +3,7 @@ import { ArrowBigUp, ArrowLeft, CalendarClock, ExternalLink, Eye, GitBranch, Pen
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { Button, ColgateWrapper, customToast, DetailsPageSkeleton, EmptyAlert } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, customToast, DetailsPageSkeleton, EmptyAlert } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { getName } from '@/utils/Utils';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';

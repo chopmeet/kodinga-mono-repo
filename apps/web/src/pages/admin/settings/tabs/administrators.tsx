@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyAlert,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { parseApiError } from '@/utils/api/errors';
 import { useGetUsersQuery, useToggleUserAdminMutation } from '@/utils/api/user/user.api';
 import type { User } from '@/utils/api/user/user.type';

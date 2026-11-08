@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, TopTitle } from '@kodinga/ui';
 import { getName, useUser } from '@/utils/Utils';
 import CommunitiesByAccessDonut from './charts/communities-by-access';
 import PaymentMethodsBars from './charts/payment-methods';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Loader } from '@kodinga-mono-repo/ui';
+import { Loader } from '@kodinga/ui';
 
 import { useAppDispatch } from '@/redux/hook';
 import { onSetUserToken } from '@/redux/slice/User.slice';

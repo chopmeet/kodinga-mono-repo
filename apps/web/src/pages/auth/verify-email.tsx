@@ -2,7 +2,7 @@ import { CircleCheck, Mail } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { Input, Loader } from '@kodinga-mono-repo/ui';
+import { Input, Loader } from '@kodinga/ui';
 import { useResendVerificationMutation, useVerifyEmailMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
 import AuthWrapper from './auth-wrapper';

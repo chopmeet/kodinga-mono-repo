@@ -1,7 +1,7 @@
 import { Award, Briefcase, Code2, ExternalLink, FolderKanban, Globe, GraduationCap, Link2, MessageCircle, Star, ThumbsUp, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { ago, availabilityLabel, employmentLabel, formatCompact, memberRoleLabel, period, plain, skillLevelLabel } from '@/utils/Utils';
 import type { AvailabilityStatus, PublicProfile } from '@/utils/api/profile/profile.type';

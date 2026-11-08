@@ -17,7 +17,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn, customToast } from '@kodinga-mono-repo/ui';
+import { cn, customToast } from '@kodinga/ui';
 import {
   useAssistantChatMutation,
   usePlanCommunityMutation,

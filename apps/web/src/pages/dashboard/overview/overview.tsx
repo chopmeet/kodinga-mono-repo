@@ -2,7 +2,7 @@ import { LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, TopTitle } from '@kodinga/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { MemberActivityView } from '@/pages/shared/member-activity';
 import { MyPointsAndBadges } from '@/pages/shared/member-points';

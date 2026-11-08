@@ -2,7 +2,7 @@ import { ArrowRightLeft, Trash2 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Button, customToast } from '@kodinga-mono-repo/ui';
+import { Button, customToast } from '@kodinga/ui';
 import { useAppDispatch } from '@/redux/hook';
 import { CommunityApi, useArchiveCommunityMutation, useChangeMemberRoleMutation, useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

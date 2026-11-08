@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { AdminPost } from '@/data/admin-community-details.data';
 
 type DeletablePost = Pick<AdminPost, 'title' | 'author' | 'comments_count'>;

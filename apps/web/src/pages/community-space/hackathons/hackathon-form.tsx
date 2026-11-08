@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Controller } from 'react-hook-form';
 import { Link, Navigate, useParams } from 'react-router-dom';
 
-import { Button, ColgateWrapper, DetailsPageSkeleton, EmptyAlert, Input, SelectInput, TextareaInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, DetailsPageSkeleton, EmptyAlert, Input, SelectInput, TextareaInput, TopTitle } from '@kodinga/ui';
 import { BannerUploadField } from '@/pages/shared/banner-upload-field';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import { useGetHackathonQuery } from '@/utils/api/community/community.api';

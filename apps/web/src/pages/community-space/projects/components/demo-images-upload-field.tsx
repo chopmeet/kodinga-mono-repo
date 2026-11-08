@@ -1,7 +1,7 @@
 import { CheckCircle2, ImagePlus, Link2, LoaderCircle, Plus, Trash2, Upload } from 'lucide-react';
 import { type ChangeEvent, useId, useState } from 'react';
 
-import { Button, cn, customToast, Input } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast, Input } from '@kodinga/ui';
 import { checkImage, useImageUpload } from '@/utils/Utils';
 
 type Props = {

@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 /**
  * Abstract blue glass ribbons (the hero picture of the design, redrawn in SVG so no image is needed).

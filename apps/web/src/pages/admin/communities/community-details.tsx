@@ -10,7 +10,7 @@ import {
   EmptyAlert,
   NavTabs,
   type Tab,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { CommunityPrivacy } from '@/utils/api/community/community.type';
 import CommunityOverview from './components/community-overview';
 import UseArchiveCommunity from './form/UseArchiveCommunity';

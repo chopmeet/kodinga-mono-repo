@@ -1,7 +1,7 @@
 import { MailOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { dateFormat } from '@/pages/shared/row-actions';
 import { getName, memberRoleLabel } from '@/utils/Utils';
 import UseMyInvitations from './form/UseMyInvitations';

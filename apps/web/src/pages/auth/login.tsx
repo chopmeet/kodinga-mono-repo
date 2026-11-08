@@ -1,7 +1,7 @@
 import { Mail } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { Button, Input, InputPassword } from '@kodinga-mono-repo/ui';
+import { Button, Input, InputPassword } from '@kodinga/ui';
 
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';

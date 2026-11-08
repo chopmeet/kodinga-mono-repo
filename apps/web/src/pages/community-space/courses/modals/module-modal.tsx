@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useCreateModuleMutation, useUpdateModuleMutation } from '@/utils/api/community/community.api';
 import type { CourseModule } from '@/utils/api/course/course.type';
 import { parseApiError } from '@/utils/api/errors';

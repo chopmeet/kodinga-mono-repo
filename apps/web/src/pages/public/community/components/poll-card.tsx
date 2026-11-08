@@ -1,7 +1,7 @@
 import { Check, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast } from '@kodinga/ui';
 import { useVotePollMutation } from '@/utils/api/community/community.api';
 import type { PostPoll } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';

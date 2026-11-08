@@ -1,6 +1,6 @@
 import { Bell, Check, Sparkles } from 'lucide-react';
 
-import { Button, cn } from '@kodinga-mono-repo/ui';
+import { Button, cn } from '@kodinga/ui';
 import { getName } from '@/utils/Utils';
 import UseHelpAssistance from '../form/UseHelpAssistance';
 

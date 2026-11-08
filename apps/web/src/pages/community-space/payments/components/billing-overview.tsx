@@ -1,6 +1,6 @@
 import { Layers, PiggyBank, Users, Wallet } from 'lucide-react';
 
-import { type CardType, OverviewCardItem } from '@kodinga-mono-repo/ui';
+import { type CardType, OverviewCardItem } from '@kodinga/ui';
 import { intervalLabel, xof } from '@/utils/Utils';
 import type { CommunityPlan, CommunityRevenue } from '@/utils/api/billing/billing.type';
 

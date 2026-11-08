@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { SelectInput, TextareaInput } from '@kodinga-mono-repo/ui';
+import { SelectInput, TextareaInput } from '@kodinga/ui';
 import FormActions from '@/pages/shared/form-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import PaidAccessCard from '../components/paid-access-card';

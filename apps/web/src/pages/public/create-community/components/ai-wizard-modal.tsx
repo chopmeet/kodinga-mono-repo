@@ -1,7 +1,7 @@
 import { Bot, Check, Globe, Loader2, Sparkles, X } from 'lucide-react';
 import React, { useState } from 'react';
 
-import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast } from '@kodinga/ui';
 import { usePlanCommunityMutation } from '@/utils/api/community/community.api';
 import type { CommunityProposalResult } from '@/utils/api/community/community.type';
 import type { CreateCommunityFlow } from '../form/UseCreateCommunity';

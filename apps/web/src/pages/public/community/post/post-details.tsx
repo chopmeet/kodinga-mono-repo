@@ -2,7 +2,7 @@ import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp } from 'luci
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn, Loader } from '@kodinga/ui';
 import { CodeBlock } from '@/pages/shared/code-block';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';

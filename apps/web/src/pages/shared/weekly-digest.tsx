@@ -1,7 +1,7 @@
 import { CalendarDays, MessageCircle, RefreshCw, Rocket, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, customToast } from '@kodinga-mono-repo/ui';
+import { Button, customToast } from '@kodinga/ui';
 import { dateFormat } from '@/pages/shared/row-actions';
 import { useGetWeeklyDigestQuery, useRegenerateWeeklyDigestMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

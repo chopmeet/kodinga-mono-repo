@@ -3,7 +3,7 @@ import { ArrowLeft, CalendarPlus, Clock, Eye, EyeOff, Link2, MapPin, Pencil, Pla
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { Badge, Button, ColgateWrapper, DataTable, DetailsPageSkeleton, EmptyAlert, Pagination, SearchInput } from '@kodinga-mono-repo/ui';
+import { Badge, Button, ColgateWrapper, DataTable, DetailsPageSkeleton, EmptyAlert, Pagination, SearchInput } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { EventAIReplayHub } from './components/event-ai-replay-hub';

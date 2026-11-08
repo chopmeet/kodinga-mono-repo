@@ -1,7 +1,7 @@
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 export function FormAlert({ variant = 'error', children }: { variant?: 'error' | 'success'; children: ReactNode }) {
   const Icon = variant === 'error' ? CircleAlert : CircleCheck;

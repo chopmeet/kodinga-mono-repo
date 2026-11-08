@@ -1,4 +1,4 @@
-import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, TopTitle } from '@kodinga/ui';
 import BillingHistory from './components/billing-history';
 import { ProPlans } from './components/pro-plans';
 import UseKodingaPro from './form/UseKodingaPro';

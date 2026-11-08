@@ -3,7 +3,7 @@ import { ArrowLeft, Briefcase, CalendarDays, Copy, FolderKanban, MapPin, Message
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { Button, cn, customToast } from '@kodinga-mono-repo/ui';
+import { Button, cn, customToast } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
 import { formatCompact, nameInitials, useUser } from '@/utils/Utils';

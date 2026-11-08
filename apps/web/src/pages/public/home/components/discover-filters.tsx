@@ -10,7 +10,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 
 export type DiscoverChip = { id: string; label: string; icon?: LucideIcon };
 export type AccessFilter = 'all' | 'free' | 'paid';

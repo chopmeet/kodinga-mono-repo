@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useEvaluateHackathonSubmissionMutation, useGetHackathonEvaluationQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { Hackathon, HackathonSubmission } from '@/utils/api/hackathon/hackathon.type';

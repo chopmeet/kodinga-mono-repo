@@ -1,6 +1,6 @@
 import { CalendarDays, FileText, UserPlus, Users, UserRoundCheck, Wallet } from 'lucide-react';
 
-import { type CardType, OverviewCardItem } from '@kodinga-mono-repo/ui';
+import { type CardType, OverviewCardItem } from '@kodinga/ui';
 import { formatCompact } from '@/pages/shared/chart-theme';
 import { useGetCommunityRevenueQuery } from '@/utils/api/community/community.api';
 import { xof } from '@/utils/Utils';

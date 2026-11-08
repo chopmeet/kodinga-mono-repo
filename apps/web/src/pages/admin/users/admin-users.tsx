@@ -1,7 +1,7 @@
 import { RotateCw, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, ColgateWrapper, customToast, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, customToast, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { parseApiError } from '@/utils/api/errors';
 import { useToggleUserAdminMutation, useToggleUserStatusMutation } from '@/utils/api/user/user.api';

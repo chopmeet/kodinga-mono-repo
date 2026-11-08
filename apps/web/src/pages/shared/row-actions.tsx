@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 
 export type RowAction = {
   label: string;

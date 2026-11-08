@@ -2,7 +2,7 @@ import { MessagesSquare, Search, Users } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga/ui';
 import { ago, nameInitials } from '@/utils/Utils';
 import { conversationName, otherPerson, type MessagesPage } from '../form/UseMessages';
 

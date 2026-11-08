@@ -2,7 +2,7 @@ import { RotateCw, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga-mono-repo/ui';
+import { Button, ColgateWrapper, EmptyAlert, Pagination, SearchInput, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { parseApiError } from '@/utils/api/errors';
 import { useCommunitySpace } from '../community-space-context';

@@ -1,7 +1,7 @@
 import { Link2, Trash2, Upload, Video } from 'lucide-react';
 import { type ChangeEvent, useId, useState } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { useFilePreview } from '@/pages/public/create-community/components/image-field';
 import type { CourseLesson } from '@/utils/api/course/course.type';
 import { isPlatformUrl } from '@/utils/Utils';

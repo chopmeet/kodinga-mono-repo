@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
-import { Button, Input, SelectInput } from '@kodinga-mono-repo/ui';
+import { Button, Input, SelectInput } from '@kodinga/ui';
 import { intervalLabel, xof } from '@/utils/Utils';
 import { useCommunitySpace } from '../../community-space-context';
 import { useSpaceSettings } from '../form/UseSpaceSettings';

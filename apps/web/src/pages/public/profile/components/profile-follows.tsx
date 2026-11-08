@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@kodinga/ui';
 import type { PublicProfile } from '@/utils/api/profile/profile.type';
 import { formatCompact, nameInitials } from '@/utils/Utils';
 import UseProfileFollows from '../form/UseProfileFollows';

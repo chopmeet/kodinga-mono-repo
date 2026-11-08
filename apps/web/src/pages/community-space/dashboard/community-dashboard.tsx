@@ -2,7 +2,7 @@ import { CalendarDays, ChevronRight, Heart, MessageCircle, UserRoundCheck } from
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { ColgateWrapper, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, TopTitle } from '@kodinga/ui';
 import { useUser } from '@/utils/Utils';
 import { WeeklyDigest } from '@/pages/shared/weekly-digest';
 import { isCommunityManager, useCommunitySpace } from '../community-space-context';

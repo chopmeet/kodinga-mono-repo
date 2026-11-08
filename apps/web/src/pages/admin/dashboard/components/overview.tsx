@@ -1,7 +1,7 @@
 import { FileText, Percent, UserPlus, Users, UsersRound, Wallet } from 'lucide-react';
 import type { ReactElement } from 'react';
 
-import { type CardType, OverviewCardItem } from '@kodinga-mono-repo/ui';
+import { type CardType, OverviewCardItem } from '@kodinga/ui';
 import { type DashboardKpi, dashboardKpis } from '@/data/admin-dashboard.data';
 import { formatCompact } from '@/pages/shared/chart-theme';
 

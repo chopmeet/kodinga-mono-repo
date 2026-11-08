@@ -12,7 +12,7 @@ import {
   DialogTitle,
   Input,
   SelectInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { SpaceRole } from '@/data/community-space.data';
 import { dateFormat } from '@/pages/shared/row-actions';
 import type { CommunityInvitation, InvitationStatus } from '@/utils/api/community/community.type';

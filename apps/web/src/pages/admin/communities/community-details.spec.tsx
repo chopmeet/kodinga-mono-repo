@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { Provider } from 'react-redux';
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import { Toaster } from '@kodinga-mono-repo/ui';
+import { Toaster } from '@kodinga/ui';
 import { adminCommunities } from '@/data/admin-communities.data';
 import store from '@/redux/store';
 import { must } from '@/test-utils';

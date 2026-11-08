@@ -2,7 +2,7 @@ import { CalendarDays, Plus, RotateCw, Trophy, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Badge, Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga-mono-repo/ui';
+import { Badge, Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { RowActions } from '@/pages/shared/row-actions';
 import { useGetCommunityHackathonsQuery } from '@/utils/api/community/community.api';

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga/ui';
 import { useCommunitySpace } from '../community-space-context';
 import BillingOverview from './components/billing-overview';
 import RevenueChart from './components/revenue-chart';

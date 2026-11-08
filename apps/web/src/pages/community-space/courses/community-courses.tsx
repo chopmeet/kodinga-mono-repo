@@ -2,7 +2,7 @@ import { BookOpen, GraduationCap, Plus, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { Badge, Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga-mono-repo/ui';
+import { Badge, Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { RowActions } from '@/pages/shared/row-actions';

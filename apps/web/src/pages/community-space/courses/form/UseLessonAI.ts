@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import type { CodeExercise } from '@/pages/shared/code-exercise';
 import type { AIDifficulty } from '@/utils/api/ai/ai.type';
 import { useGenerateExerciseMutation, useGenerateQuizMutation } from '@/utils/api/community/community.api';

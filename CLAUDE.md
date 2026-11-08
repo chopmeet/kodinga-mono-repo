@@ -31,7 +31,7 @@ C'est le développeur qui génère, relit et applique la migration lui-même.
 ```
 apps/web    Front React (SPA)
 apps/api    Back Django (API REST)
-libs/ui     Kit UI partagé, importé via @kodinga-mono-repo/ui
+libs/ui     Kit UI partagé, importé via @kodinga/ui
 deploy/     docker-compose.yaml du VPS + README de déploiement
 .github/workflows  recette.yml (branche recette), prod.yml (branche prod), deploy.yml (réutilisable)
 ```
@@ -69,7 +69,7 @@ npx nx lint api                                         # ruff
 
 ## Conventions front
 
-- Alias `@/` = `apps/web/src`. Le kit UI s'importe depuis `@kodinga-mono-repo/ui`.
+- Alias `@/` = `apps/web/src`. Le kit UI s'importe depuis `@kodinga/ui`.
 - Structure d'une page : `form/UseXxx.ts` (état + logique), `tables/`, `tabs/` (sous-routes avec `NavTabs` + `Outlet` context), `modals/`, `components/`.
 - Éléments partagés entre admin et espace communauté : `src/pages/shared/` (libellés, chips de filtre, menu d'actions, thème des graphiques, `FormActions`, `SettingSwitch`).
 - Tant que les endpoints n'existent pas, les écrans utilisent des données fictives déterministes dans `src/data/*.data.ts`, typées comme l'API (`src/utils/api/**/**.type.ts`). Les écrans d'auth appellent déjà la vraie API.

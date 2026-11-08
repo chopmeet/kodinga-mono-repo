@@ -1,7 +1,7 @@
 import { RotateCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga/ui';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 import CommunitiesToolbar, { ALL, type CommunityFilters } from './components/communities-toolbar';

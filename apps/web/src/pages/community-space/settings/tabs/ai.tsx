@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { customToast, SelectInput } from '@kodinga-mono-repo/ui';
+import { customToast, SelectInput } from '@kodinga/ui';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import {
   useAnalyzeCommunityMutation,

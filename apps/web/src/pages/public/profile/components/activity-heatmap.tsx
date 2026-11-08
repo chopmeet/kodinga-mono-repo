@@ -1,7 +1,7 @@
 import { Activity } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 const DAY_LABELS = ['Lun.', '', 'Mer.', '', 'Ven.', '', 'Dim.'];
 const LEVELS = ['bg-blue-50', 'bg-blue-200', 'bg-blue-400', 'bg-primary'];

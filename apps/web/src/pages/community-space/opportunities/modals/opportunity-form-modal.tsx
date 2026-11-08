@@ -9,7 +9,7 @@ import {
   Input,
   SelectInput,
   TextareaInput,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { TechnologyPicker } from '@/pages/shared/technology-picker';
 import type { ExperienceLevel, Opportunity, OpportunityType, WorkplaceType } from '@/utils/api/opportunity/opportunity.type';
 import UseOpportunityForm from '../form/UseOpportunityForm';

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useCreateInvitationMutation } from '@/utils/api/community/community.api';
 import type { CreatedInvitation } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';

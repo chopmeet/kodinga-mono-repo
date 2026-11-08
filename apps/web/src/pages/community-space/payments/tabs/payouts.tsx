@@ -1,7 +1,7 @@
 import { Banknote } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, cn, Loader } from '@kodinga-mono-repo/ui';
+import { Button, cn, Loader } from '@kodinga/ui';
 import { payoutMethodLabel, payoutStatusStyle, xof } from '@/utils/Utils';
 import { parseApiError } from '@/utils/api/errors';
 import { MIN_PAYOUT, useSpaceBilling } from '../form/UseSpaceBilling';

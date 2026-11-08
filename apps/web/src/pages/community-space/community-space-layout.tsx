@@ -1,6 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom';
 
-import { Loader } from '@kodinga-mono-repo/ui';
+import { Loader } from '@kodinga/ui';
 import type { MyCommunity, SpaceRole } from '@/data/community-space.data';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { useGetCommunityQuery } from '@/utils/api/community/community.api';

@@ -1,7 +1,7 @@
 import { ArrowRight, Crown, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@kodinga/ui';
 import { useGetCommunityLeaderboardQuery } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { formatCompact, getName, nameInitials } from '@/utils/Utils';

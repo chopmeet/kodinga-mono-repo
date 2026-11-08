@@ -4,7 +4,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { fromLocalInput, toLocalInput } from '@/pages/community-space/events/event-labels';
 import { useCreateHackathonMutation, useUpdateHackathonMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

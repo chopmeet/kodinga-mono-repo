@@ -2,7 +2,7 @@ import { ArrowLeft, BadgeCheck, Bell, BellOff, Check, ChevronDown, Copy, Link2, 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { customToast, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
+import { customToast, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@kodinga/ui';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useSetCommunityNotificationsMutation } from '@/utils/api/community/community.api';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useCreateShareLinkMutation } from '@/utils/api/community/community.api';
 import type { ShareableInviteLink } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';

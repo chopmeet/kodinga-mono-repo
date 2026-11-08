@@ -1,4 +1,4 @@
-import { cn, Loader } from '@kodinga-mono-repo/ui';
+import { cn, Loader } from '@kodinga/ui';
 import type { PointsTransaction } from '@/utils/api/gamification/gamification.type';
 import { pointsFormat } from '../leaderboard-labels';
 

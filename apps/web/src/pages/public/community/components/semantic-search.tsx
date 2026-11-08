@@ -1,7 +1,7 @@
 import { BookOpen, MessageSquare, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import UseSemanticSearch, { MIN_QUERY } from '../form/UseSemanticSearch';
 
 const KIND = { post: 'Publication', lesson: 'Leçon', event: 'Événement' } as const;

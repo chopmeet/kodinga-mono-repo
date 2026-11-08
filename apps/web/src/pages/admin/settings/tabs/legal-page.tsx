@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, customToast, InputQuill } from '@kodinga-mono-repo/ui';
+import { Button, customToast, InputQuill } from '@kodinga/ui';
 import type { LegalPageId } from '@/data/admin-settings.data';
 import { useSettings } from '../admin-settings';
 

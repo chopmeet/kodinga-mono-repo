@@ -2,7 +2,7 @@ import { BookOpen, Clock, Layers, PartyPopper, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga/ui';
 import { Logo } from '@/layouts/components/header';
 import { formatDuration } from '@/pages/community-space/courses/course-labels';
 import type { CoursePlayer } from './form/UseCoursePlayer';

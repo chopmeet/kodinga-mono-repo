@@ -2,7 +2,7 @@ import { Bookmark, CircleCheck, MessageCircle, MessagesSquare, PenLine, Pin, Sea
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga/ui';
 import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal';
 import { WeeklyDigest } from '@/pages/shared/weekly-digest';
 import { SemanticSearch } from './semantic-search';

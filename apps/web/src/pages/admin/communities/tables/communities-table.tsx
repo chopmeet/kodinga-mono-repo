@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { CommunityListItem, CommunityPrivacy } from '@/utils/api/community/community.type';
 import { formatCompact, getName, nameInitials } from '@/utils/Utils';
 

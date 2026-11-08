@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@kodinga/ui';
 
 /** Dialog of a profile entry (experience, education, project): its form, Cancel / Save */
 export function EntryModal({

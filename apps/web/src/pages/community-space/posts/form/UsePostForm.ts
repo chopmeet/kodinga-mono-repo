@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useCreatePostMutation, useUpdatePostMutation } from '@/utils/api/community/community.api';
 import type { PostWriteData } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';

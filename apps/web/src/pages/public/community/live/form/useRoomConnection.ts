@@ -1,7 +1,7 @@
 import { Room, RoomEvent } from 'livekit-client';
 import { useEffect, useRef, useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 
 /**
  * One LiveKit room per session, connected here (not by <LiveKitRoom>): in dev, the double mount of

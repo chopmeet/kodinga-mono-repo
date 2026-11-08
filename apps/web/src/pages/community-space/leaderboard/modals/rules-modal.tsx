@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input } from '@kodinga/ui';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { PointRule, PointRulesUpdate } from '@/utils/api/gamification/gamification.type';
 

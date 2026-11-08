@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import type { ImageSource } from '@/pages/public/create-community/components/image-field';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { onSetUser } from '@/redux/slice/User.slice';

@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
-import { TooltipProvider } from '@kodinga-mono-repo/ui';
+import { TooltipProvider } from '@kodinga/ui';
 import store from '@/redux/store';
 import '@/utils/i18n';
 

@@ -1,4 +1,4 @@
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
 import { nameInitials } from '@/utils/Utils';
 

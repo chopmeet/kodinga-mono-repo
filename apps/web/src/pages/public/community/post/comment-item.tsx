@@ -1,7 +1,7 @@
 import { CircleCheck, CornerDownRight, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, cn } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn } from '@kodinga/ui';
 import type { PostComment } from '@/utils/api/community/community.type';
 import { ago, getName, nameInitials, plain } from '@/utils/Utils';
 import type { PostComments } from '../form/UsePostComments';

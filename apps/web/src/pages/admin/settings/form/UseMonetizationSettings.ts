@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useGetSystemSettingsQuery, useUpdateSystemSettingMutation } from '@/utils/api/admin/admin.api';
 import { PRO_MONTHLY_PRICE_KEY } from '@/utils/api/admin/admin.type';
 import { parseApiError } from '@/utils/api/errors';

@@ -1,7 +1,7 @@
 import { CornerDownRight, Send } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, ColgateWrapper, customToast, EmptyAlert, TextareaInput } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, ColgateWrapper, customToast, EmptyAlert, TextareaInput } from '@kodinga/ui';
 import { useAddProjectCommentMutation, useGetProjectCommentsQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { ProjectPerson } from '@/utils/api/project/project.type';

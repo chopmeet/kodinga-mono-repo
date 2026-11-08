@@ -5,7 +5,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { CommunityCategory, CommunityPricing, CommunityPrivacy } from '@/utils/api/community/community.type';
 
 // Radix Select forbids an empty value: 'all' means "no filter"

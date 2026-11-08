@@ -2,7 +2,7 @@ import { ArrowUpRight, CalendarDays, Info, RotateCw, Sparkles, Users } from 'luc
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Avatar, AvatarFallback, AvatarImage, Button, cn, SearchInput } from '@kodinga-mono-repo/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button, cn, SearchInput } from '@kodinga/ui';
 import { useGetCommunityLeaderboardQuery, useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { useDebounced } from '@/utils/hooks/useDebounced';

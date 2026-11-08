@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { type MyCommunity, roleLabel } from '@/data/community-space.data';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { isManaged, useGetMyCommunitiesQuery } from '@/utils/api/community/community.api';

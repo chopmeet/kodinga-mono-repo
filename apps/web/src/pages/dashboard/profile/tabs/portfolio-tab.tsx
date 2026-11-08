@@ -1,7 +1,7 @@
 import { Code2, ExternalLink, FolderKanban, Pencil, Plus, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Loader } from '@kodinga-mono-repo/ui';
+import { Button, Loader } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { PortfolioProject } from '@/utils/api/profile/profile.type';
 import UseProfileEntries from '../form/UseProfileEntries';

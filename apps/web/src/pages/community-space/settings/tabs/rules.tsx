@@ -1,7 +1,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, EmptyAlert } from '@kodinga-mono-repo/ui';
+import { Button, EmptyAlert } from '@kodinga/ui';
 import { type CommunityRule, useSpaceSettings } from '../form/UseSpaceSettings';
 import RuleModal from '../modals/rule-modal';
 

@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { InputHTMLAttributes } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   title: string;

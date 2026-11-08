@@ -1,7 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { useUser } from '@/utils/Utils';
 import { useStartConversation } from '../form/UseMessages';

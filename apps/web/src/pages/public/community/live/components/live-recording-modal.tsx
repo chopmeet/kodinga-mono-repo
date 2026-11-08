@@ -1,7 +1,7 @@
 import { Check, CloudUpload, Download, Film, LoaderCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Button, customToast } from '@kodinga-mono-repo/ui';
+import { Button, customToast } from '@kodinga/ui';
 import { useAttachEventReplayMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import { formatRecordingTime } from '../form/useLiveRecording';

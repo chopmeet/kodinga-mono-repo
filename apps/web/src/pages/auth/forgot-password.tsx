@@ -1,7 +1,7 @@
 import { ArrowLeft, Mail, MailCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Input } from '@kodinga-mono-repo/ui';
+import { Input } from '@kodinga/ui';
 
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';

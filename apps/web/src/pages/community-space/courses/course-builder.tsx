@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyAlert,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { RowActions } from '@/pages/shared/row-actions';
 import {
   useDeleteLessonMutation,

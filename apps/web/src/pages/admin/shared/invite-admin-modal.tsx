@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import type { AdminUser } from '@/data/admin-users.data';
 
 const schema = z.object({

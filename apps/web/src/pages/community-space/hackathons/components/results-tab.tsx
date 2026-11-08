@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyAlert,
-} from '@kodinga-mono-repo/ui';
+} from '@kodinga/ui';
 import { useGetHackathonResultsQuery, usePublishHackathonResultsMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { Hackathon } from '@/utils/api/hackathon/hackathon.type';

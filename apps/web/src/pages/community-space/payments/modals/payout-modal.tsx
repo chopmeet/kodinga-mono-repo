@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, SelectInput } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, SelectInput } from '@kodinga/ui';
 import { payoutMethodLabel, xof } from '@/utils/Utils';
 import type { PayoutMethod, PayoutRequest } from '@/utils/api/billing/billing.type';
 import { MIN_PAYOUT } from '../form/UseSpaceBilling';

@@ -1,6 +1,6 @@
 import { Controller } from 'react-hook-form';
 
-import { Input } from '@kodinga-mono-repo/ui';
+import { Input } from '@kodinga/ui';
 import FormActions from '@/pages/shared/form-actions';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import UseMonetizationSettings from '../form/UseMonetizationSettings';

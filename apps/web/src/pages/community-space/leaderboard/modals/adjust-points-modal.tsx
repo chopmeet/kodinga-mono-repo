@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input } from '@kodinga/ui';
 import type { PointsAdjustment } from '@/utils/api/gamification/gamification.type';
 import { getName } from '@/utils/Utils';
 import UseAdjustPointsForm from '../form/UseAdjustPointsForm';

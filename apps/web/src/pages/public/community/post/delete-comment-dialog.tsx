@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga/ui';
 import type { PostComment } from '@/utils/api/community/community.type';
 
 type Props = {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useOutletContext } from 'react-router-dom';
 
-import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga-mono-repo/ui';
+import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga/ui';
 import {
   type LegalPage,
   type LegalPageId,

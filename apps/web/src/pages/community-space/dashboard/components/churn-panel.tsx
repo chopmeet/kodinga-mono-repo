@@ -1,7 +1,7 @@
 import { Check, Copy, RefreshCw, Send, Sparkles, UserRoundSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button, cn, ColgateWrapper } from '@kodinga-mono-repo/ui';
+import { Button, cn, ColgateWrapper } from '@kodinga/ui';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { dateFormat } from '@/pages/shared/row-actions';
 import type { ChurnRisk, ChurnRiskLevel } from '@/utils/api/ai/ai.type';

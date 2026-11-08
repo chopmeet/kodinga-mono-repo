@@ -2,7 +2,7 @@ import { Bell } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga-mono-repo/ui';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga/ui';
 import { NotificationContent } from '@/pages/public/notifications/components/notification-item';
 import UseJoinRequests from '@/pages/public/notifications/form/UseJoinRequests';
 import UseNotifications, { useUnreadNotifications } from '@/pages/public/notifications/form/UseNotifications';

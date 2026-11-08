@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, RotateCw, X } from 'lucide-react';
 
-import { Button, cn } from '@kodinga-mono-repo/ui';
+import { Button, cn } from '@kodinga/ui';
 import type { CourseLesson, QuizQuestion, QuizResult } from '@/utils/api/course/course.type';
 import UseQuizPlayer from './form/UseQuizPlayer';
 

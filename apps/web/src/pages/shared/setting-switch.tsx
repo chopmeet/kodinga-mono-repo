@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-import { InputSwitch } from '@kodinga-mono-repo/ui';
+import { InputSwitch } from '@kodinga/ui';
 
 type Props = {
   label: string;

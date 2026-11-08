@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga-mono-repo/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga/ui';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { LessonType } from '@/utils/api/course/course.type';
 import { CodeExerciseFields } from '../components/code-exercise-fields';

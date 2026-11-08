@@ -1,7 +1,7 @@
 import { LogOut, Monitor, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, InputPassword } from '@kodinga-mono-repo/ui';
+import { Button, InputPassword } from '@kodinga/ui';
 import type { UserSession } from '@/utils/api/profile/profile.type';
 import { ago } from '@/utils/Utils';
 import UseAccountSecurity from '../form/UseAccountSecurity';

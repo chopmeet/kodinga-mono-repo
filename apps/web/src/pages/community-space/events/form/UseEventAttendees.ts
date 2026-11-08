@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from 'react';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useCheckInAttendeeMutation, useGetAllEventAttendeesQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import type { RsvpStatus } from '@/utils/api/event/event.type';

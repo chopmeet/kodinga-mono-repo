@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { useAcceptInvitationByTokenMutation, useAcceptInvitationMutation, useDeclineInvitationMutation, useGetCommunityQuery, useGetPublicInvitationQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';

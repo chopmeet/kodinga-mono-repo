@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Lock, LockOpen, MessageCircle, Pin, PinOff, RotateCw, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Badge, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga-mono-repo/ui';
+import { Badge, customToast, DataTable, EmptyAlert, Pagination } from '@kodinga/ui';
 import DeletePostModal from '@/pages/community-space/posts/modals/delete-post-modal';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
 import {

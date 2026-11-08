@@ -3,7 +3,7 @@ import { type ChangeEvent, useEffect, useId, useState } from 'react';
 import { AiFillCamera } from 'react-icons/ai';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
-import { cn, Input } from '@kodinga-mono-repo/ui';
+import { cn, Input } from '@kodinga/ui';
 import { checkImage, type ImagePurpose } from '@/utils/Utils';
 
 export type ImageSource = 'file' | 'url';

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 
 export const communityTabs = [

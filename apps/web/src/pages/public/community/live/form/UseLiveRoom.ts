@@ -2,7 +2,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { useGetCommunityEventQuery, useJoinLiveEventMutation, useUpdateEventStatusMutation } from '@/utils/api/community/community.api';
 import type { LiveJoin } from '@/utils/api/event/event.type';

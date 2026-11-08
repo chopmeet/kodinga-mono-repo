@@ -3,7 +3,7 @@ import { ArrowLeft, Banknote, CalendarClock, ExternalLink, Eye, Globe, Graduatio
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { Badge, Button, ColgateWrapper, DetailsPageSkeleton, EmptyAlert } from '@kodinga-mono-repo/ui';
+import { Badge, Button, ColgateWrapper, DetailsPageSkeleton, EmptyAlert } from '@kodinga/ui';
 import { getName } from '@/utils/Utils';
 import { dateFormat, RowActions } from '@/pages/shared/row-actions';
 import { useGetOpportunityQuery } from '@/utils/api/community/community.api';

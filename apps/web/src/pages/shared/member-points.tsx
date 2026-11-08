@@ -1,7 +1,7 @@
 import { Award, Flame, Medal, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import { useGetMyBadgesQuery, useGetMyCommunityPointsQuery, useGetMyPointsHistoryQuery, useGetMyReputationQuery } from '@/utils/api/community/community.api';
 import type { PointsTransaction } from '@/utils/api/gamification/gamification.type';
 

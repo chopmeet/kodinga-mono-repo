@@ -19,7 +19,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-import { customToast, InputSwitch } from '@kodinga-mono-repo/ui';
+import { customToast, InputSwitch } from '@kodinga/ui';
 import {
   useGetCommunitySettingsQuery,
   useUpdateCommunitySettingsMutation,

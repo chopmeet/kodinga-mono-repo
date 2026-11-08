@@ -1,7 +1,7 @@
 import { CircleCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { InputPassword } from '@kodinga-mono-repo/ui';
+import { InputPassword } from '@kodinga/ui';
 
 import AuthWrapper from './auth-wrapper';
 import { FormAlert } from './components/form-alert';

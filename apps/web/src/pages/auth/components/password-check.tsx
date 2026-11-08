@@ -1,6 +1,6 @@
 import { Check, X } from 'lucide-react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 
 // Mirrors the api validators (min_length 8, NumericPasswordValidator); the server stays the source of truth
 export const passwordRules = [

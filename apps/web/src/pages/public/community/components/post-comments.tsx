@@ -2,7 +2,7 @@ import { Lock, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@kodinga-mono-repo/ui';
+import { Button } from '@kodinga/ui';
 import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import UsePostComments from '../form/UsePostComments';

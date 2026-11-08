@@ -1,4 +1,4 @@
-import { customToast } from '@kodinga-mono-repo/ui';
+import { customToast } from '@kodinga/ui';
 import { parseApiError } from '@/utils/api/errors';
 import type { EducationWriteData, ExperienceWriteData, PortfolioWriteData, SkillWriteData } from '@/utils/api/profile/profile.type';
 import {

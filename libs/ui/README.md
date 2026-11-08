@@ -5,7 +5,7 @@ Shared UI kit for the monorepo: [shadcn/ui](https://ui.shadcn.com) components (s
 ## Use it in an app
 
 ```tsx
-import { Button, Card, cn } from '@kodinga-mono-repo/ui';
+import { Button, Card, cn } from '@kodinga/ui';
 ```
 
 Import the theme once in the app's global stylesheet (path relative to that file):
@@ -17,7 +17,7 @@ Import the theme once in the app's global stylesheet (path relative to that file
 The app's `tsconfig.json` must also list the lib in `paths`, because `paths` there replaces (does not merge with) `tsconfig.base.json`:
 
 ```json
-"@kodinga-mono-repo/ui": ["../../libs/ui/src/index.ts"]
+"@kodinga/ui": ["../../libs/ui/src/index.ts"]
 ```
 
 ## Add a component (manual install)

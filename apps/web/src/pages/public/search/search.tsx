@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@kodinga-mono-repo/ui';
+import { cn } from '@kodinga/ui';
 import type { DiscoveryType } from '@/utils/api/discovery/discovery.type';
 import { CommunityRow, CourseRow, DeveloperRow, EventRow, PostRow } from './components/search-results';
 import UseGlobalSearch, { type GlobalSearch, MIN_QUERY } from './form/UseGlobalSearch';
