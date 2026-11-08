@@ -93,8 +93,9 @@ def send_event_reminders_task(self, minutes_before: int = 30) -> int:
         event_time_str = local_start.strftime("%H:%M")
         event_date_str = local_start.strftime("%d/%m/%Y")
 
-        action_path = f"/c/{event.community.slug}?tab=events"
-        event_url = f"{frontend_url}/c/{event.community.slug}?tab=events"
+        event_target = event.slug or str(event.id)
+        action_path = f"/c/{event.community.slug}/events/{event_target}"
+        event_url = f"{frontend_url}/c/{event.community.slug}/events/{event_target}"
 
         for attendee in attendees:
             user = attendee.user
