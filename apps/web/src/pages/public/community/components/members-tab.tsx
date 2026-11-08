@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, Info, Sparkles, Users } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, Info, RotateCw, Sparkles, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -77,7 +77,17 @@ function useMemberCards(slug: string, canList: boolean, search: string, ordering
     }));
   }, [canList, members.data, ranking.data]);
 
-  return { cards, total: members.data?.pagination.count ?? cards.length, isLoading: canList ? members.isLoading : ranking.isLoading, isFetching: members.isFetching };
+  const source = canList ? members : ranking;
+  return {
+    cards,
+    total: members.data?.pagination.count ?? cards.length,
+    isLoading: source.isLoading,
+    isFetching: members.isFetching,
+    // Failed without anything to show (a failed "Afficher plus" keeps the cards already there)
+    failed: !!source.error && cards.length === 0,
+    isRetrying: source.isFetching,
+    retry: () => void source.refetch(),
+  };
 }
 
 export function MembersTab({ community, isTeam }: { community: CommunityDetail; isTeam: boolean }) {
@@ -88,7 +98,7 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
   const membership = community.user_membership;
   const canList = isTeam || (!!membership?.is_member && membership.status === 'active');
   const query = useDebounced(search.trim(), 300);
-  const { cards, total, isLoading, isFetching } = useMemberCards(community.slug, canList, query, ordering, size, filter === 'online');
+  const { cards, total, isLoading, isFetching, failed, isRetrying, retry } = useMemberCards(community.slug, canList, query, ordering, size, filter === 'online');
   const n = community.members_count;
 
   const needle = normalize(search.trim());
@@ -183,6 +193,14 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
 
       {isLoading ? (
         <p className="py-12 text-center text-sm text-slate-500">Chargement des membres…</p>
+      ) : failed ? (
+        <div role="alert" className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+          <Users className="size-8 text-slate-300" />
+          <p className="mt-3 font-semibold text-slate-900">Impossible de charger les membres pour le moment</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={retry} isLoading={isRetrying}>
+            <RotateCw /> Réessayer
+          </Button>
+        </div>
       ) : shown.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <Users className="size-8 text-slate-300" />

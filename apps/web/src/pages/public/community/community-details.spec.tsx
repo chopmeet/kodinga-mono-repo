@@ -9,7 +9,7 @@ import type { User } from '@/utils/api/user/user.type';
 vi.setConfig({ testTimeout: 15_000 });
 
 type Membership = { is_member: boolean; role: string | null; status: string | null };
-type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean; commentsFail?: boolean; notificationsOn?: boolean };
+type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean; commentsFail?: boolean; membersFail?: boolean; notificationsOn?: boolean };
 
 const monthlyPlan = { id: 'plan-m', name: 'Mensuel', slug: 'mensuel', description: '', price: '5000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Abidjan React', features: ['Lives mensuels'], is_active: true, order: 1 };
 
@@ -67,6 +67,7 @@ const comment = (id: string, content: string) => ({
 function stubCommunityApi(o: Options = {}) {
   let membership = o.membership ?? NONE;
   let peerDeclined = false;
+  let membersRecovered = false;
   // Three comments are shown at first: five to show "2 de plus"
   let comments = ['Bravo', 'Merci', 'Top', 'Génial', 'Super'].map((text, i) => comment(`c${i + 1}`, text));
   const calls: Call[] = [];
@@ -108,7 +109,12 @@ function stubCommunityApi(o: Options = {}) {
       return json([{ id: 'pm1', user_id: 'u-fatou', username: 'fatou', first_name: 'Fatou', last_name: 'Sow', avatar_url: null, match_reasons: ['Compétences partagées : React'], status: peerDeclined ? 'declined' : 'suggested', match_type: 'pair_programming', compatibility_score: 0.9 }]);
     }
     if (path.endsWith('/communities/abidjan-react/notifications/toggle/')) return json({ success: true, data: { notifications_enabled: body?.notifications_enabled } });
+    if (path.endsWith('/conversations/') && request.method === 'POST') return json({ id: 'conv-kofi', conversation_type: 'direct', participants: [], last_message: null, unread_count: 0 }, 201);
     if (path.endsWith('/communities/abidjan-react/members/')) {
+      if (o.membersFail && !membersRecovered) {
+        membersRecovered = true;
+        return json({ success: false, code: 'error', message: 'Erreur serveur.' }, 500);
+      }
       const m = (id: string, first_name: string, role: string, is_online = false) => ({ id, user: { id, username: first_name.toLowerCase(), first_name, last_name: 'Diop', avatar_url: '' }, role, status: 'active', custom_title: '', joined_at: '2026-01-15T10:00:00Z', reputation_score: 0, created_at: '', is_online });
       const all = [m('m1', 'Awa', 'admin'), m('m2', 'Kofi', 'member', true)];
       const found = url.searchParams.get('online') === 'true' ? all.filter((x) => x.is_online) : all;
@@ -482,5 +488,27 @@ describe('Public community page', () => {
     await screen.findByRole('heading', { level: 1, name: 'Abidjan React' }, SLOW);
     expect(screen.queryByRole('button', { name: /avec l’IA/ })).toBeNull();
     expect(calls.some((c) => c.url.pathname.includes('/ai/semantic-search/'))).toBe(false);
+  });
+
+  it('opens the conversation with a member from the directory', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' } });
+    const { where } = renderAppAt('/communities/abidjan-react?tab=members');
+    const list = await screen.findByRole('list', { name: 'Membres' }, SLOW);
+    const kofi = within(list).getByText('Kofi Diop').closest('li') as HTMLElement;
+    fireEvent.click(within(kofi).getByRole('button', { name: /Écrire/ }));
+    await waitFor(() => expect(where()).toBe('/messages/conv-kofi'), SLOW);
+    expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/conversations/'))?.body).toMatchObject({ conversation_type: 'direct', recipient_id: 'm2' });
+  });
+
+  it('says when the members cannot be loaded, and loads them again', async () => {
+    signIn();
+    stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' }, membersFail: true });
+    renderAppAt('/communities/abidjan-react?tab=members');
+    const alert = await screen.findByRole('alert', {}, SLOW);
+    expect(alert.textContent).toMatch(/Impossible de charger les membres/);
+    expect(screen.queryByText('Les membres apparaîtront ici')).toBeNull();
+    fireEvent.click(within(alert).getByRole('button', { name: /Réessayer/ }));
+    expect(await screen.findByRole('list', { name: 'Membres' }, SLOW)).toBeTruthy();
   });
 });
