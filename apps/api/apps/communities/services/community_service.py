@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 
 from apps.accounts.models.user import User
 from apps.communities.models.category import CommunityCategory
-from apps.communities.models.community import Community
+from apps.communities.models.community import Community, CommunityPrivacy
 from apps.communities.models.rule import CommunityRule
 from apps.communities.models.settings import CommunitySettings
 from apps.memberships.models.member import (
@@ -33,57 +33,61 @@ class CommunityService:
         from apps.administration.services.admin_service import AdministrationService
         from apps.billing.services.billing_service import BillingService
 
-        raw_setting = AdministrationService.get_setting('community_creation_allowed_for', 'all')
-        tier = raw_setting.get('tier') if isinstance(raw_setting, dict) else str(raw_setting).lower()
-        if tier == 'pro_only' and not owner.is_pro:
+        raw_setting = AdministrationService.get_setting(
+            "community_creation_allowed_for", "all"
+        )
+        tier = (
+            raw_setting.get("tier")
+            if isinstance(raw_setting, dict)
+            else str(raw_setting).lower()
+        )
+        if tier == "pro_only" and not owner.is_pro:
             raise PermissionDenied(
                 f"La création de communauté est actuellement réservée aux abonnés Pro ({BillingService.get_pro_monthly_price_label()}). Veuillez passer au forfait Pro pour créer un espace."
             )
 
         # 2. Check monetization: Only Pro users can create paid communities
-        pricing_type = data.get('pricing_type', 'free')
-        if pricing_type == 'paid' and not owner.is_pro:
-            raise PermissionDenied(
-                f"Seuls les utilisateurs avec un abonnement Pro actif ({BillingService.get_pro_monthly_price_label()}) peuvent créer ou configurer une communauté payante."
-            )
+        pricing_type = data.get("pricing_type", "free")
+        if pricing_type == "paid":
+            if not owner.is_pro:
+                raise PermissionDenied(
+                    f"Seuls les utilisateurs avec un abonnement Pro actif ({BillingService.get_pro_monthly_price_label()}) peuvent créer ou configurer une communauté payante."
+                )
+            # Règle métier : une communauté payante est forcément privée
+            data["privacy_type"] = CommunityPrivacy.PRIVATE
 
         # Extract optional membership plan info before creating Community
-        membership_price = data.pop('membership_price', None)
-        membership_interval = data.pop('membership_interval', 'month')
-        membership_plan_name = data.pop('membership_plan_name', None)
+        membership_price = data.pop("membership_price", None)
+        membership_interval = data.pop("membership_interval", "month")
+        membership_plan_name = data.pop("membership_plan_name", None)
 
-        slug = data.get('slug')
+        slug = data.get("slug")
         if not slug:
-            base_slug = slugify(data.get('name', 'community'))
+            base_slug = slugify(data.get("name", "community"))
             slug = base_slug
             count = 1
             while Community.objects.filter(slug=slug).exists():
                 slug = f"{base_slug}-{count}"
                 count += 1
-            data['slug'] = slug
+            data["slug"] = slug
         elif Community.objects.filter(slug=slug).exists():
-            raise ValidationError({'slug': "Ce slug de communauté est déjà utilisé."})
+            raise ValidationError({"slug": "Ce slug de communauté est déjà utilisé."})
 
-        category_id = data.pop('category_id', None)
+        category_id = data.pop("category_id", None)
         if category_id:
             try:
-                data['category'] = CommunityCategory.objects.get(id=category_id)
+                data["category"] = CommunityCategory.objects.get(id=category_id)
             except CommunityCategory.DoesNotExist as err:
-                raise ValidationError({'category_id': "Catégorie introuvable."}) from err
+                raise ValidationError(
+                    {"category_id": "Catégorie introuvable."}
+                ) from err
 
         with transaction.atomic():
-            community = Community.objects.create(
-                owner=owner,
-                members_count=1,
-                **data
-            )
+            community = Community.objects.create(owner=owner, members_count=1, **data)
 
             # Initialize settings
             settings_payload = settings_data or {}
-            CommunitySettings.objects.create(
-                community=community,
-                **settings_payload
-            )
+            CommunitySettings.objects.create(community=community, **settings_payload)
 
             # Create owner membership record
             CommunityMember.objects.create(
@@ -91,7 +95,7 @@ class CommunityService:
                 user=owner,
                 role=CommunityRole.OWNER,
                 status=MembershipStatus.ACTIVE,
-                custom_title="Fondateur"
+                custom_title="Fondateur",
             )
 
             # Create initial rules if provided
@@ -99,19 +103,33 @@ class CommunityService:
                 for idx, r in enumerate(rules_data):
                     CommunityRule.objects.create(
                         community=community,
-                        title=r.get('title', ''),
-                        description=r.get('description', ''),
-                        order=r.get('order', idx)
+                        title=r.get("title", ""),
+                        description=r.get("description", ""),
+                        order=r.get("order", idx),
                     )
 
             # If paid community and initial plan price provided, create membership Plan
-            if community.pricing_type == 'paid' and membership_price:
+            if community.pricing_type == "paid" and membership_price:
                 from apps.billing.models.plan import BillingInterval, Plan
+
                 interval_choice = (
-                    BillingInterval.ONE_TIME if membership_interval == 'one_time'
-                    else (BillingInterval.YEAR if membership_interval == 'year' else BillingInterval.MONTH)
+                    BillingInterval.ONE_TIME
+                    if membership_interval == "one_time"
+                    else (
+                        BillingInterval.YEAR
+                        if membership_interval == "year"
+                        else BillingInterval.MONTH
+                    )
                 )
-                label = 'Définitif' if interval_choice == BillingInterval.ONE_TIME else ('Annuel' if interval_choice == BillingInterval.YEAR else 'Mensuel')
+                label = (
+                    "Définitif"
+                    if interval_choice == BillingInterval.ONE_TIME
+                    else (
+                        "Annuel"
+                        if interval_choice == BillingInterval.YEAR
+                        else "Mensuel"
+                    )
+                )
                 base_slug = f"{community.slug}-{membership_interval}"
                 plan_slug = base_slug
                 idx = 1
@@ -124,80 +142,113 @@ class CommunityService:
                     slug=plan_slug,
                     description=f"Accès complet à la communauté {community.name}",
                     price=membership_price,
-                    currency='XOF',
+                    currency="XOF",
                     billing_interval=interval_choice,
                     interval_count=1,
-                    is_active=True
+                    is_active=True,
                 )
 
             return community
 
     @classmethod
     def update_community(
-        cls,
-        community: Community,
-        user: User,
-        data: dict[str, Any]
+        cls, community: Community, user: User, data: dict[str, Any]
     ) -> Community:
         # Check permissions: owner, admin, or superadmin
         from common.permissions.base import is_superadmin_user
+
         if not is_superadmin_user(user) and community.owner_id != user.id:
             is_admin = CommunityMember.objects.filter(
                 community=community,
                 user=user,
                 status=MembershipStatus.ACTIVE,
-                role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
+                role__in=[CommunityRole.OWNER, CommunityRole.ADMIN],
             ).exists()
             if not is_admin:
-                raise PermissionDenied("Vous n'avez pas les droits d'administration de cette communauté.")
+                raise PermissionDenied(
+                    "Vous n'avez pas les droits d'administration de cette communauté."
+                )
 
-        new_pricing_type = data.get('pricing_type')
-        if new_pricing_type == 'paid' and community.pricing_type != 'paid' and not user.is_pro:
-            raise PermissionDenied("Seuls les utilisateurs avec un abonnement Pro actif peuvent configurer une communauté payante.")
+        new_pricing_type = data.get("pricing_type", community.pricing_type)
+        if new_pricing_type == "paid":
+            if community.pricing_type != "paid" and not user.is_pro:
+                raise PermissionDenied(
+                    "Seuls les utilisateurs avec un abonnement Pro actif peuvent configurer une communauté payante."
+                )
+            # Règle métier : une communauté payante est forcément privée
+            data["privacy_type"] = CommunityPrivacy.PRIVATE
 
-        membership_price = data.pop('membership_price', None)
-        membership_interval = data.pop('membership_interval', 'month')
-        membership_plan_name = data.pop('membership_plan_name', None)
+        membership_price = data.pop("membership_price", None)
+        membership_interval = data.pop("membership_interval", "month")
+        membership_plan_name = data.pop("membership_plan_name", None)
 
-        category_id = data.pop('category_id', None)
+        category_id = data.pop("category_id", None)
         if category_id is not None:
             if category_id:
                 try:
-                    data['category'] = CommunityCategory.objects.get(id=category_id)
+                    data["category"] = CommunityCategory.objects.get(id=category_id)
                 except CommunityCategory.DoesNotExist as err:
-                    raise ValidationError({'category_id': "Catégorie introuvable."}) from err
+                    raise ValidationError(
+                        {"category_id": "Catégorie introuvable."}
+                    ) from err
             else:
-                data['category'] = None
+                data["category"] = None
 
-        new_slug = data.get('slug')
+        new_slug = data.get("slug")
         if (
             new_slug
             and new_slug != community.slug
-            and Community.objects.filter(slug=new_slug).exclude(id=community.id).exists()
+            and Community.objects.filter(slug=new_slug)
+            .exclude(id=community.id)
+            .exists()
         ):
-            raise ValidationError({'slug': "Ce slug est déjà utilisé par une autre communauté."})
+            raise ValidationError(
+                {"slug": "Ce slug est déjà utilisé par une autre communauté."}
+            )
 
         with transaction.atomic():
             for key, value in data.items():
                 setattr(community, key, value)
             community.save()
 
-            if community.pricing_type == 'paid' and membership_price:
+            if community.pricing_type == "paid" and membership_price:
                 from apps.billing.models.plan import BillingInterval, Plan
+
                 interval_choice = (
-                    BillingInterval.ONE_TIME if membership_interval == 'one_time'
-                    else (BillingInterval.YEAR if membership_interval == 'year' else BillingInterval.MONTH)
+                    BillingInterval.ONE_TIME
+                    if membership_interval == "one_time"
+                    else (
+                        BillingInterval.YEAR
+                        if membership_interval == "year"
+                        else BillingInterval.MONTH
+                    )
                 )
-                label = 'Définitif' if interval_choice == BillingInterval.ONE_TIME else ('Annuel' if interval_choice == BillingInterval.YEAR else 'Mensuel')
-                existing_plan = Plan.objects.filter(
-                    community=community,
-                    billing_interval=interval_choice,
-                ).order_by('order', 'created_at').first()
+                label = (
+                    "Définitif"
+                    if interval_choice == BillingInterval.ONE_TIME
+                    else (
+                        "Annuel"
+                        if interval_choice == BillingInterval.YEAR
+                        else "Mensuel"
+                    )
+                )
+                existing_plan = (
+                    Plan.objects.filter(
+                        community=community,
+                        billing_interval=interval_choice,
+                    )
+                    .order_by("order", "created_at")
+                    .first()
+                )
                 if existing_plan:
-                    existing_plan.name = membership_plan_name or f"Pass {community.name} ({label})"
+                    existing_plan.name = (
+                        membership_plan_name or f"Pass {community.name} ({label})"
+                    )
                     existing_plan.price = membership_price
                     existing_plan.is_active = True
-                    existing_plan.save(update_fields=['name', 'price', 'is_active', 'updated_at'])
+                    existing_plan.save(
+                        update_fields=["name", "price", "is_active", "updated_at"]
+                    )
                 else:
                     base_slug = f"{community.slug}-{membership_interval}"
                     plan_slug = base_slug
@@ -212,9 +263,9 @@ class CommunityService:
                         slug=plan_slug,
                         description=f"Accès complet à la communauté {community.name}",
                         price=membership_price,
-                        currency='XOF',
+                        currency="XOF",
                         interval_count=1,
-                        is_active=True
+                        is_active=True,
                     )
 
         return community
@@ -222,33 +273,36 @@ class CommunityService:
     @classmethod
     def delete_community(cls, community: Community, user: User) -> None:
         from common.permissions.base import is_superadmin_user
+
         if not is_superadmin_user(user) and community.owner_id != user.id:
-            raise PermissionDenied("Seul le propriétaire de la communauté peut la supprimer.")
+            raise PermissionDenied(
+                "Seul le propriétaire de la communauté peut la supprimer."
+            )
 
         with transaction.atomic():
             community.is_active = False
-            community.save(update_fields=['is_active', 'updated_at'])
+            community.save(update_fields=["is_active", "updated_at"])
 
     @classmethod
     def update_settings(
-        cls,
-        community: Community,
-        user: User,
-        data: dict[str, Any]
+        cls, community: Community, user: User, data: dict[str, Any]
     ) -> CommunitySettings:
         from common.permissions.base import is_superadmin_user
+
         is_owner_or_super = is_superadmin_user(user) or community.owner_id == user.id
         if not is_owner_or_super:
             is_admin = CommunityMember.objects.filter(
                 community=community,
                 user=user,
                 status=MembershipStatus.ACTIVE,
-                role__in=[CommunityRole.OWNER, CommunityRole.ADMIN]
+                role__in=[CommunityRole.OWNER, CommunityRole.ADMIN],
             ).exists()
             if not is_admin:
                 raise PermissionDenied("Droits administrateur requis.")
-            if 'role_permissions' in data:
-                raise PermissionDenied("Seul le propriétaire de la communauté peut modifier les permissions des rôles.")
+            if "role_permissions" in data:
+                raise PermissionDenied(
+                    "Seul le propriétaire de la communauté peut modifier les permissions des rôles."
+                )
 
         settings, _ = CommunitySettings.objects.get_or_create(community=community)
         for key, value in data.items():
@@ -263,35 +317,42 @@ class CommunityService:
         user: User,
         title: str,
         description: str = "",
-        order: int = 0
+        order: int = 0,
     ) -> CommunityRule:
         from common.permissions.base import is_superadmin_user
+
         if not is_superadmin_user(user) and community.owner_id != user.id:
             is_admin = CommunityMember.objects.filter(
                 community=community,
                 user=user,
                 status=MembershipStatus.ACTIVE,
-                role__in=[CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
+                role__in=[
+                    CommunityRole.OWNER,
+                    CommunityRole.ADMIN,
+                    CommunityRole.MODERATOR,
+                ],
             ).exists()
             if not is_admin:
                 raise PermissionDenied("Droits modérateur ou administrateur requis.")
 
         return CommunityRule.objects.create(
-            community=community,
-            title=title,
-            description=description,
-            order=order
+            community=community, title=title, description=description, order=order
         )
 
     @classmethod
     def delete_rule(cls, community: Community, user: User, rule_id: str) -> None:
         from common.permissions.base import is_superadmin_user
+
         if not is_superadmin_user(user) and community.owner_id != user.id:
             is_admin = CommunityMember.objects.filter(
                 community=community,
                 user=user,
                 status=MembershipStatus.ACTIVE,
-                role__in=[CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR]
+                role__in=[
+                    CommunityRole.OWNER,
+                    CommunityRole.ADMIN,
+                    CommunityRole.MODERATOR,
+                ],
             ).exists()
             if not is_admin:
                 raise PermissionDenied("Droits modérateur ou administrateur requis.")
