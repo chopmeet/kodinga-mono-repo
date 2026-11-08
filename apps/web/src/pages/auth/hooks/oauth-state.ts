@@ -1,8 +1,8 @@
 import type { OAuthProvider } from '@/utils/api/auth/auth.type';
 import { safeNext } from './safe-next';
 
-// The api does not check the OAuth "state": the front keeps it for the round trip and compares it
-// on return (protects the callback against forged links). sessionStorage: this tab only.
+// The api checks the OAuth "state" (required, once only); the front also keeps it for the round trip
+// and compares it on return, so a forged link is refused before any call. sessionStorage: this tab only.
 const key = (provider: OAuthProvider) => `oauth_state_${provider}`;
 const nextKey = (provider: OAuthProvider) => `oauth_next_${provider}`;
 

@@ -4,6 +4,7 @@ import { type ApiPaginated, type ApiSuccess, unwrap } from '../api.type';
 import { authBaseQuery } from '../authBaseQuery';
 import type {
   EducationWriteData,
+  FollowState,
   ExperienceWriteData,
   MyProfile,
   PortfolioWriteData,
@@ -18,7 +19,7 @@ import type { User, UserFormData, UsersQuery } from './user.type';
 
 export const UserApi = createApi({
   reducerPath: 'userApi',
-  tagTypes: ['user', 'users', 'profile', 'my-profile', 'sessions'],
+  tagTypes: ['user', 'users', 'profile', 'my-profile', 'sessions', 'follows'],
   baseQuery: authBaseQuery,
   endpoints: (builder) => ({
     meAccount: builder.query<User, void>({
@@ -54,6 +55,28 @@ export const UserApi = createApi({
     // Who follows a profile, or whom it follows, most recent first
     getProfileFollows: builder.query<ApiPaginated<ProfileFollow>, { username: string; list: 'followers' | 'following'; page_size: number }>({
       query: ({ username, list, page_size }) => ({ url: `profiles/${encodeURIComponent(username)}/${list}/`, params: { page: 1, page_size } }),
+      providesTags: (_result, _error, { username }) => [{ type: 'follows', id: username }],
+    }),
+    // Follows the profile, or stops following it: the api toggles, and answers the new state and counts
+    toggleFollow: builder.mutation<FollowState, string>({
+      query: (username) => ({ url: `profiles/${encodeURIComponent(username)}/follow/`, method: 'POST' }),
+      transformResponse: unwrap<FollowState>,
+      invalidatesTags: (_result, _error, username) => [{ type: 'follows', id: username }],
+      async onQueryStarted(username, { dispatch, getState, queryFulfilled }) {
+        const { data } = await queryFulfilled.catch(() => ({ data: null }));
+        if (!data) return;
+        // The page may have been opened as /profiles/@name
+        for (const arg of UserApi.util.selectCachedArgsForQuery(getState(), 'getPublicProfile')) {
+          if (arg.replace(/^@/, '') !== username) continue;
+          dispatch(
+            UserApi.util.updateQueryData('getPublicProfile', arg, (profile) => {
+              profile.is_following = data.is_following;
+              profile.followers_count = data.followers_count;
+              profile.following_count = data.following_count;
+            }),
+          );
+        }
+      },
     }),
     // Posts, comments, lessons done, reactions and points of each day of a year
     getProfileActivity: builder.query<ProfileActivity, { username: string; year: number }>({
@@ -147,6 +170,7 @@ export const {
   useGetUsersQuery,
   useGetPublicProfileQuery,
   useGetProfileFollowsQuery,
+  useToggleFollowMutation,
   useGetProfileActivityQuery,
   useToggleUserAdminMutation,
   useToggleUserStatusMutation,
