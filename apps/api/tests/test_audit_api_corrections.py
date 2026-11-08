@@ -382,7 +382,7 @@ class TestClassroomAndEventsAuditCorrections:
 
         notif = Notification.objects.filter(recipient=user_b, target_type="event").first()
         assert notif is not None
-        assert notif.action_url == f"/c/{community.slug}?tab=events"
+        assert notif.action_url == f"/c/{community.slug}/events/{event.slug or event.id}"
         assert "Africa/Dakar" in notif.body
 
 

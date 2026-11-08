@@ -49,6 +49,7 @@ export type PublicProfile = {
   contributions?: ProfileContributions;
   followers_count?: number;
   following_count?: number;
+  is_following?: boolean;
 };
 
 /** GET profiles/<username>/followers/ and following/ (paginated) */
