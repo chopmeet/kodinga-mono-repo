@@ -14,7 +14,6 @@ import { FaEye, FaEyeSlash } from "react-icons/fa6";
 import { MdOutlineInfo } from 'react-icons/md';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'
-import { ColgateWrapper } from "./wrapper";
 import { FiSearch } from "react-icons/fi";
 
 
@@ -51,7 +50,7 @@ type InputTextPropsType = {
 } & PropsType;
 
 type InputPhoneTextPropsType = {
-  onChange: (val: string, country: any) => void;
+  onChange: (val: string, country: unknown) => void;
   value: string;
   name?: string;
   id?: string;
@@ -65,7 +64,7 @@ type SelectInputPropsType = SelectHTMLAttributes<HTMLSelectElement> & {
   placeholder?: string;
   options?: {
     label: string;
-    value: any;
+    value: string | number;
   }[];
   fieldHelp?: string;
 } & PropsType;
@@ -114,12 +113,12 @@ interface PhotonFeature {
   geometry: PhotonGeometry;
   properties: PhotonProperties;
 }
-interface PhotonResponse {
+export interface PhotonResponse {
   type: "FeatureCollection";
   features: PhotonFeature[];
 }
 
-interface CitySearchProps {
+export interface CitySearchProps {
   name: string;
   label?: string;
   placeholder?: string;
@@ -132,24 +131,21 @@ interface CitySearchProps {
 
 
 export function ErrorMessage({ message }: messageType) {
-    return (
-        <>
-            {!!message && (
-                <div className="flex items-center gap-1 mt-1 text-red-400" role="alert">
-                    <span className="mb-0.5">
-                        <MdOutlineInfo />
-                    </span>
-                    <span className="text-xs">{message}</span>
-                </div>
-            )}
-        </>
-    );
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1 mt-1 text-red-400" role="alert">
+      <span className="mb-0.5">
+        <MdOutlineInfo />
+      </span>
+      <span className="text-xs">{message}</span>
+    </div>
+  );
 }
 
 
-export function FormError({ error }: { error?: string | FieldError | any }) {
+export function FormError({ error }: { error?: string | FieldError | { message?: string } | null }) {
   const message =
-    typeof error === "string" ? error : error ? error.message : error;
+    typeof error === "string" ? error : error ? error.message : undefined;
   if (!message) return null;
 
   return <ErrorMessage message={message} />;
@@ -177,32 +173,30 @@ export const Input = forwardRef<
       ...rest
     } = props;
     return (
-      <>
-        <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
-          {label && (
-            <label
-              htmlFor={id}
-              className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-            >
-              {label}
-            </label>
-          )}
-          <div className="relative">
-            {!!icon && <span className={`absolute ${iconPosition === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-zinc-400`}>{icon}</span>}
-            <input
-              className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
-              name={name}
-              id={id}
-              ref={ref}
-              readOnly={readOnly || false}
-              {...rest}
-              onWheel={(event) => event.currentTarget.blur()}
-            />
-          </div>
-          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
-          {<FormError error={error} />}
+      <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
+        {label && (
+          <label
+            htmlFor={id}
+            className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+          >
+            {label}
+          </label>
+        )}
+        <div className="relative">
+          {!!icon && <span className={`absolute ${iconPosition === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-zinc-400`}>{icon}</span>}
+          <input
+            className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+            name={name}
+            id={id}
+            ref={ref}
+            readOnly={readOnly || false}
+            {...rest}
+            onWheel={(event) => event.currentTarget.blur()}
+          />
         </div>
-      </>
+        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {<FormError error={error} />}
+      </div>
     );
   }
 );
@@ -213,7 +207,6 @@ export const InputQuill = forwardRef<
   InputTextPropsType
 >((props, ref) => {
   const {
-    name,
     error,
     id,
     label,
@@ -377,33 +370,30 @@ export const InputQuill = forwardRef<
     "background",
   ];
   return (
-    <>
-      <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
-        {label && (
-          <label
-            htmlFor={id}
-            className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-          >
-            {label}
-          </label>
-        )}
-        <ReactQuill
-          className={`placeholder:text-gray-200 ${customClassInput}`}
-          // name={name}
-          id={id}
-          readOnly={readOnly || false}
-          theme="snow"
-          value={value}
-          onChange={(val: string) => onChange(val)}
-          modules={modules}
-          formats={formats}
-          ref={ref}
-          {...rest}
-        ></ReactQuill>
-        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
-        {<FormError error={error} />}
-      </div>
-    </>
+    <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
+      {label && (
+        <label
+          htmlFor={id}
+          className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+        >
+          {label}
+        </label>
+      )}
+      <ReactQuill
+        className={`placeholder:text-gray-200 ${customClassInput}`}
+        id={id}
+        readOnly={readOnly || false}
+        theme="snow"
+        value={value}
+        onChange={(val: string) => onChange(val)}
+        modules={modules}
+        formats={formats}
+        ref={ref}
+        {...rest}
+      ></ReactQuill>
+      {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+      {<FormError error={error} />}
+    </div>
   );
 });
 
@@ -424,49 +414,46 @@ export const InputPassword = forwardRef<
       required, 
       readOnly, 
       icon,
-      iconPosition = "left",
       fieldHelp,
       ...rest 
     } = props;
     const [showPassword, setShowPassword] = useState<boolean>(false);
     return (
-      <>
-        <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
-          {label && (
-            <label
-              htmlFor={id ?? name}
-              className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-            >
-              {label}
-            </label>
-          )}
-          <div className="input-group custom-input-group relative mb-1">
-            <input
-              className={`w-full block px-4 ${icon ? 'pl-9!' : ''} py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
-              name={name}
-              id={id}
-              ref={ref}
-              readOnly={readOnly || false}
-              type={showPassword ? "text" : "password"}
-              {...rest}
-            />
-            {!!icon && <span className="pointer-events-none absolute left-3 top-[38%] grid place-items-center text-zinc-400">{icon}</span>}
-            <span
-              className="input-group-icon icon__wrapper"
-              id="basic-addon2"
-              onClick={() => setShowPassword((showPassword) => !showPassword)}
-            >
-              {showPassword ? (
-                <FaEye className="show_password__icon text-zinc-500" size={16} />
-              ) : (
-                <FaEyeSlash className="hide_password__icon text-zinc-500" size={16} />
-              )}
-            </span>
-          </div>
-          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
-          {<FormError error={error} />}
+      <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
+        {label && (
+          <label
+            htmlFor={id ?? name}
+            className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+          >
+            {label}
+          </label>
+        )}
+        <div className="input-group custom-input-group relative mb-1">
+          <input
+            className={`w-full block px-4 ${icon ? 'pl-9!' : ''} py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
+            name={name}
+            id={id}
+            ref={ref}
+            readOnly={readOnly || false}
+            type={showPassword ? "text" : "password"}
+            {...rest}
+          />
+          {!!icon && <span className="pointer-events-none absolute left-3 top-[38%] grid place-items-center text-zinc-400">{icon}</span>}
+          <span
+            className="input-group-icon icon__wrapper"
+            id="basic-addon2"
+            onClick={() => setShowPassword((showPassword) => !showPassword)}
+          >
+            {showPassword ? (
+              <FaEye className="show_password__icon text-zinc-500" size={16} />
+            ) : (
+              <FaEyeSlash className="hide_password__icon text-zinc-500" size={16} />
+            )}
+          </span>
         </div>
-      </>
+        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {<FormError error={error} />}
+      </div>
     );
   }
 );
@@ -491,37 +478,35 @@ export const SelectInput = forwardRef<
       ...rest
     } = props;
     return (
-      <>
-        <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
-          {label && (
-            <label
-              htmlFor={name}
-              className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-            >
-              {label}
-            </label>
-          )}
-          <div className="relative">
-            {!!icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span>}
-            <select
-              {...rest}
-              name={name}
-              id={name}
-              ref={ref}
-              className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
-            >
-              {!!placeholder && <option value="">{placeholder}</option>}
-              {options?.map((option) => (
-                <option value={option.value} key={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
-          {<FormError error={error} />}
+      <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
+        {label && (
+          <label
+            htmlFor={name}
+            className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+          >
+            {label}
+          </label>
+        )}
+        <div className="relative">
+          {!!icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span>}
+          <select
+            {...rest}
+            name={name}
+            id={name}
+            ref={ref}
+            className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+          >
+            {!!placeholder && <option value="">{placeholder}</option>}
+            {options?.map((option) => (
+              <option value={option.value} key={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
-      </>
+        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {<FormError error={error} />}
+      </div>
     );
   }
 );
@@ -537,7 +522,6 @@ export const InputPhone = forwardRef<
       id,
       label,
       required,
-      readOnly,
       customClassInput,
       customClassLabel,
       customClassContainer,
@@ -547,47 +531,45 @@ export const InputPhone = forwardRef<
       ...rest
     } = props;
     return (
-      <>
-        <div className={`mb-3 ${customClassContainer ?? ''}`}>
-          {label && (
-            <label
-              htmlFor={id}
-              className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-            >
-              {label}
-            </label>
-          )}
-          <PhoneInput
-            onlyCountries={['bf', 'ci', 'sn']}
-            masks={{
-              bf: ".. .. .. ..",
-              ci: ".. .. .. .. ..",
-              sn: ".. ... .. ..",
-            }}
-            country={"bf"}
-            containerClass="p-0"
-            inputClass={`w-full block custom-form-control bg-background! placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
-            placeholder="Numéro de télephone"
-            inputProps={{
-                name: name,
-                required: true,
-                autoFocus: true,
-            }}
-            countryCodeEditable={false}
-            enableAreaCodes={true}
-            prefix="+"
-            value={value}
-            onChange={onChange}
-            inputStyle={{
-                width: "100%",
-            }}
-            {...rest}
-          />
-          <span ref={ref}></span>
-          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
-          {<FormError error={error} />}
-        </div>
-      </>
+      <div className={`mb-3 ${customClassContainer ?? ''}`}>
+        {label && (
+          <label
+            htmlFor={id}
+            className={`block custom-form-label dark:text-foreground! mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+          >
+            {label}
+          </label>
+        )}
+        <PhoneInput
+          onlyCountries={['bf', 'ci', 'sn']}
+          masks={{
+            bf: ".. .. .. ..",
+            ci: ".. .. .. .. ..",
+            sn: ".. ... .. ..",
+          }}
+          country={"bf"}
+          containerClass="p-0"
+          inputClass={`w-full block custom-form-control bg-background! placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
+          placeholder="Numéro de télephone"
+          inputProps={{
+              name: name,
+              required: true,
+              autoFocus: true,
+          }}
+          countryCodeEditable={false}
+          enableAreaCodes={true}
+          prefix="+"
+          value={value}
+          onChange={onChange}
+          inputStyle={{
+              width: "100%",
+          }}
+          {...rest}
+        />
+        <span ref={ref}></span>
+        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {<FormError error={error} />}
+      </div>
     );
   }
 );
@@ -616,35 +598,33 @@ export const TextareaInput = forwardRef<
       // ...rest
     } = props;
     return (
-      <>
-        <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
-          {label && (
-            <label
-              htmlFor={id}
-              className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
-            >
-              {label}
-            </label>
-          )}
-          <div className="relative">
-            <textarea 
-              className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
-              name={name} 
-              id={id}
-              readOnly={readOnly || false}
-              ref={ref}
-              onWheel={(event) => event.currentTarget.blur()}
-              rows={rows}
-              cols={cols}
-              onChange={onChange}
-              onBlur={onBlur}
-              placeholder={placeholder}
-            ></textarea>
-          </div>
-          {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
-          {<FormError error={error} />}
+      <div className={`mb-3 ${customClassContainer ? customClassContainer : ''}`}>
+        {label && (
+          <label
+            htmlFor={id}
+            className={`block custom-form-label mb-1 ${customClassLabel} ${required && `after:ml-0.5 after:text-red-500 after:content-['*']`}`}
+          >
+            {label}
+          </label>
+        )}
+        <div className="relative">
+          <textarea 
+            className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
+            name={name} 
+            id={id}
+            readOnly={readOnly || false}
+            ref={ref}
+            onWheel={(event) => event.currentTarget.blur()}
+            rows={rows}
+            cols={cols}
+            onChange={onChange}
+            onBlur={onBlur}
+            placeholder={placeholder}
+          ></textarea>
         </div>
-      </>
+        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {<FormError error={error} />}
+      </div>
     );
   }
 );
@@ -654,7 +634,6 @@ export const InputSwitch = forwardRef<
   SwitchProps
 >(
     ({ 
-      className, 
       checked, 
       onCheckedChange, 
       onChange, 

@@ -25,7 +25,6 @@ export function LiveRecordingModal({
   durationSeconds,
   slug,
   eventId,
-  eventTitle: _eventTitle,
 }: LiveRecordingModalProps) {
   const [attachReplay] = useAttachEventReplayMutation();
   const [isUploading, setIsUploading] = useState(false);

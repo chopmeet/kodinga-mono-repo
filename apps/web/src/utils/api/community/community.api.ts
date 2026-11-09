@@ -208,7 +208,8 @@ export const CommunityApi = createApi({
     discoverCommunities: builder.query<ApiPaginated<CommunityListItem>, CommunityListQuery>({
       query: (query) => ({ url: 'communities/', params: cleanParams(query) }),
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
-        const { page: _page, ...filters } = queryArgs;
+        const filters = { ...queryArgs };
+        delete filters.page;
         return `${endpointName}(${JSON.stringify(cleanParams(filters))})`;
       },
       merge: (current, incoming, { arg }) => {
