@@ -9,7 +9,6 @@ from apps.accounts.models.user import User
 from apps.ai.models import AssistantConversation, AssistantMessage
 from apps.ai.providers.exceptions import (
     AllProvidersFailedError,
-    QuotaExhaustedError,
 )
 from apps.ai.schemas import (
     AssistantChatResult,
@@ -495,16 +494,14 @@ class TestCommunityImprovementAnalysis:
 
 @pytest.mark.django_db
 class TestAssistantProviderRoutingAndSafety:
-    def test_gemini_primary_used_openai_fallback_on_quota_exhausted(self, stranger):
+    def test_assistant_chat_uses_openai_exclusively_without_calling_gemini(
+        self, stranger
+    ):
+        """9. Assistant chat routes directly and exclusively to OpenAI for sub-second responses."""
         with (
             patch("apps.ai.router.ai_router.gemini.assistant_chat") as mock_gemini,
             patch("apps.ai.router.ai_router.openai.assistant_chat") as mock_openai,
         ):
-            # Gemini throws QuotaExhaustedError
-            mock_gemini.side_effect = QuotaExhaustedError(
-                "Resource exhausted: 429 quota"
-            )
-            # OpenAI fallback returns response
             mock_openai.return_value = AssistantChatResult(
                 reply="Bonjour, voici comment je peux vous orienter.",
                 suggested_follow_ups=["Quels sont vos langages favoris ?"],
@@ -518,7 +515,7 @@ class TestAssistantProviderRoutingAndSafety:
 
             assert reply["provider"] == "openai"
             assert "voici comment" in reply["reply"]
-            assert mock_gemini.call_count == 1
+            assert mock_gemini.call_count == 0
             assert mock_openai.call_count == 1
 
     def test_both_providers_fail_returns_handled_service_error(

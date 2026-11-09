@@ -20,8 +20,6 @@ import { Link } from 'react-router-dom';
 import { cn, customToast } from '@kodinga/ui';
 import {
   useAssistantChatMutation,
-  usePlanCommunityMutation,
-  useRecommendCommunitiesMutation,
 } from '@/utils/api/community/community.api';
 import type {
   CommunityProposalResult,
@@ -86,15 +84,15 @@ export function AIAssistantWidget() {
         'Je veux lancer une communauté tech en Afrique',
         'Comment accueillir mes premiers membres ?',
       ],
-      provider: 'gemini',
+      provider: 'openai',
       timestamp: new Date(),
     },
   ]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   const [chatMutation, { isLoading: isChatLoading }] = useAssistantChatMutation();
-  const [recommendMutation] = useRecommendCommunitiesMutation();
-  const [planMutation] = usePlanCommunityMutation();
+  const isBusy = isChatLoading || isSending;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -114,8 +112,8 @@ export function AIAssistantWidget() {
   };
 
   const handleSend = async (messageText?: string) => {
-    const textToSend = messageText || inputMessage;
-    if (!textToSend.trim() || isChatLoading) return;
+    const textToSend = (messageText || inputMessage).trim();
+    if (!textToSend || isBusy) return;
 
     const userMsgId = `user-${Date.now()}`;
     const userMessage: Message = {
@@ -127,51 +125,9 @@ export function AIAssistantWidget() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
+    setIsSending(true);
 
     try {
-      const lower = textToSend.toLowerCase();
-      let specialRecommendations: CommunityRecommendationCard[] | undefined = undefined;
-      let specialProposal: CommunityProposalResult | undefined = undefined;
-
-      // Smart routing: check if user asks for recommendations directly
-      if (
-        lower.includes('recommande') ||
-        lower.includes('cherche') ||
-        lower.includes('trouve') ||
-        lower.includes('découvrir') ||
-        lower.includes('trouver')
-      ) {
-        try {
-          const recRes = await recommendMutation({
-            interests: textToSend,
-            language: selectedLang,
-          }).unwrap();
-          if (recRes.data?.recommendations && recRes.data.recommendations.length > 0) {
-            specialRecommendations = recRes.data.recommendations;
-          }
-        } catch {
-          // If recommendation fails, let the general chat handle it
-        }
-      }
-
-      // Smart routing: check if user asks to create / plan a community
-      if (
-        (lower.includes('créer') || lower.includes('lancer') || lower.includes('création') || lower.includes('plan')) &&
-        (lower.includes('communauté') || lower.includes('groupe'))
-      ) {
-        try {
-          const planRes = await planMutation({
-            idea: textToSend,
-            language: selectedLang,
-          }).unwrap();
-          if (planRes.data) {
-            specialProposal = planRes.data;
-          }
-        } catch {
-          // Fallback to chat
-        }
-      }
-
       const res = await chatMutation({
         message: textToSend,
         conversation_id: conversationId || undefined,
@@ -183,14 +139,19 @@ export function AIAssistantWidget() {
           setConversationId(res.data.conversation_id);
         }
 
+        const payloadData = (res.data.data || {}) as {
+          recommendations?: CommunityRecommendationCard[];
+          proposal?: CommunityProposalResult;
+        };
+
         const assistantMsg: Message = {
           id: `asst-${Date.now()}`,
           role: 'assistant',
           content: res.data.reply,
-          recommendations: specialRecommendations,
-          proposal: specialProposal,
+          recommendations: payloadData.recommendations,
+          proposal: payloadData.proposal,
           suggestedFollowUps: res.data.suggested_follow_ups || [],
-          provider: res.data.provider || 'gemini',
+          provider: res.data.provider || 'openai',
           timestamp: new Date(),
         };
 
@@ -206,6 +167,8 @@ export function AIAssistantWidget() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -458,10 +421,16 @@ export function AIAssistantWidget() {
             ))}
 
             {/* Loading Indicator */}
-            {isChatLoading && (
-              <div className="flex items-center gap-2 text-slate-400 text-xs py-2">
-                <span className="flex size-2 animate-ping rounded-full bg-brand" />
-                <span>L’Assistant Kodinga réfléchit...</span>
+            {isBusy && (
+              <div className="flex items-start">
+                <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/90 px-4 py-3 text-xs text-slate-600 shadow-xs">
+                  <span className="flex items-center gap-1">
+                    <span className="size-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.3s]" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-brand" />
+                  </span>
+                  <span className="font-medium">L’Assistant Kodinga prépare sa réponse...</span>
+                </div>
               </div>
             )}
 
@@ -508,12 +477,12 @@ export function AIAssistantWidget() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Posez une question, demandez un conseil..."
-                disabled={isChatLoading}
+                disabled={isBusy}
                 className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={!inputMessage.trim() || isChatLoading}
+                disabled={!inputMessage.trim() || isBusy}
                 className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand text-white shadow-sm transition hover:bg-brand/90 disabled:opacity-50"
               >
                 <Send className="size-4" />
