@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from apps.billing.services.billing_service import BillingService
 from common.utils.responses import error_response, success_response
 
-logger = logging.getLogger('kodinga.billing.ipn')
+logger = logging.getLogger("kodinga.billing.ipn")
 
 
 class PayDunyaIPNView(APIView):
@@ -21,14 +21,15 @@ class PayDunyaIPNView(APIView):
     Handles form-urlencoded and JSON formats, optionally verifies SHA-512 master key hash,
     and idempotently verifies transaction status directly with PayDunya API.
     """
+
     permission_classes = [AllowAny]
     parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     @extend_schema(
-        tags=['Billing & Affiliates'],
+        tags=["Billing & Affiliates"],
         summary="Webhook / IPN Callback PayDunya (Server-to-Server)",
         request=dict,
-        responses={200: dict}
+        responses={200: dict},
     )
     def post(self, request):
         logger.info(f"[PayDunya IPN] Received notification: {request.data}")
@@ -37,57 +38,73 @@ class PayDunyaIPNView(APIView):
         # Note: process_paydunya_ipn below queries PayDunya's official server directly using
         # private API credentials, so we log hash discrepancies without blocking server-verified tokens.
         received_hash = (
-            request.data.get('data[hash]')
-            or (request.data.get('data', {}).get('hash') if isinstance(request.data.get('data'), dict) else None)
-            or request.data.get('hash')
+            request.data.get("data[hash]")
+            or (
+                request.data.get("data", {}).get("hash")
+                if isinstance(request.data.get("data"), dict)
+                else None
+            )
+            or request.data.get("hash")
         )
-        master_key = getattr(settings, 'PAYDUNYA_MASTER_KEY', '').strip()
+        master_key = getattr(settings, "PAYDUNYA_MASTER_KEY", "").strip()
         if received_hash and master_key:
-            expected_hash = hashlib.sha512(master_key.encode('utf-8')).hexdigest()
-            if not hmac.compare_digest(str(received_hash).strip().lower(), expected_hash.lower()):
+            expected_hash = hashlib.sha512(master_key.encode("utf-8")).hexdigest()
+            if not hmac.compare_digest(
+                str(received_hash).strip().lower(), expected_hash.lower()
+            ):
                 logger.warning(
-                    f"[PayDunya IPN] Hash mismatch (continuing with direct API verification). "
-                    f"Expected {expected_hash}, got {received_hash}"
+                    f"[PayDunya IPN] Hash mismatch. Expected {expected_hash}, got {received_hash}"
+                )
+                return error_response(
+                    "Signature IPN invalide.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
         # Extract invoice token from various PayDunya IPN payload formats
         # PayDunya official form-urlencoded: data[invoice][token]
-        token = request.data.get('data[invoice][token]')
+        token = request.data.get("data[invoice][token]")
 
         # Nested dict from JSON: data.invoice.token or data.token
-        if not token and isinstance(request.data.get('data'), dict):
-            token = (
-                request.data.get('data', {}).get('invoice', {}).get('token')
-                or request.data.get('data', {}).get('token')
-            )
+        if not token and isinstance(request.data.get("data"), dict):
+            token = request.data.get("data", {}).get("invoice", {}).get(
+                "token"
+            ) or request.data.get("data", {}).get("token")
 
         # Flat or root keys: data[token], invoice.token, token
         if not token:
             token = (
-                request.data.get('data[token]')
-                or (request.data.get('invoice', {}).get('token') if isinstance(request.data.get('invoice'), dict) else None)
-                or request.data.get('token')
-                or request.POST.get('data[invoice][token]')
-                or request.POST.get('token')
+                request.data.get("data[token]")
+                or (
+                    request.data.get("invoice", {}).get("token")
+                    if isinstance(request.data.get("invoice"), dict)
+                    else None
+                )
+                or request.data.get("token")
+                or request.POST.get("data[invoice][token]")
+                or request.POST.get("token")
             )
 
         if not token:
             logger.error(f"[PayDunya IPN] Missing token in payload: {request.data}")
             return error_response(
                 "Jeton de transaction PayDunya manquant.",
-                status_code=status.HTTP_400_BAD_REQUEST
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            payment = BillingService.process_paydunya_ipn(token=str(token).strip(), raw_payload=request.data)
-            logger.info(f"[PayDunya IPN] Payment {payment.id} processed successfully with status {payment.status}")
+            payment = BillingService.process_paydunya_ipn(
+                token=str(token).strip(), raw_payload=request.data
+            )
+            logger.info(
+                f"[PayDunya IPN] Payment {payment.id} processed successfully with status {payment.status}"
+            )
             return success_response(
-                data={'payment_id': payment.id, 'status': payment.status},
-                message="Notification IPN traitée avec succès."
+                data={"payment_id": payment.id, "status": payment.status},
+                message="Notification IPN traitée avec succès.",
             )
         except Exception as e:
             logger.error(f"[PayDunya IPN] Error processing IPN: {e}", exc_info=True)
             return error_response(
                 f"Erreur de traitement IPN: {str(e)}",
-                status_code=status.HTTP_400_BAD_REQUEST
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
