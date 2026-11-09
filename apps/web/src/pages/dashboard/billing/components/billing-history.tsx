@@ -180,7 +180,7 @@ function BillingHistory() {
                                   className="text-xs text-slate-500 hover:text-slate-800 hover:underline"
                                   title="Rouvrir la page PayDunya si vous n'aviez pas encore payé"
                                 >
-                                  Rouvrir PayDunya
+                                  Finaliser
                                 </a>
                               )}
                             </div>
