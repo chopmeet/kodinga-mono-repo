@@ -1,5 +1,6 @@
 import { Lock, RotateCw } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button } from '@kodinga/ui';
@@ -19,46 +20,46 @@ const MORE = 10;
  * others on demand. Everything happens in the feed (no page change, the scroll stays where it is).
  */
 export function PostComments({ post, page }: { post: CommunityPostItem; page: CommunityPage }) {
+  const { t } = useTranslation();
   const comments = UsePostComments({ post, isMember: page.membership === 'member', role: page.role });
   const [shown, setShown] = useState(FIRST);
   const [toDelete, setToDelete] = useState<PostComment | null>(null);
   const isQuestion = post.post_type === 'question';
-  const noun = isQuestion ? 'réponse' : 'commentaire';
   const list = comments.comments;
   const rest = list.length - shown;
 
   return (
-    <section aria-label={`${isQuestion ? 'Réponses' : 'Commentaires'} de la publication`} className="mt-4 flex flex-col gap-4 border-t border-slate-100 pt-4">
+    <section aria-label={isQuestion ? t('community.comments.sectionAnswers') : t('community.comments.sectionComments')} className="mt-4 flex flex-col gap-4 border-t border-slate-100 pt-4">
       {comments.canComment ? (
         <CommentForm
-          label={isQuestion ? 'Votre réponse' : 'Votre commentaire'}
-          placeholder={isQuestion ? 'Partagez une solution, un lien, un extrait de code…' : 'Ajouter un commentaire…'}
-          submitLabel="Publier"
+          label={isQuestion ? t('community.comments.yourAnswer') : t('community.comments.yourComment')}
+          placeholder={isQuestion ? t('community.comments.answerPlaceholder') : t('community.comments.commentPlaceholder')}
+          submitLabel={t('community.comments.publish')}
           rows={2}
           onSend={(content) => comments.send(content)}
         />
       ) : post.is_locked ? (
         <p className="flex items-center gap-2 text-sm text-slate-600">
-          <Lock className="size-4" aria-hidden /> Les commentaires sont fermés sur cette publication.
+          <Lock className="size-4" aria-hidden /> {t('community.comments.closed')}
         </p>
       ) : (
         <p className="text-sm text-slate-600">
           {page.membership === 'visitor' ? (
             <>
               <Link to={page.loginUrl} className="font-semibold text-blue-900 hover:underline">
-                Connectez-vous
+                {t('community.comments.login')}
               </Link>{' '}
-              et rejoignez la communauté pour commenter.
+              {t('community.comments.loginThenJoin')}
             </>
           ) : (
-            'Rejoignez la communauté pour commenter.'
+            t('community.comments.joinToComment')
           )}
         </p>
       )}
 
       {comments.isCommentsLoading ? (
         <p className="text-sm text-slate-500" role="status">
-          Chargement des {noun}s…
+          {isQuestion ? t('community.comments.loadingAnswers') : t('community.comments.loadingComments')}
         </p>
       ) : comments.commentsError ? (
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -66,14 +67,14 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
             {comments.commentsError}
           </p>
           <Button variant="outline" size="sm" onClick={() => comments.retryComments()}>
-            <RotateCw /> Réessayer
+            <RotateCw /> {t('common.actions.retry')}
           </Button>
         </div>
       ) : list.length === 0 ? (
-        <p className="text-sm text-slate-500">{isQuestion ? 'Pas encore de réponse : soyez le premier à aider !' : 'Pas encore de commentaire.'}</p>
+        <p className="text-sm text-slate-500">{isQuestion ? t('community.comments.noAnswer') : t('community.comments.noComment')}</p>
       ) : (
         <>
-          <ul className="flex flex-col gap-3" aria-label={isQuestion ? 'Réponses' : 'Commentaires'}>
+          <ul className="flex flex-col gap-3" aria-label={isQuestion ? t('community.comments.answers') : t('community.comments.comments')}>
             {list.slice(0, shown).map((c) => (
               <li key={c.id}>
                 <CommentItem comment={c} page={comments} onDelete={setToDelete} />
@@ -82,8 +83,7 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
           </ul>
           {rest > 0 && (
             <button type="button" onClick={() => setShown((n) => n + MORE)} className="self-start text-sm font-semibold text-blue-900 hover:underline">
-              Voir {Math.min(rest, MORE)} {noun}
-              {Math.min(rest, MORE) > 1 ? 's' : ''} de plus ({rest} restant{rest > 1 ? 's' : ''})
+              {t(isQuestion ? 'community.comments.moreAnswers' : 'community.comments.moreComments', { count: Math.min(rest, MORE), rest })}
             </button>
           )}
         </>

@@ -1,5 +1,10 @@
 import { afterEach } from 'vitest';
 
+import i18n from '@/utils/i18n';
+
+// jsdom says en-US: the tests read the French texts (the reference)
+i18n.changeLanguage('fr');
+
 // jsdom lacks window.matchMedia, used by sonner's <Toaster> and the sidebar (use-mobile hook).
 // Minimal stand-in: no media query ever matches (desktop, light, no reduced motion).
 if (!window.matchMedia) {

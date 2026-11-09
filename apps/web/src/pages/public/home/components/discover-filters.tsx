@@ -1,4 +1,5 @@
 import { ChevronDown, type LucideIcon, SlidersHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   cn,
@@ -37,6 +38,7 @@ const pillClassName = (active: boolean) =>
 
 /** One-line strip above the directory (no wrapping): pills, "Plus…" overflow menu, "Filtre" menu */
 export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, access, onAccessChange, privacy, onPrivacyChange }: Props) {
+  const { t } = useTranslation();
   const visible = chips.slice(0, maxVisible);
   const hidden = chips.slice(maxVisible);
   const activeHidden = hidden.find((c) => c.id === active);
@@ -47,7 +49,7 @@ export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, acces
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 border-b border-slate-200 py-4">
           {/* Never wraps: scrolls sideways on narrow screens */}
-          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto" role="group" aria-label="Filtrer les communautés">
+          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto" role="group" aria-label={t('home.filters.label')}>
             {visible.map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" aria-pressed={id === active} onClick={() => onChange(id)} className={pillClassName(id === active)}>
                 {Icon && <Icon className="size-4.5" aria-hidden />}
@@ -57,7 +59,7 @@ export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, acces
             {hidden.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger className={pillClassName(!!activeHidden)}>
-                  {activeHidden ? activeHidden.label : 'Plus…'}
+                  {activeHidden ? activeHidden.label : t('home.filters.more')}
                   <ChevronDown className="size-4" aria-hidden />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="max-h-80 w-60 overflow-y-auto">
@@ -72,32 +74,32 @@ export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, acces
           </div>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn(pillClassName(extraFilters > 0), 'font-semibold')} aria-label="Filtre">
-              Filtre
+            <DropdownMenuTrigger className={cn(pillClassName(extraFilters > 0), 'font-semibold')} aria-label={t('home.filters.filter')}>
+              {t('home.filters.filter')}
               {extraFilters > 0 && (
                 <span className="flex size-5 items-center justify-center rounded-full bg-white text-xs font-bold text-blue-900">{extraFilters}</span>
               )}
               <SlidersHorizontal className="size-4.5" aria-hidden />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
-              <DropdownMenuLabel>Accès</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('home.filters.access')}</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={access} onValueChange={(v) => onAccessChange(v as AccessFilter)}>
-                <DropdownMenuRadioItem value="all">Toutes</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="free">Gratuites</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="paid">Payantes</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="all">{t('home.filters.all')}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="free">{t('home.filters.free')}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="paid">{t('home.filters.paid')}</DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Visibilité</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('home.filters.visibility')}</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={privacy} onValueChange={(v) => onPrivacyChange(v as PrivacyFilter)}>
-                <DropdownMenuRadioItem value="all">Toutes</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="public">Publiques</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="private">Privées (sur demande)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="all">{t('home.filters.all')}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="public">{t('home.filters.public')}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="private">{t('home.filters.private')}</DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
               {/* The api has one order (featured, then members) */}
-              <DropdownMenuLabel>Trier par</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('home.filters.sortBy')}</DropdownMenuLabel>
               <DropdownMenuRadioGroup value="recommended">
-                <DropdownMenuRadioItem value="recommended">Recommandées</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="recommended">{t('home.filters.recommended')}</DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>

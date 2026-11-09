@@ -1,4 +1,5 @@
 import { ArrowRight, BookOpen, Code2, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
@@ -10,6 +11,7 @@ import { LockedPanel } from './locked-panel';
 import { SectionHeader } from './section-header';
 
 function CourseCard({ course, open, slug }: { course: Course; open: boolean; slug: string }) {
+  const { t } = useTranslation();
   const progress = Math.round(course.user_progress_percent ?? 0);
   const started = progress > 0;
   return (
@@ -24,7 +26,7 @@ function CourseCard({ course, open, slug }: { course: Course; open: boolean; slu
           </>
         )}
         <span className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-md bg-white/90 px-2.5 py-1 text-xs text-slate-700 shadow-2xs">
-          <BookOpen className="size-3.5" /> {course.lessons_count} leçon{course.lessons_count > 1 ? 's' : ''}
+          <BookOpen className="size-3.5" /> {t('community.classroom.lessons', { count: course.lessons_count })}
         </span>
       </div>
       <div className="flex flex-1 flex-col p-6">
@@ -36,7 +38,7 @@ function CourseCard({ course, open, slug }: { course: Course; open: boolean; slu
           {open ? (
             <>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">{started ? 'Votre progression' : 'À découvrir'}</span>
+                <span className="text-slate-600">{started ? t('community.classroom.yourProgress') : t('community.classroom.toDiscover')}</span>
                 <span className="font-semibold text-blue-900 tabular-nums">{progress} %</span>
               </div>
               <div className="mt-2 h-1.5 rounded-full bg-blue-50" aria-hidden>
@@ -46,12 +48,12 @@ function CourseCard({ course, open, slug }: { course: Course; open: boolean; slu
                 to={`/communities/${slug}/courses/${course.slug}`}
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-blue-50 hover:text-blue-950"
               >
-                {progress >= 100 ? 'Revoir le parcours' : started ? 'Continuer' : 'Découvrir le parcours'} <ArrowRight className="size-4" />
+                {progress >= 100 ? t('community.classroom.review') : started ? t('community.classroom.continue') : t('community.classroom.discover')} <ArrowRight className="size-4" />
               </Link>
             </>
           ) : (
             <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
-              <Lock className="size-4" /> Réservé aux membres
+              <Lock className="size-4" /> {t('community.classroom.membersOnly')}
             </p>
           )}
         </div>
@@ -62,6 +64,7 @@ function CourseCard({ course, open, slug }: { course: Course; open: boolean; slu
 
 /** Published courses (GET communities/<slug>/courses/, signed-in users): open to the members */
 export function ClassroomTab({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const community = page.community;
   const signedIn = page.membership !== 'visitor';
   const { data, isLoading, error } = useGetCommunityCoursesQuery({ slug: page.slug, is_published: true, page_size: 50 }, { skip: !signedIn });
@@ -70,15 +73,15 @@ export function ClassroomTab({ page }: { page: CommunityPage }) {
 
   const header = (
     <SectionHeader
-      eyebrow="Apprendre à votre rythme"
-      title="Formations"
+      eyebrow={t('community.classroom.eyebrow')}
+      title={t('community.classroom.title')}
       aside={
         <span className="flex items-center gap-2 text-sm text-slate-600">
-          <BookOpen className="size-4" /> {count} parcours
+          <BookOpen className="size-4" /> {t('community.classroom.paths', { count })}
         </span>
       }
     >
-      Un nouveau savoir. Un projet concret. Une étape à la fois.
+      {t('community.classroom.intro')}
     </SectionHeader>
   );
 
@@ -87,7 +90,7 @@ export function ClassroomTab({ page }: { page: CommunityPage }) {
       <section>
         {header}
         <LockedPanel page={page}>
-          {count > 0 ? `${count} formation${count > 1 ? 's' : ''} vous attend${count > 1 ? 'ent' : ''} dans cette communauté.` : 'Les formations de la communauté seront ici.'}
+          {count > 0 ? t('community.classroom.waiting', { count }) : t('community.classroom.willBeHere')}
         </LockedPanel>
       </section>
     );
@@ -97,15 +100,15 @@ export function ClassroomTab({ page }: { page: CommunityPage }) {
     <section>
       {header}
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">Chargement des formations…</p>
+        <p className="py-12 text-center text-sm text-slate-500">{t('community.classroom.loading')}</p>
       ) : courses.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <BookOpen className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">Pas encore de formation</p>
-          <p className="mt-1 text-sm text-slate-500">L'équipe de la communauté prépare ses premiers cours.</p>
+          <p className="mt-3 font-semibold text-slate-900">{t('community.classroom.none')}</p>
+          <p className="mt-1 text-sm text-slate-500">{t('community.classroom.preparing')}</p>
         </div>
       ) : (
-        <ul className="grid gap-6 sm:grid-cols-2" aria-label="Formations">
+        <ul className="grid gap-6 sm:grid-cols-2" aria-label={t('community.classroom.title')}>
           {courses.map((course) => (
             <li key={course.id}>
               <CourseCard course={course} open={page.membership === 'member'} slug={page.slug} />

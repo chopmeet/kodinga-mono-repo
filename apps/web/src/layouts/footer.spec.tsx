@@ -1,10 +1,11 @@
-import { act, cleanup, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 
 import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import i18n from '@/utils/i18n';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -50,5 +51,16 @@ describe('Footer', () => {
     const footer = await screen.findByRole('contentinfo', {}, SLOW);
     const space = within(footer).getByRole('navigation', { name: 'Mon espace' });
     expect(within(space).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/dashboard/communities', '/messages', '/profiles/fatou']);
+  });
+
+  it('follows the language chosen in the footer', async () => {
+    renderAppAt('/');
+    const footer = await screen.findByRole('contentinfo', {}, SLOW);
+    fireEvent.click(within(footer).getByRole('button', { name: 'EN' }));
+    const english = await screen.findByRole('contentinfo', {}, SLOW);
+    expect(await within(english).findByRole('link', { name: 'Jobs & gigs' }, SLOW)).toBeTruthy();
+    expect(within(english).getByRole('list', { name: 'Payment methods' }).textContent).toContain('Bank card');
+    expect(document.documentElement.lang).toBe('en');
+    await act(() => i18n.changeLanguage('fr'));
   });
 });

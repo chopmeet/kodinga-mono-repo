@@ -5,8 +5,13 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import i18n from '@/utils/i18n';
 
 vi.setConfig({ testTimeout: 15_000 });
+
+// The menu in English: the other tests read the French texts
+beforeAll(() => i18n.changeLanguage('en'));
+afterAll(() => i18n.changeLanguage('fr'));
 
 beforeEach(() => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(

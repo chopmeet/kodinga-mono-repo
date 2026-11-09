@@ -1,4 +1,7 @@
 import { useAppSelector } from '@/redux/hook';
+import { dateFormat, numberFormat, relativeFormat } from './format';
+import i18n from './i18n';
+import { translatedLabels } from './translated';
 import type { User } from './api/user/user.type';
 import { useConfirmUploadMutation, useRequestUploadUrlMutation } from './api/community/community.api';
 import { parseApiError } from './api/errors';
@@ -43,13 +46,8 @@ export const QueryUrl = (path: string, query: object = {}) => {
   return qs ? `${path}/?${qs}` : `${path}/`;
 };
 
-const compactNumber = new Intl.NumberFormat('fr-FR', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
-
-/** 5800 → "5,8 k" */
-export const formatCompact = (value: number) => compactNumber.format(value);
+/** 5800 → "5,8 k" (fr) / "5.8K" (en) */
+export const formatCompact = (value: number) => numberFormat({ notation: 'compact', maximumFractionDigits: 1 }).format(value);
 
 /** Smooth-scrolls to the home results (the sticky filters strip sits on top of the grid). */
 export const scrollToResults = () =>
@@ -85,19 +83,16 @@ export function downloadCsv(filename: string, header: string[], rows: (string | 
   downloadText(filename, csv, 'text/csv;charset=utf-8');
 }
 
-const relative = new Intl.RelativeTimeFormat('fr-FR', { numeric: 'auto' });
-const fullDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-
-/** "Il y a 2 h", "Hier", then the date */
+/** "Il y a 2 h", "Hier", then the date (in the current language) */
 export function ago(iso: string) {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return 'À l’instant';
-  if (minutes < 60) return `Il y a ${minutes} min`;
+  if (minutes < 1) return i18n.t('common.time.now');
+  if (minutes < 60) return i18n.t('common.time.minutesAgo', { count: minutes });
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `Il y a ${hours} h`;
+  if (hours < 24) return i18n.t('common.time.hoursAgo', { count: hours });
   const days = Math.round(hours / 24);
-  if (days < 7) return relative.format(-days, 'day').replace(/^./, (c) => c.toUpperCase());
-  return fullDate.format(new Date(iso));
+  if (days < 7) return relativeFormat({ numeric: 'auto' }).format(-days, 'day').replace(/^./, (c) => c.toUpperCase());
+  return dateFormat({ day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
 }
 
 /** Plain text of a Markdown post or comment */
@@ -117,9 +112,9 @@ export function checkImage(file: File, purpose: ImagePurpose): string | null {
   const rules = IMAGE_RULES[purpose];
   if (!rules.types.includes(file.type)) {
     const formats = rules.types.map((t) => t.replace('image/', '').toUpperCase().replace('JPEG', 'JPG')).join(', ');
-    return `Format non accepté : ${formats}.`;
+    return i18n.t('common.image.badFormat', { formats });
   }
-  if (file.size > rules.maxBytes) return `Image trop lourde : ${rules.maxBytes / MB} Mo maximum.`;
+  if (file.size > rules.maxBytes) return i18n.t('common.image.tooHeavy', { max: rules.maxBytes / MB });
   return null;
 }
 
@@ -298,12 +293,7 @@ export function useImageUpload() {
 
 // Labels of the communities, shared by the admin community details and the community space (/c/:slug)
 
-export const memberRoleLabel: Record<MemberRole, string> = {
-  owner: 'Propriétaire',
-  admin: 'Administrateur',
-  moderator: 'Modérateur',
-  member: 'Membre',
-};
+export const memberRoleLabel = translatedLabels<MemberRole>('labels.memberRole.', ['owner', 'admin', 'moderator', 'member']);
 
 export const memberStatusStyle: Record<MemberStatus, { label: string; className: string }> = {
   active: { label: 'Actif', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
@@ -314,13 +304,7 @@ export const memberStatusStyle: Record<MemberStatus, { label: string; className:
   left: { label: 'Parti', className: 'border-slate-200 bg-slate-50 text-slate-600' },
 };
 
-export const postTypeLabel: Record<PostType, string> = {
-  discussion: 'Discussion',
-  question: 'Question',
-  project_showcase: 'Projet',
-  poll: 'Sondage',
-  announcement: 'Annonce',
-};
+export const postTypeLabel = translatedLabels<PostType>('labels.postType.', ['discussion', 'question', 'project_showcase', 'poll', 'announcement']);
 
 export const paymentStatusStyle: Record<PaymentStatus, { label: string; className: string }> = {
   PAID: { label: 'Payé', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
@@ -351,42 +335,41 @@ export const payoutMethodLabel: Record<PayoutMethod, string> = {
   bank_transfer: 'Virement bancaire',
 };
 
-export const intervalLabel: Record<BillingInterval, { label: string; suffix: string }> = {
-  month: { label: 'Mensuel', suffix: '/ mois' },
-  year: { label: 'Annuel', suffix: '/ an' },
-  one_time: { label: 'Paiement unique', suffix: 'une fois' },
-};
+/** "Mensuel" + "/ mois": label and price suffix of each interval, in the current language */
+export const intervalLabel = Object.fromEntries(
+  (['month', 'year', 'one_time'] as const).map((id) => [
+    id,
+    {
+      get label() {
+        return i18n.t(`labels.billingInterval.${id}`);
+      },
+      get suffix() {
+        return i18n.t(`labels.billingSuffix.${id}`);
+      },
+    },
+  ]),
+) as Record<BillingInterval, { label: string; suffix: string }>;
 
-export const xof = (value: number) => `${value.toLocaleString('fr-FR')} FCFA`;
+export const xof = (value: number) => `${numberFormat().format(value)} FCFA`;
 
 // Labels of the developer profile, shared by /dashboard/profile and the public profile
-export const availabilityLabel: Record<AvailabilityStatus, string> = {
-  available: 'Disponible',
-  open_to_offers: 'À l’écoute des offres',
-  busy: 'Occupé',
-  unavailable: 'Non disponible',
-};
+// Texts in locales/*/labels.ts, read in the current language
+export const availabilityLabel = translatedLabels<AvailabilityStatus>('labels.availability.', ['available', 'open_to_offers', 'busy', 'unavailable']);
 
-export const skillLevelLabel: Record<SkillLevel, string> = {
-  beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
-  expert: 'Expert',
-};
+export const skillLevelLabel = translatedLabels<SkillLevel>('labels.skillLevel.', ['beginner', 'intermediate', 'advanced', 'expert']);
 
-export const employmentLabel: Record<EmploymentType, string> = {
-  full_time: 'Temps plein',
-  part_time: 'Temps partiel',
-  freelance: 'Freelance',
-  contract: 'CDD / Prestation',
-  internship: 'Stage / Alternance',
-  apprenticeship: 'Apprentissage',
-};
-
-const monthYear = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric' });
+export const employmentLabel = translatedLabels<EmploymentType>('labels.employment.', [
+  'full_time',
+  'part_time',
+  'freelance',
+  'contract',
+  'internship',
+  'apprenticeship',
+]);
 
 /** "mars 2022 – aujourd’hui" */
 export function period(start: string, end: string | null, current: boolean) {
+  const monthYear = dateFormat({ month: 'short', year: 'numeric' });
   const from = monthYear.format(new Date(start));
-  return `${from} – ${current || !end ? 'aujourd’hui' : monthYear.format(new Date(end))}`;
+  return `${from} – ${current || !end ? i18n.t('common.time.today') : monthYear.format(new Date(end))}`;
 }

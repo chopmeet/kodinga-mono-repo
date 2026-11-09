@@ -1,4 +1,5 @@
 import { Code2, ExternalLink, Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@kodinga/ui';
 import type { HackathonResult } from '@/utils/api/hackathon/hackathon.type';
@@ -7,9 +8,10 @@ const medal = ['bg-amber-400 text-amber-950', 'bg-slate-300 text-slate-800', 'bg
 
 /** Published ranking: projects by score, with the prizes they won */
 function ResultsTab({ results }: { results: HackathonResult[] }) {
-  if (results.length === 0) return <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">Aucun projet classé.</p>;
+  const { t } = useTranslation();
+  if (results.length === 0) return <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">{t('hackathon.results.none')}</p>;
   return (
-    <ol className="flex flex-col gap-3" aria-label="Classement">
+    <ol className="flex flex-col gap-3" aria-label={t('hackathon.results.label')}>
       {results.map((r, i) => {
         const rank = r.rank ?? i + 1;
         return (
@@ -18,7 +20,7 @@ function ResultsTab({ results }: { results: HackathonResult[] }) {
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-slate-900">{r.title}</h3>
               <p className="text-sm text-slate-500">
-                {r.team_name ? `Équipe ${r.team_name}` : r.applicant_username}
+                {r.team_name ? t('hackathon.results.team', { name: r.team_name }) : r.applicant_username}
                 {r.tagline && ` · ${r.tagline}`}
               </p>
               {r.won_prizes.length > 0 && (
@@ -33,12 +35,12 @@ function ResultsTab({ results }: { results: HackathonResult[] }) {
               <p className="mt-2 flex flex-wrap gap-4 text-sm">
                 {r.demo_url && (
                   <a href={r.demo_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-blue-900 hover:underline">
-                    <ExternalLink className="size-3.5" /> Démo
+                    <ExternalLink className="size-3.5" /> {t('hackathon.results.demo')}
                   </a>
                 )}
                 {r.repository_url && (
                   <a href={r.repository_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-blue-900 hover:underline">
-                    <Code2 className="size-3.5" /> Code
+                    <Code2 className="size-3.5" /> {t('hackathon.results.code')}
                   </a>
                 )}
               </p>
@@ -46,7 +48,7 @@ function ResultsTab({ results }: { results: HackathonResult[] }) {
             {r.total_score !== null && (
               <span className="shrink-0 text-right">
                 <span className="block text-lg font-semibold text-slate-900 tabular-nums">{Number(r.total_score).toFixed(1)}</span>
-                <span className="text-xs text-slate-500">points</span>
+                <span className="text-xs text-slate-500">{t('hackathon.results.points')}</span>
               </span>
             )}
           </li>

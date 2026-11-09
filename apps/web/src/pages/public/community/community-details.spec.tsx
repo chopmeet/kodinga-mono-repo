@@ -5,6 +5,7 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import i18n from '@/utils/i18n';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -510,5 +511,23 @@ describe('Public community page', () => {
     expect(screen.queryByText('Les membres apparaîtront ici')).toBeNull();
     fireEvent.click(within(alert).getByRole('button', { name: /Réessayer/ }));
     expect(await screen.findByRole('list', { name: 'Membres' }, SLOW)).toBeTruthy();
+  });
+
+  it('speaks English: tabs, access, plans and the feed', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    try {
+      signIn();
+      stubCommunityApi({ pricing: 'paid', plansInDetail: true });
+      renderAppAt('/communities/abidjan-react');
+      expect(await screen.findByRole('heading', { level: 1, name: 'Abidjan React' }, SLOW)).toBeTruthy();
+      const tabs = screen.getByRole('navigation', { name: 'Community sections' });
+      expect(within(tabs).getByRole('link', { name: 'Leaderboard' })).toBeTruthy();
+      const plans = await screen.findByRole('list', { name: 'Membership plans' }, SLOW);
+      expect(within(plans).getByText('5,000 FCFA')).toBeTruthy();
+      expect(within(plans).getByText('/ month')).toBeTruthy();
+      expect(within(plans).getByRole('button', { name: /Subscribe — Mensuel/ })).toBeTruthy();
+    } finally {
+      await act(() => i18n.changeLanguage('fr'));
+    }
   });
 });

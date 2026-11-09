@@ -1,4 +1,5 @@
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import {
   useAcceptInvitationByTokenMutation,
   useDeclineInvitationMutation,
@@ -33,10 +34,10 @@ function UseMyInvitations() {
     teams,
     /** The invitation being answered, for its buttons */
     busyId: isAccepting ? accepting : isDeclining ? declining : isResponding ? responding?.invitation_id : undefined,
-    acceptInvitation: (i: MyInvitation) => run(() => accept(i.id).unwrap(), `Bienvenue dans ${i.community_name} !`),
-    declineInvitation: (i: MyInvitation) => run(() => decline(i.id).unwrap(), 'Invitation refusée.'),
+    acceptInvitation: (i: MyInvitation) => run(() => accept(i.id).unwrap(), i18n.t('inbox.invitations.welcome', { name: i.community_name })),
+    declineInvitation: (i: MyInvitation) => run(() => decline(i.id).unwrap(), i18n.t('inbox.invitations.declined')),
     answerTeam: (t: MyTeamInvitation, answer: boolean) =>
-      run(() => respond({ invitation_id: t.id, accept: answer }).unwrap(), answer ? `Vous avez rejoint l’équipe ${t.team_name}.` : 'Invitation refusée.'),
+      run(() => respond({ invitation_id: t.id, accept: answer }).unwrap(), answer ? i18n.t('inbox.invitations.joinedTeam', { name: t.team_name }) : i18n.t('inbox.invitations.declined')),
   };
 }
 

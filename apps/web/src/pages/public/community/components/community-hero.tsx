@@ -1,5 +1,6 @@
 import { ArrowLeft, BadgeCheck, Bell, BellOff, Check, ChevronDown, Copy, Link2, LogOut, Radio, Settings, ShieldCheck, Users } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { customToast, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@kodinga/ui';
@@ -8,30 +9,32 @@ import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useSetCommunityNotificationsMutation } from '@/utils/api/community/community.api';
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
+import i18n from '@/utils/i18n';
 import { formatCompact, memberRoleLabel } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { LeaveDialog, MembershipActions } from './community-sidebar';
 
 /** "Accès gratuit", "Sur demande", "Payante": the badge next to the name */
 export function accessBadge(community: CommunityDetail) {
-  if (community.pricing_type === 'paid') return { label: 'Accès payant', className: 'border-slate-200 bg-white/80 text-slate-700' };
-  if (community.settings?.require_approval_to_join) return { label: 'Sur demande', className: 'border-amber-200 bg-amber-50 text-amber-800' };
-  return { label: 'Accès gratuit', className: 'border-blue-100 bg-blue-50 text-blue-800' };
+  if (community.pricing_type === 'paid') return { label: i18n.t('community.hero.paidAccess'), className: 'border-slate-200 bg-white/80 text-slate-700' };
+  if (community.settings?.require_approval_to_join) return { label: i18n.t('community.hero.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' };
+  return { label: i18n.t('community.hero.freeAccess'), className: 'border-blue-100 bg-blue-50 text-blue-800' };
 }
 
 async function copyPageLink() {
   try {
     await navigator.clipboard.writeText(window.location.href.split('?')[0]);
-    customToast.success({ message: 'Lien de la communauté copié.' });
+    customToast.success({ message: i18n.t('community.hero.linkCopied') });
     return true;
   } catch {
-    customToast.error({ message: 'Copie impossible : copiez l’adresse de la page.' });
+    customToast.error({ message: i18n.t('community.hero.copyFailed') });
     return false;
   }
 }
 
 /** Member: the notifications of this community reach them, or not */
 function NotificationsBell({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const [setNotifications, { isLoading }] = useSetCommunityNotificationsMutation();
   const enabled = !!page.community?.notifications_enabled;
   const Icon = enabled ? Bell : BellOff;
@@ -39,13 +42,13 @@ function NotificationsBell({ page }: { page: CommunityPage }) {
   const toggle = async () => {
     try {
       await setNotifications({ slug: page.slug, enabled: !enabled }).unwrap();
-      customToast.success({ message: enabled ? 'Notifications de cette communauté coupées.' : 'Notifications de cette communauté activées.' });
+      customToast.success({ message: enabled ? t('community.hero.notificationsOff') : t('community.hero.notificationsOn') });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     }
   };
 
-  const label = enabled ? 'Couper les notifications de cette communauté' : 'Activer les notifications de cette communauté';
+  const label = enabled ? t('community.hero.muteLabel') : t('community.hero.unmuteLabel');
   return (
     <button
       type="button"
@@ -63,6 +66,7 @@ function NotificationsBell({ page }: { page: CommunityPage }) {
 
 /** Member: role menu (manage, copy the link, leave) */
 function MemberMenu({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const community = page.community;
   if (!community) return null;
@@ -73,7 +77,7 @@ function MemberMenu({ page }: { page: CommunityPage }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Votre rôle : ${memberRoleLabel[role]}`}
+            aria-label={t('community.hero.yourRole', { role: memberRoleLabel[role] })}
             className="flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-4 text-sm font-medium text-slate-800 shadow-2xs hover:text-slate-950"
           >
             <ShieldCheck className="size-4" />
@@ -85,18 +89,18 @@ function MemberMenu({ page }: { page: CommunityPage }) {
           {page.isTeam && (
             <DropdownMenuItem asChild>
               <Link to={`/c/${community.slug}/dashboard`}>
-                <Settings /> Gérer la communauté
+                <Settings /> {t('community.hero.manage')}
               </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => copyPageLink()}>
-            <Link2 /> Copier le lien
+            <Link2 /> {t('community.hero.copyLink')}
           </DropdownMenuItem>
           {role !== 'owner' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600 focus:text-red-700" onSelect={() => setConfirmLeave(true)}>
-                <LogOut /> Quitter la communauté
+                <LogOut /> {t('community.hero.leave')}
               </DropdownMenuItem>
             </>
           )}
@@ -109,6 +113,7 @@ function MemberMenu({ page }: { page: CommunityPage }) {
 
 /** Banner of the page: back link, logo, name, then the access (visitors) or the member's tools */
 export function CommunityHero({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const community = page.community;
   if (!community) return null;
@@ -138,32 +143,32 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
       <div className="relative mx-auto max-w-285 px-4 pt-6 pb-10 sm:px-6 lg:px-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
           <ArrowLeft className="size-4" />
-          Explorer les communautés
+          {t('community.hero.back')}
         </Link>
 
         <div className="mt-8 flex flex-wrap items-start gap-5 sm:gap-6">
           <CommunityAvatar community={community} className="size-16 rounded-xl text-xl shadow-sm sm:size-20 sm:text-2xl" />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-600 uppercase">{isMember ? 'Votre espace communauté' : 'Les communautés Kodinga'}</p>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-600 uppercase">{isMember ? t('community.hero.yourSpace') : t('community.hero.kodingaCommunities')}</p>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
               <h1 id="community-name" className="text-3xl font-bold tracking-tight break-words text-slate-900 sm:text-4xl">
                 {community.name}
               </h1>
-              {community.is_verified && <BadgeCheck className="size-6 shrink-0 text-brand" aria-label="Communauté vérifiée" />}
+              {community.is_verified && <BadgeCheck className="size-6 shrink-0 text-brand" aria-label={t('community.hero.verified')} />}
               {community.active_live && (
                 <Link
                   to={`/communities/${community.slug}/events/${community.active_live.id}/live`}
                   className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-md shadow-red-600/30 hover:bg-red-500 transition-all hover:scale-105 animate-pulse"
                 >
                   <Radio className="size-3.5" />
-                  En direct {community.active_live.is_public ? '' : '🔒 Membres'}
+                  {t('community.hero.live')} {community.active_live.is_public ? '' : t('community.hero.membersOnly')}
                 </Link>
               )}
               {!isMember && <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${badge.className}`}>{badge.label}</span>}
             </div>
             {isMember ? (
               <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-                <Users className="size-4" /> {formatCompact(n)} membre{n > 1 ? 's' : ''}
+                <Users className="size-4" /> {t('community.hero.members', { count: n, formatted: formatCompact(n) })}
               </p>
             ) : (
               community.tagline && <p className="mt-3 text-slate-600">{community.tagline}</p>
@@ -172,7 +177,7 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
               <div className="mt-5 lg:hidden">
                 {community.pricing_type === 'paid' ? (
                   <a href="#formules" className="inline-flex h-11 items-center gap-2 rounded-lg bg-blue-900 px-5 text-sm font-semibold text-white">
-                    Voir les formules
+                    {t('community.hero.seePlans')}
                   </a>
                 ) : (
                   <MembershipActions page={page} className="w-full sm:w-auto" />
@@ -191,8 +196,8 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
             <button
               type="button"
               onClick={copy}
-              aria-label="Copier le lien de la communauté"
-              title="Copier le lien"
+              aria-label={t('community.hero.copyCommunityLink')}
+              title={t('community.hero.copyLink')}
               className="hidden size-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs hover:text-slate-900 sm:flex"
             >
               {copied ? <Check className="size-5 text-emerald-600" /> : <Copy className="size-5" />}

@@ -1,5 +1,6 @@
 import { ChevronDown, LoaderCircle, RotateCw, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { CommunityCard, CommunityCardSkeleton } from './components/community-card';
 import { CreatorCallout } from './components/creator-callout';
@@ -14,11 +15,6 @@ import type { CommunityListQuery } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
 
-// Exclusive pills of the strip: these two, then the api categories
-const QUICK_CHIPS: DiscoverChip[] = [
-  { id: 'all', label: 'Toutes' },
-  { id: 'featured', label: 'À la une', icon: TrendingUp },
-];
 
 // The hero stacks search by keyword (the api searches name, tagline, description and slug)
 const STACK_KEYWORDS: Record<StackId, string> = {
@@ -33,6 +29,7 @@ const STACK_KEYWORDS: Record<StackId, string> = {
 };
 
 function Home() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   // Shared with the header's compact search (see Search.slice)
   const query = useAppSelector((s) => s.search.query);
@@ -46,7 +43,12 @@ function Home() {
   const page = paging.key === searchKey ? paging.page : 1;
 
   const { data: categories = [] } = useGetCommunityCategoriesQuery();
-  const chips: DiscoverChip[] = [...QUICK_CHIPS, ...categories.map((c) => ({ id: `category:${c.slug}`, label: c.name }))];
+  // Exclusive pills of the strip: these two, then the api categories
+  const quickChips: DiscoverChip[] = [
+    { id: 'all', label: t('home.filters.all') },
+    { id: 'featured', label: t('home.filters.featured'), icon: TrendingUp },
+  ];
+  const chips: DiscoverChip[] = [...quickChips, ...categories.map((c) => ({ id: `category:${c.slug}`, label: c.name }))];
   const params: CommunityListQuery = {
     ...(chip === 'featured' ? { is_featured: true } : {}),
     ...(chip.startsWith('category:') ? { category: chip.slice('category:'.length) } : {}),
@@ -80,18 +82,18 @@ function Home() {
           <div className="flex flex-col gap-6 lg:col-span-9">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-900">
-                <span>Communautés à découvrir</span>
+                <span>{t('home.list.title')}</span>
                 {data && (
                   <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium tracking-wide text-slate-500">
-                    {total} RÉSULTAT{total > 1 ? 'S' : ''}
+                    {t('home.list.results', { count: total })}
                   </span>
                 )}
               </h2>
-              {isFetching && !loadingMore && <LoaderCircle className="size-4 animate-spin text-slate-400" aria-label="Mise à jour des résultats" />}
+              {isFetching && !loadingMore && <LoaderCircle className="size-4 animate-spin text-slate-400" aria-label={t('home.list.updating')} />}
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2" aria-busy="true" aria-label="Chargement des communautés">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2" aria-busy="true" aria-label={t('home.list.loading')}>
                 <CommunityCardSkeleton />
               </div>
             ) : error && !data ? (
@@ -103,7 +105,7 @@ function Home() {
                   className="inline-flex items-center gap-2 font-semibold text-brand hover:underline"
                 >
                   <RotateCw className="size-4" />
-                  Réessayer
+                  {t('common.actions.retry')}
                 </button>
               </div>
             ) : results.length > 0 ? (
@@ -114,9 +116,7 @@ function Home() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
-                {search
-                  ? `Aucune communauté ne correspond à « ${search} ».`
-                  : 'Aucune communauté ne correspond à ces filtres pour le moment.'}
+                {search ? t('home.list.noMatch', { search }) : t('home.list.noMatchFilters')}
               </div>
             )}
 
@@ -128,7 +128,7 @@ function Home() {
                   disabled={loadingMore}
                   className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:text-slate-900 disabled:opacity-70"
                 >
-                  <span>Afficher plus de communautés</span>
+                  <span>{t('home.list.showMore')}</span>
                   {loadingMore ? <LoaderCircle className="size-4.5 animate-spin" /> : <ChevronDown className="size-4.5" />}
                 </button>
               </div>
@@ -136,7 +136,7 @@ function Home() {
 
             <p className="flex items-center gap-2 text-sm text-slate-500">
               <ShieldCheck className="size-4.5" aria-hidden />
-              Votre prochaine rencontre peut tout changer.
+              {t('home.list.footnote')}
             </p>
           </div>
 

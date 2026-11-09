@@ -1,5 +1,6 @@
 import { Send } from 'lucide-react';
 import { type FormEvent, useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@kodinga/ui';
 
@@ -18,6 +19,7 @@ type Props = {
 
 /** Text area + publish (answer to the post, or reply to a comment) */
 export function CommentForm({ label, placeholder, submitLabel, isSending = false, onSend, onCancel, autoFocus, rows = 4 }: Props) {
+  const { t } = useTranslation();
   const id = useId();
   const [content, setContent] = useState('');
   const text = content.trim();
@@ -45,11 +47,11 @@ export function CommentForm({ label, placeholder, submitLabel, isSending = false
         className="w-full resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/10 focus:outline-none"
       />
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">Markdown accepté : **gras**, `code`, listes…</p>
+        <p className="text-xs text-slate-500">{t('community.comment.markdown')}</p>
         <div className="flex gap-2">
           {onCancel && (
             <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={isSending}>
-              Annuler
+              {t('common.actions.cancel')}
             </Button>
           )}
           <Button type="submit" size="sm" isLoading={isSending} disabled={!text}>

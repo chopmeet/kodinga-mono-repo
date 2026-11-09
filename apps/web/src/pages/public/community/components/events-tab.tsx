@@ -1,5 +1,6 @@
 import { CalendarDays, CalendarPlus, CalendarX2, Clock, Film, MapPin, PlayCircle, Radio, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@kodinga/ui';
 import { EventAIReplayHub } from '@/pages/community-space/events/components/event-ai-replay-hub';
@@ -9,6 +10,7 @@ import { ReplayPlayer } from '@/pages/shared/replay-player';
 import { eventTypeLabel, formatEventPlace } from '@/pages/community-space/events/event-labels';
 import { useGetCommunityEventsQuery } from '@/utils/api/community/community.api';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
+import { dateFormat } from '@/utils/format';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import UseEventRsvp from '../form/UseEventRsvp';
 import { EventRsvpActions } from './event-rsvp';
@@ -17,26 +19,27 @@ import { Pill, SectionHeader } from './section-header';
 import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 
 const PAGE_SIZE = 10;
-const day = new Intl.DateTimeFormat('fr-FR', { day: '2-digit' });
-const month = new Intl.DateTimeFormat('fr-FR', { month: 'short' });
-const hour = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const day = { format: (d: Date) => dateFormat({ day: '2-digit' }).format(d) };
+const month = { format: (d: Date) => dateFormat({ month: 'short' }).format(d) };
+const hour = { format: (d: Date) => dateFormat({ hour: '2-digit', minute: '2-digit' }).format(d) };
 
 /** "18:30 – 20:00 (GMT)", in the visitor's time zone */
 function timeRange(event: CommunityEvent) {
   const start = new Date(event.start_time);
-  const zone = new Intl.DateTimeFormat('fr-FR', { timeZoneName: 'short' }).formatToParts(start).find((p) => p.type === 'timeZoneName')?.value;
+  const zone = dateFormat({ timeZoneName: 'short' }).formatToParts(start).find((p) => p.type === 'timeZoneName')?.value;
   return `${hour.format(start)} – ${hour.format(new Date(event.end_time))}${zone ? ` (${zone})` : ''}`;
 }
 
 /** Replay of a past event, opened on demand (the player loads hls.js only then) */
 function PastEventReplay({ event, page }: { event: CommunityEvent; page: CommunityPage }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  if (!event.replay_video_asset) return <p className="text-sm text-slate-500">Pas de replay pour cet événement.</p>;
-  if (!page.canSee) return <p className="text-sm text-slate-500">Replay réservé aux membres de la communauté.</p>;
+  if (!event.replay_video_asset) return <p className="text-sm text-slate-500">{t('community.events.noReplay')}</p>;
+  if (!page.canSee) return <p className="text-sm text-slate-500">{t('community.events.replayMembersOnly')}</p>;
   if (!open) {
     return (
       <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="flex items-center gap-1.5 border-emerald-600/40 text-emerald-800 bg-emerald-50 hover:bg-emerald-100">
-        <PlayCircle className="size-4 text-emerald-600" /> Voir le replay & IA
+        <PlayCircle className="size-4 text-emerald-600" /> {t('community.events.seeReplay')}
       </Button>
     );
   }
@@ -45,6 +48,7 @@ function PastEventReplay({ event, page }: { event: CommunityEvent; page: Communi
 
 /** Rich video replay card for the dedicated video hub gallery */
 function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPage }) {
+  const { t } = useTranslation();
   const [playing, setPlaying] = useState(false);
   const [openHub, setOpenHub] = useState(false);
   const start = new Date(event.start_time);
@@ -66,7 +70,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
               type="button"
               onClick={() => setPlaying(true)}
               className="absolute inset-0 flex items-center justify-center cursor-pointer"
-              title="Lire la vidéo du replay"
+              title={t('community.events.playReplay')}
             >
               <div className="flex size-14 items-center justify-center rounded-full bg-red-600 text-white shadow-xl shadow-red-600/50 group-hover:scale-110 transition-transform">
                 <PlayCircle className="size-8" />
@@ -74,11 +78,11 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
             </button>
             <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-md">
               <Film className="size-3 text-red-400" />
-              Replay vidéo
+              {t('community.events.videoReplay')}
             </div>
             {event.duration_minutes ? (
               <div className="absolute bottom-3 right-3 rounded-md bg-black/75 px-2 py-0.5 text-xs font-mono font-medium text-white backdrop-blur-sm">
-                {event.duration_minutes} min
+                {t('community.events.minutes', { count: event.duration_minutes })}
               </div>
             ) : null}
           </>
@@ -106,7 +110,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
         <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             {event.host && (
-              <span className="truncate">Animé par <strong className="text-slate-800">{event.host.full_name || event.host.username}</strong></span>
+              <span className="truncate">{t('community.events.hostedBy')} <strong className="text-slate-800">{event.host.full_name || event.host.username}</strong></span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -117,7 +121,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
               className="text-xs font-semibold border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 gap-1.5"
             >
               <Sparkles className="size-3.5 text-emerald-600" />
-              {openHub ? 'Masquer IA' : 'Transcription & Chat IA'}
+              {openHub ? t('community.events.hideAi') : t('community.events.aiHub')}
             </Button>
             {!playing && (
               <Button
@@ -126,7 +130,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
                 onClick={() => setPlaying(true)}
                 className="text-xs font-semibold text-slate-800 hover:text-black border-slate-300"
               >
-                <PlayCircle className="size-3.5 text-red-600" /> Regarder
+                <PlayCircle className="size-3.5 text-red-600" /> {t('community.events.watch')}
               </Button>
             )}
           </div>
@@ -147,6 +151,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
  * to, the past ones (status=completed) with their replay, and dedicated video replay gallery
  */
 export function EventsTab({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const slug = page.slug;
   const rsvp = UseEventRsvp(slug);
   const [view, setView] = useState<'upcoming' | 'replays' | 'past'>('upcoming');
@@ -181,8 +186,8 @@ export function EventsTab({ page }: { page: CommunityPage }) {
   return (
     <section>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <SectionHeader eyebrow="Se retrouver" title="Événements" aside={<CalendarDays className="size-7 text-amber-600" aria-hidden />}>
-          Ateliers, lives et rencontres à venir dans la communauté. Inscrivez-vous pour recevoir le lien et l’ajouter à votre agenda.
+        <SectionHeader eyebrow={t('community.events.eyebrow')} title={t('community.events.title')} aside={<CalendarDays className="size-7 text-amber-600" aria-hidden />}>
+          {t('community.events.intro')}
         </SectionHeader>
 
         {(canStartLive || canCreate) && (
@@ -192,24 +197,24 @@ export function EventsTab({ page }: { page: CommunityPage }) {
                 onClick={() => setQuickLiveOpen(true)}
                 className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/25 hover:bg-red-500"
               >
-                <Radio className="size-4 animate-pulse" /> Démarrer un direct
+                <Radio className="size-4 animate-pulse" /> {t('community.events.startLive')}
               </Button>
             )}
             {canCreate && (
               <Button variant="outline" onClick={() => setScheduleOpen(true)}>
-                <CalendarPlus className="size-4" /> Programmer
+                <CalendarPlus className="size-4" /> {t('community.events.schedule')}
               </Button>
             )}
           </div>
         )}
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Période">
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={t('community.events.period')}>
         {(
           [
-            ['upcoming', 'À venir'],
-            ['replays', '📹 Replays vidéo'],
-            ['past', 'Passés et replays'],
+            ['upcoming', t('community.events.upcoming')],
+            ['replays', t('community.events.replays')],
+            ['past', t('community.events.past')],
           ] as const
         ).map(([id, label]) => (
           <Pill
@@ -226,41 +231,33 @@ export function EventsTab({ page }: { page: CommunityPage }) {
       </div>
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">Chargement des événements…</p>
+        <p className="py-12 text-center text-sm text-slate-500">{t('community.events.loading')}</p>
       ) : events.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           {isReplays ? <Film className="size-8 text-slate-300" /> : <CalendarX2 className="size-8 text-slate-300" />}
           <p className="mt-3 font-semibold text-slate-900">
-            {isReplays
-              ? 'Aucun replay vidéo disponible'
-              : past
-              ? 'Aucun événement passé'
-              : 'Aucun événement à venir'}
+            {isReplays ? t('community.events.noReplays') : past ? t('community.events.noPast') : t('community.events.noUpcoming')}
           </p>
           <p className="mt-1 text-sm text-slate-500">
-            {isReplays
-              ? 'Les replays des lives enregistrés apparaîtront dans cette galerie.'
-              : past
-              ? 'Les événements terminés apparaîtront ici.'
-              : 'Les lives, ateliers et rencontres apparaîtront ici.'}
+            {isReplays ? t('community.events.noReplaysText') : past ? t('community.events.noPastText') : t('community.events.noUpcomingText')}
           </p>
         </div>
       ) : isReplays ? (
         <>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6" aria-label="Replays vidéo de la communauté">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6" aria-label={t('community.events.replaysLabel')}>
             {events.map((event) => (
               <ReplayCard key={event.id} event={event} page={page} />
             ))}
           </ul>
           {events.length < total && (
             <Button variant="outline" className="mx-auto mt-6 flex" isLoading={isFetching} onClick={() => setCount((n) => n + PAGE_SIZE)}>
-              Afficher plus de replays
+              {t('community.events.moreReplays')}
             </Button>
           )}
         </>
       ) : (
         <>
-          <ul className="flex flex-col gap-6" aria-label={past ? 'Événements passés' : 'Événements à venir'}>
+          <ul className="flex flex-col gap-6" aria-label={past ? t('community.events.pastLabel') : t('community.events.upcomingLabel')}>
             {events.map((event) => {
               const start = new Date(event.start_time);
               return (
@@ -273,7 +270,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
                     )}
                     {event.status === 'live' && (
                       <span className="absolute top-3 left-3 flex items-center gap-1.5 rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
-                        <span className="size-1.5 animate-pulse rounded-full bg-white" /> En direct
+                        <span className="size-1.5 animate-pulse rounded-full bg-white" /> {t('community.events.live')}
                       </span>
                     )}
                   </div>
@@ -293,7 +290,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
                           <MapPin className="size-4 text-slate-400" /> {formatEventPlace(event)}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <Users className="size-4 text-slate-400" /> {event.attendees_count} participant{event.attendees_count > 1 ? 's' : ''}
+                          <Users className="size-4 text-slate-400" /> {t('community.events.participants', { count: event.attendees_count })}
                           {event.max_attendees ? ` / ${event.max_attendees}` : ''}
                         </span>
                       </p>
@@ -309,7 +306,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
           </ul>
           {events.length < total && (
             <Button variant="outline" className="mx-auto mt-6 flex" isLoading={isFetching} onClick={() => setCount((n) => n + PAGE_SIZE)}>
-              Afficher plus
+              {t('common.actions.showMore')}
             </Button>
           )}
         </>

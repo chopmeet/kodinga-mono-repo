@@ -32,6 +32,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -45,6 +46,7 @@ import { LiveRecordingModal } from './components/live-recording-modal';
 
 /** The speakers (host and presenters): their screen first, else their camera */
 function Stage() {
+  const { t: tr } = useTranslation();
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -71,14 +73,12 @@ function Stage() {
           </span>
         </div>
         <div className="max-w-md space-y-1.5">
-          <p className="text-lg font-semibold text-white">L’organisateur va bientôt prendre la parole</p>
-          <p className="text-sm text-slate-400">
-            Installez-vous confortablement. La diffusion vidéo et audio démarrera automatiquement dès le lancement.
-          </p>
+          <p className="text-lg font-semibold text-white">{tr('live.stage.soon')}</p>
+          <p className="text-sm text-slate-400">{tr('live.stage.settle')}</p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-slate-300">
           <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-          Microphone et vidéo prêts
+          {tr('live.stage.ready')}
         </div>
       </div>
     );
@@ -92,11 +92,12 @@ function Stage() {
 }
 
 function Audience() {
+  const { t } = useTranslation();
   const participants = useParticipants();
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white/90 hover:bg-white/15 transition-colors"
-      aria-label={`${participants.length} dans la salle`}
+      aria-label={t('live.inRoom', { count: participants.length })}
     >
       <Users className="size-3.5 text-red-400" aria-hidden /> {participants.length}
     </span>
@@ -124,6 +125,7 @@ function FloatingReactionsOverlay({ reactions }: { reactions: ReactionItem[] }) 
 
 /** Participants List Drawer */
 function ParticipantsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const participants = useParticipants();
   if (!open) return null;
 
@@ -131,11 +133,12 @@ function ParticipantsDrawer({ open, onClose }: { open: boolean; onClose: () => v
     <div className="fixed inset-y-0 right-0 z-50 flex w-80 flex-col border-l border-white/10 bg-slate-900/95 p-4 shadow-2xl backdrop-blur-xl sm:w-96">
       <div className="flex items-center justify-between border-b border-white/10 pb-3">
         <h3 className="flex items-center gap-2 text-base font-semibold text-white">
-          <Users className="size-4 text-red-400" /> Participants ({participants.length})
+          <Users className="size-4 text-red-400" /> {t('live.participants', { count: participants.length })}
         </h3>
         <button
           type="button"
           onClick={onClose}
+          aria-label={t('common.actions.close')}
           className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white"
         >
           <X className="size-5" />
@@ -157,7 +160,7 @@ function ParticipantsDrawer({ open, onClose }: { open: boolean; onClose: () => v
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-white">{name}</p>
                   <p className="text-xs text-slate-400">
-                    {isHost ? '⭐ Organisateur' : 'Participant'}
+                    {isHost ? t('live.host') : t('live.participant')}
                   </p>
                 </div>
               </div>
@@ -181,6 +184,7 @@ function ParticipantsDrawer({ open, onClose }: { open: boolean; onClose: () => v
 
 /** Connected Live Room: Video Stage, Chat, Audience Drawer, Reaction Overlays & Controls */
 function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom['session']> }) {
+  const { t } = useTranslation();
   const room = useRoomConnection({
     serverUrl: live.serverUrl,
     token: session.token,
@@ -225,10 +229,10 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
     try {
       await navigator.clipboard.writeText(window.location.href);
       setShowShareSuccess(true);
-      customToast.success({ message: 'Lien du live copié dans le presse-papier !' });
+      customToast.success({ message: t('live.room.linkCopied') });
       setTimeout(() => setShowShareSuccess(false), 2000);
     } catch {
-      customToast.error({ message: 'Impossible de copier le lien automatiquement.' });
+      customToast.error({ message: t('live.room.copyFailed') });
     }
   };
 
@@ -253,7 +257,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
             <Link
               to={live.back}
               className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-              title="Retour aux événements"
+              title={t('live.room.back')}
             >
               <ArrowLeft className="size-4" />
             </Link>
@@ -261,7 +265,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
             <div className="min-w-0">
               <h1 className="truncate text-sm font-semibold text-white sm:text-base">{e.title}</h1>
               <p className="text-xs text-slate-400 truncate">
-                {e.host ? `Animé par ${e.host.full_name || e.host.username}` : 'Événement interactif'}
+                {e.host ? t('live.room.hostedBy', { name: e.host.full_name || e.host.username }) : t('live.room.interactive')}
               </p>
             </div>
           </div>
@@ -269,14 +273,14 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
           <div className="flex items-center gap-2.5">
             {isLive ? (
               <span className="flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm shadow-red-600/50">
-                <span className="size-1.5 animate-pulse rounded-full bg-white" /> En direct
+                <span className="size-1.5 animate-pulse rounded-full bg-white" /> {t('live.room.live')}
                 <span className="ml-1 text-[11px] font-mono font-medium text-red-100">
                   {formatTimer(secondsElapsed)}
                 </span>
               </span>
             ) : (
               <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
-                Salle d’attente
+                {t('live.room.waiting')}
               </span>
             )}
 
@@ -284,7 +288,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
               type="button"
               onClick={() => setParticipantsOpen(true)}
               className="cursor-pointer"
-              title="Voir les participants"
+              title={t('live.room.seeParticipants')}
             >
               <Audience />
             </button>
@@ -294,10 +298,10 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
               variant="outline"
               onClick={copyLiveLink}
               className="hidden sm:inline-flex bg-white text-black border-slate-200 hover:bg-slate-100 hover:text-black font-semibold shadow-xs transition-colors"
-              title="Inviter des personnes"
+              title={t('live.room.invite')}
             >
               {showShareSuccess ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5 text-black" />}
-              Partager
+              {t('live.room.share')}
             </Button>
 
             <button
@@ -309,7 +313,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                   ? 'border-red-500/50 bg-red-600/20 text-red-400'
                   : 'border-white/10 text-slate-400 hover:bg-white/10 hover:text-white',
               )}
-              title="Afficher/Masquer le chat"
+              title={t('live.room.toggleChat')}
             >
               <MessageSquare className="size-4" />
             </button>
@@ -325,10 +329,10 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                     type="button"
                     onClick={recording.stopRecording}
                     className="flex items-center gap-1 rounded bg-red-600 hover:bg-red-500 px-2 py-1 text-xs font-medium text-white transition-colors cursor-pointer"
-                    title="Arrêter l'enregistrement"
+                    title={t('live.room.stopRecording')}
                   >
                     <CircleStop className="size-3.5" />
-                    Arrêter
+                    {t('live.room.stop')}
                   </button>
                 </div>
               ) : (
@@ -337,10 +341,10 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                   variant="outline"
                   onClick={recording.startRecording}
                   className="hidden sm:inline-flex border-red-500/40 bg-red-950/30 text-red-300 hover:bg-red-900/40 hover:text-white transition-colors"
-                  title="Enregistrer le live pour générer un replay"
+                  title={t('live.room.recordTitle')}
                 >
                   <span className="size-2 rounded-full bg-red-500" />
-                  Enregistrer
+                  {t('live.room.record')}
                 </Button>
               )
             )}
@@ -348,7 +352,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
             {live.isHost &&
               (isLive ? (
                 <Button size="sm" variant="danger" isLoading={live.isUpdating} onClick={handleEndLive}>
-                  <CircleStop className="size-4" /> Terminer le live
+                  <CircleStop className="size-4" /> {t('live.room.end')}
                 </Button>
               ) : (
                 <Button
@@ -357,7 +361,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                   onClick={live.start}
                   className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/30 hover:bg-red-500"
                 >
-                  <Radio className="size-4 animate-pulse" /> Démarrer le live
+                  <Radio className="size-4 animate-pulse" /> {t('live.room.start')}
                 </Button>
               ))}
           </div>
@@ -375,12 +379,12 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                 <Smile className="size-3.5 text-amber-400" />
               </span>
               {[
-                { emoji: '👏', label: 'Applaudir' },
-                { emoji: '❤️', label: 'J’adore' },
-                { emoji: '🔥', label: 'Génial' },
-                { emoji: '🚀', label: 'Au top' },
-                { emoji: '💡', label: 'Pertinent' },
-                { emoji: '🎉', label: 'Bravo' },
+                { emoji: '👏', label: t('live.reactions.clap') },
+                { emoji: '❤️', label: t('live.reactions.love') },
+                { emoji: '🔥', label: t('live.reactions.fire') },
+                { emoji: '🚀', label: t('live.reactions.rocket') },
+                { emoji: '💡', label: t('live.reactions.idea') },
+                { emoji: '🎉', label: t('live.reactions.party') },
               ].map(({ emoji, label }) => (
                 <button
                   key={emoji}
@@ -398,19 +402,19 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
           {/* Right chat panel */}
           {chatOpen && (
             <aside
-              aria-label="Chat du live"
+              aria-label={t('live.room.chat')}
               className="live-chat-panel relative flex w-80 sm:w-88 lg:w-96 shrink-0 min-h-0 flex-col rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-xl overflow-hidden z-20 max-md:fixed max-md:inset-x-3 max-md:bottom-18 max-md:top-18 max-md:w-auto"
             >
               <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-slate-900/80">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="size-4 text-red-400" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-white">Chat en direct</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-white">{t('live.room.liveChat')}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setChatOpen(false)}
                   className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-                  title="Fermer le chat"
+                  title={t('live.room.closeChat')}
                 >
                   <X className="size-4" />
                 </button>
@@ -457,6 +461,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
 
 /** Pre-join device preview tester (webcam & microphone check) */
 function DevicePreviewTester({ isHost }: { isHost: boolean }) {
+  const { t: tr } = useTranslation();
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -516,7 +521,7 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
         ) : (
           <div className="flex flex-col items-center gap-2 text-slate-500">
             <CameraOff className="size-8" />
-            <span className="text-xs">Caméra désactivée</span>
+            <span className="text-xs">{tr('live.preview.cameraOff')}</span>
           </div>
         )}
 
@@ -528,7 +533,7 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
               'flex size-8 items-center justify-center rounded-full transition-colors',
               videoEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-600 text-white',
             )}
-            title={videoEnabled ? 'Couper la caméra' : 'Activer la caméra'}
+            title={videoEnabled ? tr('live.preview.muteCamera') : tr('live.preview.unmuteCamera')}
           >
             {videoEnabled ? <Camera className="size-4" /> : <CameraOff className="size-4" />}
           </button>
@@ -539,14 +544,14 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
               'flex size-8 items-center justify-center rounded-full transition-colors',
               audioEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-600 text-white',
             )}
-            title={audioEnabled ? 'Couper le micro' : 'Activer le micro'}
+            title={audioEnabled ? tr('live.preview.muteMic') : tr('live.preview.unmuteMic')}
           >
             {audioEnabled ? <Mic className="size-4" /> : <MicOff className="size-4" />}
           </button>
         </div>
       </div>
       <div className="p-2.5 text-center text-xs text-slate-400">
-        Aperçu de votre caméra avant de rejoindre
+        {tr('live.preview.hint')}
       </div>
     </div>
   );
@@ -554,15 +559,16 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
 
 /** Before joining: when, who, device checks, and joining actions */
 function Lobby({ live }: { live: LiveRoom }) {
+  const { t } = useTranslation();
   const e = live.event;
   if (!e) return null;
 
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      customToast.success({ message: 'Lien du live copié !' });
+      customToast.success({ message: t('live.lobby.linkCopied') });
     } catch {
-      customToast.error({ message: 'Copiez l’adresse dans la barre du navigateur.' });
+      customToast.error({ message: t('live.lobby.copyManually') });
     }
   };
 
@@ -570,25 +576,25 @@ function Lobby({ live }: { live: LiveRoom }) {
   if (e.format !== 'livekit') {
     action = (
       <p className="text-slate-400">
-        Cet événement ne se déroule pas dans un salon Kodinga : le lien est sur la page de la communauté.
+        {t('live.lobby.external')}
       </p>
     );
   } else if (e.status === 'cancelled') {
-    action = <p className="text-amber-400 font-medium">Cet événement a été annulé.</p>;
+    action = <p className="text-amber-400 font-medium">{t('live.lobby.cancelled')}</p>;
   } else if (e.status === 'completed') {
     action = (
       <div className="flex w-full flex-col items-center gap-4">
-        <p className="text-slate-300">Ce live est terminé. Merci d’avoir suivi la communauté !</p>
+        <p className="text-slate-300">{t('live.lobby.over')}</p>
         {/* On the dark room: a light outline (the outline variant has a white background) */}
         <Button asChild size="lg" className="w-full max-w-sm border border-white/20 bg-white/10 font-semibold text-white shadow-none hover:bg-white/20">
-          <Link to={live.back}>Retour aux événements</Link>
+          <Link to={live.back}>{t('live.room.back')}</Link>
         </Button>
       </div>
     );
   } else if (!live.signedIn) {
     action = (
       <Button asChild size="lg" className="bg-blue-600 font-semibold text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30">
-        <Link to={live.loginUrl}>Se connecter pour rejoindre</Link>
+        <Link to={live.loginUrl}>{t('live.lobby.loginToJoin')}</Link>
       </Button>
     );
   } else {
@@ -606,11 +612,11 @@ function Lobby({ live }: { live: LiveRoom }) {
           )}
         >
           <Radio className="size-5 animate-pulse" />
-          {e.status === 'live' ? 'Rejoindre le live' : 'Entrer dans la salle d’attente'}
+          {e.status === 'live' ? t('live.lobby.join') : t('live.lobby.waitingRoom')}
         </Button>
         {e.status !== 'live' && (
           <p className="text-sm text-slate-400">
-            L’organisateur n’a pas encore démarré : la vidéo commencera dès son lancement.
+            {t('live.lobby.notStarted')}
           </p>
         )}
       </div>
@@ -648,21 +654,21 @@ function Lobby({ live }: { live: LiveRoom }) {
       <div className="flex flex-wrap items-center justify-center gap-2">
         {isLive ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-red-600/40 animate-pulse">
-            <span className="size-2 rounded-full bg-white" /> En direct
+            <span className="size-2 rounded-full bg-white" /> {t('live.room.live')}
           </span>
         ) : (
           <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
-            {e.status === 'completed' ? 'Live terminé' : e.status === 'cancelled' ? 'Événement annulé' : 'Événement programmé'}
+            {e.status === 'completed' ? t('live.lobby.ended') : e.status === 'cancelled' ? t('live.lobby.eventCancelled') : t('live.lobby.scheduled')}
           </span>
         )}
 
         {e.is_public ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300">
-            <Globe className="size-3.5" /> Direct public
+            <Globe className="size-3.5" /> {t('live.lobby.publicLive')}
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-300">
-            <Lock className="size-3.5" /> Réservé aux membres
+            <Lock className="size-3.5" /> {t('live.lobby.membersOnly')}
           </span>
         )}
       </div>
@@ -677,7 +683,7 @@ function Lobby({ live }: { live: LiveRoom }) {
         <span className="text-slate-600">•</span>
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-4 text-slate-400" />
-          {e.attendees_count} participant{e.attendees_count > 1 ? 's' : ''}
+          {t('live.lobby.participants', { count: e.attendees_count })}
         </span>
       </div>
 
@@ -689,7 +695,7 @@ function Lobby({ live }: { live: LiveRoom }) {
               {nameInitials(e.host.full_name || e.host.username)}
             </AvatarFallback>
           </Avatar>
-          <span>Animé par {e.host.full_name || e.host.username}</span>
+          <span>{t('live.room.hostedBy', { name: e.host.full_name || e.host.username })}</span>
         </div>
       )}
 
@@ -707,7 +713,7 @@ function Lobby({ live }: { live: LiveRoom }) {
           onClick={copyLink}
           className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
         >
-          <Copy className="size-3.5" /> Copier le lien du live pour inviter
+          <Copy className="size-3.5" /> {t('live.lobby.copyInvite')}
         </button>
       )}
     </section>
@@ -716,9 +722,10 @@ function Lobby({ live }: { live: LiveRoom }) {
 
 /** /communities/:slug/events/:eventId/live — the live room of an event */
 function LiveRoomPage() {
+  const { t } = useTranslation();
   const live = UseLiveRoom();
 
-  if (live.isLoading) return <Loader inline className="py-24" message="Chargement du live…" />;
+  if (live.isLoading) return <Loader inline className="py-24" message={t('live.page.loading')} />;
 
   if (live.isForbidden) {
     return (
@@ -732,30 +739,30 @@ function LiveRoomPage() {
         </div>
 
         <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-semibold text-amber-300 uppercase tracking-wider">
-          Direct privé • Réservé aux membres
+          {t('live.page.privateBadge')}
         </span>
 
         <h1 className="mt-4 text-2xl font-bold tracking-tight text-white sm:text-3xl max-w-lg">
-          Ce direct est réservé aux membres de la communauté
+          {t('live.page.privateTitle')}
         </h1>
 
         <p className="mt-3 max-w-md text-sm text-slate-400 leading-relaxed">
-          L’organisateur a configuré ce live en mode privé. Vous devez être un membre actif de la communauté pour accéder au salon et participer.
+          {t('live.page.privateText')}
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           {!live.signedIn ? (
             <Button asChild size="lg" className="bg-blue-600 font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500">
-              <Link to={live.loginUrl}>Se connecter pour rejoindre</Link>
+              <Link to={live.loginUrl}>{t('live.lobby.loginToJoin')}</Link>
             </Button>
           ) : (
             <Button asChild size="lg" className="bg-brand font-semibold text-white shadow-lg shadow-brand/30 hover:bg-brand-hover">
-              <Link to={`/communities/${live.slug}`}>Rejoindre la communauté</Link>
+              <Link to={`/communities/${live.slug}`}>{t('live.page.joinCommunity')}</Link>
             </Button>
           )}
           <Button asChild variant="outline" size="lg" className="border-white/10 text-white hover:bg-white/10">
             <Link to={live.back}>
-              <ArrowLeft className="size-4" /> Retour aux événements
+              <ArrowLeft className="size-4" /> {t('live.room.back')}
             </Link>
           </Button>
         </div>
@@ -767,10 +774,10 @@ function LiveRoomPage() {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
         <h1 className="text-2xl font-bold text-slate-900">
-          {live.notFound ? 'Événement introuvable' : 'Impossible de charger l’événement'}
+          {live.notFound ? t('live.page.notFound') : t('live.page.loadFailed')}
         </h1>
         <Button asChild variant="outline">
-          <Link to={live.back}>Retour aux événements</Link>
+          <Link to={live.back}>{t('live.room.back')}</Link>
         </Button>
       </section>
     );
@@ -785,7 +792,7 @@ function LiveRoomPage() {
           to={live.back}
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
         >
-          <ArrowLeft className="size-4" /> Événements de la communauté
+          <ArrowLeft className="size-4" /> {t('live.lobby.communityEvents')}
         </Link>
       </div>
       <Lobby live={live} />

@@ -2,6 +2,7 @@ import { Room, RoomEvent } from 'livekit-client';
 import { useEffect, useRef, useState } from 'react';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 
 /**
  * One LiveKit room per session, connected here (not by <LiveKitRoom>): in dev, the double mount of
@@ -23,13 +24,13 @@ export function useRoomConnection({ serverUrl, token, isHost, onLeft }: { server
         room.once(RoomEvent.Disconnected, () => active && left.current());
         if (isHost) {
           await room.localParticipant.enableCameraAndMicrophone().catch(() => {
-            customToast.error({ message: 'Caméra ou micro refusés par le navigateur : autorisez-les, puis réactivez-les en bas de l’écran.' });
+            customToast.error({ message: i18n.t('live.toasts.devicesRefused') });
           });
         }
       } catch (err) {
         if (!active) return;
         console.error('[LiveKit] Connection failed to:', serverUrl, err);
-        customToast.error({ message: 'Impossible de rejoindre le live. Vérifiez votre connexion et réessayez.' });
+        customToast.error({ message: i18n.t('live.toasts.joinFailed') });
         left.current();
       }
     }, 0);

@@ -1,4 +1,5 @@
 import { Award, Briefcase, Code2, ExternalLink, FolderKanban, Globe, GraduationCap, Link2, MessageCircle, Star, ThumbsUp, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga/ui';
@@ -19,16 +20,17 @@ const availabilityStyle: Record<AvailabilityStatus, string> = {
 
 /** Availability, what the developer is open to, years of experience */
 export function ProfileAvailability({ profile }: { profile: PublicProfile }) {
+  const { t } = useTranslation();
   const status = profile.availability_status as AvailabilityStatus;
   const open = [
-    profile.open_to_freelance && 'Freelance',
-    profile.open_to_remote && 'Télétravail',
-    profile.open_to_relocation && 'Mobilité',
-    profile.is_mentor && 'Mentorat',
+    profile.open_to_freelance && t('profile.availability.freelance'),
+    profile.open_to_remote && t('profile.availability.remote'),
+    profile.open_to_relocation && t('profile.availability.relocation'),
+    profile.is_mentor && t('profile.availability.mentoring'),
   ].filter(Boolean) as string[];
   if (!availabilityLabel[status] && open.length === 0 && !profile.years_of_experience) return null;
   return (
-    <div className="mt-5 flex flex-col gap-3" aria-label="Disponibilité">
+    <div className="mt-5 flex flex-col gap-3" aria-label={t('profile.availability.label')}>
       {availabilityLabel[status] && (
         <span className={cn('inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold', availabilityStyle[status])}>
           <span className="size-1.5 rounded-full bg-current" aria-hidden />
@@ -46,7 +48,7 @@ export function ProfileAvailability({ profile }: { profile: PublicProfile }) {
       )}
       {profile.years_of_experience ? (
         <p className="text-sm text-slate-600">
-          {profile.years_of_experience} an{profile.years_of_experience > 1 ? 's' : ''} d’expérience
+          {t('profile.availability.years', { count: profile.years_of_experience })}
         </p>
       ) : null}
     </div>
@@ -55,16 +57,17 @@ export function ProfileAvailability({ profile }: { profile: PublicProfile }) {
 
 /** GitHub, GitLab, LinkedIn, X and the website, when given */
 export function ProfileLinks({ profile }: { profile: PublicProfile }) {
+  const { t } = useTranslation();
   const links = [
     handle(profile.github_username) && { label: 'GitHub', href: `https://github.com/${handle(profile.github_username)}`, text: handle(profile.github_username), icon: Code2 },
     handle(profile.gitlab_username) && { label: 'GitLab', href: `https://gitlab.com/${handle(profile.gitlab_username)}`, text: handle(profile.gitlab_username), icon: Code2 },
     safeUrl(profile.linkedin_url) && { label: 'LinkedIn', href: profile.linkedin_url, text: 'LinkedIn', icon: Link2 },
     handle(profile.twitter_handle) && { label: 'X', href: `https://x.com/${handle(profile.twitter_handle)}`, text: `@${handle(profile.twitter_handle)}`, icon: Link2 },
-    safeUrl(profile.website_url) && { label: 'Site web', href: profile.website_url, text: profile.website_url.replace(/^https?:\/\//, '').replace(/\/$/, ''), icon: Globe },
+    safeUrl(profile.website_url) && { label: t('profile.links.website'), href: profile.website_url, text: profile.website_url.replace(/^https?:\/\//, '').replace(/\/$/, ''), icon: Globe },
   ].filter(Boolean) as { label: string; href: string; text: string; icon: typeof Globe }[];
   if (links.length === 0) return null;
   return (
-    <ul className="mt-5 space-y-2 text-sm" aria-label="Liens">
+    <ul className="mt-5 space-y-2 text-sm" aria-label={t('profile.links.label')}>
       {links.map(({ label, href, text, icon: Icon }) => (
         <li key={label}>
           <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-slate-700 hover:text-primary">
@@ -91,20 +94,21 @@ function Empty({ icon: Icon, text }: { icon: typeof Globe; text: string }) {
 
 /** Bio and skills (highlighted ones first) */
 export function ProfileAbout({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const skills = [...(profile.skills ?? [])].sort((a, b) => Number(b.is_highlighted) - Number(a.is_highlighted));
-  if (!profile.bio && skills.length === 0) return <Empty icon={Star} text={`${name} n’a pas encore rempli sa présentation.`} />;
+  if (!profile.bio && skills.length === 0) return <Empty icon={Star} text={t('profile.about.empty', { name })} />;
   return (
     <div className="flex flex-col gap-8 py-8">
       {profile.bio && <p className="whitespace-pre-line text-slate-700">{profile.bio}</p>}
       {skills.length > 0 && (
         <section aria-labelledby="skills-title">
           <h3 id="skills-title" className="font-semibold text-slate-900">
-            Compétences
+            {t('profile.about.skills')}
           </h3>
-          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Compétences">
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label={t('profile.about.skills')}>
             {skills.map((s) => (
               <li key={s.id} className={cn('flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm', s.is_highlighted ? 'border-blue-200 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700')}>
-                {s.is_highlighted && <Star className="size-3.5 fill-amber-400 text-amber-400" aria-label="Mise en avant" />}
+                {s.is_highlighted && <Star className="size-3.5 fill-amber-400 text-amber-400" aria-label={t('profile.about.highlighted')} />}
                 <span className="font-medium">{s.technology.name}</span>
                 {skillLevelLabel[s.level] && <span className="text-xs text-slate-500">· {skillLevelLabel[s.level]}</span>}
               </li>
@@ -118,17 +122,18 @@ export function ProfileAbout({ profile, name }: { profile: PublicProfile; name: 
 
 /** Experiences and educations, most recent first */
 export function ProfileCareer({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const experiences = byStart(profile.experiences);
   const educations = byStart(profile.educations);
-  if (experiences.length === 0 && educations.length === 0) return <Empty icon={Briefcase} text={`${name} n’a pas encore renseigné son parcours.`} />;
+  if (experiences.length === 0 && educations.length === 0) return <Empty icon={Briefcase} text={t('profile.career.empty', { name })} />;
   return (
     <div className="flex flex-col gap-10 py-8">
       {experiences.length > 0 && (
         <section aria-labelledby="experiences-title">
           <h3 id="experiences-title" className="flex items-center gap-2 font-semibold text-slate-900">
-            <Briefcase className="size-5 text-primary" aria-hidden /> Expériences
+            <Briefcase className="size-5 text-primary" aria-hidden /> {t('profile.career.experiences')}
           </h3>
-          <ol className="mt-4 space-y-6 border-l border-slate-200 pl-6" aria-label="Expériences">
+          <ol className="mt-4 space-y-6 border-l border-slate-200 pl-6" aria-label={t('profile.career.experiences')}>
             {experiences.map((x) => (
               <li key={x.id} className="relative">
                 <span className="absolute top-1.5 -left-[1.85rem] size-2.5 rounded-full border-2 border-white bg-primary ring-1 ring-primary/30" aria-hidden />
@@ -143,7 +148,7 @@ export function ProfileCareer({ profile, name }: { profile: PublicProfile; name:
                   )}
                   {employmentLabel[x.employment_type] && ` · ${employmentLabel[x.employment_type]}`}
                 </p>
-                <p className="text-sm text-slate-500">{[period(x.start_date, x.end_date, x.is_current), x.is_remote ? 'Télétravail' : x.location].filter(Boolean).join(' · ')}</p>
+                <p className="text-sm text-slate-500">{[period(x.start_date, x.end_date, x.is_current), x.is_remote ? t('profile.career.remote') : x.location].filter(Boolean).join(' · ')}</p>
                 {x.description && <p className="mt-2 text-sm whitespace-pre-line text-slate-600">{x.description}</p>}
                 {x.technologies.length > 0 && <p className="mt-2 text-xs text-slate-500">{x.technologies.map((t) => t.name).join(' · ')}</p>}
               </li>
@@ -154,9 +159,9 @@ export function ProfileCareer({ profile, name }: { profile: PublicProfile; name:
       {educations.length > 0 && (
         <section aria-labelledby="educations-title">
           <h3 id="educations-title" className="flex items-center gap-2 font-semibold text-slate-900">
-            <GraduationCap className="size-5 text-primary" aria-hidden /> Formations
+            <GraduationCap className="size-5 text-primary" aria-hidden /> {t('profile.career.educations')}
           </h3>
-          <ul className="mt-4 space-y-4" aria-label="Formations">
+          <ul className="mt-4 space-y-4" aria-label={t('profile.career.educations')}>
             {educations.map((x) => (
               <li key={x.id}>
                 <p className="font-semibold text-slate-900">{x.degree}</p>
@@ -174,17 +179,18 @@ export function ProfileCareer({ profile, name }: { profile: PublicProfile; name:
 
 /** Portfolio projects, featured ones first */
 export function ProfilePortfolio({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const projects = [...(profile.portfolio_projects ?? [])].sort((a, b) => Number(b.is_featured) - Number(a.is_featured) || a.order - b.order);
-  if (projects.length === 0) return <Empty icon={FolderKanban} text={`${name} n’a pas encore ajouté de projet.`} />;
+  if (projects.length === 0) return <Empty icon={FolderKanban} text={t('profile.portfolio.empty', { name })} />;
   return (
-    <ul className="grid gap-4 py-8 sm:grid-cols-2" aria-label="Portfolio">
+    <ul className="grid gap-4 py-8 sm:grid-cols-2" aria-label={t('profile.portfolio.label')}>
       {projects.map((p) => (
         <li key={p.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="relative h-36">
             {safeUrl(p.thumbnail_url) ? <img src={p.thumbnail_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
             {p.is_featured && (
               <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden /> À la une
+                <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden /> {t('profile.portfolio.featured')}
               </span>
             )}
           </div>
@@ -195,12 +201,12 @@ export function ProfilePortfolio({ profile, name }: { profile: PublicProfile; na
             <p className="mt-3 flex gap-4 text-sm">
               {safeUrl(p.project_url) && (
                 <a href={p.project_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
-                  <ExternalLink className="size-3.5" aria-hidden /> Démo
+                  <ExternalLink className="size-3.5" aria-hidden /> {t('profile.portfolio.demo')}
                 </a>
               )}
               {safeUrl(p.repo_url) && (
                 <a href={p.repo_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
-                  <Code2 className="size-3.5" aria-hidden /> Code
+                  <Code2 className="size-3.5" aria-hidden /> {t('profile.portfolio.code')}
                 </a>
               )}
             </p>
@@ -213,10 +219,11 @@ export function ProfilePortfolio({ profile, name }: { profile: PublicProfile; na
 
 /** Its public communities (of its profile), with its role in each */
 export function ProfileCommunities({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const communities = profile.communities ?? [];
-  if (communities.length === 0) return <Empty icon={Users} text={`${name} ne fait partie d’aucune communauté publique.`} />;
+  if (communities.length === 0) return <Empty icon={Users} text={t('profile.communities.empty', { name })} />;
   return (
-    <ul className="grid gap-4 py-6 sm:grid-cols-2" aria-label={`Communautés de ${name}`}>
+    <ul className="grid gap-4 py-6 sm:grid-cols-2" aria-label={t('profile.communities.label', { name })}>
       {communities.map((c) => (
         <li key={c.id}>
           <Link to={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-slate-300">
@@ -230,7 +237,7 @@ export function ProfileCommunities({ profile, name }: { profile: PublicProfile; 
             <span className="min-w-0">
               <span className="block truncate font-semibold text-slate-900">{c.name}</span>
               <span className="block text-sm text-slate-500">
-                {memberRoleLabel[c.role] ?? c.role} · {formatCompact(c.members_count)} membre{c.members_count > 1 ? 's' : ''}
+                {memberRoleLabel[c.role] ?? c.role} · {t('profile.communities.members', { count: c.members_count, formatted: formatCompact(c.members_count) })}
               </span>
             </span>
           </Link>
@@ -242,29 +249,30 @@ export function ProfileCommunities({ profile, name }: { profile: PublicProfile; 
 
 /** What it published: its figures, its latest posts (in public communities) and projects */
 export function ProfileContributions({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const c = profile.contributions;
-  if (!c || (c.posts_count === 0 && c.projects_count === 0 && c.badges_count === 0)) return <Empty icon={MessageCircle} text={`${name} n’a pas encore de contribution.`} />;
+  if (!c || (c.posts_count === 0 && c.projects_count === 0 && c.badges_count === 0)) return <Empty icon={MessageCircle} text={t('profile.contributions.empty', { name })} />;
   return (
     <div className="flex flex-col gap-8 py-6">
       {c.badges_count > 0 && (
         <p className="flex items-center gap-2 text-sm text-slate-600">
           <Award className="size-4 text-amber-600" aria-hidden />
-          {c.badges_count} badge{c.badges_count > 1 ? 's' : ''} obtenu{c.badges_count > 1 ? 's' : ''}
+          {t('profile.contributions.badges', { count: c.badges_count })}
         </p>
       )}
       {c.recent_posts.length > 0 && (
-        <section aria-label="Dernières publications">
-          <h3 className="font-semibold text-slate-900">Dernières publications</h3>
+        <section aria-label={t('profile.contributions.latestPosts')}>
+          <h3 className="font-semibold text-slate-900">{t('profile.contributions.latestPosts')}</h3>
           <ul className="mt-3 divide-y divide-slate-100">
             {c.recent_posts.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                 <span className="min-w-0">
                   {p.community_slug ? (
                     <Link to={`/communities/${p.community_slug}/posts/${p.id}`} className="block truncate font-medium text-slate-900 hover:text-primary">
-                      {plain(p.title) || 'Publication sans titre'}
+                      {plain(p.title) || t('profile.contributions.untitled')}
                     </Link>
                   ) : (
-                    <span className="block truncate font-medium text-slate-900">{plain(p.title) || 'Publication sans titre'}</span>
+                    <span className="block truncate font-medium text-slate-900">{plain(p.title) || t('profile.contributions.untitled')}</span>
                   )}
                   <span className="text-xs text-slate-500">
                     {p.community_name ? `${p.community_name} · ` : ''}
@@ -272,10 +280,10 @@ export function ProfileContributions({ profile, name }: { profile: PublicProfile
                   </span>
                 </span>
                 <span className="flex items-center gap-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1" aria-label={`${p.reactions_count} réactions`}>
+                  <span className="flex items-center gap-1" aria-label={t('profile.contributions.reactions', { count: p.reactions_count })}>
                     <ThumbsUp className="size-3.5" aria-hidden /> {p.reactions_count}
                   </span>
-                  <span className="flex items-center gap-1" aria-label={`${p.comments_count} commentaires`}>
+                  <span className="flex items-center gap-1" aria-label={t('profile.contributions.comments', { count: p.comments_count })}>
                     <MessageCircle className="size-3.5" aria-hidden /> {p.comments_count}
                   </span>
                 </span>
@@ -285,15 +293,15 @@ export function ProfileContributions({ profile, name }: { profile: PublicProfile
         </section>
       )}
       {c.recent_projects.length > 0 && (
-        <section aria-label="Derniers projets">
-          <h3 className="font-semibold text-slate-900">Derniers projets</h3>
+        <section aria-label={t('profile.contributions.latestProjects')}>
+          <h3 className="font-semibold text-slate-900">{t('profile.contributions.latestProjects')}</h3>
           <ul className="mt-3 divide-y divide-slate-100">
             {c.recent_projects.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 py-3 text-sm">
                 <Link to={`/projects/${p.slug}`} className="min-w-0 truncate font-medium text-slate-900 hover:text-primary">
                   {p.title}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 text-xs text-slate-500" aria-label={`${p.upvotes_count} votes`}>
+                <span className="flex shrink-0 items-center gap-1 text-xs text-slate-500" aria-label={t('profile.contributions.votes', { count: p.upvotes_count })}>
                   <ThumbsUp className="size-3.5" aria-hidden /> {p.upvotes_count}
                 </span>
               </li>

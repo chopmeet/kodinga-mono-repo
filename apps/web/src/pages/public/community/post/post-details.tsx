@@ -1,5 +1,6 @@
 import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, Loader } from '@kodinga/ui';
@@ -16,6 +17,7 @@ import { DeleteCommentDialog } from './delete-comment-dialog';
 import { HelpPanel } from './help-panel';
 
 function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetailsPage }) {
+  const { t } = useTranslation();
   const author = getName(post.author) || post.author.username;
   const liked = !!post.user_reactions?.includes('like');
   return (
@@ -23,12 +25,12 @@ function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetail
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-medium">
         {post.is_pinned && (
           <span className="flex items-center gap-1.5 text-blue-900">
-            <Pin className="size-3.5" /> Épinglé par l’équipe
+            <Pin className="size-3.5" /> {t('community.post.pinned')}
           </span>
         )}
         {page.isQuestion && post.is_resolved && (
           <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
-            <CircleCheck className="size-3.5" /> Question résolue
+            <CircleCheck className="size-3.5" /> {t('community.post.resolved')}
           </span>
         )}
       </div>
@@ -58,8 +60,8 @@ function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetail
           onClick={page.likePost}
           disabled={!page.isMember || page.isLiking}
           aria-pressed={liked}
-          aria-label={liked ? 'Retirer mon j’aime' : 'J’aime'}
-          title={page.isMember ? undefined : 'Réservé aux membres'}
+          aria-label={liked ? t('community.feed.unlike') : t('community.feed.like')}
+          title={page.isMember ? undefined : t('community.feed.membersOnly')}
           className={cn('flex items-center gap-2 disabled:cursor-not-allowed', liked ? 'font-semibold text-blue-900' : 'hover:text-slate-900')}
         >
           <ThumbsUp className="size-5" /> {post.reactions_count}
@@ -74,6 +76,7 @@ function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetail
 
 /** /communities/:slug/posts/:postId — one post, its answers and the accepted one */
 function PostDetails() {
+  const { t } = useTranslation();
   const page = UsePostDetails();
   const { community, post, comments, slug } = page;
   const [toDelete, setToDelete] = useState<PostComment | null>(null);
@@ -82,7 +85,7 @@ function PostDetails() {
 
   if (page.isLoading) {
     return (
-      <Loader inline className="py-24" message="Chargement de la publication…" />
+      <Loader inline className="py-24" message={t('community.post.loading')} />
     );
   }
 
@@ -90,10 +93,10 @@ function PostDetails() {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
         <Lock className="size-8 text-slate-400" />
-        <h1 className="text-2xl font-bold text-slate-900">Réservé aux membres</h1>
-        <p className="text-slate-500">Rejoignez {community.name} pour lire et répondre aux publications.</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('community.post.membersOnly')}</h1>
+        <p className="text-slate-500">{t('community.post.joinToRead', { name: community.name })}</p>
         <Button asChild>
-          <Link to={`/communities/${slug}`}>Découvrir la communauté</Link>
+          <Link to={`/communities/${slug}`}>{t('community.post.discoverCommunity')}</Link>
         </Button>
       </section>
     );
@@ -102,16 +105,15 @@ function PostDetails() {
   if (!post || !community || page.notFound) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound || !page.error ? 'Publication introuvable' : 'Impossible de charger la publication'}</h1>
-        <p className="text-slate-500">{page.notFound || !page.error ? 'Elle a peut-être été supprimée.' : parseApiError(page.error).message}</p>
+        <h1 className="text-2xl font-bold text-slate-900">{page.notFound || !page.error ? t('community.post.notFound') : t('community.post.loadFailed')}</h1>
+        <p className="text-slate-500">{page.notFound || !page.error ? t('community.post.deleted') : parseApiError(page.error).message}</p>
         <Button asChild variant="outline">
-          <Link to={community ? back : '/'}>{community ? 'Retour au fil' : 'Découvrir les communautés'}</Link>
+          <Link to={community ? back : '/'}>{community ? t('community.post.backToFeed') : t('community.post.discoverCommunities')}</Link>
         </Button>
       </section>
     );
   }
 
-  const noun = page.isQuestion ? 'réponse' : 'commentaire';
   const count = comments.reduce((n, c) => n + 1 + c.replies.length, 0);
 
   return (
@@ -119,7 +121,7 @@ function PostDetails() {
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link to={back} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-            <ArrowLeft className="size-4" /> Retour au fil
+            <ArrowLeft className="size-4" /> {t('community.post.backToFeed')}
           </Link>
           <Link to={`/communities/${slug}`} className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900">
             <CommunityAvatar community={community} className="size-7 rounded-md text-[10px]" />
@@ -135,43 +137,42 @@ function PostDetails() {
 
         <section aria-labelledby="answers-title" className="mt-8">
           <h2 id="answers-title" className="text-lg font-semibold text-slate-900">
-            {count} {noun}
-            {count > 1 ? 's' : ''}
+            {page.isQuestion ? t('community.post.answers', { count }) : t('community.post.comments', { count })}
           </h2>
           {page.isQuestion && !post.is_resolved && post.author && page.isMember && (
-            <p className="mt-1 text-sm text-slate-500">L’auteur de la question peut accepter la réponse qui l’a aidé.</p>
+            <p className="mt-1 text-sm text-slate-500">{t('community.post.authorCanAccept')}</p>
           )}
 
           <div className="mt-4">
             {page.canComment ? (
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <CommentForm
-                  label={page.isQuestion ? 'Votre réponse' : 'Votre commentaire'}
-                  placeholder={page.isQuestion ? 'Partagez une solution, un lien, un extrait de code…' : 'Réagissez, posez une question…'}
-                  submitLabel="Publier"
+                  label={page.isQuestion ? t('community.comments.yourAnswer') : t('community.comments.yourComment')}
+                  placeholder={page.isQuestion ? t('community.comments.answerPlaceholder') : t('community.post.commentPlaceholder')}
+                  submitLabel={t('community.comments.publish')}
                   isSending={page.isSending}
                   onSend={(content) => page.send(content)}
                 />
               </div>
             ) : post.is_locked ? (
               <p className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                <Lock className="size-4" /> Les commentaires sont fermés sur cette publication.
+                <Lock className="size-4" /> {t('community.comments.closed')}
               </p>
             ) : (
               <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 {page.membership === 'visitor' ? (
                   <>
                     <Link to={page.loginUrl} className="font-semibold text-blue-900 hover:underline">
-                      Connectez-vous
+                      {t('community.comments.login')}
                     </Link>{' '}
-                    et rejoignez la communauté pour répondre.
+                    {t('community.post.loginThenJoin')}
                   </>
                 ) : (
                   <>
                     <Link to={`/communities/${slug}`} className="font-semibold text-blue-900 hover:underline">
-                      Rejoignez {community.name}
+                      {t('community.post.join', { name: community.name })}
                     </Link>{' '}
-                    pour répondre.
+                    {t('community.post.toAnswer')}
                   </>
                 )}
               </p>
@@ -179,11 +180,13 @@ function PostDetails() {
           </div>
 
           {page.isCommentsLoading ? (
-            <p className="py-8 text-center text-sm text-slate-500">Chargement des {noun}s…</p>
+            <p className="py-8 text-center text-sm text-slate-500">
+              {page.isQuestion ? t('community.comments.loadingAnswers') : t('community.comments.loadingComments')}
+            </p>
           ) : comments.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">{page.isQuestion ? 'Pas encore de réponse : soyez le premier à aider !' : 'Pas encore de commentaire.'}</p>
+            <p className="py-8 text-center text-sm text-slate-500">{page.isQuestion ? t('community.comments.noAnswer') : t('community.comments.noComment')}</p>
           ) : (
-            <ul className="mt-6 flex flex-col gap-4" aria-label={page.isQuestion ? 'Réponses' : 'Commentaires'}>
+            <ul className="mt-6 flex flex-col gap-4" aria-label={page.isQuestion ? t('community.comments.answers') : t('community.comments.comments')}>
               {comments.map((c) => (
                 <li key={c.id}>
                   <CommentItem comment={c} page={page} onDelete={setToDelete} />

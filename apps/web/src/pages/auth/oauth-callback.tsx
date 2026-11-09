@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Loader } from '@kodinga/ui';
 
@@ -13,6 +14,7 @@ import { isOAuthProvider, oauthRedirectUri, takeOAuthNext, takeOAuthState } from
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
 function OAuthCallback() {
+  const { t } = useTranslation();
   const { provider } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -28,7 +30,7 @@ function OAuthCallback() {
     started.current = true;
 
     if (!isOAuthProvider(provider)) {
-      setError('Ce mode de connexion n’est pas disponible.');
+      setError(t('auth.callback.unavailable'));
       return;
     }
     const expectedState = takeOAuthState(provider);
@@ -40,11 +42,11 @@ function OAuthCallback() {
     const providerError = params.get('error');
     if (providerError) {
       const name = provider === 'google' ? 'Google' : 'GitHub';
-      setError(providerError === 'access_denied' ? 'La connexion a été annulée.' : `La connexion avec ${name} a échoué. Réessayez, ou connectez-vous avec votre email.`);
+      setError(providerError === 'access_denied' ? t('auth.callback.cancelled') : t('auth.callback.providerFailed', { provider: name }));
       return;
     }
     if (!code || !expectedState || state !== expectedState) {
-      setError('Ce lien de connexion est invalide ou a expiré. Recommencez depuis Kodinga.');
+      setError(t('auth.callback.expired'));
       return;
     }
 
@@ -55,24 +57,24 @@ function OAuthCallback() {
         navigate(next, { replace: true });
       })
       .catch((err) => setError(parseApiError(err).message));
-  }, [provider, params, oauthCallback, dispatch, navigate]);
+  }, [provider, params, oauthCallback, dispatch, navigate, t]);
 
   if (error) {
     return (
       <AuthWrapper
-        title="Connexion impossible"
+        title={t('auth.callback.title')}
         footer={
           <Link to={loginUrl} className={linkClassName}>
-            Retour à la connexion
+            {t('auth.common.backToLogin')}
           </Link>
         }
       >
         <div className="flex flex-col gap-5">
           <FormAlert>{error}</FormAlert>
           <p className="text-[15px] text-slate-600">
-            Vous pouvez réessayer ou{' '}
+            {t('auth.callback.retryBefore')}{' '}
             <Link to="/auth/register" className={linkClassName}>
-              créer un compte avec votre email
+              {t('auth.callback.registerWithEmail')}
             </Link>
             .
           </p>
@@ -82,8 +84,8 @@ function OAuthCallback() {
   }
 
   return (
-    <AuthWrapper title="Connexion en cours…">
-      <Loader inline size="sm" className="py-6" message="Nous finalisons votre connexion." />
+    <AuthWrapper title={t('auth.callback.pendingTitle')}>
+      <Loader inline size="sm" className="py-6" message={t('auth.callback.pending')} />
     </AuthWrapper>
   );
 }

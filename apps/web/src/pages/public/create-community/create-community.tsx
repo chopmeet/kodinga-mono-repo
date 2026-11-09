@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -9,21 +10,18 @@ import { useGetCommunityCategoriesQuery } from '@/utils/api/community/community.
 import { CommunityPreview } from './components/community-preview';
 import { AccessStep, AccountStep, LookStep, NameStep, TopicStep } from './components/steps';
 import { AIWizardModal } from './components/ai-wizard-modal';
-import UseCreateCommunity, { type StepId } from './form/UseCreateCommunity';
+import UseCreateCommunity from './form/UseCreateCommunity';
 
-const headings: Record<StepId, { title: string; subtitle: string }> = {
-  name: { title: 'Comment s’appelle votre communauté ?', subtitle: 'Choisissez un nom clair : vous pourrez le changer plus tard.' },
-  topic: { title: 'De quoi va-t-on parler ?', subtitle: 'Aidez les développeurs à trouver votre communauté dans l’annuaire.' },
-  access: { title: 'Qui peut la rejoindre ?', subtitle: 'Vous pourrez modifier ces réglages à tout moment.' },
-  look: { title: 'Donnez-lui une identité', subtitle: 'Une couleur suffit pour se démarquer.' },
-  account: { title: 'Dernière étape : votre compte', subtitle: 'Créez votre compte Kodinga pour gérer votre communauté.' },
-};
 
 /** /create-community — Skool-like creation flow, open to visitors (account asked at the end) */
 function CreateCommunity() {
+  const { t } = useTranslation();
   const flow = UseCreateCommunity();
   const { data: categories = [], isLoading: categoriesLoading } = useGetCommunityCategoriesQuery();
-  const heading = headings[flow.step.id];
+  const heading = {
+    title: t(`create.headings.${flow.step.id}Title`),
+    subtitle: t(`create.headings.${flow.step.id}Subtitle`),
+  };
   const titleRef = useRef<HTMLHeadingElement>(null);
   const category = categories.find((c) => c.id === flow.values.category_id);
 
@@ -46,7 +44,7 @@ function CreateCommunity() {
         <Logo />
         <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 font-medium text-slate-700 hover:bg-white hover:text-slate-900">
           <ArrowLeft className="size-4.5" />
-          Quitter
+          {t('create.page.quit')}
         </Link>
       </header>
 
@@ -60,7 +58,7 @@ function CreateCommunity() {
           className="rounded-2xl bg-white p-6 shadow-sm sm:p-10"
         >
           {/* One segment per step: done and current steps are filled */}
-          <div className="flex gap-2" role="progressbar" aria-valuemin={1} aria-valuemax={flow.steps.length} aria-valuenow={flow.index + 1} aria-label="Progression">
+          <div className="flex gap-2" role="progressbar" aria-valuemin={1} aria-valuemax={flow.steps.length} aria-valuenow={flow.index + 1} aria-label={t('create.page.progress')}>
             {flow.steps.map((s, i) => (
               <span key={s.id} className={cn('h-1 flex-1 rounded-full transition-colors', i <= flow.index ? 'bg-blue-800' : 'bg-slate-200')} />
             ))}
@@ -73,7 +71,7 @@ function CreateCommunity() {
           )}
 
           <p className="mt-7 text-sm font-semibold text-blue-800">
-            Étape {flow.index + 1} sur {flow.steps.length}
+            {t('create.page.stepOf', { n: flow.index + 1, total: flow.steps.length })}
           </p>
           <h1 ref={titleRef} tabIndex={-1} className="mt-2 text-3xl leading-tight font-bold tracking-tight text-slate-900 outline-none sm:text-4xl">
             {heading.title}
@@ -102,7 +100,7 @@ function CreateCommunity() {
                 className="inline-flex h-12 items-center gap-2 rounded-lg px-4 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
               >
                 <ArrowLeft className="size-4" />
-                Retour
+                {t('create.page.back')}
               </button>
             ) : (
               <span />
@@ -118,13 +116,13 @@ function CreateCommunity() {
                   <Sparkles className="size-4.5" />
                   {flow.isSubmitting
                     ? flow.isAnyUploading
-                      ? 'Téléversement des images…'
-                      : 'Création de la communauté…'
-                    : 'Créer ma communauté'}
+                      ? t('create.page.uploading')
+                      : t('create.page.creating')
+                    : t('create.page.create')}
                 </>
               ) : (
                 <>
-                  Continuer
+                  {t('create.page.continue')}
                   <ArrowRight className="size-4.5" />
                 </>
               )}
@@ -133,10 +131,10 @@ function CreateCommunity() {
         </form>
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-8">
-          <p className="text-[15px] font-semibold text-blue-800">Aperçu dans « Toutes les communautés »</p>
+          <p className="text-[15px] font-semibold text-blue-800">{t('create.page.previewTitle')}</p>
           <CommunityPreview values={flow.values} slug={flow.slug} category={category} images={flow.previews} />
 
-          <ol className="space-y-1 rounded-xl bg-white p-4 shadow-2xs" aria-label="Étapes">
+          <ol className="space-y-1 rounded-xl bg-white p-4 shadow-2xs" aria-label={t('create.page.stepsLabel')}>
             {flow.steps.map((s, i) => (
               <li
                 key={s.id}
@@ -155,7 +153,7 @@ function CreateCommunity() {
                 >
                   {i < flow.index ? <Check className="size-3.5" /> : i + 1}
                 </span>
-                {s.label}
+                {t(`create.steps.${s.id}`)}
               </li>
             ))}
           </ol>

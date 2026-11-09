@@ -1,5 +1,6 @@
 import { ArrowRight, ArrowUpRight, Ban, CalendarDays, Check, ChevronRight, Clock, Globe, Lock, LogOut, Settings, ShieldCheck, Trophy } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import {
@@ -18,13 +19,15 @@ import {
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetCommunityLeaderboardQuery, useGetCommunityPlansQuery } from '@/utils/api/community/community.api';
 import type { BillingInterval, CommunityPlan } from '@/utils/api/billing/billing.type';
+import { numberFormat } from '@/utils/format';
+import i18n from '@/utils/i18n';
 import { formatCompact, nameInitials } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 
-const intervalLabel: Record<BillingInterval, string> = { month: '/ mois', year: '/ an', one_time: 'accès à vie' };
+const intervalKey: Record<BillingInterval, 'perMonth' | 'perYear' | 'lifetime'> = { month: 'perMonth', year: 'perYear', one_time: 'lifetime' };
+const intervalLabel = (interval: BillingInterval) => i18n.t(`community.sidebar.${intervalKey[interval]}`);
 
-const price = (p: CommunityPlan) =>
-  `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(p.price))} ${p.currency === 'XOF' ? 'FCFA' : p.currency}`;
+const price = (p: CommunityPlan) => `${numberFormat({ maximumFractionDigits: 0 }).format(Number(p.price))} ${p.currency === 'XOF' ? 'FCFA' : p.currency}`;
 
 /** Formulas of a paid community, each with its PayDunya checkout */
 function Plans({ page }: { page: CommunityPage }) {
@@ -34,19 +37,20 @@ function Plans({ page }: { page: CommunityPage }) {
   const plans = fromDetail ?? query.data ?? [];
   const isLoading = !fromDetail && query.isLoading;
   const [chosen, setChosen] = useState<string | null>(null);
+  const { t } = useTranslation();
 
-  if (isLoading) return <p className="text-center text-sm text-slate-500">Chargement des formules…</p>;
-  if (plans.length === 0) return <p className="text-center text-sm text-slate-500">Les formules d'adhésion ne sont pas encore ouvertes.</p>;
+  if (isLoading) return <p className="text-center text-sm text-slate-500">{t('community.sidebar.loadingPlans')}</p>;
+  if (plans.length === 0) return <p className="text-center text-sm text-slate-500">{t('community.sidebar.noPlans')}</p>;
 
   return (
-    <ul id="formules" className="scroll-mt-40 space-y-3" aria-label="Formules d'adhésion">
+    <ul id="formules" className="scroll-mt-40 space-y-3" aria-label={t('community.sidebar.plansLabel')}>
       {plans.map((plan) => (
         <li key={plan.id} className="rounded-xl border border-slate-200 p-4">
           <div className="flex items-baseline justify-between gap-2">
             <p className="font-semibold text-slate-900">{plan.name}</p>
             <p className="text-right text-sm whitespace-nowrap">
               <span className="font-bold text-slate-900">{price(plan)}</span>{' '}
-              <span className="text-slate-500">{intervalLabel[plan.billing_interval]}</span>
+              <span className="text-slate-500">{intervalLabel(plan.billing_interval)}</span>
             </p>
           </div>
           {plan.description && <p className="mt-1 text-xs text-slate-500">{plan.description}</p>}
@@ -62,7 +66,7 @@ function Plans({ page }: { page: CommunityPage }) {
           )}
           {page.membership === 'visitor' ? (
             <Button asChild size="sm" className="mt-3 w-full">
-              <Link to={page.loginUrl}>Se connecter pour s'abonner</Link>
+              <Link to={page.loginUrl}>{t('community.sidebar.loginToSubscribe')}</Link>
             </Button>
           ) : (
             <Button
@@ -75,32 +79,33 @@ function Plans({ page }: { page: CommunityPage }) {
                 page.subscribe(plan.id);
               }}
             >
-              S'abonner — {plan.name}
+              {t('community.sidebar.subscribe', { plan: plan.name })}
             </Button>
           )}
         </li>
       ))}
-      <li className="text-center text-[11px] text-slate-500">Paiement sécurisé par PayDunya : Orange Money, Wave, MTN MoMo, Moov Money ou carte.</li>
+      <li className="text-center text-[11px] text-slate-500">{t('community.sidebar.securedBy')}</li>
     </ul>
   );
 }
 
 /** Confirmation before leaving (the owner cannot leave) */
 export function LeaveDialog({ page, open, onClose }: { page: CommunityPage; open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const community = page.community;
   if (!community) return null;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !page.isLeaving && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Quitter {community.name} ?</DialogTitle>
+          <DialogTitle>{t('community.sidebar.leaveTitle', { name: community.name })}</DialogTitle>
           <DialogDescription>
-            {community.pricing_type === 'paid' ? 'Vous perdez l’accès au contenu. Votre abonnement n’est pas remboursé.' : 'Vous pourrez la rejoindre à nouveau plus tard.'}
+            {community.pricing_type === 'paid' ? t('community.sidebar.leavePaid') : t('community.sidebar.leaveFree')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={page.isLeaving}>
-            Rester
+            {t('community.sidebar.stay')}
           </Button>
           <Button
             variant="danger"
@@ -109,7 +114,7 @@ export function LeaveDialog({ page, open, onClose }: { page: CommunityPage; open
               if (await page.leave()) onClose();
             }}
           >
-            <LogOut /> Quitter
+            <LogOut /> {t('community.sidebar.leave')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -119,29 +124,30 @@ export function LeaveDialog({ page, open, onClose }: { page: CommunityPage; open
 
 /** Join / leave / subscribe, depending on where the user stands */
 export function MembershipActions({ page, className }: { page: CommunityPage; className?: string }) {
+  const { t } = useTranslation();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const community = page.community;
   if (!community) return null;
   const needsApproval = !!community.settings?.require_approval_to_join;
-  const joinLabel = needsApproval ? 'Demander à rejoindre' : 'Rejoindre la communauté';
+  const joinLabel = needsApproval ? t('community.sidebar.askToJoin') : t('community.sidebar.join');
 
   switch (page.membership) {
     case 'member':
       return (
         <div className={cn('space-y-2', className)}>
           <p className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 py-2 text-sm font-semibold text-emerald-800">
-            <Check className="size-4" /> Vous êtes membre
+            <Check className="size-4" /> {t('community.sidebar.youAreMember')}
           </p>
           {page.isTeam && (
             <Button asChild variant="outline" className="w-full">
               <Link to={`/c/${community.slug}/dashboard`}>
-                <Settings /> Gérer la communauté
+                <Settings /> {t('community.sidebar.manage')}
               </Link>
             </Button>
           )}
           {page.role !== 'owner' && (
             <Button variant="ghost" size="sm" className="w-full text-slate-500" onClick={() => setConfirmLeave(true)}>
-              <LogOut /> Quitter la communauté
+              <LogOut /> {t('community.sidebar.leaveCommunity')}
             </Button>
           )}
           <LeaveDialog page={page} open={confirmLeave} onClose={() => setConfirmLeave(false)} />
@@ -150,13 +156,13 @@ export function MembershipActions({ page, className }: { page: CommunityPage; cl
     case 'pending':
       return (
         <p className={cn('flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2.5 text-sm font-semibold text-amber-800', className)}>
-          <Clock className="size-4" /> Demande en cours d'examen
+          <Clock className="size-4" /> {t('community.sidebar.pending')}
         </p>
       );
     case 'banned':
       return (
         <p className={cn('flex items-center justify-center gap-1.5 rounded-lg bg-red-50 py-2.5 text-sm font-semibold text-red-700', className)}>
-          <Ban className="size-4" /> Vous n'avez plus accès à cette communauté
+          <Ban className="size-4" /> {t('community.sidebar.banned')}
         </p>
       );
     default:
@@ -185,22 +191,23 @@ export function MembershipActions({ page, className }: { page: CommunityPage; cl
 function accessNote(page: CommunityPage) {
   const community = page.community;
   if (!community) return null;
-  if (community.pricing_type === 'paid') return 'Paiement sécurisé par PayDunya';
-  if (community.settings?.require_approval_to_join) return 'Votre demande sera validée par l’équipe';
-  return 'Accès immédiat et gratuit';
+  if (community.pricing_type === 'paid') return i18n.t('community.sidebar.notePaid');
+  if (community.settings?.require_approval_to_join) return i18n.t('community.sidebar.noteApproval');
+  return i18n.t('community.sidebar.noteFree');
 }
 
 /** Top 3 of the community (public leaderboard; the api has no weekly ranking yet) */
 function HonourBoard({ slug }: { slug: string }) {
+  const { t } = useTranslation();
   const { data = [] } = useGetCommunityLeaderboardQuery({ slug, limit: 3 });
   if (data.length === 0) return null;
   return (
     <section aria-labelledby="honour-board">
       <h3 id="honour-board" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-        <Trophy className="size-5 text-amber-600" /> Les membres à l’honneur
+        <Trophy className="size-5 text-amber-600" /> {t('community.sidebar.honourTitle')}
       </h3>
-      <p className="mt-1 text-sm text-slate-500">Depuis le début</p>
-      <ol className="mt-3 divide-y divide-slate-200" aria-label="Membres à l’honneur">
+      <p className="mt-1 text-sm text-slate-500">{t('community.sidebar.sinceStart')}</p>
+      <ol className="mt-3 divide-y divide-slate-200" aria-label={t('community.sidebar.honourLabel')}>
         {data.map((e) => (
           <li key={e.user.id} className="flex items-center gap-3 py-3">
             <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold', e.rank === 1 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-slate-600')}>
@@ -212,7 +219,7 @@ function HonourBoard({ slug }: { slug: string }) {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900">{e.user.name}</p>
-              <p className="text-xs text-slate-500">Niveau {e.level}</p>
+              <p className="text-xs text-slate-500">{t('community.sidebar.level', { level: e.level })}</p>
             </div>
             <span className="text-sm font-semibold text-blue-900 tabular-nums">+{formatCompact(e.points)}</span>
           </li>
@@ -224,12 +231,13 @@ function HonourBoard({ slug }: { slug: string }) {
 
 /** Member: the community card, a shortcut to the feed (or the space for the team), the top members */
 function MemberSidebar({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const community = page.community;
   if (!community) return null;
   const stats = [
-    { label: 'Membres', value: community.members_count },
-    { label: 'Publications', value: community.posts_count },
-    { label: 'Formations', value: community.courses_count },
+    { label: t('community.sidebar.members'), value: community.members_count },
+    { label: t('community.sidebar.posts'), value: community.posts_count },
+    { label: t('community.sidebar.courses'), value: community.courses_count },
   ];
   return (
     <div className="flex flex-col gap-8">
@@ -238,7 +246,7 @@ function MemberSidebar({ page }: { page: CommunityPage }) {
           {community.banner_url ? <img src={community.banner_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
         <div className="p-6">
-          <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">Les connexions qui comptent</p>
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">{t('community.sidebar.connections')}</p>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">{community.name}</h2>
           {community.tagline && <p className="mt-3 leading-relaxed text-slate-600">{community.tagline}</p>}
 
@@ -254,16 +262,16 @@ function MemberSidebar({ page }: { page: CommunityPage }) {
           <Button asChild size="lg" className="mt-6 w-full">
             {page.isTeam ? (
               <Link to={`/c/${community.slug}/dashboard`}>
-                Gérer la communauté <ArrowUpRight />
+                {t('community.sidebar.manageArrow')} <ArrowUpRight />
               </Link>
             ) : (
               <Link to="?tab=feed" replace>
-                Ouvrir le fil <ArrowUpRight />
+                {t('community.sidebar.openFeed')} <ArrowUpRight />
               </Link>
             )}
           </Button>
           <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500">
-            <ShieldCheck className="size-3.5" /> Vous êtes membre de cette communauté
+            <ShieldCheck className="size-3.5" /> {t('community.sidebar.memberOfThis')}
           </p>
         </div>
       </div>
@@ -274,6 +282,7 @@ function MemberSidebar({ page }: { page: CommunityPage }) {
 }
 
 export function CommunitySidebar({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const community = page.community;
   if (!community) return null;
   if (page.membership === 'member') return <MemberSidebar page={page} />;
@@ -281,9 +290,12 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
   const isPublic = community.privacy_type === 'public';
   const note = accessNote(page);
   const stats = [
-    { label: n > 1 ? 'Membres' : 'Membre', value: <span className="text-lg font-semibold">{formatCompact(n)}</span> },
-    { label: isPublic ? 'Publique' : 'Privée', value: isPublic ? <Globe className="mx-auto size-5" /> : <Lock className="mx-auto size-5" /> },
-    { label: 'Accès', value: <span className="text-lg font-semibold">{community.pricing_type === 'paid' ? 'Payant' : 'Gratuit'}</span> },
+    { label: n > 1 ? t('community.sidebar.members') : t('community.sidebar.member'), value: <span className="text-lg font-semibold">{formatCompact(n)}</span> },
+    { label: isPublic ? t('community.sidebar.public') : t('community.sidebar.private'), value: isPublic ? <Globe className="mx-auto size-5" /> : <Lock className="mx-auto size-5" /> },
+    {
+      label: t('community.sidebar.access'),
+      value: <span className="text-lg font-semibold">{community.pricing_type === 'paid' ? t('community.sidebar.paid') : t('community.sidebar.free')}</span>,
+    },
   ];
 
   return (
@@ -295,7 +307,7 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
         <div className="p-6">
           <p className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
             <span className="size-2 rounded-full bg-brand ring-4 ring-brand/15" aria-hidden />
-            Votre prochaine communauté
+            {t('community.sidebar.nextCommunity')}
           </p>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">{community.name}</h2>
           {community.tagline && <p className="mt-3 leading-relaxed text-slate-600">{community.tagline}</p>}
@@ -321,27 +333,27 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
       <section aria-labelledby="community-connect" className="px-1">
         <CalendarDays className="size-7 text-blue-900" aria-hidden />
         <h3 id="community-connect" className="mt-3 text-lg font-semibold text-slate-900">
-          Les connexions commencent ici.
+          {t('community.sidebar.connectTitle')}
         </h3>
-        <p className="mt-1 text-sm text-slate-600">Une conversation aujourd’hui, une nouvelle idée demain.</p>
+        <p className="mt-1 text-sm text-slate-600">{t('community.sidebar.connectText')}</p>
         <ul className="mt-4 space-y-3 text-sm font-semibold text-blue-900">
           <li>
             <Link to="?tab=feed" replace className="inline-flex items-center gap-1.5 hover:underline">
-              Voir l’espace membre <ChevronRight className="size-4" />
+              {t('community.sidebar.memberSpace')} <ChevronRight className="size-4" />
             </Link>
           </li>
           <li>
             <Link to="/" className="inline-flex items-center gap-1.5 hover:underline">
-              Explorer d’autres communautés <ChevronRight className="size-4" />
+              {t('community.sidebar.exploreOthers')} <ChevronRight className="size-4" />
             </Link>
           </li>
         </ul>
       </section>
 
       <section className="border-t border-slate-200 pt-6 text-sm">
-        <p className="text-slate-600">Envie de rassembler votre propre communauté ?</p>
+        <p className="text-slate-600">{t('community.sidebar.ownCommunity')}</p>
         <Link to="/create-community" className="mt-2 inline-flex items-center gap-1.5 font-semibold text-blue-900 hover:underline">
-          Lancez-vous <ArrowRight className="size-4" />
+          {t('community.sidebar.launch')} <ArrowRight className="size-4" />
         </Link>
       </section>
     </div>

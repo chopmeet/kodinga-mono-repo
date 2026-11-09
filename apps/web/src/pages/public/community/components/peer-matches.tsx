@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, customToast } from '@kodinga/ui';
@@ -9,6 +10,7 @@ import { getName } from '@/utils/Utils';
 
 /** Members suggested to an active member, with the reasons of the api; the ones ignored stay away */
 export function PeerMatches({ slug }: { slug: string }) {
+  const { t } = useTranslation();
   const { data = [] } = useGetPeerMatchesQuery(slug);
   const [respond, { isLoading }] = useRespondPeerMatchMutation();
   const matches = data.filter((m) => m.status !== 'declined');
@@ -25,9 +27,9 @@ export function PeerMatches({ slug }: { slug: string }) {
   return (
     <section aria-labelledby="peer-matches-title" className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
       <h3 id="peer-matches-title" className="font-semibold text-slate-900">
-        Membres à rencontrer
+        {t('community.peers.title')}
       </h3>
-      <ul className="mt-3 grid gap-3 md:grid-cols-2" aria-label="Membres à rencontrer">
+      <ul className="mt-3 grid gap-3 md:grid-cols-2" aria-label={t('community.peers.title')}>
         {matches.map((m) => {
           const name = getName(m) || m.username;
           return (
@@ -45,13 +47,13 @@ export function PeerMatches({ slug }: { slug: string }) {
                     {reason}
                   </p>
                 ))}
-                <MessageButton userId={m.user_id} label="Écrire" size="sm" variant="outline" className="mt-2" />
+                <MessageButton userId={m.user_id} label={t('community.peers.write')} size="sm" variant="outline" className="mt-2" />
               </div>
               <button
                 type="button"
                 disabled={isLoading}
                 onClick={() => ignore(m.id)}
-                aria-label={`Ignorer ${name}`}
+                aria-label={t('community.peers.ignore', { name })}
                 className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
               >
                 <X className="size-4" aria-hidden />

@@ -1,5 +1,6 @@
 import { LoaderCircle } from 'lucide-react';
 import { type ReactElement, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 import { useOauthStartMutation } from '@/utils/api/auth/auth.api';
@@ -27,13 +28,14 @@ function GithubLogo() {
   );
 }
 
-const providers: { id: OAuthProvider; label: string; logo: () => ReactElement }[] = [
-  { id: 'google', label: 'Continuer avec Google', logo: GoogleLogo },
-  { id: 'github', label: 'Continuer avec GitHub', logo: GithubLogo },
+const providers: { id: OAuthProvider; logo: () => ReactElement }[] = [
+  { id: 'google', logo: GoogleLogo },
+  { id: 'github', logo: GithubLogo },
 ];
 
 /** Asks the api for the provider url, keeps the state, then leaves for the provider */
 export function OAuthButtons() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const [oauthStart] = useOauthStartMutation();
   const [pending, setPending] = useState<OAuthProvider | null>(null);
@@ -55,7 +57,7 @@ export function OAuthButtons() {
   return (
     <div className="flex flex-col gap-3">
       {error && <FormAlert>{error}</FormAlert>}
-      {providers.map(({ id, label, logo: Logo }) => (
+      {providers.map(({ id, logo: Logo }) => (
         <button
           key={id}
           type="button"
@@ -64,7 +66,7 @@ export function OAuthButtons() {
           className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-[15px] font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-brand/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending === id ? <LoaderCircle className="size-5 animate-spin" /> : <Logo />}
-          {label}
+          {t(`auth.oauth.${id}`)}
         </button>
       ))}
     </div>
@@ -73,10 +75,11 @@ export function OAuthButtons() {
 
 /** Between the buttons of the providers and the form with an email */
 export function EmailSeparator() {
+  const { t } = useTranslation();
   return (
     <div className="my-6 flex items-center gap-3 text-sm text-slate-400" role="separator">
       <span className="h-px flex-1 bg-slate-200" />
-      ou avec votre email
+      {t('auth.oauth.withEmail')}
       <span className="h-px flex-1 bg-slate-200" />
     </div>
   );

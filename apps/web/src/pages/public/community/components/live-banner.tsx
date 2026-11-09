@@ -1,4 +1,5 @@
 import { Globe, Lock, Radio, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button } from '@kodinga/ui';
@@ -10,17 +11,18 @@ import { nameInitials } from '@/utils/Utils';
  * Provides immediate one-click access for all members and visitors.
  */
 export function LiveBanner({ slug }: { slug: string }) {
+  const { t } = useTranslation();
   const { data } = useGetCommunityEventsQuery({ slug, status: 'live' }, { pollingInterval: 15_000 });
   const liveEvent = data?.results?.find((e) => e.status === 'live');
 
   if (!liveEvent) return null;
 
-  const hostName = liveEvent.host?.full_name || liveEvent.host?.username || 'L’organisateur';
+  const hostName = liveEvent.host?.full_name || liveEvent.host?.username || t('community.liveBanner.host');
 
   return (
     <div
       role="region"
-      aria-label="Événement en direct"
+      aria-label={t('community.liveBanner.label')}
       className="relative overflow-hidden rounded-2xl border border-red-500/30 bg-linear-to-r from-red-950/90 via-slate-900 to-red-950/80 p-4 text-white shadow-xl shadow-red-950/20 backdrop-blur-md transition-all hover:border-red-500/50"
     >
       <div className="absolute -top-12 -right-12 size-40 rounded-full bg-red-600/10 blur-3xl pointer-events-none" />
@@ -37,20 +39,20 @@ export function LiveBanner({ slug }: { slug: string }) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold tracking-wider text-white uppercase">
-                <span className="size-1.5 animate-pulse rounded-full bg-white" /> En direct
+                <span className="size-1.5 animate-pulse rounded-full bg-white" /> {t('community.liveBanner.live')}
               </span>
               {liveEvent.is_public ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
-                  <Globe className="size-3" /> Public
+                  <Globe className="size-3" /> {t('community.liveBanner.public')}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[11px] font-medium text-amber-300">
-                  <Lock className="size-3" /> Réservé aux membres
+                  <Lock className="size-3" /> {t('community.liveBanner.membersOnly')}
                 </span>
               )}
               <span className="flex items-center gap-1 text-xs text-slate-300">
                 <Users className="size-3.5 text-slate-400" />
-                {liveEvent.attendees_count} participant{liveEvent.attendees_count > 1 ? 's' : ''}
+                {t('community.events.participants', { count: liveEvent.attendees_count })}
               </span>
             </div>
 
@@ -65,7 +67,7 @@ export function LiveBanner({ slug }: { slug: string }) {
                   {nameInitials(hostName)}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate">Animé par {hostName}</span>
+              <span className="truncate">{t('community.liveBanner.hostedBy', { name: hostName })}</span>
             </div>
           </div>
         </div>
@@ -78,7 +80,7 @@ export function LiveBanner({ slug }: { slug: string }) {
           >
             <Link to={`/communities/${slug}/events/${liveEvent.id}/live`}>
               <Radio className="size-4 animate-pulse" />
-              Rejoindre le direct
+              {t('community.liveBanner.join')}
             </Link>
           </Button>
         </div>

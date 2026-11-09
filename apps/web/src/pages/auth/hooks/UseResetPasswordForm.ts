@@ -1,5 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -7,22 +9,24 @@ import { z } from 'zod';
 import { useResetUserPasswordMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
 
-const resetSchema = z
-  .object({
-    new_password: z
-      .string()
-      .min(8, 'Au moins 8 caractères')
-      .refine((v) => !/^\d+$/.test(v), 'Le mot de passe ne peut pas contenir uniquement des chiffres'),
-    confirm_password: z.string().min(1, 'Confirmez votre mot de passe'),
-  })
-  .refine((v) => v.new_password === v.confirm_password, {
-    message: 'Les mots de passe ne correspondent pas',
-    path: ['confirm_password'],
-  });
+const resetSchema = (t: TFunction) =>
+  z
+    .object({
+      new_password: z
+        .string()
+        .min(8, t('auth.validation.min8'))
+        .refine((v) => !/^\d+$/.test(v), t('auth.validation.passwordNumeric')),
+      confirm_password: z.string().min(1, t('auth.validation.confirmRequired')),
+    })
+    .refine((v) => v.new_password === v.confirm_password, {
+      message: t('auth.validation.passwordsMismatch'),
+      path: ['confirm_password'],
+    });
 
-type ResetValues = z.infer<typeof resetSchema>;
+type ResetValues = z.infer<ReturnType<typeof resetSchema>>;
 
 function UseResetPasswordForm() {
+  const { t } = useTranslation();
   // The emailed link is {FRONTEND_URL}/auth/reset-password?token=...
   const [params] = useSearchParams();
   const token = params.get('token') ?? '';
@@ -37,7 +41,7 @@ function UseResetPasswordForm() {
     setError,
     watch,
     formState: { errors },
-  } = useForm<ResetValues>({ resolver: zodResolver(resetSchema) });
+  } = useForm<ResetValues>({ resolver: zodResolver(resetSchema(t)) });
 
   const onSubmit = async (values: ResetValues) => {
     setFormError(null);

@@ -1,4 +1,5 @@
 import { CircleCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { InputPassword } from '@kodinga/ui';
@@ -12,6 +13,7 @@ import UseResetPasswordForm from './hooks/UseResetPasswordForm';
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
 function ResetPassword() {
+  const { t } = useTranslation();
   const { 
     register, 
     errors, 
@@ -25,20 +27,19 @@ function ResetPassword() {
 
   if (done) {
     return (
-      <AuthWrapper title="Mot de passe modifié">
+      <AuthWrapper title={t('auth.reset.doneTitle')}>
         <div className="flex flex-col gap-6">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <CircleCheck className="size-6" />
           </div>
           <p className="text-[15px] leading-relaxed text-slate-600">
-            Votre mot de passe a bien été réinitialisé. Par sécurité, vous avez été déconnecté de tous vos
-            appareils.
+            {t('auth.reset.done')}
           </p>
           <Link
             to="/auth/login"
             className="flex h-13 w-full items-center justify-center rounded-xl bg-brand text-base font-semibold text-white shadow-sm hover:bg-brand-hover"
           >
-            Se connecter
+            {t('auth.common.login')}
           </Link>
         </div>
       </AuthWrapper>
@@ -48,19 +49,19 @@ function ResetPassword() {
   if (linkInvalid) {
     return (
       <AuthWrapper
-        title="Lien invalide"
+        title={t('auth.common.invalidLink')}
         footer={
           <Link to="/auth/login" className={linkClassName}>
-            Retour à la connexion
+            {t('auth.common.backToLogin')}
           </Link>
         }
       >
         <div className="flex flex-col gap-5">
-          <FormAlert>Ce lien de réinitialisation est invalide ou a expiré.</FormAlert>
+          <FormAlert>{t('auth.reset.invalid')}</FormAlert>
           <p className="text-[15px] text-slate-600">
-            Les liens ne sont valables qu'une seule fois et pour une durée limitée.{' '}
+            {t('auth.common.singleUse')}{' '}
             <Link to="/auth/forgot-password" className={linkClassName}>
-              Demander un nouveau lien
+              {t('auth.reset.newLink')}
             </Link>
           </p>
         </div>
@@ -69,13 +70,13 @@ function ResetPassword() {
   }
 
   return (
-    <AuthWrapper title="Nouveau mot de passe" subtitle="Choisissez un mot de passe que vous n'utilisez pas ailleurs.">
+    <AuthWrapper title={t('auth.reset.title')} subtitle={t('auth.reset.subtitle')}>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
         {formError && <FormAlert>{formError}</FormAlert>}
 
         <InputPassword
           id="reset-password"
-          label="Nouveau mot de passe"
+          label={t('auth.reset.newPassword')}
           autoComplete="new-password"
           required
           error={errors.new_password?.message}
@@ -89,7 +90,7 @@ function ResetPassword() {
 
         <InputPassword
           id="reset-password-confirm"
-          label="Confirmer le mot de passe"
+          label={t('auth.reset.confirm')}
           autoComplete="new-password"
           required
           error={errors.confirm_password?.message}
@@ -97,7 +98,7 @@ function ResetPassword() {
         />
 
         <div className="mt-4">
-          <SubmitButton isLoading={isLoading}>Réinitialiser le mot de passe</SubmitButton>
+          <SubmitButton isLoading={isLoading}>{t('auth.reset.submit')}</SubmitButton>
         </div>
       </form>
     </AuthWrapper>

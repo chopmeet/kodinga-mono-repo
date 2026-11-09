@@ -1,4 +1,5 @@
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useCancelEventRsvpMutation, useRsvpEventMutation } from '@/utils/api/community/community.api';
 import type { CommunityEvent, RsvpStatus } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -64,9 +65,9 @@ function UseEventRsvp(slug: string) {
     respond: (event: CommunityEvent, status: RsvpStatus) =>
       run(
         rsvp({ slug, eventId: event.id, status }).unwrap(),
-        status === 'attending' ? `Inscription confirmée : « ${event.title} ».` : 'Noté : vous êtes intéressé par cet événement.',
+        status === 'attending' ? i18n.t('community.toasts.rsvpConfirmed', { title: event.title }) : i18n.t('community.toasts.rsvpInterested'),
       ),
-    cancel: (event: CommunityEvent) => run(cancel({ slug, eventId: event.id }).unwrap(), 'Inscription annulée.'),
+    cancel: (event: CommunityEvent) => run(cancel({ slug, eventId: event.id }).unwrap(), i18n.t('community.toasts.rsvpCancelled')),
   };
 }
 

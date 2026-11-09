@@ -1,4 +1,5 @@
 import { UserCheck, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 import { Button, cn, customToast } from '@kodinga/ui';
@@ -15,6 +16,7 @@ const className = 'h-13 w-full text-base';
  * (is_following): without it, nothing is shown. Visitors sign in first; nothing on one's own profile.
  */
 export function FollowButton({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const signedIn = !!useAppSelector((s) => s.user.token);
   const me = useUser();
   const { pathname } = useLocation();
@@ -26,7 +28,7 @@ export function FollowButton({ profile, name }: { profile: PublicProfile; name: 
     return (
       <Button asChild size="lg" variant="outline" className={className}>
         <Link to={`/auth/login?next=${encodeURIComponent(pathname)}`}>
-          <UserPlus /> Suivre
+          <UserPlus /> {t('profile.follow.follow')}
         </Link>
       </Button>
     );
@@ -36,7 +38,7 @@ export function FollowButton({ profile, name }: { profile: PublicProfile; name: 
   const toggle = async () => {
     try {
       const state = await toggleFollow(profile.user.username).unwrap();
-      customToast.success({ message: state.is_following ? `Vous suivez ${name}.` : `Vous ne suivez plus ${name}.` });
+      customToast.success({ message: state.is_following ? t('profile.follow.nowFollowing', { name }) : t('profile.follow.noLongerFollowing', { name }) });
     } catch (err) {
       customToast.error({ message: parseApiError(err).message });
     }
@@ -47,13 +49,13 @@ export function FollowButton({ profile, name }: { profile: PublicProfile; name: 
       size="lg"
       variant="outline"
       aria-pressed={following}
-      title={following ? `Ne plus suivre ${name}` : undefined}
+      title={following ? t('profile.follow.unfollowTitle', { name }) : undefined}
       className={cn(className, following && 'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary')}
       isLoading={isLoading}
       onClick={toggle}
     >
       {following ? <UserCheck /> : <UserPlus />}
-      {following ? 'Abonné' : 'Suivre'}
+      {following ? t('profile.follow.following') : t('profile.follow.follow')}
     </Button>
   );
 }

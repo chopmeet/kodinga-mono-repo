@@ -1,11 +1,13 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { ArrowLeft, Briefcase, CalendarDays, Copy, FolderKanban, MapPin, MessageCircle, Pencil, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
 import { Button, cn, customToast } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { useGetPublicProfileQuery } from '@/utils/api/user/user.api';
+import { dateFormat } from '@/utils/format';
 import { formatCompact, nameInitials, useUser } from '@/utils/Utils';
 import { MessageButton } from '@/pages/public/messages/components/message-button';
 import { ActivityHeatmap } from './components/activity-heatmap';
@@ -16,19 +18,17 @@ import { ProfileAbout, ProfileAvailability, ProfileCareer, ProfileCommunities, P
 
 type TabId = 'about' | 'career' | 'portfolio' | 'communities' | 'contributions';
 
-const joinedFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-
-
 function Banner({ imageUrl }: { imageUrl?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="relative isolate h-56 overflow-hidden border-b border-slate-200 sm:h-60">
       {imageUrl ? <img src={imageUrl} alt="" className="absolute inset-0 -z-10 size-full object-cover" /> : <GlassBackdrop className="-z-10" />}
       <div className="mx-auto flex h-full max-w-[1440px] flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
         <Link to="/" className="flex w-fit items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
           <ArrowLeft className="size-4" />
-          Explorer les communautés
+          {t('profile.backExplore')}
         </Link>
-        <p className="hidden self-end pb-6 text-xs font-semibold sm:block tracking-[0.2em] text-slate-600 uppercase">Les personnes derrière le code</p>
+        <p className="hidden self-end pb-6 text-xs font-semibold sm:block tracking-[0.2em] text-slate-600 uppercase">{t('profile.bannerTagline')}</p>
       </div>
     </div>
   );
@@ -36,6 +36,7 @@ function Banner({ imageUrl }: { imageUrl?: string }) {
 
 /** /profiles/:username — public developer profile */
 function PublicProfile() {
+  const { t } = useTranslation();
   const { username = '' } = useParams();
   const { data: profile, isLoading, error } = useGetPublicProfileQuery(username, { skip: !username });
   const me = useUser();
@@ -44,7 +45,7 @@ function PublicProfile() {
 
   if (isLoading) {
     return (
-      <div aria-busy="true" aria-label="Chargement du profil">
+      <div aria-busy="true" aria-label={t('profile.loading')}>
         <Banner />
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="relative z-10 -mt-20 size-40 animate-pulse rounded-full border-4 border-white bg-slate-100" />
@@ -60,9 +61,9 @@ function PublicProfile() {
       <div>
         <Banner />
         <div className="mx-auto max-w-[1440px] px-4 py-16 text-center sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-slate-900">{notFound ? 'Profil introuvable' : 'Profil indisponible'}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{notFound ? t('profile.notFound') : t('profile.unavailable')}</h1>
           <p className="mt-2 text-slate-500">
-            {notFound ? "Ce profil n'existe pas ou n'est pas public." : 'Impossible de charger ce profil pour le moment.'}
+            {notFound ? t('profile.notFoundText') : t('profile.unavailableText')}
           </p>
         </div>
       </div>
@@ -76,7 +77,7 @@ function PublicProfile() {
       if (navigator.share) await navigator.share({ title: name, url });
       else {
         await navigator.clipboard.writeText(url);
-        customToast.success({ message: 'Lien du profil copié.' });
+        customToast.success({ message: t('profile.linkCopied') });
       }
     } catch {
       // Share sheet dismissed: nothing to do
@@ -103,7 +104,7 @@ function PublicProfile() {
 
           <p className="mt-8 flex items-center gap-1.5 text-xs font-medium tracking-wide text-slate-500 uppercase">
             <UserRound className="size-3.5" aria-hidden />
-            Profil public
+            {t('profile.publicProfile')}
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{name}</h1>
           <p className="mt-2 text-sm text-slate-500">@{profile.user.username}</p>
@@ -119,7 +120,7 @@ function PublicProfile() {
             )}
             <li className="flex items-center gap-2">
               <CalendarDays className="size-4 text-slate-400" aria-hidden />
-              Inscrit le {joinedFormat.format(new Date(profile.user.date_joined))}
+              {t('profile.joined', { date: dateFormat({ day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(profile.user.date_joined)) })}
             </li>
           </ul>
           <ProfileFollows profile={profile} name={name} />
@@ -128,9 +129,9 @@ function PublicProfile() {
           <dl className="mt-8 grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-5 text-center">
             {(
               [
-                ['Publications', profile.contributions?.posts_count],
-                ['Projets', profile.contributions?.projects_count],
-                ['Points', profile.contributions?.reputation_points ?? profile.reputation_points],
+                [t('profile.stats.posts'), profile.contributions?.posts_count],
+                [t('profile.stats.projects'), profile.contributions?.projects_count],
+                [t('profile.stats.points'), profile.contributions?.reputation_points ?? profile.reputation_points],
               ] as const
             ).map(([label, value]) => (
               <div key={label}>
@@ -146,7 +147,7 @@ function PublicProfile() {
             {me?.id === profile.user.id && (
               <Button asChild size="lg" className="h-13 w-full text-base">
                 <Link to="/dashboard/profile">
-                  <Pencil /> Modifier mon profil
+                  <Pencil /> {t('profile.editMine')}
                 </Link>
               </Button>
             )}
@@ -156,7 +157,7 @@ function PublicProfile() {
               className="flex h-13 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white font-semibold text-slate-900 shadow-2xs transition-colors hover:bg-slate-50"
             >
               <Copy className="size-4.5" />
-              Partager le profil
+              {t('profile.share')}
             </button>
           </div>
         </aside>
@@ -165,20 +166,20 @@ function PublicProfile() {
         <section className="pt-12" aria-labelledby="activity-title">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase">Un peu chaque jour</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase">{t('profile.activity.eyebrow')}</p>
               <h2 id="activity-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-                Activité
+                {t('profile.activity.title')}
               </h2>
               <p className="mt-4 text-slate-600" aria-live="polite">
                 {activity.failed
-                  ? 'Impossible de charger l’activité pour le moment.'
+                  ? t('profile.activity.failed')
                   : activity.total === undefined
-                    ? 'Chargement de l’activité…'
-                    : `${formatCompact(activity.total)} contribution${activity.total > 1 ? 's' : ''} en ${activity.year}`}
+                    ? t('profile.activity.loading')
+                    : t('profile.activity.total', { count: activity.total, formatted: formatCompact(activity.total), year: activity.year })}
               </p>
             </div>
             <label className="sr-only" htmlFor="activity-year">
-              Année
+              {t('profile.activity.year')}
             </label>
             <select
               id="activity-year"
@@ -201,13 +202,13 @@ function PublicProfile() {
           <div className="no-scrollbar mt-12 flex gap-2 overflow-x-auto border-b border-slate-200" role="tablist">
             {(
               [
-                { id: 'about', label: 'À propos', icon: UserRound },
-                { id: 'career', label: 'Parcours', icon: Briefcase },
-                { id: 'portfolio', label: 'Portfolio', icon: FolderKanban },
-                { id: 'communities', label: 'Communautés', icon: Users },
-                { id: 'contributions', label: 'Contributions', icon: MessageCircle },
+                { id: 'about', icon: UserRound },
+                { id: 'career', icon: Briefcase },
+                { id: 'portfolio', icon: FolderKanban },
+                { id: 'communities', icon: Users },
+                { id: 'contributions', icon: MessageCircle },
               ] as const
-            ).map(({ id, label, icon: Icon }) => (
+            ).map(({ id, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
@@ -220,7 +221,7 @@ function PublicProfile() {
                 )}
               >
                 <Icon className="size-4.5" aria-hidden />
-                {label}
+                {t(`profile.tabs.${id}`)}
               </button>
             ))}
           </div>

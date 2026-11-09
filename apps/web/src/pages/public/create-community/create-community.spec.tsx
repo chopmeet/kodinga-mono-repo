@@ -5,6 +5,7 @@ import { onLogout, onSetUserToken } from '@/redux/slice/User.slice';
 import { renderAppAt, SLOW, stubApi } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import i18n from '@/utils/i18n';
 
 // Full app tree + network stubs: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 20_000 });
@@ -313,5 +314,22 @@ describe('Create a community', () => {
     renderAppAt('/create-community');
     expect(await screen.findByRole('heading', { name: 'De quoi va-t-on parler ?' }, SLOW)).toBeTruthy();
     expect(within(screen.getByRole('figure', { name: 'Aperçu de la communauté' })).getByText('Lomé Product Builders')).toBeTruthy();
+  });
+
+  it('speaks English: steps, preview and the access choices', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    try {
+      renderAppAt('/create-community');
+      await screen.findByRole('heading', { name: 'What is your community called?' }, SLOW);
+      expect(screen.getByText('Step 1 of 5')).toBeTruthy();
+      fireEvent.change(screen.getByLabelText(/^Community name/), { target: { value: 'Abidjan Flutter Crew' } });
+      const preview = screen.getByRole('figure', { name: 'Community preview' });
+      expect(within(preview).getByText('Free access')).toBeTruthy();
+      expect(within(screen.getByRole('list', { name: 'Steps' })).getByText('Identity')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: /Continue/ }));
+      expect(await screen.findByRole('heading', { name: 'What will it be about?' }, SLOW)).toBeTruthy();
+    } finally {
+      await act(() => i18n.changeLanguage('fr'));
+    }
   });
 });

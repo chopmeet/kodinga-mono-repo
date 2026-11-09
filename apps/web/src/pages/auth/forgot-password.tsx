@@ -1,4 +1,5 @@
 import { ArrowLeft, Mail, MailCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Input } from '@kodinga/ui';
@@ -8,17 +9,18 @@ import { FormAlert } from './components/form-alert';
 import { SubmitButton } from './components/submit-button';
 import UseForgotPasswordForm from './hooks/UseForgotPasswordForm';
 
-const backToLogin = (
-  <Link
-    to="/auth/login"
-    className="inline-flex items-center gap-1.5 font-semibold text-brand hover:text-brand-hover hover:underline"
-  >
-    <ArrowLeft className="size-4" />
-    Retour à la connexion
-  </Link>
-);
+function BackToLogin() {
+  const { t } = useTranslation();
+  return (
+    <Link to="/auth/login" className="inline-flex items-center gap-1.5 font-semibold text-brand hover:text-brand-hover hover:underline">
+      <ArrowLeft className="size-4" />
+      {t('auth.common.backToLogin')}
+    </Link>
+  );
+}
 
 function ForgotPassword() {
+  const { t } = useTranslation();
   const { 
     register, 
     errors, 
@@ -32,29 +34,29 @@ function ForgotPassword() {
 
   if (sentTo) {
     return (
-      <AuthWrapper title="Vérifiez vos emails" footer={backToLogin}>
+      <AuthWrapper title={t('auth.common.checkEmails')} footer={<BackToLogin />}>
         <div className="flex flex-col gap-5">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
             <MailCheck className="size-6" />
           </div>
           <p className="text-[15px] leading-relaxed text-slate-600">
-            Si un compte existe pour <strong className="font-semibold text-slate-900">{sentTo}</strong>, vous
-            allez recevoir un lien pour choisir un nouveau mot de passe. Pensez à vérifier vos spams.
+            {t('auth.forgot.sentBefore')} <strong className="font-semibold text-slate-900">{sentTo}</strong>
+            {t('auth.forgot.sentAfter')}
           </p>
           {formError && <FormAlert>{formError}</FormAlert>}
           <p className="text-sm text-slate-500">
-            Rien reçu ?{' '}
+            {t('auth.common.nothingReceived')}{' '}
             <button
               type="button"
               onClick={resend}
               disabled={isLoading}
               className="font-semibold text-brand hover:text-brand-hover hover:underline disabled:opacity-60"
             >
-              Renvoyer le lien
+              {t('auth.common.resendLink')}
             </button>{' '}
-            ou{' '}
+            {t('auth.common.or')}{' '}
             <button type="button" onClick={reset} className="font-semibold text-brand hover:text-brand-hover hover:underline">
-              changer d'adresse
+              {t('auth.forgot.changeEmail')}
             </button>
           </p>
         </div>
@@ -64,15 +66,15 @@ function ForgotPassword() {
 
   return (
     <AuthWrapper
-      title="Mot de passe oublié"
-      subtitle="Indiquez votre adresse email : nous vous enverrons un lien pour en choisir un nouveau."
-      footer={backToLogin}
+      title={t('auth.forgot.title')}
+      subtitle={t('auth.forgot.subtitle')}
+      footer={<BackToLogin />}
     >
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
         {formError && <FormAlert>{formError}</FormAlert>}
         <Input
           id="forgot-email"
-          label="Adresse email"
+          label={t('auth.common.email')}
           type="email"
           icon={<Mail className="size-4" />}
           autoComplete="email"
@@ -81,7 +83,7 @@ function ForgotPassword() {
           {...register('email')}
         />
         <div className="mt-4">
-          <SubmitButton isLoading={isLoading}>Envoyer le lien</SubmitButton>
+          <SubmitButton isLoading={isLoading}>{t('auth.forgot.submit')}</SubmitButton>
         </div>
       </form>
     </AuthWrapper>

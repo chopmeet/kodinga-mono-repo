@@ -1,12 +1,15 @@
 import { MailOpen, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button, Loader } from '@kodinga/ui';
+import { formatNumber } from '@/utils/format';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import UseAcceptInvitation from './form/UseAcceptInvitation';
 
 /** /invitations/:code and /invite/:code (sent by email) — join a community with an invitation */
 function AcceptInvitation() {
+  const { t } = useTranslation();
   const { community, invitedTo, invitedEmail, closed, isLoading, isSignedIn, alreadyMember, loginUrl, registerUrl, memberUrl, isJoining, accept, canDecline, isDeclining, decline } = UseAcceptInvitation();
   const name = community?.name ?? invitedTo?.name;
 
@@ -14,7 +17,7 @@ function AcceptInvitation() {
     <div className="mx-auto flex min-h-[60svh] max-w-lg items-center px-4 py-12">
       <section aria-labelledby="invitation-title" className="w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-2xs">
         {isLoading ? (
-          <Loader inline size="sm" className="py-4" message="Chargement de l'invitation…" />
+          <Loader inline size="sm" className="py-4" message={t('inbox.invitation.loading')} />
         ) : (
           <>
             {community ? (
@@ -26,16 +29,16 @@ function AcceptInvitation() {
                 <MailOpen className="size-7" />
               </span>
             )}
-            <p className="mt-5 text-sm font-medium text-slate-500">Vous êtes invité à rejoindre</p>
+            <p className="mt-5 text-sm font-medium text-slate-500">{t('inbox.invitation.invited')}</p>
             <h1 id="invitation-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-              {name ?? 'une communauté Kodinga'}
+              {name ?? t('inbox.invitation.aCommunity')}
             </h1>
-            {invitedEmail && <p className="mt-2 text-sm text-slate-500">Invitation adressée à {invitedEmail}</p>}
+            {invitedEmail && <p className="mt-2 text-sm text-slate-500">{t('inbox.invitation.sentTo', { email: invitedEmail })}</p>}
             {community?.tagline && <p className="mt-2 text-slate-600">{community.tagline}</p>}
             {community && (
               <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-500">
                 <Users className="size-4" aria-hidden />
-                {community.members_count.toLocaleString('fr-FR')} membre{community.members_count > 1 ? 's' : ''}
+                {t('inbox.invitation.members', { count: community.members_count, formatted: formatNumber(community.members_count) })}
               </p>
             )}
 
@@ -46,37 +49,37 @@ function AcceptInvitation() {
                     {closed}
                   </p>
                   <Button asChild variant="outline" className="w-full">
-                    <Link to="/">Découvrir les communautés</Link>
+                    <Link to="/">{t('inbox.invitation.discover')}</Link>
                   </Button>
                 </>
               ) : !isSignedIn ? (
                 <>
                   <Button asChild className="w-full">
-                    <Link to={loginUrl}>Se connecter pour rejoindre</Link>
+                    <Link to={loginUrl}>{t('inbox.invitation.loginToJoin')}</Link>
                   </Button>
                   <p className="mt-4 text-sm text-slate-600">
-                    Pas encore de compte ?{' '}
+                    {t('inbox.invitation.noAccount')}{' '}
                     <Link to={registerUrl} className="font-semibold text-brand hover:underline">
-                      Créez-le
+                      {t('inbox.invitation.create')}
                     </Link>
-                    , puis rouvrez ce lien.
+                    {t('inbox.invitation.thenReopen')}
                   </p>
                 </>
               ) : alreadyMember ? (
                 <>
-                  <p className="mb-4 text-sm text-slate-600">Vous faites déjà partie de cette communauté.</p>
+                  <p className="mb-4 text-sm text-slate-600">{t('inbox.invitation.alreadyMember')}</p>
                   <Button asChild variant="outline" className="w-full">
-                    <Link to={memberUrl}>Ouvrir la communauté</Link>
+                    <Link to={memberUrl}>{t('inbox.invitation.open')}</Link>
                   </Button>
                 </>
               ) : (
                 <div className="flex flex-col gap-2">
                   <Button className="w-full" onClick={accept} isLoading={isJoining} disabled={isDeclining}>
-                    Rejoindre {name ?? 'la communauté'}
+                    {t('inbox.invitation.join', { name: name ?? t('inbox.invitation.theCommunity') })}
                   </Button>
                   {canDecline && (
                     <Button variant="outline" className="w-full" onClick={decline} isLoading={isDeclining} disabled={isJoining}>
-                      Refuser l’invitation
+                      {t('inbox.invitation.decline')}
                     </Button>
                   )}
                 </div>

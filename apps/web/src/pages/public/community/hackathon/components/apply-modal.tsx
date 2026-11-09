@@ -1,17 +1,20 @@
 import { User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, cn, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@kodinga/ui';
 import type { HackathonQuestion, ParticipationMode } from '@/utils/api/hackathon/hackathon.type';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
+import i18n from '@/utils/i18n';
 import type { HackathonPage } from '../form/UseHackathonPage';
 
 /** Key and wording of a question of the organizers (free-form JSON on the api) */
 export const questionKey = (q: HackathonQuestion, i: number) => q.id || q.key || `question_${i + 1}`;
-export const questionLabel = (q: HackathonQuestion, i: number) => q.label || q.question || `Question ${i + 1}`;
+export const questionLabel = (q: HackathonQuestion, i: number) => q.label || q.question || i18n.t('hackathon.apply.question', { n: i + 1 });
 
 /** Application: alone or in a team, the questions of the organizers, the rules */
 function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const h = page.hackathon;
   const questions = h?.custom_registration_questions ?? [];
   const [mode, setMode] = useState<ParticipationMode>('individual');
@@ -38,8 +41,8 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
 
   const send = async () => {
     const missing = questions.findIndex((q, i) => q.required && !answers[questionKey(q, i)]?.trim());
-    if (missing >= 0) return setError(`Répondez à : ${questionLabel(questions[missing], missing)}`);
-    if (!terms) return setError('Acceptez le règlement pour candidater.');
+    if (missing >= 0) return setError(t('hackathon.apply.answerTo', { question: questionLabel(questions[missing], missing) }));
+    if (!terms) return setError(t('hackathon.apply.acceptRules'));
     setError(null);
     const outcome = await page.apply({
       participation_mode: mode,
@@ -56,15 +59,15 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
     <Dialog open={open} onOpenChange={(next) => !next && !page.isApplying && onClose()}>
       <DialogContent position="top" className="max-h-[92svh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Candidater à {h.title}</DialogTitle>
+          <DialogTitle>{t('hackathon.apply.title', { title: h.title })}</DialogTitle>
           <DialogDescription>
-            {h.auto_accept_applications ? 'Votre inscription est confirmée dès l’envoi.' : 'Les organisateurs examinent chaque candidature et vous répondent par notification.'}
+            {h.auto_accept_applications ? t('hackathon.apply.autoAccept') : t('hackathon.apply.reviewed')}
           </DialogDescription>
         </DialogHeader>
         {closed && (
           <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="font-semibold">Les candidatures ne sont plus acceptées</p>
-            <p className="mt-0.5">{closedByApi ?? `Elles étaient ouvertes jusqu’au ${formatDateTime(h.registration_end)}.`}</p>
+            <p className="font-semibold">{t('hackathon.apply.closed')}</p>
+            <p className="mt-0.5">{closedByApi ?? t('hackathon.apply.wereOpen', { date: formatDateTime(h.registration_end) })}</p>
           </div>
         )}
         <form
@@ -79,12 +82,12 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
           <fieldset disabled={closed} className="contents">
           {h.allow_teams && (
             <fieldset>
-              <legend className="custom-form-label mb-2">Comment participez-vous ?</legend>
+              <legend className="custom-form-label mb-2">{t('hackathon.apply.how')}</legend>
               <div role="radiogroup" className="grid gap-2 sm:grid-cols-2">
                 {(
                   [
-                    { value: 'individual', label: 'En solo', help: 'Vous pourrez rejoindre une équipe plus tard.', icon: User },
-                    { value: 'team', label: 'En équipe', help: `De ${h.min_team_size} à ${h.max_team_size} personnes.`, icon: Users },
+                    { value: 'individual', label: t('hackathon.apply.solo'), help: t('hackathon.apply.soloHelp'), icon: User },
+                    { value: 'team', label: t('hackathon.apply.team'), help: t('hackathon.apply.teamHelp', { min: h.min_team_size, max: h.max_team_size }), icon: Users },
                   ] as const
                 ).map(({ value, label, help, icon: Icon }) => (
                   <button
@@ -110,9 +113,9 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
           )}
           {mode === 'team' && (
             <label className="flex flex-col gap-1">
-              <span className="custom-form-label">Nom de l’équipe envisagé (optionnel)</span>
+              <span className="custom-form-label">{t('hackathon.apply.teamName')}</span>
               <input value={teamName} onChange={(e) => setTeamName(e.target.value)} className="custom-form-control bg-background px-4 py-2" />
-              <span className="text-xs text-slate-500">Vous créerez l’équipe et inviterez vos coéquipiers une fois inscrit.</span>
+              <span className="text-xs text-slate-500">{t('hackathon.apply.teamNameHelp')}</span>
             </label>
           )}
           {questions.map((q, i) => {
@@ -135,13 +138,13 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
           <label className="flex items-start gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-(--primary)" />
             <span>
-              J’accepte le règlement du hackathon
+              {t('hackathon.apply.acceptBefore')}
               {h.rules_url && (
                 <>
                   {' '}
                   (
                   <a href={h.rules_url} target="_blank" rel="noreferrer" className="font-medium text-blue-900 underline">
-                    lire le règlement
+                    {t('hackathon.apply.readRules')}
                   </a>
                   )
                 </>
@@ -158,10 +161,10 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={page.isApplying}>
-            {closed ? 'Fermer' : 'Annuler'}
+            {closed ? t('common.actions.close') : t('common.actions.cancel')}
           </Button>
           <Button type="submit" form="apply-form" isLoading={page.isApplying} disabled={closed}>
-            Envoyer ma candidature
+            {t('hackathon.apply.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

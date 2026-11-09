@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import type { TFunction } from 'i18next';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -8,24 +9,25 @@ import { useRegisterUserMutation, useResendVerificationMutation } from '@/utils/
 import { parseApiError } from '@/utils/api/errors';
 
 // Same limits as the api RegisterSerializer; the server stays the source of truth
-const registerSchema = z.object({
-  first_name: z.string().trim().min(1, 'Saisissez votre prénom').max(150, '150 caractères maximum'),
-  last_name: z.string().trim().min(1, 'Saisissez votre nom').max(150, '150 caractères maximum'),
-  username: z
-    .string()
-    .trim()
-    .min(3, 'Au moins 3 caractères')
-    .max(50, '50 caractères maximum')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Lettres, chiffres, « _ » et « - » uniquement'),
-  email: z.string().trim().min(1, 'Saisissez votre email').email('Adresse email invalide'),
-  password: z
-    .string()
-    .min(8, 'Au moins 8 caractères')
-    .refine((v) => !/^\d+$/.test(v), 'Le mot de passe ne peut pas contenir uniquement des chiffres'),
-  terms_accepted: z.boolean().refine((v) => v, "Acceptez les conditions d'utilisation pour continuer"),
-});
+const registerSchema = (t: TFunction) =>
+  z.object({
+    first_name: z.string().trim().min(1, t('auth.validation.firstNameRequired')).max(150, t('auth.validation.max150')),
+    last_name: z.string().trim().min(1, t('auth.validation.lastNameRequired')).max(150, t('auth.validation.max150')),
+    username: z
+      .string()
+      .trim()
+      .min(3, t('auth.validation.min3'))
+      .max(50, t('auth.validation.max50'))
+      .regex(/^[a-zA-Z0-9_-]+$/, t('auth.validation.usernameChars')),
+    email: z.string().trim().min(1, t('auth.validation.emailRequired')).email(t('auth.validation.emailInvalid')),
+    password: z
+      .string()
+      .min(8, t('auth.validation.min8'))
+      .refine((v) => !/^\d+$/.test(v), t('auth.validation.passwordNumeric')),
+    terms_accepted: z.boolean().refine((v) => v, t('auth.validation.termsRequired')),
+  });
 
-type RegisterValues = z.infer<typeof registerSchema>;
+type RegisterValues = z.infer<ReturnType<typeof registerSchema>>;
 
 const FIELDS = ['first_name', 'last_name', 'username', 'email', 'password', 'terms_accepted'] as const;
 
@@ -44,7 +46,7 @@ export const suggestUsername = (first: string, last: string) =>
     .slice(0, 50);
 
 function UseRegisterForm() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [registerUser, { isLoading }] = useRegisterUserMutation();
   const [resendVerification, { isLoading: isResending }] = useResendVerificationMutation();
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -52,7 +54,7 @@ function UseRegisterForm() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<RegisterValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema(t)),
     defaultValues: { first_name: '', last_name: '', username: '', email: '', password: '', terms_accepted: false },
   });
   const { register, handleSubmit, setError, setValue, watch, getFieldState, formState } = form;

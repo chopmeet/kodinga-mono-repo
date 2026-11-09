@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { parseApiError } from './errors';
 
 // Payloads captured from the Django api (apps/api)
@@ -46,5 +47,17 @@ describe('parseApiError', () => {
     expect(parseApiError({ status: 'FETCH_ERROR', error: 'TypeError: Failed to fetch' }).message).toBe(
       'Impossible de joindre le serveur. Vérifiez votre connexion.'
     );
+  });
+
+  it('gives our own English texts in English', async () => {
+    await i18n.changeLanguage('en');
+    const error = {
+      status: 400,
+      data: { success: false, code: 'invalid', message: 'Validation error.', details: { username: ['Username must be at least 3 characters long.'] } },
+    };
+    expect(parseApiError(error).fields).toEqual({ username: 'The username must be at least 3 characters long.' });
+    expect(parseApiError({ status: 'FETCH_ERROR' }).message).toBe('Unable to reach the server. Check your connection.');
+    expect(parseApiError({ status: 429, data: { success: false, code: 'throttled', message: 'x' } }).message).toBe('Too many attempts. Try again in a few minutes.');
+    await i18n.changeLanguage('fr');
   });
 });

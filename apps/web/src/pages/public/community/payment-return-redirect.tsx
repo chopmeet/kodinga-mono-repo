@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Navigate, useSearchParams } from 'react-router-dom';
 
 import { Loader } from '@kodinga/ui';
@@ -14,6 +15,7 @@ function getRememberedPayment(): { slug?: string; paymentId?: string } | null {
 }
 
 export function PaymentReturnRedirect({ mode }: { mode: 'done' | 'cancelled' }) {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const remembered = getRememberedPayment();
   const paymentId = params.get('payment_id') || remembered?.paymentId || '';
@@ -23,7 +25,7 @@ export function PaymentReturnRedirect({ mode }: { mode: 'done' | 'cancelled' }) 
   });
 
   if (paymentId && isLoading) {
-    return <Loader inline className="py-24" message="Vérification de votre paiement PayDunya en cours…" />;
+    return <Loader inline className="py-24" message={t('community.payment.verifying')} />;
   }
 
   const communitySlug =

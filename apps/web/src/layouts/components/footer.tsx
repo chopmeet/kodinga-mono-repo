@@ -10,8 +10,8 @@ import { scrollToResults, useUser } from '@/utils/Utils';
 
 type FooterLink = { label: string; to?: string; onClick?: () => void };
 
-/** Ways to pay a paid community (PayDunya) */
-const PAYMENTS = ['Orange Money', 'Wave', 'MTN MoMo', 'Moov Money', 'Carte bancaire'];
+/** Ways to pay a paid community (PayDunya); the card is named in the current language */
+const PAYMENTS = ['Orange Money', 'Wave', 'MTN MoMo', 'Moov Money'];
 
 function Column({ title, links }: { title: string; links: FooterLink[] }) {
   return (
@@ -37,8 +37,9 @@ function Column({ title, links }: { title: string; links: FooterLink[] }) {
 }
 
 function FooterLogo() {
+  const { t } = useTranslation();
   return (
-    <Link to="/" className="inline-flex items-center gap-2.5" aria-label="Kodinga, accueil">
+    <Link to="/" className="inline-flex items-center gap-2.5" aria-label={t('layout.footer.homeLabel')}>
       <span className="flex size-10 items-center justify-center rounded-lg bg-white text-lg font-bold text-blue-900">K</span>
       <span className="text-2xl font-bold tracking-tight text-white">
         kodinga<span className="text-blue-300">.</span>
@@ -53,7 +54,7 @@ function Pill({ children }: { children: ReactNode }) {
 
 /** Footer of the public pages: call to action, links, ways to pay, language */
 function Footer() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const signedIn = !!useAppSelector((s) => s.user.token);
@@ -70,21 +71,21 @@ function Footer() {
   };
 
   const platform: FooterLink[] = [
-    { label: 'Explorer les communautés', onClick: explore },
-    { label: 'Créer une communauté', to: '/create-community' },
-    { label: 'Hackathons & défis', to: '/hackathons' },
-    { label: 'Offres & missions', to: '/opportunities' },
+    { label: t('layout.footer.explore'), onClick: explore },
+    { label: t('layout.footer.create'), to: '/create-community' },
+    { label: t('layout.footer.hackathons'), to: '/hackathons' },
+    { label: t('layout.footer.opportunities'), to: '/opportunities' },
   ];
   const account: FooterLink[] = signedIn
     ? [
-        { label: 'Mes communautés', to: '/dashboard/communities' },
-        { label: 'Messages', to: '/messages' },
-        ...(user?.username ? [{ label: 'Mon profil public', to: `/profiles/${user.username}` }] : []),
+        { label: t('layout.footer.myCommunities'), to: '/dashboard/communities' },
+        { label: t('layout.footer.messages'), to: '/messages' },
+        ...(user?.username ? [{ label: t('layout.footer.publicProfile'), to: `/profiles/${user.username}` }] : []),
       ]
     : [
-        { label: 'Se connecter', to: '/auth/login' },
-        { label: 'Créer un compte', to: '/auth/register' },
-        { label: 'Mot de passe oublié', to: '/auth/forgot-password' },
+        { label: t('layout.footer.login'), to: '/auth/login' },
+        { label: t('layout.footer.register'), to: '/auth/register' },
+        { label: t('layout.footer.forgotPassword'), to: '/auth/forgot-password' },
       ];
 
   return (
@@ -96,14 +97,14 @@ function Footer() {
         {/* Call to action */}
         <div className="flex flex-col items-start justify-between gap-6 border-b border-white/10 py-12 md:flex-row md:items-center">
           <div>
-            <p className="text-2xl font-semibold tracking-tight sm:text-3xl">Votre communauté tech mérite son espace.</p>
-            <p className="mt-2 text-white/70">Lancez-la en quelques minutes, gratuite ou payante, et réunissez les développeurs qui vous ressemblent.</p>
+            <p className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('layout.footer.ctaTitle')}</p>
+            <p className="mt-2 text-white/70">{t('layout.footer.ctaText')}</p>
           </div>
           <Link
             to="/create-community"
             className="inline-flex h-12 shrink-0 items-center gap-2 rounded-lg bg-white px-6 font-semibold text-blue-950 shadow-sm transition-colors hover:bg-blue-50"
           >
-            Créer une communauté <ArrowUpRight className="size-4" />
+            {t('layout.footer.ctaButton')} <ArrowUpRight className="size-4" />
           </Link>
         </div>
 
@@ -111,27 +112,27 @@ function Footer() {
           <div className="max-w-sm">
             <FooterLogo />
             <p className="mt-5 leading-relaxed text-white/70">
-              La plateforme d’échange des développeurs africains, par les développeurs : communautés, formations, événements, hackathons et opportunités.
+              {t('layout.footer.about')}
             </p>
             <p className="mt-8 flex items-center gap-2 text-sm font-medium text-white/80">
-              <ShieldCheck className="size-4 text-blue-300" aria-hidden /> Paiements sécurisés
+              <ShieldCheck className="size-4 text-blue-300" aria-hidden /> {t('layout.footer.securePayments')}
             </p>
-            <ul className="mt-3 flex flex-wrap gap-2" aria-label="Moyens de paiement">
-              {PAYMENTS.map((p) => (
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label={t('layout.footer.paymentMethods')}>
+              {[...PAYMENTS, t('layout.footer.card')].map((p) => (
                 <Pill key={p}>{p}</Pill>
               ))}
             </ul>
           </div>
-          <Column title="Plateforme" links={platform} />
-          <Column title={signedIn ? 'Mon espace' : 'Compte'} links={account} />
+          <Column title={t('layout.footer.platform')} links={platform} />
+          <Column title={signedIn ? t('layout.footer.mySpace') : t('layout.footer.account')} links={account} />
         </div>
 
         {/* Legal line: kept on the left, the bottom right corner belongs to the floating assistant */}
         <div className="flex flex-col gap-4 border-t border-white/10 py-6 text-sm text-white/60 sm:flex-row sm:items-center sm:gap-8 sm:pr-56">
           <p>
-            © {year} Kodinga · Fait en Afrique, pour les développeurs d’Afrique <span aria-hidden>🌍</span>
+            © {year} Kodinga · {t('layout.footer.madeIn')}
           </p>
-          <div className="flex items-center gap-1" role="group" aria-label="Langue">
+          <div className="flex items-center gap-1" role="group" aria-label={t('layout.footer.language')}>
             {languages.map((lang) => {
               const active = i18n.resolvedLanguage === lang.code;
               return (

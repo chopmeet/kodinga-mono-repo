@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useAppSelector } from '@/redux/hook';
 import {
   useApplyToHackathonMutation,
@@ -67,11 +68,11 @@ function participationOf(hackathon: Hackathon | undefined, membership: string, d
 export function timelineOf(h: Hackathon) {
   const now = Date.now();
   const steps = [
-    { label: 'Ouverture des candidatures', at: h.registration_start },
-    { label: 'Clôture des candidatures', at: h.registration_end },
-    { label: 'Début du hackathon', at: h.start_time },
-    { label: 'Date limite des projets', at: h.submission_deadline },
-    { label: 'Fin des évaluations', at: h.judging_end },
+    { label: i18n.t('hackathon.timeline.registrationStart'), at: h.registration_start },
+    { label: i18n.t('hackathon.timeline.registrationEnd'), at: h.registration_end },
+    { label: i18n.t('hackathon.timeline.start'), at: h.start_time },
+    { label: i18n.t('hackathon.timeline.deadline'), at: h.submission_deadline },
+    { label: i18n.t('hackathon.timeline.judgingEnd'), at: h.judging_end },
   ];
   const nextIndex = steps.findIndex((s) => new Date(s.at).getTime() > now);
   return steps.map((s, i) => ({ ...s, state: nextIndex === -1 || i < nextIndex ? ('done' as const) : i === nextIndex ? ('next' as const) : ('later' as const) }));
@@ -114,10 +115,17 @@ function UseHackathonPage() {
   const invitations = myTeam ? [] : teamList.filter((t) => t.members.some((m) => m.user.id === meId && m.status === 'invited'));
 
   const tabs: { id: HackathonTabId; label: string }[] = [
-    { id: 'overview', label: 'Présentation' },
-    ...(hackathon?.allow_teams ? [{ id: 'teams' as const, label: `Équipes${teams.data ? ` (${teams.data.pagination?.count ?? teamList.length})` : ''}` }] : []),
-    ...(accepted ? [{ id: 'space' as const, label: 'Mon espace' }] : []),
-    ...(hackathon?.results_published ? [{ id: 'results' as const, label: 'Résultats' }] : []),
+    { id: 'overview', label: i18n.t('hackathon.tabs.overview') },
+    ...(hackathon?.allow_teams
+      ? [
+          {
+            id: 'teams' as const,
+            label: teams.data ? i18n.t('hackathon.tabs.teamsCount', { count: teams.data.pagination?.count ?? teamList.length }) : i18n.t('hackathon.tabs.teams'),
+          },
+        ]
+      : []),
+    ...(accepted ? [{ id: 'space' as const, label: i18n.t('hackathon.tabs.space') }] : []),
+    ...(hackathon?.results_published ? [{ id: 'results' as const, label: i18n.t('hackathon.tabs.results') }] : []),
   ];
   const requested = params.get('tab') as HackathonTabId | null;
   const tab = tabs.some((t) => t.id === requested) ? (requested as HackathonTabId) : 'overview';
@@ -183,7 +191,7 @@ function UseHackathonPage() {
       try {
         const created = await apply({ ...ids, ...data }).unwrap();
         customToast.success({
-          message: created.status === 'accepted' ? 'Inscription confirmée : bienvenue dans le hackathon !' : 'Candidature envoyée : les organisateurs vont l’examiner.',
+          message: created.status === 'accepted' ? i18n.t('hackathon.toasts.registered') : i18n.t('hackathon.toasts.applied'),
         });
         return { ok: true };
       } catch (error) {
@@ -196,15 +204,15 @@ function UseHackathonPage() {
         return { ok: false, closed: false, message: fieldMessage ?? message };
       }
     },
-    withdraw: () => run(withdraw(ids).unwrap(), 'Votre candidature a été retirée.'),
-    createTeam: (name: string, tagline: string) => run(createTeam({ ...ids, name, tagline }).unwrap(), `Équipe « ${name} » créée.`),
-    invite: (identifier: string) => (myTeam ? run(invite({ ...ids, teamId: myTeam.id, identifier }).unwrap(), 'Invitation envoyée.') : Promise.resolve(false)),
+    withdraw: () => run(withdraw(ids).unwrap(), i18n.t('hackathon.toasts.withdrawn')),
+    createTeam: (name: string, tagline: string) => run(createTeam({ ...ids, name, tagline }).unwrap(), i18n.t('hackathon.toasts.teamCreated', { name })),
+    invite: (identifier: string) => (myTeam ? run(invite({ ...ids, teamId: myTeam.id, identifier }).unwrap(), i18n.t('hackathon.toasts.invited')) : Promise.resolve(false)),
     respond: (teamId: string, accept: boolean) =>
-      run(respond({ ...ids, team_id: teamId, accept }).unwrap(), accept ? 'Vous avez rejoint l’équipe.' : 'Invitation déclinée.'),
+      run(respond({ ...ids, team_id: teamId, accept }).unwrap(), accept ? i18n.t('hackathon.toasts.joinedTeam') : i18n.t('hackathon.toasts.declined')),
     leaveTeam: () => {
       if (!myTeam) return Promise.resolve(false);
       const alone = myTeam.members.filter((m) => m.status === 'accepted').length <= 1;
-      return run(leave({ ...ids, teamId: myTeam.id }).unwrap(), alone ? 'Équipe dissoute.' : 'Vous avez quitté l’équipe.');
+      return run(leave({ ...ids, teamId: myTeam.id }).unwrap(), alone ? i18n.t('hackathon.toasts.teamDissolved') : i18n.t('hackathon.toasts.leftTeam'));
     },
   };
 }

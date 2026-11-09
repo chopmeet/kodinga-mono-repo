@@ -1,4 +1,5 @@
 import { CheckCircle2, ImageOff, ImagePlus, Link2, LoaderCircle, Trash2, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { type ChangeEvent, useEffect, useId, useState } from 'react';
 import { AiFillCamera } from 'react-icons/ai';
 import type { UseFormRegisterReturn } from 'react-hook-form';
@@ -60,6 +61,7 @@ export function ImageField({
   isUploading,
   isUploaded,
 }: Props) {
+  const { t } = useTranslation();
   const id = useId();
   const [fileError, setFileError] = useState<string | null>(null);
   // The url whose image failed to load (forgotten as soon as the url changes)
@@ -90,8 +92,8 @@ export function ImageField({
         <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
           {(
             [
-              { value: 'file', label: 'Fichier', icon: Upload },
-              { value: 'url', label: 'Lien', icon: Link2 },
+              { value: 'file', label: t('create.image.file'), icon: Upload },
+              { value: 'url', label: t('create.image.link'), icon: Link2 },
             ] as const
           ).map(({ value, label: text, icon: Icon }) => (
             <button
@@ -125,7 +127,7 @@ export function ImageField({
             <span className="flex size-full flex-col items-center justify-center gap-1.5 px-4 text-center text-slate-400">
               {broken ? <ImageOff className="size-7" aria-hidden /> : <ImagePlus className="size-7" aria-hidden />}
               <span className="text-xs font-medium">
-                {broken ? 'Image introuvable' : source === 'file' ? 'Cliquez pour choisir une image' : 'Aperçu de l’image'}
+                {broken ? t('create.image.notFound') : source === 'file' ? t('create.image.clickToChoose') : t('create.image.preview')}
               </span>
             </span>
           )}
@@ -135,14 +137,14 @@ export function ImageField({
               <input
                 type="file"
                 accept={purpose === 'avatar' ? 'image/jpeg,image/png,image/webp,image/gif' : 'image/jpeg,image/png,image/webp'}
-                aria-label={`Choisir le fichier : ${label}`}
+                aria-label={t('create.image.chooseFile', { label })}
                 onChange={choose}
                 className="peer absolute top-0 left-0 z-20 size-full cursor-pointer opacity-0"
               />
               {image && (
                 <span className="pointer-events-none absolute -bottom-full left-0 z-10 flex h-1/2 w-full flex-col items-center justify-center bg-white/50 text-center text-[#333] transition-[bottom] duration-300 ease-in-out peer-hover:bottom-[5%] peer-focus-visible:bottom-[5%]">
                   <AiFillCamera size={22} />
-                  <p className="text-[15px] font-bold">Changer</p>
+                  <p className="text-[15px] font-bold">{t('create.image.change')}</p>
                 </span>
               )}
             </>
@@ -157,7 +159,7 @@ export function ImageField({
             className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-600 bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-2xs transition hover:bg-blue-100"
           >
             <Upload className="size-3.5" />
-            {file ? 'Changer de fichier' : 'Sélectionner un fichier'}
+            {file ? t('create.image.changeFile') : t('create.image.selectFile')}
           </label>
           <input
             id={`${id}-file-btn`}
@@ -170,19 +172,19 @@ export function ImageField({
             <div className="flex flex-col items-center gap-1.5">
               <p className="flex max-w-full items-center gap-2 text-xs font-medium text-emerald-700">
                 <span className="truncate font-semibold">{file.name}</span>
-                <span className="shrink-0 text-xs text-slate-500">({(file.size / (1024 * 1024)).toFixed(2)} Mo)</span>
+                <span className="shrink-0 text-xs text-slate-500">{t('create.image.size', { size: (file.size / (1024 * 1024)).toFixed(2) })}</span>
                 <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600">
-                  <Trash2 className="size-3.5" /> Retirer
+                  <Trash2 className="size-3.5" /> {t('create.image.remove')}
                 </button>
               </p>
               {isUploading && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 animate-pulse">
-                  <LoaderCircle className="size-3 animate-spin" /> Optimisation & téléversement en cours…
+                  <LoaderCircle className="size-3 animate-spin" /> {t('create.image.uploading')}
                 </span>
               )}
               {isUploaded && !isUploading && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                  <CheckCircle2 className="size-3" /> Image optimisée & prête
+                  <CheckCircle2 className="size-3" /> {t('create.image.ready')}
                 </span>
               )}
             </div>
@@ -190,14 +192,14 @@ export function ImageField({
             <p className="text-xs text-slate-500">{help}</p>
           )}
           <span className="text-[11px] font-medium text-slate-400">
-            Stockage cloud persistant sur UploadThing
+            {t('create.image.storage')}
           </span>
           {(fileError || error) && <p className="text-sm text-red-600">{fileError ?? error}</p>}
         </div>
       ) : (
         <>
-          <Input id={`${id}-url`} type="url" inputMode="url" label={`Lien : ${label.toLowerCase()}`} placeholder="https://…" fieldHelp={help} error={error} customClassContainer="mb-1!" {...registration} />
-          {broken && <p className="text-sm text-amber-700">Impossible d'afficher cette image : vérifiez que le lien mène bien à une image.</p>}
+          <Input id={`${id}-url`} type="url" inputMode="url" label={t('create.image.linkOf', { label: label.toLowerCase() })} placeholder="https://…" fieldHelp={help} error={error} customClassContainer="mb-1!" {...registration} />
+          {broken && <p className="text-sm text-amber-700">{t('create.image.broken')}</p>}
         </>
       )}
     </div>

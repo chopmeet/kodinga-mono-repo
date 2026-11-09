@@ -1,5 +1,6 @@
 import { Bell } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga/ui';
@@ -12,6 +13,7 @@ const LATEST = 8;
 
 /** Bell of the header: unread count, the latest notifications, a link to all of them */
 export function NotificationsMenu() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const unread = useUnreadNotifications();
   const actions = UseNotifications();
@@ -23,7 +25,7 @@ export function NotificationsMenu() {
     (r) => !notifications.some((n) => n.notification_type === 'join_request' && n.target_id === r.member.id),
   ).length;
   const notifications = data?.results ?? [];
-  const label = unread > 0 ? `Notifications (${unread} non lue${unread > 1 ? 's' : ''})` : 'Notifications';
+  const label = unread > 0 ? t('layout.notifications.unread', { count: unread }) : t('layout.notifications.title');
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -41,25 +43,25 @@ export function NotificationsMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[min(24rem,calc(100vw-2rem))] p-0">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-          <p className="font-semibold text-slate-900">Notifications</p>
+          <p className="font-semibold text-slate-900">{t('layout.notifications.title')}</p>
           {unread > 0 && (
             <button type="button" onClick={actions.markAll} disabled={actions.isMarkingAll} className="text-xs font-semibold text-blue-900 hover:underline disabled:opacity-50">
-              Tout marquer comme lu
+              {t('layout.notifications.markAll')}
             </button>
           )}
         </div>
         {pendingRequests > 0 && (
           <DropdownMenuItem asChild className="rounded-none border-b border-amber-100 bg-amber-50/60 px-4 py-3 text-sm font-semibold text-amber-900">
             <Link to="/notifications">
-              {pendingRequests} demande{pendingRequests > 1 ? 's' : ''} d’adhésion à traiter
+              {t('layout.notifications.joinRequests', { count: pendingRequests })}
             </Link>
           </DropdownMenuItem>
         )}
         <div className="max-h-[min(28rem,70dvh)] overflow-y-auto">
           {isLoading ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">Chargement…</p>
+            <p className="px-4 py-8 text-center text-sm text-slate-500">{t('common.actions.loading')}</p>
           ) : notifications.length === 0 ? (
-            <p className="px-4 py-10 text-center text-sm text-slate-500">Aucune notification pour le moment.</p>
+            <p className="px-4 py-10 text-center text-sm text-slate-500">{t('layout.notifications.empty')}</p>
           ) : (
             notifications.map((n) => (
               <DropdownMenuItem key={n.id} onSelect={() => actions.open(n)} className={!n.is_read ? 'bg-blue-50/40 rounded-none px-4 py-3' : 'rounded-none px-4 py-3'}>
@@ -69,7 +71,7 @@ export function NotificationsMenu() {
           )}
         </div>
         <DropdownMenuItem asChild className="justify-center rounded-none border-t border-slate-100 py-3 text-sm font-semibold text-blue-900">
-          <Link to="/notifications">Voir toutes les notifications</Link>
+          <Link to="/notifications">{t('layout.notifications.seeAll')}</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

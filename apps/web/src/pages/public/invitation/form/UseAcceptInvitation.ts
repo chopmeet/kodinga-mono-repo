@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useAppSelector } from '@/redux/hook';
 import { useAcceptInvitationByTokenMutation, useAcceptInvitationMutation, useDeclineInvitationMutation, useGetCommunityQuery, useGetPublicInvitationQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 
 /** Why an invitation can no longer be used */
-const closedLabel: Record<string, string> = {
-  accepted: 'Cette invitation a déjà été acceptée.',
-  declined: 'Cette invitation a été refusée.',
-  revoked: 'Cette invitation a été révoquée par la communauté.',
-  expired: 'Cette invitation a expiré : demandez-en une nouvelle.',
-};
+// Why an invitation can no longer be used (inbox.invitation.status.<status>)
+const CLOSED_STATUSES = ['accepted', 'declined', 'revoked', 'expired'] as const;
+const closedLabel = (status: string) =>
+  i18n.t(`inbox.invitation.status.${(CLOSED_STATUSES as readonly string[]).includes(status) ? (status as (typeof CLOSED_STATUSES)[number]) : 'expired'}`);
 
 /**
  * Two kinds of links: /invitations/:code?community=<slug> (made in the members tab) and
@@ -41,7 +40,7 @@ function UseAcceptInvitation() {
   const alreadyMember = !!community?.user_membership?.is_member && community.user_membership.status === 'active';
   const loginUrl = `/auth/login?next=${encodeURIComponent(pathname + search)}`;
   const registerUrl = `/auth/register?next=${encodeURIComponent(pathname + search)}`;
-  const closed = declined ? 'Vous avez refusé cette invitation.' : invitation && !invitation.is_valid ? (closedLabel[invitation.status] ?? closedLabel.expired) : null;
+  const closed = declined ? i18n.t('inbox.invitation.youDeclined') : invitation && !invitation.is_valid ? closedLabel(invitation.status) : null;
   // The api masks an empty address as "***": a shareable link, addressed to nobody
   const invitedEmail = invitation?.masked_email && invitation.masked_email !== '***' ? invitation.masked_email : '';
 
@@ -53,7 +52,7 @@ function UseAcceptInvitation() {
     try {
       const member = await (slugParam ? acceptWithCode(code) : acceptWithToken(code)).unwrap();
       const name = community?.name ?? invitation?.workspace_name;
-      customToast.success({ message: name ? `Bienvenue dans ${name} !` : 'Vous avez rejoint la communauté.' });
+      customToast.success({ message: name ? i18n.t('inbox.invitation.welcome', { name }) : i18n.t('inbox.invitation.joined') });
       navigate(destination(member.role), { replace: true });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
@@ -64,7 +63,7 @@ function UseAcceptInvitation() {
     try {
       await declineInvitation(code).unwrap();
       setDeclined(true);
-      customToast.success({ message: 'Invitation refusée.' });
+      customToast.success({ message: i18n.t('inbox.invitation.declined') });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     }

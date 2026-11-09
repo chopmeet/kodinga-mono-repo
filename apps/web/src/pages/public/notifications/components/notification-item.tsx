@@ -1,4 +1,5 @@
 import { Award, Bell, BookOpen, Briefcase, CalendarClock, CheckCircle2, CircleX, Heart, MessageCircle, Radio, Rocket, Trophy, UserCheck, UserPlus, AtSign, type LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@kodinga/ui';
 import type { AppNotification, NotificationType } from '@/utils/api/notification/notification.type';
@@ -26,12 +27,13 @@ const icons: Record<NotificationType, LucideIcon> = {
 
 type ContentKind = 'hackathon' | 'course' | 'project' | 'opportunity' | 'event';
 
-const kinds: Record<ContentKind, { label: string; icon: LucideIcon; className: string }> = {
-  hackathon: { label: 'Hackathon', icon: Trophy, className: 'bg-amber-50 text-amber-800' },
-  course: { label: 'Formation', icon: BookOpen, className: 'bg-emerald-50 text-emerald-800' },
-  project: { label: 'Projet', icon: Rocket, className: 'bg-violet-50 text-violet-800' },
-  opportunity: { label: 'Opportunité', icon: Briefcase, className: 'bg-sky-50 text-sky-800' },
-  event: { label: 'Événement', icon: CalendarClock, className: 'bg-rose-50 text-rose-800' },
+// Labels: inbox.notifications.kinds.<kind>
+const kinds: Record<ContentKind, { icon: LucideIcon; className: string }> = {
+  hackathon: { icon: Trophy, className: 'bg-amber-50 text-amber-800' },
+  course: { icon: BookOpen, className: 'bg-emerald-50 text-emerald-800' },
+  project: { icon: Rocket, className: 'bg-violet-50 text-violet-800' },
+  opportunity: { icon: Briefcase, className: 'bg-sky-50 text-sky-800' },
+  event: { icon: CalendarClock, className: 'bg-rose-50 text-rose-800' },
 };
 
 /**
@@ -52,6 +54,7 @@ export function contentKind(n: Pick<AppNotification, 'target_type' | 'action_url
 
 /** Icon, kind of content, title, text and age of a notification; a dot while it is unread */
 export function NotificationContent({ notification: n, compact = false }: { notification: AppNotification; compact?: boolean }) {
+  const { t } = useTranslation();
   const kind = contentKind(n);
   // The content decides the icon (a new hackathon is sent as an "invitation")
   const Icon = kind ? kinds[kind].icon : (icons[n.notification_type] ?? Bell);
@@ -61,12 +64,12 @@ export function NotificationContent({ notification: n, compact = false }: { noti
         <Icon className="size-4" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        {kind && <span className={cn('mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase', kinds[kind].className)}>{kinds[kind].label}</span>}
+        {kind && <span className={cn('mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase', kinds[kind].className)}>{t(`inbox.notifications.kinds.${kind}`)}</span>}
         <span className={cn('block text-sm', n.is_read ? 'text-slate-700' : 'font-semibold text-slate-900')}>{n.title}</span>
         {n.body && <span className={cn('mt-0.5 block text-sm text-slate-500', compact && 'line-clamp-2')}>{n.body}</span>}
         <span className="mt-1 block text-xs text-slate-400">{ago(n.created_at)}</span>
       </span>
-      {!n.is_read && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-900" aria-label="Non lue" />}
+      {!n.is_read && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-900" aria-label={t('inbox.notifications.unreadDot')} />}
     </span>
   );
 }

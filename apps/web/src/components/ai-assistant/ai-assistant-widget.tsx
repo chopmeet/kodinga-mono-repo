@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { cn, customToast } from '@kodinga/ui';
@@ -37,28 +38,13 @@ interface Message {
   timestamp: Date;
 }
 
+// Labels and prompts are translated keys (assistant.starters.*)
 const starterPrompts = [
-  {
-    icon: Sparkles,
-    label: 'Découvrir des communautés',
-    prompt: 'Je recherche des communautés actives pour apprendre, collaborer et échanger.',
-  },
-  {
-    icon: Lightbulb,
-    label: 'Concevoir ma communauté',
-    prompt: 'Je souhaite créer une communauté. Peux-tu me proposer une idée et un plan de lancement ?',
-  },
-  {
-    icon: MessageSquare,
-    label: 'Que publier en premier ?',
-    prompt: 'Quelles sont les meilleures idées de premier post pour engager de nouveaux membres ?',
-  },
-  {
-    icon: TrendingUp,
-    label: 'Booster la participation',
-    prompt: 'Quelles activités et événements hebdomadaires organisent les communautés qui réussissent ?',
-  },
-];
+  { icon: Sparkles, id: 'discover' },
+  { icon: Lightbulb, id: 'design' },
+  { icon: MessageSquare, id: 'firstPost' },
+  { icon: TrendingUp, id: 'boost' },
+] as const;
 
 const languageOptions = [
   { code: 'fr', label: 'Français (FR)' },
@@ -68,22 +54,19 @@ const languageOptions = [
 ];
 
 export function AIAssistantWidget() {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('fr');
+  // Replies in the language of the interface by default (Wolof and Bambara on request)
+  const [selectedLang, setSelectedLang] = useState<string>(i18n.resolvedLanguage === 'en' ? 'en' : 'fr');
   const [inputMessage, setInputMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content:
-        'Bonjour ! Je suis votre guide et bâtisseur de communauté Kodinga. Je peux vous aider à découvrir des groupes passionnants, concevoir votre propre espace ou dynamiser vos échanges. Comment puis-je vous aider aujourd’hui ?',
-      suggestedFollowUps: [
-        'Quelles communautés me conseilles-tu ?',
-        'Je veux lancer une communauté tech en Afrique',
-        'Comment accueillir mes premiers membres ?',
-      ],
+      content: t('assistant.welcome'),
+      suggestedFollowUps: [t('assistant.followUps.advise'), t('assistant.followUps.launch'), t('assistant.followUps.welcome')],
       provider: 'openai',
       timestamp: new Date(),
     },
@@ -107,7 +90,7 @@ export function AIAssistantWidget() {
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    customToast.success({ message: 'Copié dans le presse-papier !' });
+    customToast.success({ message: t('assistant.copied') });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -161,8 +144,7 @@ export function AIAssistantWidget() {
       const errorMsg: Message = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        content:
-          'L’Assistant Kodinga est momentanément indisponible ou a rencontré une erreur réseau. Veuillez réessayer dans quelques instants.',
+        content: t('assistant.error'),
         provider: 'fallback',
         timestamp: new Date(),
       };
@@ -178,17 +160,17 @@ export function AIAssistantWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          aria-label="Assistant Kodinga"
+          aria-label={t('assistant.name')}
           // Phones: a round button (icon only) that hides less of the page
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 rounded-full bg-slate-900 p-3.5 text-white sm:bottom-6 sm:right-6 sm:px-4 sm:py-3 shadow-xl shadow-brand/20 ring-2 ring-brand/40 transition-all duration-300 hover:scale-105 hover:bg-slate-800 hover:ring-brand focus:outline-none focus:ring-4 focus:ring-brand/30"
-          title="Ouvrir l'Assistant IA Kodinga"
+          title={t('assistant.open')}
         >
           <span className="relative hidden size-3 sm:flex">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
           </span>
           <Sparkles className="size-5 text-brand" />
-          <span className="hidden text-sm font-semibold tracking-wide sm:inline">Assistant Kodinga</span>
+          <span className="hidden text-sm font-semibold tracking-wide sm:inline">{t('assistant.name')}</span>
         </button>
       )}
 
@@ -213,13 +195,13 @@ export function AIAssistantWidget() {
               </div>
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h3 className="truncate text-sm font-bold tracking-tight text-white">Assistant Kodinga</h3>
+                  <h3 className="truncate text-sm font-bold tracking-tight text-white">{t('assistant.name')}</h3>
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap text-emerald-400">
                     <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
-                    <span className="max-[399px]:sr-only">En ligne</span>
+                    <span className="max-[399px]:sr-only">{t('assistant.online')}</span>
                   </span>
                 </div>
-                <p className="truncate text-[11px] text-slate-400">Votre guide sur Kodinga</p>
+                <p className="truncate text-[11px] text-slate-400">{t('assistant.subtitle')}</p>
               </div>
             </div>
 
@@ -230,7 +212,7 @@ export function AIAssistantWidget() {
                 <select
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
-                  aria-label="Langue des réponses"
+                  aria-label={t('assistant.replyLanguage')}
                   className="rounded-md border border-slate-700 bg-slate-800 px-1.5 py-1 text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand sm:px-2"
                 >
                   {languageOptions.map((opt) => (
@@ -244,9 +226,9 @@ export function AIAssistantWidget() {
               {/* Expand Toggle: a phone already gives the whole width */}
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                aria-label={isExpanded ? 'Réduire' : 'Agrandir'}
+                aria-label={isExpanded ? t('assistant.reduce') : t('assistant.expand')}
                 className="hidden rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white sm:inline-flex"
-                title={isExpanded ? 'Réduire' : 'Agrandir'}
+                title={isExpanded ? t('assistant.reduce') : t('assistant.expand')}
               >
                 {isExpanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
               </button>
@@ -254,9 +236,9 @@ export function AIAssistantWidget() {
               {/* Close Button */}
               <button
                 onClick={() => setIsOpen(false)}
-                aria-label="Fermer l’assistant"
+                aria-label={t('assistant.close')}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
-                title="Fermer"
+                title={t('assistant.closeShort')}
               >
                 <X className="size-4" />
               </button>
@@ -284,7 +266,7 @@ export function AIAssistantWidget() {
                   {m.recommendations && m.recommendations.length > 0 && (
                     <div className="mt-3.5 space-y-2.5">
                       <p className="text-xs font-bold uppercase tracking-wider text-brand">
-                        Communautés recommandées :
+                        {t('assistant.recommended')}
                       </p>
                       <div className="grid gap-2">
                         {m.recommendations.map((rec) => (
@@ -305,20 +287,20 @@ export function AIAssistantWidget() {
                             </div>
 
                             <p className="mt-2 text-xs text-emerald-800 bg-emerald-50/80 rounded-md p-1.5 font-medium">
-                              <span role="img" aria-label="Pourquoi">💡</span> {rec.relevance_reason}
+                              <span role="img" aria-label={t('assistant.why')}>💡</span> {rec.relevance_reason}
                             </p>
 
                             <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500">
                               <span className="flex items-center gap-1">
                                 <Users className="size-3.5" />
-                                {rec.members_count} membres
+                                {t('assistant.members', { count: rec.members_count })}
                               </span>
                               <Link
-                                to={`/community/${rec.slug}`}
+                                to={`/communities/${rec.slug}`}
                                 onClick={() => setIsOpen(false)}
                                 className="inline-flex items-center gap-1 font-semibold text-brand hover:underline"
                               >
-                                Découvrir
+                                {t('assistant.discover')}
                                 <ArrowRight className="size-3" />
                               </Link>
                             </div>
@@ -333,15 +315,15 @@ export function AIAssistantWidget() {
                     <div className="mt-3.5 space-y-2 rounded-xl border border-brand/20 bg-brand/5 p-3.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-brand">
-                          Proposition de communauté
+                          {t('assistant.proposal')}
                         </span>
                         <span className="text-[10px] font-semibold text-slate-500">
-                          {m.proposal.recommended_visibility === 'public' ? 'Publique' : 'Privée'}
+                          {m.proposal.recommended_visibility === 'public' ? t('assistant.public') : t('assistant.private')}
                         </span>
                       </div>
 
                       <div className="mt-1">
-                        <p className="text-xs font-bold text-slate-700">Suggestions de noms :</p>
+                        <p className="text-xs font-bold text-slate-700">{t('assistant.nameIdeas')}</p>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {m.proposal.name_suggestions.map((name, i) => (
                             <span
@@ -355,12 +337,12 @@ export function AIAssistantWidget() {
                       </div>
 
                       <div className="mt-2">
-                        <p className="text-xs font-bold text-slate-700">Mission :</p>
+                        <p className="text-xs font-bold text-slate-700">{t('assistant.mission')}</p>
                         <p className="text-xs text-slate-600">{m.proposal.purpose || m.proposal.description}</p>
                       </div>
 
                       <div className="mt-2">
-                        <p className="text-xs font-bold text-slate-700">Catégories suggérées :</p>
+                        <p className="text-xs font-bold text-slate-700">{t('assistant.categories')}</p>
                         <p className="text-xs text-slate-600">
                           {m.proposal.suggested_categories.join(', ')}
                         </p>
@@ -372,7 +354,7 @@ export function AIAssistantWidget() {
                           onClick={() => setIsOpen(false)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-brand/90"
                         >
-                          Lancer la création
+                          {t('assistant.startCreation')}
                           <ArrowRight className="size-3.5" />
                         </Link>
                         <button
@@ -389,7 +371,7 @@ export function AIAssistantWidget() {
                           ) : (
                             <Copy className="size-3.5" />
                           )}
-                          Copier le plan
+                          {t('assistant.copyPlan')}
                         </button>
                       </div>
                     </div>
@@ -398,7 +380,7 @@ export function AIAssistantWidget() {
                   {/* Provider Info */}
                   {m.provider && (
                     <div className="mt-1.5 flex items-center gap-1 text-[10px] text-slate-400">
-                      <span>{m.provider === 'fallback' ? 'Réponse automatique' : 'Réponse générée par l’IA'}</span>
+                      <span>{m.provider === 'fallback' ? t('assistant.automatic') : t('assistant.generated')}</span>
                     </div>
                   )}
                 </div>
@@ -429,7 +411,7 @@ export function AIAssistantWidget() {
                     <span className="size-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
                     <span className="size-1.5 animate-bounce rounded-full bg-brand" />
                   </span>
-                  <span className="font-medium">L’Assistant Kodinga prépare sa réponse...</span>
+                  <span className="font-medium">{t('assistant.thinking')}</span>
                 </div>
               </div>
             )}
@@ -441,20 +423,20 @@ export function AIAssistantWidget() {
           {messages.length === 1 && (
             <div className="max-h-[30dvh] shrink-0 overflow-y-auto border-t border-slate-100 bg-slate-50/50 p-3">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Actions rapides :
+                {t('assistant.quickActions')}
               </p>
               <div className="grid grid-cols-2 gap-1.5">
-                {starterPrompts.map((s, idx) => {
+                {starterPrompts.map((s) => {
                   const Icon = s.icon;
                   return (
                     <button
-                      key={idx}
-                      onClick={() => handleSend(s.prompt)}
+                      key={s.id}
+                      onClick={() => handleSend(t(`assistant.starters.${s.id}Prompt`))}
                       className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left text-xs text-slate-700 transition hover:border-brand hover:text-brand"
                     >
                       <Icon className="mt-0.5 size-3.5 shrink-0 text-brand" />
                       {/* Two lines: one cut the labels on a phone */}
-                      <span className="line-clamp-2">{s.label}</span>
+                      <span className="line-clamp-2">{t(`assistant.starters.${s.id}`)}</span>
                     </button>
                   );
                 })}
@@ -476,13 +458,15 @@ export function AIAssistantWidget() {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Posez une question, demandez un conseil..."
+                placeholder={t('assistant.placeholder')}
+                aria-label={t('assistant.placeholder')}
                 disabled={isBusy}
                 className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isBusy}
+                aria-label={t('assistant.send')}
                 className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand text-white shadow-sm transition hover:bg-brand/90 disabled:opacity-50"
               >
                 <Send className="size-4" />

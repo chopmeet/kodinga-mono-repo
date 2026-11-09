@@ -1,5 +1,6 @@
 import { ArrowLeft, Code2, ExternalLink, Images, MessageCircle, Pencil } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button, Loader } from '@kodinga/ui';
@@ -25,11 +26,12 @@ function Person({ person, size = 'size-9' }: { person: ProjectPerson; size?: str
 }
 
 function CommentForm({ page, parentId, onDone, placeholder }: { page: ProjectPage; parentId?: string; onDone?: () => void; placeholder: string }) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   if (!page.signedIn) {
     return (
       <Link to={page.loginUrl} className="text-sm font-semibold text-blue-900 hover:underline">
-        Connectez-vous pour donner votre avis
+        {t('discover.project.loginToReview')}
       </Link>
     );
   }
@@ -50,26 +52,27 @@ function CommentForm({ page, parentId, onDone, placeholder }: { page: ProjectPag
       </label>
       <textarea id={`comment-${parentId ?? 'root'}`} rows={parentId ? 2 : 3} value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} className="custom-form-control bg-background px-4 py-2" />
       <Button type="submit" size="sm" className="self-end" disabled={!text.trim()} isLoading={page.isCommenting}>
-        {parentId ? 'Répondre' : 'Publier'}
+        {parentId ? t('discover.project.reply') : t('discover.project.publish')}
       </Button>
     </form>
   );
 }
 
 function Comments({ page }: { page: ProjectPage }) {
+  const { t } = useTranslation();
   const [replyTo, setReplyTo] = useState<string | null>(null);
   return (
     <section id="commentaires" aria-labelledby="comments-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
       <h2 id="comments-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-        <MessageCircle className="size-5 text-blue-900" /> Avis ({page.comments.length})
+        <MessageCircle className="size-5 text-blue-900" /> {t('discover.project.reviews', { count: page.comments.length })}
       </h2>
       <div className="mt-4">
-        <CommentForm page={page} placeholder="Votre avis sur le projet…" />
+        <CommentForm page={page} placeholder={t('discover.project.reviewPlaceholder')} />
       </div>
       {page.comments.length === 0 ? (
-        <p className="mt-6 text-sm text-slate-500">Aucun avis pour le moment : soyez le premier.</p>
+        <p className="mt-6 text-sm text-slate-500">{t('discover.project.noReview')}</p>
       ) : (
-        <ul className="mt-6 flex flex-col gap-5" aria-label="Commentaires">
+        <ul className="mt-6 flex flex-col gap-5" aria-label={t('discover.project.comments')}>
           {page.comments.map((c) => (
             <li key={c.id} className="flex gap-3">
               <Person person={c.author} />
@@ -80,11 +83,11 @@ function Comments({ page }: { page: ProjectPage }) {
                 <p className="mt-1 text-sm whitespace-pre-line text-slate-700">{c.content}</p>
                 {page.signedIn && (
                   <button type="button" onClick={() => setReplyTo(replyTo === c.id ? null : c.id)} className="mt-1 text-xs font-semibold text-slate-500 hover:text-blue-900">
-                    Répondre
+                    {t('discover.project.reply')}
                   </button>
                 )}
                 {c.replies.length > 0 && (
-                  <ul className="mt-3 flex flex-col gap-3 border-l border-slate-200 pl-4" aria-label={`Réponses à ${getName(c.author)}`}>
+                  <ul className="mt-3 flex flex-col gap-3 border-l border-slate-200 pl-4" aria-label={t('discover.project.repliesTo', { name: getName(c.author) })}>
                     {c.replies.map((r) => (
                       <li key={r.id} className="flex gap-2.5">
                         <Person person={r.author} size="size-7" />
@@ -100,7 +103,7 @@ function Comments({ page }: { page: ProjectPage }) {
                 )}
                 {replyTo === c.id && (
                   <div className="mt-3">
-                    <CommentForm page={page} parentId={c.id} placeholder={`Répondre à ${getName(c.author)}…`} onDone={() => setReplyTo(null)} />
+                    <CommentForm page={page} parentId={c.id} placeholder={t('discover.project.replyTo', { name: getName(c.author) })} onDone={() => setReplyTo(null)} />
                   </div>
                 )}
               </div>
@@ -114,17 +117,18 @@ function Comments({ page }: { page: ProjectPage }) {
 
 /** /projects/:projectSlug — a project of a member, with votes and feedback */
 function ProjectPageView() {
+  const { t } = useTranslation();
   const page = UseProjectPage();
   const p = page.project;
   const [editing, setEditing] = useState(false);
 
-  if (page.isLoading) return <Loader inline className="py-24" message="Chargement du projet…" />;
+  if (page.isLoading) return <Loader inline className="py-24" message={t('discover.project.loading')} />;
   if (!p) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? 'Projet introuvable' : 'Impossible de charger le projet'}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('discover.project.notFound') : t('discover.project.loadFailed')}</h1>
         <Button asChild variant="outline">
-          <Link to={page.back.to}>Retour</Link>
+          <Link to={page.back.to}>{t('common.actions.back')}</Link>
         </Button>
       </section>
     );
@@ -153,20 +157,20 @@ function ProjectPageView() {
             {safeUrl(p.demo_url) && (
               <Button asChild>
                 <a href={p.demo_url} target="_blank" rel="noreferrer">
-                  <ExternalLink /> Voir la démo
+                  <ExternalLink /> {t('discover.project.demo')}
                 </a>
               </Button>
             )}
             {safeUrl(p.repository_url) && (
               <Button asChild variant="outline">
                 <a href={p.repository_url} target="_blank" rel="noreferrer">
-                  <Code2 /> Code source
+                  <Code2 /> {t('discover.project.code')}
                 </a>
               </Button>
             )}
             {page.isOwner && p.community_id && (
               <Button variant="outline" onClick={() => setEditing(true)}>
-                <Pencil /> Modifier
+                <Pencil /> {t('discover.project.edit')}
               </Button>
             )}
           </div>
@@ -175,12 +179,12 @@ function ProjectPageView() {
 
       <div className="mx-auto flex max-w-285 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <article className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
-          {p.description ? <Markdown source={p.description} /> : <p className="text-slate-500">Pas encore de présentation détaillée.</p>}
+          {p.description ? <Markdown source={p.description} /> : <p className="text-slate-500">{t('discover.project.noDescription')}</p>}
           {p.technologies.length > 0 && (
-            <ul className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-5" aria-label="Technologies">
-              {p.technologies.map((t) => (
-                <li key={t.id} className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900">
-                  {t.name}
+            <ul className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-5" aria-label={t('discover.project.technologies')}>
+              {p.technologies.map((tech) => (
+                <li key={tech.id} className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900">
+                  {tech.name}
                 </li>
               ))}
             </ul>
@@ -189,7 +193,7 @@ function ProjectPageView() {
         {(p.demo_images?.length ?? 0) > 0 && (
           <section aria-labelledby="demo-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
             <h2 id="demo-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-              <Images className="size-5 text-blue-900" /> Captures ({p.demo_images?.length})
+              <Images className="size-5 text-blue-900" /> {t('discover.project.screenshots', { count: p.demo_images?.length ?? 0 })}
             </h2>
             <ImageGallery images={p.demo_images ?? []} title={p.title} className="mt-4" />
           </section>

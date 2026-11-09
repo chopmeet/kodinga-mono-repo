@@ -2,6 +2,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useAppSelector } from '@/redux/hook';
 import {
   useCreateCheckoutMutation,
@@ -59,7 +60,7 @@ function UseCommunityPage() {
     try {
       const member = await joinCommunity(slug).unwrap();
       customToast.success({
-        message: member.status === 'pending' ? 'Demande envoyée : l’équipe de la communauté va l’examiner.' : `Bienvenue dans ${community?.name} !`,
+        message: member.status === 'pending' ? i18n.t('community.toasts.requestSent') : i18n.t('community.toasts.welcome', { name: community?.name }),
       });
     } catch (err) {
       customToast.error({ message: parseApiError(err).message });
@@ -69,7 +70,7 @@ function UseCommunityPage() {
   const leave = async () => {
     try {
       await leaveCommunity(slug).unwrap();
-      customToast.success({ message: `Vous avez quitté ${community?.name}.` });
+      customToast.success({ message: i18n.t('community.toasts.left', { name: community?.name }) });
       return true;
     } catch (err) {
       customToast.error({ message: parseApiError(err).message });

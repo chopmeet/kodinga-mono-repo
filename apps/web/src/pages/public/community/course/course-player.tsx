@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, BookOpen, Check, CircleCheck, Clock, Download, LoaderCircle, Lock, PartyPopper, PlayCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button, cn, Loader } from '@kodinga/ui';
@@ -17,13 +18,14 @@ function Centered({ children }: { children: React.ReactNode }) {
 
 /** Modules and lessons: done, open, locked */
 function Outline({ player }: { player: CoursePlayer }) {
+  const { t } = useTranslation();
   const modules = [...(player.course?.modules ?? [])].sort((a, b) => a.order - b.order);
   return (
-    <nav aria-label="Plan de la formation" className="space-y-5">
+    <nav aria-label={t('course.outline')} className="space-y-5">
       {modules.map((m, mi) => (
         <section key={m.id}>
           <h2 className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-            Module {mi + 1} · {m.title}
+            {t('course.module', { n: mi + 1, title: m.title })}
           </h2>
           <ol className="mt-2 space-y-1">
             {[...m.lessons]
@@ -37,7 +39,7 @@ function Outline({ player }: { player: CoursePlayer }) {
                       onClick={() => player.open(l.id)}
                       disabled={l.is_locked}
                       aria-current={current ? 'step' : undefined}
-                      title={l.is_locked ? 'Terminez les leçons précédentes pour l’ouvrir' : undefined}
+                      title={l.is_locked ? t('course.lockedHint') : undefined}
                       className={cn(
                         'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed',
                         current ? 'bg-blue-50 font-semibold text-blue-950' : 'text-slate-700 hover:bg-slate-50',
@@ -45,9 +47,9 @@ function Outline({ player }: { player: CoursePlayer }) {
                       )}
                     >
                       {l.is_completed ? (
-                        <CircleCheck className="size-4 shrink-0 text-emerald-600" aria-label="Terminée" />
+                        <CircleCheck className="size-4 shrink-0 text-emerald-600" aria-label={t('course.done')} />
                       ) : l.is_locked ? (
-                        <Lock className="size-4 shrink-0" aria-label="Verrouillée" />
+                        <Lock className="size-4 shrink-0" aria-label={t('course.locked')} />
                       ) : (
                         <PlayCircle className={cn('size-4 shrink-0', current ? 'text-blue-900' : 'text-slate-400')} aria-hidden />
                       )}
@@ -69,12 +71,13 @@ function Outline({ player }: { player: CoursePlayer }) {
  * alone needs the HLS player of the browser (Safari)
  */
 function LessonVideo({ lesson }: { lesson: CourseLesson }) {
+  const { t } = useTranslation();
   // On a platform: its own player
   if (lesson.video_embed_url && ['youtube', 'vimeo', 'dailymotion'].includes(lesson.video_provider ?? '')) {
     return (
       <iframe
         src={lesson.video_embed_url}
-        title={`Vidéo : ${lesson.title}`}
+        title={t('course.videoOf', { title: lesson.title })}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
@@ -87,11 +90,11 @@ function LessonVideo({ lesson }: { lesson: CourseLesson }) {
     return (
       <p role="status" className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 px-6 text-center text-sm text-slate-500">
         {lesson.video_status === 'errored' ? (
-          'La vidéo de cette leçon n’a pas pu être traitée.'
+          t('course.videoErrored')
         ) : (
           <>
             <LoaderCircle className="size-5 animate-spin" aria-hidden />
-            La vidéo est en cours de préparation, revenez dans quelques minutes.
+            {t('course.videoPreparing')}
           </>
         )}
       </p>
@@ -105,17 +108,18 @@ function LessonVideo({ lesson }: { lesson: CourseLesson }) {
 }
 
 function LessonContent({ player }: { player: CoursePlayer }) {
+  const { t } = useTranslation();
   const { outline, lesson, nextToDo, next } = player;
   if (!outline) return null;
   if (outline.is_locked) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-16 text-center">
         <Lock className="size-8 text-slate-400" />
-        <p className="mt-3 font-semibold text-slate-900">Leçon verrouillée</p>
-        <p className="mt-1 text-sm text-slate-500">Cette formation se suit dans l’ordre : terminez les leçons précédentes pour l’ouvrir.</p>
+        <p className="mt-3 font-semibold text-slate-900">{t('course.lockedTitle')}</p>
+        <p className="mt-1 text-sm text-slate-500">{t('course.lockedText')}</p>
         {nextToDo && (
           <Button className="mt-5" onClick={() => player.open(nextToDo.id)}>
-            Reprendre là où j’en suis <ArrowRight />
+            {t('course.resume')} <ArrowRight />
           </Button>
         )}
       </div>
@@ -123,7 +127,7 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   }
   if (player.isLessonLoading || !lesson) {
     return (
-      <Loader inline size="sm" className="py-24" message="Chargement de la leçon…" />
+      <Loader inline size="sm" className="py-24" message={t('course.loadingLesson')} />
     );
   }
 
@@ -132,12 +136,12 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   const exercise = lesson.lesson_type === 'code' ? exerciseOfLesson(lesson) : null;
   const hasQuiz = (lesson.quiz_data?.questions?.length ?? 0) > 0;
   const images = ((lesson as CourseLesson & { images?: { url: string; caption?: string; alt?: string }[] }).images ?? []).filter((i) => i.url);
-  const attachments = (lesson.attachments ?? []).map((a) => ({ name: a.name || a.file_name || 'Fichier', url: a.url || a.file_url })).filter((a) => a.url);
+  const attachments = (lesson.attachments ?? []).map((a) => ({ name: a.name || a.file_name || t('course.file'), url: a.url || a.file_url })).filter((a) => a.url);
 
   return (
     <article aria-labelledby="lesson-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
       <p className="text-xs font-semibold tracking-wide text-blue-900 uppercase">
-        Leçon {player.position} / {player.lessons.length} · {lessonTypeLabel[lesson.lesson_type]}
+        {t('course.lessonOf', { position: player.position, total: player.lessons.length, type: lessonTypeLabel[lesson.lesson_type] })}
       </p>
       <h1 id="lesson-title" className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
         {lesson.title}
@@ -157,11 +161,11 @@ function LessonContent({ player }: { player: CoursePlayer }) {
 
       <div className="mt-6">
         {!content && !exercise ? (
-          <p className="text-slate-500">{lesson.has_video || hasQuiz ? '' : 'Cette leçon n’a pas encore de contenu.'}</p>
+          <p className="text-slate-500">{lesson.has_video || hasQuiz ? '' : t('course.noContent')}</p>
         ) : lesson.content_format === 'html' ? (
           <Markdown source={htmlToText(content)} />
         ) : lesson.content_format === 'json' ? (
-          <p className="text-slate-500">Ce contenu n’est pas encore lisible ici.</p>
+          <p className="text-slate-500">{t('course.notReadable')}</p>
         ) : exercise ? (
           <CodeExerciseView exercise={exercise} />
         ) : (
@@ -187,8 +191,8 @@ function LessonContent({ player }: { player: CoursePlayer }) {
       )}
 
       {attachments.length > 0 && (
-        <section aria-label="Ressources" className="mt-8 rounded-xl border border-slate-200 p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Ressources</h2>
+        <section aria-label={t('course.resources')} className="mt-8 rounded-xl border border-slate-200 p-4">
+          <h2 className="text-sm font-semibold text-slate-900">{t('course.resources')}</h2>
           <ul className="mt-2 space-y-1.5">
             {attachments.map((a) => (
               <li key={a.url}>
@@ -203,17 +207,17 @@ function LessonContent({ player }: { player: CoursePlayer }) {
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
         <Button variant="outline" onClick={() => player.previous && player.open(player.previous.id)} disabled={!player.previous}>
-          <ArrowLeft /> Précédente
+          <ArrowLeft /> {t('course.previous')}
         </Button>
         <div className="flex flex-wrap items-center gap-2">
           {/* A quiz is done by passing it, not by hand */}
           {hasQuiz ? (
             outline.is_completed ? (
               <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-                <Check className="size-4" aria-hidden /> Terminée
+                <Check className="size-4" aria-hidden /> {t('course.done')}
               </span>
             ) : (
-              <span className="text-sm text-slate-500">Réussissez le quiz pour terminer cette leçon.</span>
+              <span className="text-sm text-slate-500">{t('course.passQuiz')}</span>
             )
           ) : (
             <Button
@@ -224,22 +228,22 @@ function LessonContent({ player }: { player: CoursePlayer }) {
             >
               {outline.is_completed ? (
                 <>
-                  <Check /> Terminée
+                  <Check /> {t('course.done')}
                 </>
               ) : next ? (
                 <>
-                  Terminer et continuer <ArrowRight />
+                  {t('course.finishContinue')} <ArrowRight />
                 </>
               ) : (
                 <>
-                  <CircleCheck /> Marquer comme terminée
+                  <CircleCheck /> {t('course.markDone')}
                 </>
               )}
             </Button>
           )}
           {outline.is_completed && next && !next.is_locked && (
             <Button onClick={() => player.open(next.id)}>
-              Leçon suivante <ArrowRight />
+              {t('course.nextLesson')} <ArrowRight />
             </Button>
           )}
         </div>
@@ -250,23 +254,28 @@ function LessonContent({ player }: { player: CoursePlayer }) {
 
 /** /communities/:slug/courses/:courseSlug — a member follows a course, lesson by lesson */
 function CoursePlayerPage() {
+  const { t } = useTranslation();
   const player = UseCoursePlayer();
   const { community, course } = player;
   const back = `/communities/${player.slug}?tab=classroom`;
 
   if (player.isLoading) {
     return (
-      <Loader inline className="py-24" message="Chargement de la formation…" />
+      <Loader inline className="py-24" message={t('course.loading')} />
     );
   }
   if (player.membership !== 'member') {
     return (
       <Centered>
         <Lock className="size-8 text-slate-400" />
-        <h1 className="text-2xl font-bold text-slate-900">Réservé aux membres</h1>
-        <p className="text-slate-500">Rejoignez {community?.name ?? 'la communauté'} pour suivre ses formations.</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('course.membersOnly')}</h1>
+        <p className="text-slate-500">{t('course.joinToFollow', { name: community?.name ?? t('course.theCommunity') })}</p>
         <Button asChild>
-          {player.membership === 'visitor' ? <Link to={player.loginUrl}>Se connecter</Link> : <Link to={`/communities/${player.slug}`}>Découvrir la communauté</Link>}
+          {player.membership === 'visitor' ? (
+            <Link to={player.loginUrl}>{t('course.login')}</Link>
+          ) : (
+            <Link to={`/communities/${player.slug}`}>{t('course.discoverCommunity')}</Link>
+          )}
         </Button>
       </Centered>
     );
@@ -274,9 +283,9 @@ function CoursePlayerPage() {
   if (!course) {
     return (
       <Centered>
-        <h1 className="text-2xl font-bold text-slate-900">{player.notFound ? 'Formation introuvable' : 'Impossible de charger la formation'}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{player.notFound ? t('course.notFound') : t('course.loadFailed')}</h1>
         <Button asChild variant="outline">
-          <Link to={back}>Retour aux formations</Link>
+          <Link to={back}>{t('course.back')}</Link>
         </Button>
       </Centered>
     );
@@ -287,7 +296,7 @@ function CoursePlayerPage() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-285 px-4 py-6 sm:px-6 lg:px-8">
           <Link to={back} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-            <ArrowLeft className="size-4" /> {community?.name} · Formations
+            <ArrowLeft className="size-4" /> {community?.name} · {t('course.courses')}
           </Link>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
@@ -295,7 +304,7 @@ function CoursePlayerPage() {
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{course.title}</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
                 <span className="flex items-center gap-1.5">
-                  <BookOpen className="size-4" /> {course.lessons_count} leçon{course.lessons_count > 1 ? 's' : ''}
+                  <BookOpen className="size-4" /> {t('course.lessons', { count: course.lessons_count })}
                 </span>
                 {course.duration_seconds > 0 && (
                   <span className="flex items-center gap-1.5">
@@ -306,16 +315,16 @@ function CoursePlayerPage() {
             </div>
             {!player.isEnrolled && player.progress === 0 && (
               <Button size="lg" onClick={player.start} isLoading={player.isEnrolling}>
-                Commencer la formation <ArrowRight />
+                {t('course.start')} <ArrowRight />
               </Button>
             )}
           </div>
           <div className="mt-5">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Votre progression</span>
+              <span className="text-slate-600">{t('course.progress')}</span>
               <span className="font-semibold text-blue-900 tabular-nums">{player.progress} %</span>
             </div>
-            <div className="mt-2 h-2 rounded-full bg-blue-50" role="progressbar" aria-label="Progression de la formation" aria-valuenow={player.progress} aria-valuemin={0} aria-valuemax={100}>
+            <div className="mt-2 h-2 rounded-full bg-blue-50" role="progressbar" aria-label={t('course.progressLabel')} aria-valuenow={player.progress} aria-valuemin={0} aria-valuemax={100}>
               <div className="h-full rounded-full bg-blue-900 transition-[width]" style={{ width: `${player.progress}%` }} />
             </div>
           </div>
@@ -333,12 +342,12 @@ function CoursePlayerPage() {
             <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-900" role="status">
               <PartyPopper className="size-6 shrink-0" />
               <p>
-                <strong>Formation terminée, bravo !</strong> Vous avez suivi toutes les leçons de « {course.title} ».
+                <strong>{t('course.finished')}</strong> {t('course.finishedText', { title: course.title })}
               </p>
             </div>
           )}
           {player.lessons.length === 0 ? (
-            <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">L’équipe prépare encore le contenu de cette formation.</p>
+            <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">{t('course.preparing')}</p>
           ) : (
             <LessonContent player={player} />
           )}

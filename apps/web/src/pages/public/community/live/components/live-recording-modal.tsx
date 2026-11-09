@@ -1,4 +1,5 @@
 import { Check, CloudUpload, Download, Film, LoaderCircle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 
 import { Button, customToast } from '@kodinga/ui';
@@ -26,6 +27,7 @@ export function LiveRecordingModal({
   slug,
   eventId,
 }: LiveRecordingModalProps) {
+  const { t } = useTranslation();
   const [attachReplay] = useAttachEventReplayMutation();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -53,7 +55,7 @@ export function LiveRecordingModal({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    customToast.success({ message: 'Téléchargement de la vidéo démarré.' });
+    customToast.success({ message: t('live.recording.downloadStarted') });
   };
 
   const handleUploadToUploadThing = async () => {
@@ -70,14 +72,14 @@ export function LiveRecordingModal({
 
       setUploadSuccess(true);
       customToast.success({
-        message: 'Replay enregistré et publié pour la communauté !',
+        message: t('live.recording.published'),
       });
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err) {
       const errorMsg = parseApiError(err).message;
-      customToast.error({ message: `Le replay n’a pas pu être enregistré : ${errorMsg}` });
+      customToast.error({ message: t('live.recording.failed', { error: errorMsg }) });
     } finally {
       setIsUploading(false);
     }
@@ -107,10 +109,10 @@ export function LiveRecordingModal({
             </div>
             <div className="min-w-0">
               <h2 id="live-recording-modal-title" className="text-sm sm:text-base font-semibold text-white truncate">
-                Enregistrement du Live terminé
+                {t('live.recording.title')}
               </h2>
               <p className="text-xs text-slate-400">
-                Durée : {formatRecordingTime(durationSeconds)} • Poids : {sizeMb} Mo
+                {t('live.recording.meta', { duration: formatRecordingTime(durationSeconds), size: sizeMb })}
               </p>
             </div>
           </div>
@@ -119,8 +121,8 @@ export function LiveRecordingModal({
             onClick={onClose}
             disabled={isUploading}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer disabled:opacity-50 shrink-0 ml-2"
-            title="Fermer"
-            aria-label="Fermer la fenêtre d'enregistrement"
+            title={t('common.actions.close')}
+            aria-label={t('live.recording.close')}
           >
             <X className="size-5" />
           </button>
@@ -141,9 +143,9 @@ export function LiveRecordingModal({
           </div>
 
           <div className="rounded-xl border border-red-500/20 bg-red-950/20 p-3 sm:p-3.5 text-xs text-slate-300 space-y-1">
-            <p className="font-semibold text-red-400">Publier en replay</p>
+            <p className="font-semibold text-red-400">{t('live.recording.publishTitle')}</p>
             <p className="text-slate-400 leading-relaxed">
-              Envoyez cette vidéo sur Kodinga : elle sera disponible en replay pour les membres de la communauté.
+              {t('live.recording.publishText')}
             </p>
           </div>
         </div>
@@ -158,7 +160,7 @@ export function LiveRecordingModal({
             disabled={isUploading}
             className="w-full sm:w-auto border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
           >
-            <Download className="size-4" /> Télécharger une copie (.webm)
+            <Download className="size-4" /> {t('live.recording.download')}
           </Button>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -170,7 +172,7 @@ export function LiveRecordingModal({
               disabled={isUploading}
               className="text-slate-400 hover:text-white hover:bg-white/5"
             >
-              Ignorer
+              {t('live.recording.ignore')}
             </Button>
 
             <Button
@@ -183,17 +185,17 @@ export function LiveRecordingModal({
               {isUploading ? (
                 <>
                   <LoaderCircle className="size-4 animate-spin" />
-                  Téléversement sur UploadThing...
+                  {t('live.recording.uploading')}
                 </>
               ) : uploadSuccess ? (
                 <>
                   <Check className="size-4 text-emerald-400" />
-                  Replay publié !
+                  {t('live.recording.done')}
                 </>
               ) : (
                 <>
                   <CloudUpload className="size-4" />
-                  Sauvegarder sur UploadThing
+                  {t('live.recording.save')}
                 </>
               )}
             </Button>

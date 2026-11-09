@@ -2,6 +2,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useAppSelector } from '@/redux/hook';
 import { useAddProjectCommentMutation, useGetProjectCommentsQuery, useGetProjectQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
@@ -24,7 +25,9 @@ function UseProjectPage() {
     project: query.data,
     isLoading: query.isLoading,
     notFound: (query.error as FetchBaseQueryError | undefined)?.status === 404,
-    back: from ? { to: `/communities/${from}?tab=projects`, label: 'Projets de la communauté' } : { to: '/', label: 'Explorer les communautés' },
+    back: from
+      ? { to: `/communities/${from}?tab=projects`, label: i18n.t('discover.project.backCommunity') }
+      : { to: '/', label: i18n.t('discover.project.backExplore') },
     signedIn,
     loginUrl,
     /** What the vote button needs */

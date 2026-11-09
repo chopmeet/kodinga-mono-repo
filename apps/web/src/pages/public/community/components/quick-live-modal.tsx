@@ -1,5 +1,6 @@
 import { Globe, Lock, Radio, Video } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -30,6 +31,7 @@ type Props = {
  * Creates the event in LiveKit format, marks it as 'live', and redirects into the studio.
  */
 export function QuickLiveModal({ slug, open, onClose }: Props) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [createEvent] = useCreateEventMutation();
   const [updateStatus] = useUpdateEventStatusMutation();
@@ -43,7 +45,7 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || title.trim().length < 3) {
-      setError('Le titre doit comporter au moins 3 caractères.');
+      setError(t('community.quickLive.titleTooShort'));
       return;
     }
     setError('');
@@ -76,12 +78,12 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
       // Immediately transition status to live
       await updateStatus({ slug, eventId: created.id, status: 'live' }).unwrap();
 
-      customToast.success({ message: 'Votre direct est lancé ! Connexion au salon…' });
+      customToast.success({ message: t('community.quickLive.started') });
       onClose();
       navigate(`/communities/${slug}/events/${created.id}/live`);
     } catch (err) {
       const parsed = parseApiError(err);
-      customToast.error({ message: parsed.message || 'Impossible de démarrer le live.' });
+      customToast.error({ message: parsed.message || t('community.quickLive.failed') });
       setIsStarting(false);
     }
   };
@@ -94,18 +96,18 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
             <span className="flex size-9 items-center justify-center rounded-xl bg-red-100 text-red-600">
               <Radio className="size-5 animate-pulse" />
             </span>
-            <DialogTitle className="text-xl">Lancer un direct maintenant</DialogTitle>
+            <DialogTitle className="text-xl">{t('community.quickLive.title')}</DialogTitle>
           </div>
           <DialogDescription>
-            Démarrez une session vidéo interactive en temps réel avec les membres de la communauté.
+            {t('community.quickLive.description')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleStart} className="space-y-4">
           <Input
             id="quick-live-title"
-            label="Titre du direct"
-            placeholder="Ex. Session Q&A, Live Coding, Démo…"
+            label={t('community.quickLive.liveTitle')}
+            placeholder={t('community.quickLive.liveTitlePlaceholder')}
             required
             autoFocus
             value={title}
@@ -115,15 +117,15 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
 
           <TextareaInput
             id="quick-live-description"
-            label="Description (facultative)"
-            placeholder="De quoi va-t-on discuter pendant ce live ?"
+            label={t('community.quickLive.liveDescription')}
+            placeholder={t('community.quickLive.liveDescriptionPlaceholder')}
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-slate-700">Confidentialité du direct</span>
+            <span className="text-xs font-semibold text-slate-700">{t('community.quickLive.privacy')}</span>
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
@@ -136,10 +138,10 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
                 )}
               >
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                  <Globe className={cn('size-3.5', isPublic ? 'text-blue-600' : 'text-slate-400')} /> Public
+                  <Globe className={cn('size-3.5', isPublic ? 'text-blue-600' : 'text-slate-400')} /> {t('community.quickLive.public')}
                 </span>
                 <span className="text-[11px] leading-tight text-slate-500">
-                  Accessible à tous les membres et visiteurs.
+                  {t('community.quickLive.publicText')}
                 </span>
               </button>
 
@@ -154,10 +156,10 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
                 )}
               >
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                  <Lock className={cn('size-3.5', !isPublic ? 'text-amber-600' : 'text-slate-400')} /> Privé (Membres)
+                  <Lock className={cn('size-3.5', !isPublic ? 'text-amber-600' : 'text-slate-400')} /> {t('community.quickLive.private')}
                 </span>
                 <span className="text-[11px] leading-tight text-slate-500">
-                  Réservé uniquement aux membres de la communauté.
+                  {t('community.quickLive.privateText')}
                 </span>
               </button>
             </div>
@@ -165,7 +167,7 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
 
           <DialogFooter className="mt-6 pt-2">
             <Button variant="outline" type="button" onClick={onClose} disabled={isStarting}>
-              Annuler
+              {t('common.actions.cancel')}
             </Button>
             <Button
               type="submit"
@@ -173,7 +175,7 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
               className="bg-red-600 font-semibold text-white shadow-md shadow-red-600/30 hover:bg-red-500"
             >
               <Video className="size-4" />
-              Lancer le direct
+              {t('community.quickLive.start')}
             </Button>
           </DialogFooter>
         </form>

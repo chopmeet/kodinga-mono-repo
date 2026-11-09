@@ -1,18 +1,20 @@
 import { Check, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, cn, customToast } from '@kodinga/ui';
 import { useVotePollMutation } from '@/utils/api/community/community.api';
 import type { PostPoll } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
+import { dateFormat } from '@/utils/format';
 
-const until = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
 /**
  * Poll of a post: members vote (POST posts/<id>/vote/, a new vote replaces the previous one), then
  * see the results with their choice. Visitors and closed polls show the results only.
  */
 export function PollCard({ postId, poll: cached, canVote }: { postId: string; poll: PostPoll; canVote: boolean }) {
+  const { t } = useTranslation();
   const [votePoll, { isLoading }] = useVotePollMutation();
   // The poll answered by the vote, shown at once: the cache update lands a moment later and
   // would otherwise flash the previous results
@@ -33,17 +35,17 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
     try {
       setAnswered(await votePoll({ postId, option_ids: chosen }).unwrap());
       setChanging(false);
-      customToast.success({ message: voted ? 'Vote modifié.' : 'Vote enregistré.' });
+      customToast.success({ message: voted ? t('community.poll.changed') : t('community.poll.recorded') });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     }
   };
 
   return (
-    <section aria-label={`Sondage : ${poll.question}`} className="mt-5 rounded-xl border border-slate-200 p-4">
+    <section aria-label={t('community.poll.label', { question: poll.question })} className="mt-5 rounded-xl border border-slate-200 p-4">
       {voting ? (
         <fieldset>
-          <legend className="mb-3 text-sm text-slate-600">{poll.is_multiple_choice ? 'Plusieurs réponses possibles' : 'Une seule réponse'}</legend>
+          <legend className="mb-3 text-sm text-slate-600">{poll.is_multiple_choice ? t('community.poll.multiple') : t('community.poll.single')}</legend>
           <div className="space-y-2">
             {options.map((o) => {
               const selected = chosen.includes(o.id);
@@ -69,24 +71,24 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
           </div>
           <div className="mt-3 flex items-center gap-2">
             <Button size="sm" onClick={submit} isLoading={isLoading} disabled={chosen.length === 0}>
-              {voted ? 'Enregistrer mon vote' : 'Voter'}
+              {voted ? t('community.poll.saveVote') : t('community.poll.vote')}
             </Button>
             {changing && (
               <Button size="sm" variant="ghost" onClick={() => setChanging(false)} disabled={isLoading}>
-                Annuler
+                {t('common.actions.cancel')}
               </Button>
             )}
           </div>
         </fieldset>
       ) : (
-        <ul className="space-y-3" aria-label="Résultats du sondage">
+        <ul className="space-y-3" aria-label={t('community.poll.results')}>
           {options.map((o) => {
             const mine = poll.user_voted_option_ids?.includes(o.id);
             return (
               <li key={o.id}>
                 <div className="flex justify-between gap-3 text-sm">
                   <span className={cn('flex items-center gap-1.5', mine ? 'font-semibold text-blue-900' : 'text-slate-800')}>
-                    {mine && <Check className="size-4" aria-label="Votre choix" />}
+                    {mine && <Check className="size-4" aria-label={t('community.poll.yourChoice')} />}
                     {o.text}
                   </span>
                   <span className="font-semibold text-slate-900 tabular-nums">{Math.round(o.percentage)} %</span>
@@ -102,21 +104,22 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         <span>
-          {poll.total_votes} vote{poll.total_votes > 1 ? 's' : ''}
+          {t('community.poll.votes', { count: poll.total_votes })}
         </span>
         {poll.is_expired ? (
-          <span>· Sondage terminé</span>
+          <span>{t('community.poll.ended')}</span>
         ) : (
           poll.expires_at && (
             <span className="flex items-center gap-1">
-              · <Clock className="size-3" /> jusqu’au {until.format(new Date(poll.expires_at))}
+              · <Clock className="size-3" />{' '}
+              {t('community.poll.until', { date: dateFormat({ day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(poll.expires_at)) })}
             </span>
           )
         )}
-        {!canVote && !poll.is_expired && <span>· Réservé aux membres</span>}
+        {!canVote && !poll.is_expired && <span>{t('community.poll.membersOnly')}</span>}
         {open && voted && !changing && (
           <button type="button" onClick={() => setChanging(true)} className="ml-auto font-semibold text-blue-900 hover:underline">
-            Modifier mon vote
+            {t('community.poll.change')}
           </button>
         )}
       </div>

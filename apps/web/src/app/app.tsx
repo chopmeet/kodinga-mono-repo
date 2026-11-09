@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router-dom';
 
 import { Toaster } from '@kodinga/ui';
@@ -62,6 +63,8 @@ export function App() {
   // An expired access token is renewed by authBaseQuery: the session only ends without a valid refresh token
   const expired = !!token && isTokenExpired(token) && (!refresh || isTokenExpired(refresh));
   const routes = useRoutes(AppRoutes);
+  // A new language mounts the pages again: every text and date format follows it
+  const { i18n } = useTranslation();
 
   return (
     <>
@@ -69,7 +72,7 @@ export function App() {
       <ReferralCapture />
       {token && (expired ? <ExpiredSession /> : <FetchUser />)}
       {token && !expired && <RealtimeSync />}
-      {routes}
+      <Fragment key={i18n.resolvedLanguage}>{routes}</Fragment>
       {/* Renders the customToast notifications of the ui lib */}
       <Toaster richColors closeButton />
     </>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@kodinga/ui';
@@ -5,30 +6,29 @@ import type { PublicProfile } from '@/utils/api/profile/profile.type';
 import { formatCompact, nameInitials } from '@/utils/Utils';
 import UseProfileFollows from '../form/UseProfileFollows';
 
-const plural = (n: number, one: string, many: string) => (n > 1 ? many : one);
-
 /** "12 abonnés · 3 abonnements", each opening the list of the people */
 export function ProfileFollows({ profile, name }: { profile: PublicProfile; name: string }) {
+  const { t } = useTranslation();
   const follows = UseProfileFollows(profile.user.username);
   const followers = profile.followers_count;
   const following = profile.following_count;
   if (followers === undefined && following === undefined) return null;
 
-  const title = follows.open === 'following' ? `Abonnements de ${name}` : `Abonnés de ${name}`;
-  const empty = follows.open === 'following' ? `${name} ne suit personne pour l’instant.` : `Personne ne suit encore ${name}.`;
+  const title = follows.open === 'following' ? t('profile.follow.followingOf', { name }) : t('profile.follow.followersOf', { name });
+  const empty = follows.open === 'following' ? t('profile.follow.noFollowing', { name }) : t('profile.follow.noFollowers', { name });
   const countClass = 'rounded text-sm text-slate-600 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none';
 
   return (
     <>
       <p className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1">
         <button type="button" className={countClass} onClick={() => follows.show('followers')}>
-          <strong className="font-semibold text-slate-900 tabular-nums">{formatCompact(followers ?? 0)}</strong> {plural(followers ?? 0, 'abonné', 'abonnés')}
+          <strong className="font-semibold text-slate-900 tabular-nums">{formatCompact(followers ?? 0)}</strong> {t('profile.follow.followers', { count: followers ?? 0 })}
         </button>
         <span className="text-slate-300" aria-hidden>
           ·
         </span>
         <button type="button" className={countClass} onClick={() => follows.show('following')}>
-          <strong className="font-semibold text-slate-900 tabular-nums">{formatCompact(following ?? 0)}</strong> {plural(following ?? 0, 'abonnement', 'abonnements')}
+          <strong className="font-semibold text-slate-900 tabular-nums">{formatCompact(following ?? 0)}</strong> {t('profile.follow.followingCount', { count: following ?? 0 })}
         </button>
       </p>
 
@@ -39,9 +39,9 @@ export function ProfileFollows({ profile, name }: { profile: PublicProfile; name
             <DialogDescription className="sr-only">{title}</DialogDescription>
           </DialogHeader>
           {follows.isLoading ? (
-            <p className="py-6 text-center text-sm text-slate-500">Chargement…</p>
+            <p className="py-6 text-center text-sm text-slate-500">{t('common.actions.loading')}</p>
           ) : follows.failed ? (
-            <p className="py-6 text-center text-sm text-red-700">Impossible de charger la liste pour le moment.</p>
+            <p className="py-6 text-center text-sm text-red-700">{t('profile.follow.listFailed')}</p>
           ) : follows.people.length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-500">{empty}</p>
           ) : (
@@ -64,7 +64,7 @@ export function ProfileFollows({ profile, name }: { profile: PublicProfile; name
           )}
           {follows.hasMore && (
             <Button variant="outline" className="w-full" isLoading={follows.isFetching} onClick={follows.more}>
-              Afficher plus
+              {t('common.actions.showMore')}
             </Button>
           )}
         </DialogContent>

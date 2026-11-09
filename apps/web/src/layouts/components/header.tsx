@@ -158,8 +158,8 @@ function Header() {
         <div className="flex items-center gap-0.5 justify-self-end sm:gap-4">
           <NavLink
             to="/search"
-            aria-label="Rechercher sur Kodinga"
-            title="Rechercher sur Kodinga"
+            aria-label={t('header.searchSite')}
+            title={t('header.searchSite')}
             className={({ isActive }) => cn('flex size-10 items-center justify-center rounded-lg hover:bg-slate-100', isActive ? 'text-slate-900' : 'text-slate-500')}
           >
             <Search className="size-5" aria-hidden />

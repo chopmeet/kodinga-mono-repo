@@ -1,0 +1,33 @@
+// Global search /search
+export const search = {
+  title: 'Rechercher sur Kodinga',
+  placeholder: 'Une communauté, une formation, un développeur…',
+  filtersLabel: 'Filtrer les résultats',
+  filters: {
+    all: 'Tout',
+    communities: 'Communautés',
+    courses: 'Formations',
+    events: 'Événements',
+    developers: 'Développeurs',
+    discussions: 'Discussions',
+  },
+  trending: {
+    communities: 'Communautés populaires',
+    courses: 'Formations les plus suivies',
+    events: 'Prochains événements',
+  },
+  noResult: 'Aucun résultat pour « {{q}} ».',
+  unavailable: 'La recherche est momentanément indisponible.',
+  searching: 'Recherche…',
+  oneMoreLetter: 'Encore une lettre…',
+  members_one: '{{formatted}} membre',
+  members_other: '{{formatted}} membres',
+  lessons_one: '{{formatted}} leçon',
+  lessons_other: '{{formatted}} leçons',
+  replies_one: '{{formatted}} réponse',
+  replies_other: '{{formatted}} réponses',
+  paid: 'Payante',
+  free: 'Gratuite',
+  live: 'En direct',
+  discussionBy: 'Discussion de @{{username}}',
+};

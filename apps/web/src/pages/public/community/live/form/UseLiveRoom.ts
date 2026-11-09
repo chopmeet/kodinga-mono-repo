@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useAppSelector } from '@/redux/hook';
 import { useGetCommunityEventQuery, useJoinLiveEventMutation, useUpdateEventStatusMutation } from '@/utils/api/community/community.api';
 import type { LiveJoin } from '@/utils/api/event/event.type';
@@ -70,10 +71,10 @@ function UseLiveRoom() {
       event.refetch();
     },
     /** Host: the members waiting are let in */
-    start: () => changeStatus('live', 'Vous êtes en direct !'),
+    start: () => changeStatus('live', i18n.t('live.toasts.started')),
     /** Host: ends the live for everyone, back to the events */
     end: async () => {
-      if (await changeStatus('completed', 'Le live est terminé. Merci !')) {
+      if (await changeStatus('completed', i18n.t('live.toasts.ended'))) {
         setSession(null);
         navigate(`/communities/${slug}?tab=events`);
       }

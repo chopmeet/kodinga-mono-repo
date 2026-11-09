@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useGetHelpAssistanceQuery, usePingMentorsMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 
@@ -32,7 +33,14 @@ function UseHelpAssistance(postId: string, enabled: boolean) {
     send: async () => {
       try {
         const { notified_count } = await ping({ postId, mentor_ids: chosen, custom_message: message.trim() || undefined }).unwrap();
-        customToast.success({ message: notified_count > 1 ? `${notified_count} mentors prévenus.` : notified_count === 1 ? 'Le mentor a été prévenu.' : 'Personne n’a pu être prévenu.' });
+        customToast.success({
+          message:
+            notified_count > 1
+              ? i18n.t('community.toasts.mentorsNotified', { count: notified_count })
+              : notified_count === 1
+                ? i18n.t('community.toasts.mentorNotified')
+                : i18n.t('community.toasts.nobodyNotified'),
+        });
       } catch (err) {
         customToast.error({ message: parseApiError(err).message });
       }

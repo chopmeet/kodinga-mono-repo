@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { useAppSelector } from '@/redux/hook';
 import {
   useEnrollCourseMutation,
@@ -98,7 +99,7 @@ function UseCoursePlayer() {
     open,
     /** Enrolls, then opens the first lesson to do */
     start: async () => {
-      if (await run(enroll({ slug, courseSlug }).unwrap(), 'Vous êtes inscrit à la formation.')) {
+      if (await run(enroll({ slug, courseSlug }).unwrap(), i18n.t('course.toasts.enrolled'))) {
         const first = nextToDo ?? lessons[0];
         if (first) open(first.id);
       }
@@ -110,7 +111,7 @@ function UseCoursePlayer() {
       await course.refetch();
       if (result.just_completed_course) return congratulate(result.congratulations?.xp_awarded ?? result.xp_awarded ?? 0);
       const points = result.passed ? (result.xp_awarded ?? 0) : 0;
-      if (points > 0) customToast.success({ message: `Quiz réussi : +${points} point${points > 1 ? 's' : ''}` });
+      if (points > 0) customToast.success({ message: i18n.t('course.toasts.quizPassed', { count: points }) });
     },
     closeCongratulations: () => setJustFinished(false),
     /**
@@ -128,7 +129,7 @@ function UseCoursePlayer() {
           congratulate(result.xp_awarded);
           return;
         }
-        if (result.xp_awarded > 0) customToast.success({ message: `Leçon terminée : +${result.xp_awarded} point${result.xp_awarded > 1 ? 's' : ''}` });
+        if (result.xp_awarded > 0) customToast.success({ message: i18n.t('course.toasts.lessonDone', { count: result.xp_awarded }) });
         if (next) open(next.id);
       } catch (error) {
         customToast.error({ message: parseApiError(error).message });

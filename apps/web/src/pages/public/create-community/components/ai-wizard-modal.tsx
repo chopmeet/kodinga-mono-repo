@@ -1,4 +1,5 @@
 import { Bot, Check, Globe, Loader2, Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 
 import { Button, cn, customToast } from '@kodinga/ui';
@@ -13,7 +14,9 @@ interface AIWizardModalProps {
 export function AIWizardModal({ flow }: AIWizardModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [idea, setIdea] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('fr');
+  const { t, i18n } = useTranslation();
+  // The proposal comes in the language of the interface by default (Wolof and Bambara on request)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(i18n.resolvedLanguage === 'en' ? 'en' : 'fr');
   const [selectedName, setSelectedName] = useState<string>('');
   const [proposal, setProposal] = useState<CommunityProposalResult | null>(null);
 
@@ -35,7 +38,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
         }
       }
     } catch {
-      customToast.error({ message: 'Impossible de générer la proposition pour le moment. Veuillez réessayer.' });
+      customToast.error({ message: t('create.ai.failed') });
     }
   };
 
@@ -59,7 +62,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
       flow.form.setValue('privacy_type', 'public');
     }
 
-    customToast.success({ message: 'Proposition IA appliquée ! Vérifiez et personnalisez chaque champ avant de valider.' });
+    customToast.success({ message: t('create.ai.applied') });
     setIsOpen(false);
   };
 
@@ -74,10 +77,10 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900">
-                Idée en tête ? Laissez l’IA Assistant Kodinga concevoir votre communauté
+                {t('create.ai.bannerTitle')}
               </h3>
               <p className="text-xs text-slate-500">
-                Noms percutants, description, catégories, règles et plan de lancement en 1 clic.
+                {t('create.ai.bannerText')}
               </p>
             </div>
           </div>
@@ -87,7 +90,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
             className="shrink-0 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-slate-800"
           >
             <Sparkles className="mr-1.5 size-3.5 text-brand" />
-            Concevoir avec l’IA
+            {t('create.ai.design')}
           </Button>
         </div>
       </div>
@@ -103,15 +106,16 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                   <Bot className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">Assistant Bâtisseur de Communauté</h3>
+                  <h3 className="text-sm font-bold">{t('create.ai.title')}</h3>
                   <p className="text-[11px] text-slate-400">
-                    Propulsé par Google Gemini avec fallback OpenAI
+                    {t('create.ai.poweredBy')}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
+                aria-label={t('common.actions.close')}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
               >
                 <X className="size-4" />
@@ -122,13 +126,13 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
             <div className="flex-1 space-y-5 overflow-y-auto p-6 text-sm">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Décrivez votre idée ou votre public cible :
+                  {t('create.ai.describe')}
                 </label>
                 <textarea
                   rows={3}
                   value={idea}
                   onChange={(e) => setIdea(e.target.value)}
-                  placeholder="Ex: Une communauté pour les passionnés d'IA et de Python francophones en Afrique qui souhaitent collaborer sur des projets open-source..."
+                  placeholder={t('create.ai.placeholder')}
                   className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                 />
               </div>
@@ -136,7 +140,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Globe className="size-4 text-slate-400" />
-                  <span className="text-xs text-slate-600">Langue préférée :</span>
+                  <span className="text-xs text-slate-600">{t('create.ai.language')}</span>
                   <select
                     value={selectedLanguage}
                     onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -158,12 +162,12 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                      Génération en cours...
+                      {t('create.ai.generating')}
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-1.5 size-3.5" />
-                      Générer la proposition
+                      {t('create.ai.generate')}
                     </>
                   )}
                 </Button>
@@ -174,7 +178,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                 <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-brand">
-                      1. Noms suggérés (cliquez pour sélectionner) :
+                      {t('create.ai.names')}
                     </span>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {proposal.name_suggestions.map((name, i) => (
@@ -200,7 +204,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
 
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      2. Mission et accroche :
+                      {t('create.ai.mission')}
                     </span>
                     <p className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-700">
                       {proposal.purpose || proposal.description}
@@ -209,7 +213,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
 
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      3. Catégories de discussion (#canaux) :
+                      {t('create.ai.categories')}
                     </span>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {proposal.suggested_categories.map((cat, i) => (
@@ -225,16 +229,19 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
 
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      4. Première discussion suggérée :
+                      {t('create.ai.firstDiscussion')}
                     </span>
                     <p className="mt-1 text-xs italic text-slate-600">
-                      "{proposal.first_discussion_prompts[0] || 'Présentez-vous et partagez ce que vous souhaitez accomplir.'}"
+                      "{proposal.first_discussion_prompts[0] || t('create.ai.defaultPrompt')}"
                     </p>
                   </div>
 
                   <div className="border-t border-slate-200 pt-3">
                     <p className="text-[11px] text-slate-500">
-                      <span role="img" aria-label="Attention">⚠️</span> <strong>Confirmation requise :</strong> Cliquer sur « Appliquer au formulaire » pré-remplit les champs du formulaire. Rien ne sera créé ou publié avant votre validation finale.
+                      <span role="img" aria-label={t('create.ai.warning')}>
+                        ⚠️
+                      </span>{' '}
+                      <strong>{t('create.ai.confirmTitle')}</strong> {t('create.ai.confirmText')}
                     </p>
                   </div>
                 </div>
@@ -248,7 +255,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                 onClick={() => setIsOpen(false)}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
               >
-                Annuler
+                {t('common.actions.cancel')}
               </Button>
               {proposal && (
                 <Button
@@ -257,7 +264,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                   className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800"
                 >
                   <Check className="mr-1.5 size-3.5 text-brand" />
-                  Appliquer au formulaire
+                  {t('create.ai.apply')}
                 </Button>
               )}
             </div>

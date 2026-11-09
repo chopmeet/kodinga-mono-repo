@@ -2,6 +2,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { isExpired } from '@/pages/community-space/opportunities/opportunity-labels';
 import { useAppSelector } from '@/redux/hook';
 import { useApplyToOpportunityMutation, useGetMyOpportunityApplicationsQuery, useGetOpportunityQuery } from '@/utils/api/community/community.api';
@@ -31,7 +32,9 @@ function UseOpportunityPage() {
     offer,
     isLoading: query.isLoading,
     notFound: (query.error as FetchBaseQueryError | undefined)?.status === 404,
-    back: from ? { to: `/communities/${from}?tab=opportunities`, label: 'Opportunités de la communauté' } : { to: '/opportunities', label: 'Toutes les offres' },
+    back: from
+      ? { to: `/communities/${from}?tab=opportunities`, label: i18n.t('discover.offer.backCommunity') }
+      : { to: '/opportunities', label: i18n.t('discover.offer.backAll') },
     signedIn,
     loginUrl: `/auth/login?next=${encodeURIComponent(pathname + search)}`,
     isPoster: !!offer && offer.poster?.id === meId,
@@ -43,7 +46,7 @@ function UseOpportunityPage() {
     apply: async (values: ApplyValues) => {
       try {
         await apply({ opportunitySlug, ...values }).unwrap();
-        customToast.success({ message: 'Candidature envoyée : le recruteur est prévenu.' });
+        customToast.success({ message: i18n.t('discover.offer.modal.sent') });
         return true;
       } catch (error) {
         const parsed = parseApiError(error);

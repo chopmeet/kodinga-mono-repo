@@ -1,4 +1,6 @@
 import { ArrowUpRight, BadgeCheck, Lock, Radio, Star, Users } from 'lucide-react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
@@ -7,17 +9,18 @@ import type { CommunityListItem } from '@/utils/api/community/community.type';
 import { formatCompact } from '@/utils/Utils';
 
 /** Free + public: join right away. Paid: subscription. Private / secret: the request is reviewed */
-function accessOf(community: CommunityListItem) {
-  if (community.pricing_type === 'paid') return { label: 'Payante', className: 'border-slate-200 bg-slate-50 text-slate-700' };
-  if (community.privacy_type !== 'public') return { label: 'Sur demande', className: 'border-amber-200 bg-amber-50 text-amber-800' };
-  return { label: 'Accès gratuit', className: 'border-blue-100 bg-blue-50 text-blue-800' };
+function accessOf(community: CommunityListItem, t: TFunction) {
+  if (community.pricing_type === 'paid') return { label: t('home.card.paid'), className: 'border-slate-200 bg-slate-50 text-slate-700' };
+  if (community.privacy_type !== 'public') return { label: t('home.card.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' };
+  return { label: t('home.card.freeAccess'), className: 'border-blue-100 bg-blue-50 text-blue-800' };
 }
 
 export function CommunityCard({ community }: { community: CommunityListItem }) {
-  const access = accessOf(community);
+  const { t } = useTranslation();
+  const access = accessOf(community, t);
   const href = `/communities/${community.slug}`;
   const isPrivate = community.privacy_type !== 'public';
-  const tags = [community.category?.name, community.pricing_type === 'paid' ? 'Payante' : 'Gratuite'].filter(Boolean) as string[];
+  const tags = [community.category?.name, community.pricing_type === 'paid' ? t('home.card.paid') : t('home.card.free')].filter(Boolean) as string[];
   const activeLive = community.active_live;
 
   return (
@@ -38,7 +41,7 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-700 uppercase shadow-2xs">
               {isPrivate ? <Lock className="size-3.5" /> : <Users className="size-3.5" />}
-              {isPrivate ? 'Privée' : 'Communauté'}
+              {isPrivate ? t('home.card.private') : t('home.card.community')}
             </span>
             {activeLive && (
               <span className="flex items-center gap-1.5 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-md animate-pulse">
@@ -49,7 +52,8 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
           </div>
           {community.is_featured && (
             <span className="flex shrink-0 items-center gap-1 rounded-md bg-amber-400/95 px-2 py-1 text-xs font-semibold text-amber-950">
-              <Star className="size-3.5" />À la une
+              <Star className="size-3.5" />
+              {t('home.card.featured')}
             </span>
           )}
         </div>
@@ -66,7 +70,7 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
           <Link to={href} className="after:absolute after:inset-0 group-hover:text-primary">
             {community.name}
           </Link>
-          {community.is_verified && <BadgeCheck className="size-5 shrink-0 text-primary" aria-label="Communauté vérifiée" />}
+          {community.is_verified && <BadgeCheck className="size-5 shrink-0 text-primary" aria-label={t('home.card.verified')} />}
         </h3>
         {community.tagline && <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-slate-600">{community.tagline}</p>}
 
@@ -85,7 +89,7 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
         <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-sm">
           <span className="flex items-center gap-2 text-slate-600">
             <Users className="size-4.5 text-slate-500" />
-            {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
+            {t('home.card.members', { count: community.members_count, formatted: formatCompact(community.members_count) })}
           </span>
           {activeLive ? (
             <Link
@@ -93,14 +97,14 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
               className="relative z-10 flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-red-600/30 hover:bg-red-500 transition-all hover:scale-102"
             >
               <Radio className="size-3.5 animate-pulse" />
-              Rejoindre le direct
+              {t('home.card.joinLive')}
             </Link>
           ) : (
             <NavLink
               to={href}
               className="relative z-10 flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-slate-900 transition-colors hover:text-primary"
             >
-              {community.is_member ? 'Ouvrir' : 'Découvrir'}
+              {community.is_member ? t('home.card.open') : t('home.card.discover')}
               <ArrowUpRight className="size-4.5" />
             </NavLink>
           )}

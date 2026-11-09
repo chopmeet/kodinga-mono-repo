@@ -1,5 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -10,14 +12,16 @@ import { useLoginUserMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
 import { safeNext } from './safe-next';
 
-const loginSchema = z.object({
-  email: z.string().trim().min(1, 'Saisissez votre email').email('Adresse email invalide'),
-  password: z.string().min(1, 'Saisissez votre mot de passe'),
-});
+const loginSchema = (t: TFunction) =>
+  z.object({
+    email: z.string().trim().min(1, t('auth.validation.emailRequired')).email(t('auth.validation.emailInvalid')),
+    password: z.string().min(1, t('auth.validation.passwordRequired')),
+  });
 
-type LoginValues = z.infer<typeof loginSchema>;
+type LoginValues = z.infer<ReturnType<typeof loginSchema>>;
 
 function UseLoginForm() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -29,7 +33,7 @@ function UseLoginForm() {
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
+  } = useForm<LoginValues>({ resolver: zodResolver(loginSchema(t)) });
 
   const onSubmit = async (values: LoginValues) => {
     setFormError(null);

@@ -5,6 +5,7 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import i18n from '@/utils/i18n';
 import { contentKind } from './components/notification-item';
 import { notificationHref } from './form/UseNotifications';
 
@@ -219,5 +220,21 @@ describe('Notifications', () => {
     renderAppAt('/notifications');
     expect(await screen.findByRole('heading', { name: 'Vos notifications' }, SLOW)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Notifications/ })).toBeNull();
+  });
+
+  it('speaks English: title, filters, content kinds and actions', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    try {
+      signIn();
+      stubNotificationsApi();
+      renderAppAt('/notifications');
+      const list = await screen.findByRole('list', { name: 'Notifications' }, SLOW);
+      expect(within(list).getAllByRole('listitem')[2].textContent).toMatch(/^ProjectNouveau vote reçu/);
+      expect(screen.getByRole('button', { name: 'Unread' })).toBeTruthy();
+      expect(screen.getByText('2 unread')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Delete the notification: Nouveau vote reçu' })).toBeTruthy();
+    } finally {
+      await act(() => i18n.changeLanguage('fr'));
+    }
   });
 });

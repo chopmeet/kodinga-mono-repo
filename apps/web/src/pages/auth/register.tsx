@@ -1,4 +1,5 @@
 import { AtSign, Mail, MailCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { Input, InputPassword } from '@kodinga/ui';
@@ -13,13 +14,14 @@ import UseRegisterForm from './hooks/UseRegisterForm';
 const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
 
 function Register() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const next = params.get('next');
   const loginFooter = (
     <>
-      Déjà un compte ?{' '}
+      {t('auth.register.hasAccount')}{' '}
       <Link to={next ? `/auth/login?next=${encodeURIComponent(next)}` : '/auth/login'} className={linkClassName}>
-        Se connecter
+        {t('auth.common.login')}
       </Link>
     </>
   );
@@ -40,31 +42,30 @@ function Register() {
 
   if (sentTo) {
     return (
-      <AuthWrapper title="Vérifiez vos emails" footer={loginFooter}>
+      <AuthWrapper title={t('auth.common.checkEmails')} footer={loginFooter}>
         <div className="flex flex-col gap-5">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
             <MailCheck className="size-6" />
           </div>
           <p className="text-[15px] leading-relaxed text-slate-600">
-            Votre compte est créé. Nous avons envoyé un lien de confirmation à{' '}
-            <strong className="font-semibold text-slate-900">{sentTo}</strong> : cliquez dessus pour activer votre
-            compte. Pensez à vérifier vos spams.
+            {t('auth.register.sentBefore')} <strong className="font-semibold text-slate-900">{sentTo}</strong>{' '}
+            {t('auth.register.sentAfter')}
           </p>
           {formError && <FormAlert>{formError}</FormAlert>}
-          {resent && <FormAlert variant="success">Un nouveau lien vient de vous être envoyé.</FormAlert>}
+          {resent && <FormAlert variant="success">{t('auth.register.resent')}</FormAlert>}
           <p className="text-sm text-slate-500">
-            Rien reçu ?{' '}
+            {t('auth.common.nothingReceived')}{' '}
             <button
               type="button"
               onClick={resend}
               disabled={isResending}
               className="font-semibold text-brand hover:text-brand-hover hover:underline disabled:opacity-60"
             >
-              Renvoyer le lien
+              {t('auth.common.resendLink')}
             </button>{' '}
-            ou{' '}
+            {t('auth.common.or')}{' '}
             <button type="button" onClick={changeEmail} className={linkClassName}>
-              corriger l'adresse
+              {t('auth.register.changeEmail')}
             </button>
           </p>
         </div>
@@ -73,7 +74,7 @@ function Register() {
   }
 
   return (
-    <AuthWrapper title="Créer un compte" subtitle="Rejoignez les communautés tech d'Afrique, gratuitement." footer={loginFooter}>
+    <AuthWrapper title={t('auth.register.title')} subtitle={t('auth.register.subtitle')} footer={loginFooter}>
       <OAuthButtons />
 
       <EmailSeparator />
@@ -84,7 +85,7 @@ function Register() {
         <div className="grid gap-x-3 sm:grid-cols-2">
           <Input
             id="register-first-name"
-            label="Prénom"
+            label={t('auth.register.firstName')}
             autoComplete="given-name"
             required
             error={errors.first_name?.message}
@@ -92,7 +93,7 @@ function Register() {
           />
           <Input
             id="register-last-name"
-            label="Nom"
+            label={t('auth.register.lastName')}
             autoComplete="family-name"
             required
             error={errors.last_name?.message}
@@ -102,18 +103,18 @@ function Register() {
 
         <Input
           id="register-username"
-          label="Nom d'utilisateur"
+          label={t('auth.register.username')}
           icon={<AtSign className="size-4" />}
           autoComplete="username"
           required
-          fieldHelp="Visible par les autres membres. Lettres, chiffres, « _ » et « - »."
+          fieldHelp={t('auth.register.usernameHelp')}
           error={errors.username?.message}
           {...register('username')}
         />
 
         <Input
           id="register-email"
-          label="Adresse email"
+          label={t('auth.common.email')}
           type="email"
           icon={<Mail className="size-4" />}
           autoComplete="email"
@@ -124,7 +125,7 @@ function Register() {
 
         <InputPassword
           id="register-password"
-          label="Mot de passe"
+          label={t('auth.common.password')}
           autoComplete="new-password"
           required
           error={errors.password?.message}
@@ -146,7 +147,7 @@ function Register() {
               aria-describedby={errors.terms_accepted ? 'register-terms-error' : undefined}
               {...register('terms_accepted')}
             />
-            <span>J'accepte les conditions d'utilisation et la politique de confidentialité de Kodinga.</span>
+            <span>{t('auth.register.terms')}</span>
           </label>
           {errors.terms_accepted && (
             <p id="register-terms-error" className="mt-1.5 text-sm text-red-600">
@@ -156,7 +157,7 @@ function Register() {
         </div>
 
         <div className="mt-4">
-          <SubmitButton isLoading={isLoading}>Créer mon compte</SubmitButton>
+          <SubmitButton isLoading={isLoading}>{t('auth.register.submit')}</SubmitButton>
         </div>
       </form>
     </AuthWrapper>

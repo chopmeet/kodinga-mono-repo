@@ -1,4 +1,5 @@
 // Same values as the api (apps/gamification/models/reputation.py)
+import { numberFormat } from '@/utils/format';
 
 /** LEVEL_THRESHOLDS; the level counts every point of the member, on all of Kodinga */
 export const LEVELS: { level: number; title: string; from: number }[] = [
@@ -12,4 +13,5 @@ export const LEVELS: { level: number; title: string; from: number }[] = [
   { level: 8, title: 'Légende Kodinga', from: 6000 },
 ];
 
-export const pointsFormat = new Intl.NumberFormat('fr-FR');
+/** Points in the number format of the current language */
+export const pointsFormat = { format: (points: number) => numberFormat().format(points) };

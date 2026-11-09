@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
+import i18n from '@/utils/i18n';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -89,5 +90,18 @@ describe('Public hackathons page', () => {
       expect(last?.searchParams.get('format')).toBe('hybrid');
       expect(last?.searchParams.get('search')).toBe('fintech');
     }, SLOW);
+  });
+
+  it('speaks English: cards, counts and dates', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    stub();
+    renderAppAt('/hackathons');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Hackathons & challenges' }, SLOW)).toBeTruthy();
+    const list = await screen.findByRole('list', { name: 'Hackathons' }, SLOW);
+    expect(within(list).getAllByText('14 registered')).toHaveLength(2);
+    expect(within(list).getAllByText('2 prizes')).toHaveLength(2);
+    expect(within(list).getAllByRole('link', { name: 'View and apply →' })).toHaveLength(2);
+    expect(within(list).getAllByText('Dec')).toHaveLength(2);
+    await act(() => i18n.changeLanguage('fr'));
   });
 });

@@ -1,11 +1,13 @@
 import { Activity } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@kodinga/ui';
+import { dateFormat } from '@/utils/format';
 
-const DAY_LABELS = ['Lun.', '', 'Mer.', '', 'Ven.', '', 'Dim.'];
+// Every other day is named (keys of profile.activity.days)
+const DAY_LABELS = ['mon', '', 'wed', '', 'fri', '', 'sun'] as const;
 const LEVELS = ['bg-blue-50', 'bg-blue-200', 'bg-blue-400', 'bg-primary'];
-const monthFormat = new Intl.DateTimeFormat('fr-FR', { month: 'short' });
 
 /** Monday-first week grid ending on `end`: 53 columns of 7 days */
 function buildWeeks(end: Date) {
@@ -30,6 +32,9 @@ type Props = {
 
 /** GitHub-like contribution grid over the last 12 months of `year` */
 export function ActivityHeatmap({ year, counts = {} }: Props) {
+  const { t } = useTranslation();
+  const monthFormat = dateFormat({ month: 'short' });
+  const dayFormat = dateFormat({ day: '2-digit', month: '2-digit', year: 'numeric' });
   // A narrow screen scrolls the grid: it opens on the latest weeks
   const scroller = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -52,7 +57,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
   return (
     <div>
       <div ref={scroller} className="overflow-x-auto pb-1">
-        <div className="inline-grid min-w-full grid-cols-[2.5rem_1fr] gap-x-2" role="img" aria-label={`Contributions sur 12 mois jusqu'en ${year}`}>
+        <div className="inline-grid min-w-full grid-cols-[2.5rem_1fr] gap-x-2" role="img" aria-label={t('profile.activity.gridLabel', { year })}>
           <span />
           <div className="grid grid-flow-col auto-cols-[minmax(0.625rem,1fr)] gap-1 text-xs text-slate-500">
             {monthLabels.map((label, i) => (
@@ -64,7 +69,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
           <div className="mt-2 grid grid-rows-7 gap-1 text-[11px] text-slate-500">
             {DAY_LABELS.map((label, i) => (
               <span key={i} className="flex h-3.5 items-center">
-                {label}
+                {label && t(`profile.activity.days.${label}`)}
               </span>
             ))}
           </div>
@@ -75,7 +80,7 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
                   day ? (
                     <span
                       key={d}
-                      title={`${day.toLocaleDateString('fr-FR')} : ${counts[iso(day)] ?? 0} contribution(s)`}
+                      title={t('profile.activity.dayTitle', { date: dayFormat.format(day), count: counts[iso(day)] ?? 0 })}
                       className={cn('h-3.5 rounded-[3px]', LEVELS[level(counts[iso(day)] ?? 0)])}
                     />
                   ) : (
@@ -90,14 +95,14 @@ export function ActivityHeatmap({ year, counts = {} }: Props) {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <span className="flex items-center gap-1.5">
           <Activity className="size-4" aria-hidden />
-          Les contributions au fil du temps
+          {t('profile.activity.overTime')}
         </span>
         <span className="flex items-center gap-1.5">
-          Moins
+          {t('profile.activity.less')}
           {LEVELS.map((c) => (
             <span key={c} className={cn('size-3 rounded-[3px]', c)} />
           ))}
-          Plus
+          {t('profile.activity.more')}
         </span>
       </div>
     </div>

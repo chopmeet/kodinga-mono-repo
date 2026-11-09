@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@kodinga/ui';
+import { dateFormat as intlDate } from '@/utils/format';
 
 export type RowAction = {
   label: string;
@@ -47,7 +48,8 @@ export function RowActions({ label, actions }: { label: string; actions: RowActi
   );
 }
 
-export const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+/** "08 nov. 2026", in the current language */
+export const dateFormat = { format: (date: Date) => intlDate({ day: '2-digit', month: 'short', year: 'numeric' }).format(date) };
 
 /** Marks a feature the api does not offer yet */
 export function SoonBadge({ className }: { className?: string }) {

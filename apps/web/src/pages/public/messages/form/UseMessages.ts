@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import {
   useDeleteMessageMutation,
   useEditMessageMutation,
@@ -34,7 +35,7 @@ export function otherPerson(conversation: Conversation, meId: string | undefined
 
 /** Name shown for a conversation: its title (group) or the other person */
 export function conversationName(conversation: Conversation, meId: string | undefined) {
-  if (conversation.conversation_type === 'group') return conversation.title || 'Groupe';
+  if (conversation.conversation_type === 'group') return conversation.title || i18n.t('inbox.messages.group');
   const other = otherPerson(conversation, meId);
   return other ? fullName(other) : 'Conversation';
 }

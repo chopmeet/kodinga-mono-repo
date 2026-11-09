@@ -1,20 +1,10 @@
 import type { CourseLevel, LessonType } from '@/utils/api/course/course.type';
+import { translatedLabels } from '@/utils/translated';
 
-export const courseLevelLabel: Record<CourseLevel, string> = {
-  all_levels: 'Tous niveaux',
-  beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
-};
+/** Texts in locales/<lang>/labels.ts, read in the current language */
+export const courseLevelLabel = translatedLabels<CourseLevel>('labels.courseLevel.', ['all_levels', 'beginner', 'intermediate', 'advanced']);
 
-export const lessonTypeLabel: Record<LessonType, string> = {
-  text: 'Texte',
-  article: 'Article',
-  code: 'Exercice de code',
-  quiz: 'Quiz',
-  video: 'Vidéo',
-  hybrid: 'Mixte',
-};
+export const lessonTypeLabel = translatedLabels<LessonType>('labels.lessonType.', ['text', 'article', 'code', 'quiz', 'video', 'hybrid']);
 
 /** 5400 -> "1 h 30", 600 -> "10 min", 0 -> "" */
 export function formatDuration(seconds: number) {

@@ -1,4 +1,5 @@
 import { Building2, CheckCircle2, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { formatSalary, opportunityTypeLabel, workplaceLabel } from '@/pages/community-space/opportunities/opportunity-labels';
@@ -9,6 +10,7 @@ import type { OpportunityListItem } from '@/utils/api/opportunity/opportunity.ty
  * the reader comes from, for the "Retour" link of the offer page.
  */
 export function OpportunityCard({ opportunity: o, from }: { opportunity: OpportunityListItem; from?: string }) {
+  const { t } = useTranslation();
   const salary = formatSalary(o);
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-5 transition-colors hover:border-slate-300">
@@ -39,7 +41,7 @@ export function OpportunityCard({ opportunity: o, from }: { opportunity: Opportu
         </div>
         {o.has_applied && (
           <span className="inline-flex h-fit shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-            <CheckCircle2 className="size-3.5" /> Candidature envoyée
+            <CheckCircle2 className="size-3.5" /> {t('discover.opportunityCard.applied')}
           </span>
         )}
       </div>

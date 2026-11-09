@@ -6,43 +6,37 @@ import type {
   OpportunityType,
   WorkplaceType,
 } from '@/utils/api/opportunity/opportunity.type';
+import { numberFormat } from '@/utils/format';
+import i18n from '@/utils/i18n';
+import { translatedLabels, translatedStyles } from '@/utils/translated';
 
-export const opportunityTypeLabel: Record<OpportunityType, string> = {
-  full_time: 'CDI / temps plein',
-  part_time: 'Temps partiel',
-  contract: 'CDD / contrat',
-  freelance: 'Freelance',
-  internship: 'Stage',
-  bounty: 'Bounty',
-};
+// Texts in locales/*/labels.ts, read in the current language
+export const opportunityTypeLabel = translatedLabels<OpportunityType>('labels.opportunityType.', [
+  'full_time',
+  'part_time',
+  'contract',
+  'freelance',
+  'internship',
+  'bounty',
+]);
 
-export const workplaceLabel: Record<WorkplaceType, string> = {
-  remote: 'Télétravail',
-  hybrid: 'Hybride',
-  onsite: 'Sur site',
-};
+export const workplaceLabel = translatedLabels<WorkplaceType>('labels.workplace.', ['remote', 'hybrid', 'onsite']);
 
-export const experienceLabel: Record<ExperienceLevel, string> = {
-  all: 'Tous niveaux',
-  junior: 'Junior',
-  mid: 'Confirmé',
-  senior: 'Senior',
-  lead: 'Lead',
-};
+export const experienceLabel = translatedLabels<ExperienceLevel>('labels.experience.', ['all', 'junior', 'mid', 'senior', 'lead']);
 
-export const opportunityStatusStyle: Record<OpportunityStatus, { label: string; className: string }> = {
-  open: { label: 'Ouverte', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
-  draft: { label: 'Brouillon', className: 'border-slate-200 bg-slate-50 text-slate-600' },
-  closed: { label: 'Clôturée', className: 'border-slate-200 bg-slate-100 text-slate-500' },
-};
+export const opportunityStatusStyle = translatedStyles<OpportunityStatus>('labels.opportunityStatus.', {
+  open: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  draft: 'border-slate-200 bg-slate-50 text-slate-600',
+  closed: 'border-slate-200 bg-slate-100 text-slate-500',
+});
 
-export const applicationStatusLabel: Record<OpportunityApplicationStatus, string> = {
-  pending: 'Nouvelle',
-  reviewing: 'En cours d’examen',
-  shortlisted: 'Présélectionnée',
-  accepted: 'Retenue',
-  rejected: 'Refusée',
-};
+export const applicationStatusLabel = translatedLabels<OpportunityApplicationStatus>('labels.applicationStatus.', [
+  'pending',
+  'reviewing',
+  'shortlisted',
+  'accepted',
+  'rejected',
+]);
 
 export const applicationStatusStyle: Record<OpportunityApplicationStatus, string> = {
   pending: 'border-blue-200 bg-blue-50 text-blue-700',
@@ -52,15 +46,15 @@ export const applicationStatusStyle: Record<OpportunityApplicationStatus, string
   rejected: 'border-red-200 bg-red-50 text-red-700',
 };
 
-const amount = (value: string) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(value));
+const amount = (value: string) => numberFormat({ maximumFractionDigits: 0 }).format(Number(value));
 const currencyLabel = (currency: string) => (currency === 'XOF' ? 'FCFA' : currency);
 
 /** "300 000 – 500 000 FCFA", "À partir de 300 000 FCFA", "" when none */
 export function formatSalary({ salary_min, salary_max, currency }: Pick<OpportunityListItem, 'salary_min' | 'salary_max' | 'currency'>) {
   const unit = currencyLabel(currency);
-  if (salary_min && salary_max) return `${amount(salary_min)} – ${amount(salary_max)} ${unit}`;
-  if (salary_min) return `À partir de ${amount(salary_min)} ${unit}`;
-  if (salary_max) return `Jusqu’à ${amount(salary_max)} ${unit}`;
+  if (salary_min && salary_max) return i18n.t('labels.salary.range', { min: amount(salary_min), max: amount(salary_max), unit });
+  if (salary_min) return i18n.t('labels.salary.from', { min: amount(salary_min), unit });
+  if (salary_max) return i18n.t('labels.salary.upTo', { max: amount(salary_max), unit });
   return '';
 }
 

@@ -1,13 +1,11 @@
 // Gamification (apps/gamification): reputation points, levels and leaderboards.
+import { translatedLabels } from '@/utils/translated';
 
 /** ?period= of the community leaderboard: rolling windows (last 7 or 30 days), or all time */
 export type LeaderboardPeriod = 'all_time' | 'monthly' | 'weekly';
 
-export const PERIOD_LABEL: Record<LeaderboardPeriod, string> = {
-  weekly: '7 derniers jours',
-  monthly: '30 derniers jours',
-  all_time: 'Depuis le début',
-};
+/** Texts in locales/<lang>/labels.ts, read in the current language */
+export const PERIOD_LABEL = translatedLabels<LeaderboardPeriod>('labels.leaderboardPeriod.', ['weekly', 'monthly', 'all_time']);
 
 /** LeaderboardEntrySerializer; `points` are the ones earned in the community over the period */
 export type LeaderboardEntry = {

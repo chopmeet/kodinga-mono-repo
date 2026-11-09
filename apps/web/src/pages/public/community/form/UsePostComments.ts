@@ -1,4 +1,5 @@
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import {
   useAcceptAnswerMutation,
   useAddPostCommentMutation,
@@ -71,9 +72,9 @@ function UsePostComments({ post, isMember, role, enabled = true }: Options) {
         });
       return true;
     },
-    remove: (c: PostComment) => run(deleteComment({ postId, commentId: c.id }).unwrap(), 'Commentaire supprimé.'),
+    remove: (c: PostComment) => run(deleteComment({ postId, commentId: c.id }).unwrap(), i18n.t('community.toasts.commentDeleted')),
     likeComment: (c: PostComment) => run(toggleCommentLike({ postId, commentId: c.id }).unwrap()),
-    accept: (c: PostComment) => run(acceptAnswer({ postId, commentId: c.id }).unwrap(), 'Réponse acceptée : la question est résolue.'),
+    accept: (c: PostComment) => run(acceptAnswer({ postId, commentId: c.id }).unwrap(), i18n.t('community.toasts.answerAccepted')),
   };
 }
 

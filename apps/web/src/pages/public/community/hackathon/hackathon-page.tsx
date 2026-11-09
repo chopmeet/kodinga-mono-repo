@@ -1,5 +1,6 @@
 import { ArrowLeft, CalendarDays, Laptop, MapPin, Trophy, Users } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button, cn, Loader } from '@kodinga/ui';
@@ -15,6 +16,7 @@ import UseHackathonPage from './form/UseHackathonPage';
 
 /** /communities/:slug/hackathons/:hackathonSlug — discover a hackathon, apply, team up, submit */
 function HackathonPageView() {
+  const { t } = useTranslation();
   const page = UseHackathonPage();
   // "Ouvrir mon espace": once the tab is shown, the page scrolls to it and the focus follows
   const content = useRef<HTMLDivElement>(null);
@@ -29,21 +31,21 @@ function HackathonPageView() {
 
   if (page.isLoading) {
     return (
-      <Loader inline className="py-24" message="Chargement du hackathon…" />
+      <Loader inline className="py-24" message={t('hackathon.page.loading')} />
     );
   }
   if (!h) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? 'Hackathon introuvable' : 'Impossible de charger le hackathon'}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('hackathon.page.notFound') : t('hackathon.page.loadFailed')}</h1>
         <Button asChild variant="outline">
-          <Link to={back}>Retour aux hackathons</Link>
+          <Link to={back}>{t('hackathon.page.back')}</Link>
         </Button>
       </section>
     );
   }
 
-  const place = h.format === 'online' ? 'En ligne' : [h.venue_name, h.venue_city, h.venue_country].filter(Boolean).join(', ') || hackathonFormatLabel[h.format];
+  const place = h.format === 'online' ? t('hackathon.page.online') : [h.venue_name, h.venue_city, h.venue_country].filter(Boolean).join(', ') || hackathonFormatLabel[h.format];
   const status = hackathonStatusStyle[h.status];
 
   return (
@@ -67,33 +69,33 @@ function HackathonPageView() {
               {h.format === 'online' ? <Laptop className="size-4 text-slate-400" /> : <MapPin className="size-4 text-slate-400" />} {place}
             </span>
             <span className="flex items-center gap-1.5">
-              <CalendarDays className="size-4 text-slate-400" /> Du {formatDay(h.start_time)} au {formatDay(h.submission_deadline)}
+              <CalendarDays className="size-4 text-slate-400" /> {t('hackathon.page.dates', { start: formatDay(h.start_time), end: formatDay(h.submission_deadline) })}
             </span>
             {/* Given by the list of hackathons, not by the detail */}
             {typeof h.participants_count === 'number' && (
               <span className="flex items-center gap-1.5">
-                <Users className="size-4 text-slate-400" /> {h.participants_count} participant{h.participants_count > 1 ? 's' : ''}
+                <Users className="size-4 text-slate-400" /> {t('hackathon.page.participants', { count: h.participants_count })}
               </span>
             )}
             {h.prizes.length > 0 && (
               <span className="flex items-center gap-1.5">
-                <Trophy className="size-4 text-slate-400" /> {h.prizes.length} prix
+                <Trophy className="size-4 text-slate-400" /> {t('hackathon.page.prizes', { count: h.prizes.length })}
               </span>
             )}
           </p>
-          <nav aria-label="Sections du hackathon" className="-mb-6 mt-6 flex gap-1 overflow-x-auto">
-            {page.tabs.map((t) => (
+          <nav aria-label={t('hackathon.page.sections')} className="-mb-6 mt-6 flex gap-1 overflow-x-auto">
+            {page.tabs.map((tab) => (
               <button
-                key={t.id}
+                key={tab.id}
                 type="button"
-                aria-current={page.tab === t.id ? 'page' : undefined}
-                onClick={() => page.openTab(t.id)}
+                aria-current={page.tab === tab.id ? 'page' : undefined}
+                onClick={() => page.openTab(tab.id)}
                 className={cn(
                   'shrink-0 border-b-2 px-3 py-3 text-sm font-semibold transition-colors',
-                  page.tab === t.id ? 'border-blue-900 text-blue-900' : 'border-transparent text-slate-500 hover:text-slate-800',
+                  page.tab === tab.id ? 'border-blue-900 text-blue-900' : 'border-transparent text-slate-500 hover:text-slate-800',
                 )}
               >
-                {t.label}
+                {tab.label}
               </button>
             ))}
           </nav>
@@ -101,7 +103,7 @@ function HackathonPageView() {
       </header>
 
       <div className="mx-auto grid max-w-285 items-start gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
-        <div ref={content} tabIndex={-1} aria-label="Contenu du hackathon" className="flex min-w-0 scroll-mt-24 flex-col gap-6 outline-none">
+        <div ref={content} tabIndex={-1} aria-label={t('hackathon.page.content')} className="flex min-w-0 scroll-mt-24 flex-col gap-6 outline-none">
           {page.tab === 'overview' && <OverviewTab hackathon={h} />}
           {page.tab === 'teams' && <TeamsTab teams={page.teams} maxSize={h.max_team_size} />}
           {page.tab === 'space' && (
@@ -112,8 +114,8 @@ function HackathonPageView() {
               ) : (
                 <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
                   {new Date(h.start_time).getTime() > Date.now()
-                    ? `Le dépôt des projets ouvre au début du hackathon, le ${formatDay(h.start_time)}.`
-                    : 'La période de soumission des projets est terminée.'}
+                    ? t('hackathon.page.submissionOpensAt', { date: formatDay(h.start_time) })
+                    : t('hackathon.page.submissionClosed')}
                 </p>
               )}
             </>

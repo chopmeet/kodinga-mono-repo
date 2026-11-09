@@ -1,34 +1,38 @@
 import { ArrowLeft, Building2, CalendarClock, CheckCircle2, ExternalLink, Mail, MapPin, Wallet } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Loader } from '@kodinga/ui';
 import { experienceLabel, formatSalary, opportunityTypeLabel, workplaceLabel } from '@/pages/community-space/opportunities/opportunity-labels';
 import { Markdown } from '@/pages/shared/markdown';
 import type { OpportunityApplicationStatus } from '@/utils/api/opportunity/opportunity.type';
+import { dateFormat as format } from '@/utils/format';
+import { translatedStyles } from '@/utils/translated';
 import UseOpportunityPage, { type ApplyValues, type OpportunityPage } from './form/UseOpportunityPage';
 
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+const longDate = (iso: string) => format({ day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
 
 // Seen by the candidate (the poster sees "Nouvelle" for a pending one)
-const candidateStatus: Record<OpportunityApplicationStatus, { label: string; className: string }> = {
-  pending: { label: 'Envoyée', className: 'bg-blue-50 text-blue-900' },
-  reviewing: { label: 'En cours d’examen', className: 'bg-amber-50 text-amber-800' },
-  shortlisted: { label: 'Présélectionnée', className: 'bg-violet-50 text-violet-800' },
-  accepted: { label: 'Retenue', className: 'bg-emerald-50 text-emerald-800' },
-  rejected: { label: 'Non retenue', className: 'bg-slate-100 text-slate-600' },
-};
+const candidateStatus = translatedStyles<OpportunityApplicationStatus>('discover.offer.candidate.', {
+  pending: 'bg-blue-50 text-blue-900',
+  reviewing: 'bg-amber-50 text-amber-800',
+  shortlisted: 'bg-violet-50 text-violet-800',
+  accepted: 'bg-emerald-50 text-emerald-800',
+  rejected: 'bg-slate-100 text-slate-600',
+});
 
 const isUrl = (v: string) => !v.trim() || /^https?:\/\/\S+\.\S+/.test(v.trim());
 
 function ApplyModal({ page, open, onClose }: { page: OpportunityPage; open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const [v, setV] = useState<ApplyValues>({ resume_url: '', cover_letter: '', portfolio_url: '' });
   const [error, setError] = useState<string | null>(null);
   const set = (changes: Partial<ApplyValues>) => setV((c) => ({ ...c, ...changes }));
 
   const send = async () => {
-    if (!v.resume_url.trim() && !v.portfolio_url.trim() && !v.cover_letter.trim()) return setError('Ajoutez au moins votre CV, un portfolio ou un message.');
-    if (!isUrl(v.resume_url) || !isUrl(v.portfolio_url)) return setError('Les liens doivent commencer par https://');
+    if (!v.resume_url.trim() && !v.portfolio_url.trim() && !v.cover_letter.trim()) return setError(t('discover.offer.modal.needOne'));
+    if (!isUrl(v.resume_url) || !isUrl(v.portfolio_url)) return setError(t('discover.offer.modal.httpsOnly'));
     setError(null);
     if (await page.apply({ resume_url: v.resume_url.trim(), cover_letter: v.cover_letter.trim(), portfolio_url: v.portfolio_url.trim() })) onClose();
   };
@@ -37,8 +41,8 @@ function ApplyModal({ page, open, onClose }: { page: OpportunityPage; open: bool
     <Dialog open={open} onOpenChange={(next) => !next && !page.isApplying && onClose()}>
       <DialogContent position="top" className="max-h-[92svh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Postuler : {page.offer?.title}</DialogTitle>
-          <DialogDescription>{page.offer?.company_name} reçoit votre candidature et vous répond par notification.</DialogDescription>
+          <DialogTitle>{t('discover.offer.modal.title', { title: page.offer?.title })}</DialogTitle>
+          <DialogDescription>{t('discover.offer.modal.description', { company: page.offer?.company_name })}</DialogDescription>
         </DialogHeader>
         <form
           id="apply-form"
@@ -50,17 +54,17 @@ function ApplyModal({ page, open, onClose }: { page: OpportunityPage; open: bool
           className="flex flex-col gap-3"
         >
           <label className="flex flex-col gap-1">
-            <span className="custom-form-label">Lien vers votre CV</span>
+            <span className="custom-form-label">{t('discover.offer.modal.resume')}</span>
             <input type="url" value={v.resume_url} onChange={(e) => set({ resume_url: e.target.value })} placeholder="https://…/cv.pdf" className="custom-form-control bg-background px-4 py-2" />
-            <span className="text-xs text-slate-500">Google Drive, Dropbox, site personnel… (lien public).</span>
+            <span className="text-xs text-slate-500">{t('discover.offer.modal.resumeHelp')}</span>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="custom-form-label">Portfolio ou GitHub</span>
+            <span className="custom-form-label">{t('discover.offer.modal.portfolio')}</span>
             <input type="url" value={v.portfolio_url} onChange={(e) => set({ portfolio_url: e.target.value })} placeholder="https://github.com/…" className="custom-form-control bg-background px-4 py-2" />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="custom-form-label">Message au recruteur</span>
-            <textarea rows={6} value={v.cover_letter} onChange={(e) => set({ cover_letter: e.target.value })} placeholder="Pourquoi ce poste, ce que vous apportez…" className="custom-form-control bg-background px-4 py-2" />
+            <span className="custom-form-label">{t('discover.offer.modal.message')}</span>
+            <textarea rows={6} value={v.cover_letter} onChange={(e) => set({ cover_letter: e.target.value })} placeholder={t('discover.offer.modal.messagePlaceholder')} className="custom-form-control bg-background px-4 py-2" />
           </label>
           {error && (
             <p role="alert" className="text-sm text-red-600">
@@ -70,10 +74,10 @@ function ApplyModal({ page, open, onClose }: { page: OpportunityPage; open: bool
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={page.isApplying}>
-            Annuler
+            {t('common.actions.cancel')}
           </Button>
           <Button type="submit" form="apply-form" isLoading={page.isApplying}>
-            Envoyer ma candidature
+            {t('discover.offer.modal.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -83,6 +87,7 @@ function ApplyModal({ page, open, onClose }: { page: OpportunityPage; open: bool
 
 /** What the visitor can do: sign in, apply (here, on the site of the company or by email), follow */
 function ApplyCard({ page }: { page: OpportunityPage }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const o = page.offer;
   if (!o) return null;
@@ -90,20 +95,20 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
 
   let body;
   if (page.isPoster) {
-    body = <p className="text-sm text-slate-600">Vous avez publié cette offre : les candidatures se gèrent dans l’espace de la communauté.</p>;
+    body = <p className="text-sm text-slate-600">{t('discover.offer.poster')}</p>;
   } else if (page.hasApplied) {
     body = (
       <>
         <p className="flex items-center gap-2 font-semibold text-emerald-800">
-          <CheckCircle2 className="size-5" /> Candidature envoyée
+          <CheckCircle2 className="size-5" /> {t('discover.offer.applied')}
         </p>
         {page.application && (
           <p className="text-sm text-slate-600">
-            Le {dateFormat.format(new Date(page.application.created_at))}.
+            {t('discover.offer.appliedOn', { date: longDate(page.application.created_at) })}
             {status && (
               <>
                 {' '}
-                Statut : <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.className}`}>{status.label}</span>
+                {t('discover.offer.status')} <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.className}`}>{status.label}</span>
               </>
             )}
           </p>
@@ -111,28 +116,28 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
       </>
     );
   } else if (!page.isOpen) {
-    body = <p className="text-sm text-slate-600">Cette offre n’accepte plus de candidatures.</p>;
+    body = <p className="text-sm text-slate-600">{t('discover.offer.closed')}</p>;
   } else if (!page.signedIn) {
     body = (
       <Button asChild>
-        <Link to={page.loginUrl}>Se connecter pour postuler</Link>
+        <Link to={page.loginUrl}>{t('discover.offer.loginToApply')}</Link>
       </Button>
     );
   } else if (o.apply_url) {
     body = (
       <Button asChild>
         <a href={o.apply_url} target="_blank" rel="noreferrer">
-          <ExternalLink /> Postuler sur le site
+          <ExternalLink /> {t('discover.offer.applyOnSite')}
         </a>
       </Button>
     );
   } else {
     body = (
       <>
-        <Button onClick={() => setOpen(true)}>Postuler</Button>
+        <Button onClick={() => setOpen(true)}>{t('discover.offer.apply')}</Button>
         {o.apply_email && (
           <a href={`mailto:${o.apply_email}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-900 hover:underline">
-            <Mail className="size-4" /> ou écrire à {o.apply_email}
+            <Mail className="size-4" /> {t('discover.offer.orWrite', { email: o.apply_email })}
           </a>
         )}
       </>
@@ -140,7 +145,7 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
   }
 
   return (
-    <section aria-label="Candidature" className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5">
+    <section aria-label={t('discover.offer.application')} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5">
       {body}
       <ApplyModal page={page} open={open} onClose={() => setOpen(false)} />
     </section>
@@ -149,16 +154,17 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
 
 /** /opportunities/:opportunitySlug — an offer shared in a community */
 function OpportunityPageView() {
+  const { t } = useTranslation();
   const page = UseOpportunityPage();
   const o = page.offer;
 
-  if (page.isLoading) return <Loader inline className="py-24" message="Chargement de l’offre…" />;
+  if (page.isLoading) return <Loader inline className="py-24" message={t('discover.offer.loading')} />;
   if (!o) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? 'Offre introuvable' : 'Impossible de charger l’offre'}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('discover.offer.notFound') : t('discover.offer.loadFailed')}</h1>
         <Button asChild variant="outline">
-          <Link to={page.back.to}>Retour</Link>
+          <Link to={page.back.to}>{t('common.actions.back')}</Link>
         </Button>
       </section>
     );
@@ -168,7 +174,7 @@ function OpportunityPageView() {
   const facts = [
     { icon: MapPin, text: [workplaceLabel[o.workplace_type], o.location].filter(Boolean).join(' · ') },
     salary && { icon: Wallet, text: salary },
-    o.expires_at && { icon: CalendarClock, text: `Jusqu’au ${dateFormat.format(new Date(o.expires_at))}` },
+    o.expires_at && { icon: CalendarClock, text: t('discover.offer.until', { date: longDate(o.expires_at) }) },
   ].filter(Boolean) as { icon: typeof MapPin; text: string }[];
 
   return (
@@ -216,12 +222,12 @@ function OpportunityPageView() {
       <div className="mx-auto grid max-w-285 items-start gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
         <article className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
           <section>
-            <h2 className="text-lg font-semibold text-slate-900">Le poste</h2>
-            <div className="mt-3">{o.description ? <Markdown source={o.description} /> : <p className="text-slate-500">Pas de description.</p>}</div>
+            <h2 className="text-lg font-semibold text-slate-900">{t('discover.offer.role')}</h2>
+            <div className="mt-3">{o.description ? <Markdown source={o.description} /> : <p className="text-slate-500">{t('discover.offer.noDescription')}</p>}</div>
           </section>
           {o.requirements && (
             <section>
-              <h2 className="text-lg font-semibold text-slate-900">Profil recherché</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t('discover.offer.profile')}</h2>
               <div className="mt-3">
                 <Markdown source={o.requirements} />
               </div>
@@ -229,11 +235,11 @@ function OpportunityPageView() {
           )}
           {o.technologies.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-slate-900">Technologies</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t('discover.offer.technologies')}</h2>
               <ul className="mt-3 flex flex-wrap gap-2">
-                {o.technologies.map((t) => (
-                  <li key={t.id} className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900">
-                    {t.name}
+                {o.technologies.map((tech) => (
+                  <li key={tech.id} className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900">
+                    {tech.name}
                   </li>
                 ))}
               </ul>
@@ -243,7 +249,7 @@ function OpportunityPageView() {
         <aside className="order-first lg:sticky lg:top-24 lg:order-none">
           <ApplyCard page={page} />
           <p className="mt-3 px-1 text-xs text-slate-500">
-            {o.applications_count} candidature{o.applications_count > 1 ? 's' : ''} · publiée le {dateFormat.format(new Date(o.created_at))}
+            {t('discover.offer.footer', { count: o.applications_count, date: longDate(o.created_at) })}
           </p>
         </aside>
       </div>

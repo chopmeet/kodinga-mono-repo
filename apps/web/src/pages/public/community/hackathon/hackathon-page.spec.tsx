@@ -5,6 +5,7 @@ import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
+import i18n from '@/utils/i18n';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -192,7 +193,8 @@ describe('Hackathon page (participants)', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Envoyer ma candidature' }));
     await waitFor(() => expect(calls.find((c) => c.url.pathname.endsWith('/apply/'))?.body).toEqual({ participation_mode: 'team', team_name: '', answers: {}, accept_terms: true }), SLOW);
     expect(await within(card()).findByText('Vous participez !', {}, SLOW)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Mon espace' })).toBeTruthy();
+    // The tab of the page (the header has a "Mon espace" menu too)
+    expect(within(screen.getByRole('navigation', { name: 'Sections du hackathon' })).getByRole('button', { name: 'Mon espace' })).toBeTruthy();
   });
 
   it('closes the applications of a page left open when the deadline passes', async () => {
@@ -342,5 +344,21 @@ describe('Hackathon page (participants)', () => {
     expect(ranking.textContent).toMatch(/Wari Pay/);
     expect(ranking.textContent).toMatch(/Grand prix/);
     expect(ranking.textContent).toMatch(/18\.5/);
+  });
+
+  it('speaks English: the challenge, the schedule, the prizes and the participation card', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    try {
+      stubHackathonApi({ member: false });
+      renderAppAt(URL_PATH);
+      expect(await screen.findByRole('heading', { level: 1, name: 'DevFest Hack' }, SLOW)).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'The challenge', level: 2 })).toBeTruthy();
+      expect(screen.getByText('500,000 FCFA')).toBeTruthy();
+      expect(within(screen.getByRole('list', { name: 'Schedule' })).getByText('Applications open')).toBeTruthy();
+      const participation = screen.getByRole('region', { name: 'My participation' });
+      expect(within(participation).getByRole('link', { name: 'Log in' })).toBeTruthy();
+    } finally {
+      await act(() => i18n.changeLanguage('fr'));
+    }
   });
 });

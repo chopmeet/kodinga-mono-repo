@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import store from '@/redux/store';
 import { renderAppAt, SLOW } from '@/test-utils';
 import { CommunityApi } from '@/utils/api/community/community.api';
+import i18n from '@/utils/i18n';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -89,5 +90,20 @@ describe('Public opportunities page', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une offre' }), { target: { value: 'react' } });
     await waitFor(() => expect(screen.queryByText('Audit Solidity')).toBeNull(), SLOW);
     expect(urls.some((u) => u.searchParams.get('search') === 'react')).toBe(true);
+  });
+
+  it('speaks English: titles, filters, counts and the labels of the offers', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    stub();
+    renderAppAt('/opportunities');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Jobs & gigs' }, SLOW)).toBeTruthy();
+    const list = await screen.findByRole('list', { name: 'Opportunities' }, SLOW);
+    expect(screen.getByText('3 offers')).toBeTruthy();
+    expect(within(list).getByText('Internship')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remote' }));
+    expect(screen.getByText('2 offers')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Bounties' }));
+    expect(screen.getByText('1 offer')).toBeTruthy();
+    await act(() => i18n.changeLanguage('fr'));
   });
 });

@@ -4,10 +4,13 @@ import { Link } from 'react-router-dom';
 
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import type { DiscoveryCommunity, DiscoveryCourse, DiscoveryDeveloper, DiscoveryEvent, DiscoveryPost } from '@/utils/api/discovery/discovery.type';
+import { dateFormat } from '@/utils/format';
+import i18n from '@/utils/i18n';
 import { formatCompact, nameInitials } from '@/utils/Utils';
 
-const when = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-const plural = (n: number, one: string, many: string) => `${formatCompact(n)} ${n > 1 ? many : one}`;
+const when = (iso: string) => dateFormat({ weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+/** "1,2 k membres": the number in short, the word in the current language */
+const plural = (n: number, key: 'members' | 'lessons' | 'replies') => i18n.t(`search.${key}`, { count: n, formatted: formatCompact(n) });
 
 function Row({ to, media, title, meta }: { to: string; media: ReactNode; title: string; meta: string }) {
   return (
@@ -37,7 +40,7 @@ export const CommunityRow = ({ c }: { c: DiscoveryCommunity }) => (
     to={`/communities/${c.slug}`}
     media={<CommunityAvatar community={{ name: c.name, avatar_url: c.avatar_url, brand_color: '' }} className="size-10 rounded-lg text-xs" />}
     title={c.name}
-    meta={`${plural(c.members_count, 'membre', 'membres')} · ${c.pricing_type === 'paid' ? 'Payante' : 'Gratuite'}`}
+    meta={`${plural(c.members_count, 'members')} · ${c.pricing_type === 'paid' ? i18n.t('search.paid') : i18n.t('search.free')}`}
   />
 );
 
@@ -46,7 +49,7 @@ export const CourseRow = ({ c }: { c: DiscoveryCourse }) => (
     to={`/communities/${c.community_slug}/courses/${c.slug}`}
     media={<Thumb src={c.thumbnail_url} fallback={<BookOpen className="size-5" />} />}
     title={c.title}
-    meta={`${c.community_name} · ${plural(c.lessons_count, 'leçon', 'leçons')}`}
+    meta={`${c.community_name} · ${plural(c.lessons_count, 'lessons')}`}
   />
 );
 
@@ -55,7 +58,7 @@ export const EventRow = ({ e }: { e: DiscoveryEvent }) => (
     to={`/communities/${e.community_slug}?tab=events`}
     media={<Thumb src={e.cover_image_url} fallback={<CalendarDays className="size-5" />} />}
     title={e.title}
-    meta={`${e.community_name} · ${e.status === 'live' ? 'En direct' : when.format(new Date(e.start_time))}`}
+    meta={`${e.community_name} · ${e.status === 'live' ? i18n.t('search.live') : when(e.start_time)}`}
   />
 );
 
@@ -81,8 +84,8 @@ export const PostRow = ({ p }: { p: DiscoveryPost }) => (
   <Row
     to={`/communities/${p.community_slug}/posts/${p.id}`}
     media={<Icon>{<MessageSquare className="size-5" />}</Icon>}
-    title={p.title || `Discussion de @${p.author_username}`}
-    meta={`@${p.author_username} · ${plural(p.comments_count, 'réponse', 'réponses')}`}
+    title={p.title || i18n.t('search.discussionBy', { username: p.author_username })}
+    meta={`@${p.author_username} · ${plural(p.comments_count, 'replies')}`}
   />
 );
 

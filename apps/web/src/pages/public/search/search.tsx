@@ -1,22 +1,25 @@
 import { Search } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@kodinga/ui';
 import type { DiscoveryType } from '@/utils/api/discovery/discovery.type';
 import { CommunityRow, CourseRow, DeveloperRow, EventRow, PostRow } from './components/search-results';
 import UseGlobalSearch, { type GlobalSearch, MIN_QUERY } from './form/UseGlobalSearch';
 
-const FILTERS: { value: DiscoveryType | null; label: string }[] = [
-  { value: null, label: 'Tout' },
-  { value: 'community', label: 'Communautés' },
-  { value: 'course', label: 'Formations' },
-  { value: 'event', label: 'Événements' },
-  { value: 'developer', label: 'Développeurs' },
-  { value: 'post', label: 'Discussions' },
+// label: key of search.filters
+const FILTERS: { value: DiscoveryType | null; label: 'all' | 'communities' | 'courses' | 'events' | 'developers' | 'discussions' }[] = [
+  { value: null, label: 'all' },
+  { value: 'community', label: 'communities' },
+  { value: 'course', label: 'courses' },
+  { value: 'event', label: 'events' },
+  { value: 'developer', label: 'developers' },
+  { value: 'post', label: 'discussions' },
 ];
 
 /** A titled list; "Voir plus" opens its kind alone when the overview shows the first ones only */
 function Group({ title, count, type, search, children }: { title: string; count: number; type: DiscoveryType; search: GlobalSearch; children: ReactNode }) {
+  const { t } = useTranslation();
   if (count === 0) return null;
   return (
     <section aria-label={title} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
@@ -24,7 +27,7 @@ function Group({ title, count, type, search, children }: { title: string; count:
         <h2 className="font-semibold text-slate-900">{title}</h2>
         {!search.type && count >= 5 && (
           <button type="button" onClick={() => search.setType(type)} className="text-sm font-semibold text-blue-900 hover:underline">
-            Voir plus
+            {t('common.actions.seeMore')}
           </button>
         )}
       </div>
@@ -34,27 +37,28 @@ function Group({ title, count, type, search, children }: { title: string; count:
 }
 
 function Results({ search }: { search: GlobalSearch }) {
+  const { t } = useTranslation();
   const r = search.results;
   if (!r) return null;
   const total = r.communities.length + r.courses.length + r.events.length + r.developers.length + r.posts.length;
   if (total === 0) {
-    return <p className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-500">Aucun résultat pour « {search.q} ».</p>;
+    return <p className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-500">{t('search.noResult', { q: search.q })}</p>;
   }
   return (
     <div className="flex flex-col gap-4">
-      <Group title="Communautés" count={r.communities.length} type="community" search={search}>
+      <Group title={t('search.filters.communities')} count={r.communities.length} type="community" search={search}>
         {r.communities.map((c) => <CommunityRow key={c.id} c={c} />)}
       </Group>
-      <Group title="Formations" count={r.courses.length} type="course" search={search}>
+      <Group title={t('search.filters.courses')} count={r.courses.length} type="course" search={search}>
         {r.courses.map((c) => <CourseRow key={c.id} c={c} />)}
       </Group>
-      <Group title="Événements" count={r.events.length} type="event" search={search}>
+      <Group title={t('search.filters.events')} count={r.events.length} type="event" search={search}>
         {r.events.map((e) => <EventRow key={e.id} e={e} />)}
       </Group>
-      <Group title="Développeurs" count={r.developers.length} type="developer" search={search}>
+      <Group title={t('search.filters.developers')} count={r.developers.length} type="developer" search={search}>
         {r.developers.map((d) => <DeveloperRow key={d.id} d={d} />)}
       </Group>
-      <Group title="Discussions" count={r.posts.length} type="post" search={search}>
+      <Group title={t('search.filters.discussions')} count={r.posts.length} type="post" search={search}>
         {r.posts.map((p) => <PostRow key={p.id} p={p} />)}
       </Group>
     </div>
@@ -63,17 +67,18 @@ function Results({ search }: { search: GlobalSearch }) {
 
 /** With no words: what moves on the platform */
 function Trending({ search }: { search: GlobalSearch }) {
+  const { t: tr } = useTranslation();
   const t = search.trending;
   if (!t) return null;
   return (
     <div className="flex flex-col gap-4">
-      <Group title="Communautés populaires" count={t.communities.length} type="community" search={{ ...search, type: 'community' }}>
+      <Group title={tr('search.trending.communities')} count={t.communities.length} type="community" search={{ ...search, type: 'community' }}>
         {t.communities.map((c) => <CommunityRow key={c.id} c={c} />)}
       </Group>
-      <Group title="Formations les plus suivies" count={t.courses.length} type="course" search={{ ...search, type: 'course' }}>
+      <Group title={tr('search.trending.courses')} count={t.courses.length} type="course" search={{ ...search, type: 'course' }}>
         {t.courses.map((c) => <CourseRow key={c.id} c={c} />)}
       </Group>
-      <Group title="Prochains événements" count={t.events.length} type="event" search={{ ...search, type: 'event' }}>
+      <Group title={tr('search.trending.events')} count={t.events.length} type="event" search={{ ...search, type: 'event' }}>
         {t.events.map((e) => <EventRow key={e.id} e={e} />)}
       </Group>
     </div>
@@ -82,29 +87,30 @@ function Trending({ search }: { search: GlobalSearch }) {
 
 /** /search — communities, courses, events, developers and discussions of the whole platform */
 function GlobalSearchPage() {
+  const { t } = useTranslation();
   const search = UseGlobalSearch();
 
   return (
     <div className="min-h-full bg-slate-50/60">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Rechercher sur Kodinga</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('search.title')}</h1>
         <div role="search" className="mt-4">
           <label className="relative block">
-            <span className="sr-only">Rechercher sur Kodinga</span>
+            <span className="sr-only">{t('search.title')}</span>
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
             <input
               type="search"
               autoFocus
               value={search.text}
               onChange={(e) => search.setText(e.target.value)}
-              placeholder="Une communauté, une formation, un développeur…"
+              placeholder={t('search.placeholder')}
               className="h-12 w-full rounded-lg border border-slate-200 bg-white pr-4 pl-11 text-slate-800 placeholder:text-slate-400"
             />
           </label>
         </div>
 
         {search.searching && (
-          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer les résultats">
+          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={t('search.filtersLabel')}>
             {FILTERS.map((f) => (
               <button
                 key={f.label}
@@ -116,7 +122,7 @@ function GlobalSearchPage() {
                   search.type === f.value ? 'border-blue-900 bg-blue-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
                 )}
               >
-                {f.label}
+                {t(`search.filters.${f.label}`)}
               </button>
             ))}
           </div>
@@ -124,12 +130,12 @@ function GlobalSearchPage() {
 
         <div className="mt-6" aria-busy={search.isLoading}>
           {search.failed ? (
-            <p className="text-center text-sm text-red-700">La recherche est momentanément indisponible.</p>
+            <p className="text-center text-sm text-red-700">{t('search.unavailable')}</p>
           ) : search.searching ? (
-            search.isLoading && !search.results ? <p className="py-12 text-center text-sm text-slate-500">Recherche…</p> : <Results search={search} />
+            search.isLoading && !search.results ? <p className="py-12 text-center text-sm text-slate-500">{t('search.searching')}</p> : <Results search={search} />
           ) : (
             <>
-              {search.text.trim().length > 0 && search.text.trim().length < MIN_QUERY && <p className="mb-4 text-sm text-slate-500">Encore une lettre…</p>}
+              {search.text.trim().length > 0 && search.text.trim().length < MIN_QUERY && <p className="mb-4 text-sm text-slate-500">{t('search.oneMoreLetter')}</p>}
               <Trending search={search} />
             </>
           )}

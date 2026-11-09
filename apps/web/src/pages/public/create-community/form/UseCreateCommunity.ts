@@ -12,80 +12,84 @@ import { useLoginUserMutation, useRegisterUserMutation } from '@/utils/api/auth/
 import { useCreateCommunityMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
 import { slugify, useImageUpload } from '@/utils/Utils';
+import i18n from '@/utils/i18n';
+import { numberFormat } from '@/utils/format';
 import { type ImageSource, useFilePreview } from '../components/image-field';
 
 
-const optionalImageUrl = z
-  .string()
-  .trim()
-  .max(500, '500 caractères maximum')
-  .refine((v) => !v || /^https:\/\/\S+\.\S+/.test(v), 'Lien invalide : collez une adresse https://…');
+// Schemas built when the flow opens: their messages follow the current language
+const tr = (key: string, options?: Record<string, unknown>) => (i18n.t as (k: string, o?: Record<string, unknown>) => string)(`create.validation.${key}`, options);
+
+const optionalImageUrl = () =>
+  z
+    .string()
+    .trim()
+    .max(500, tr('max500'))
+    .refine((v) => !v || /^https:\/\/\S+\.\S+/.test(v), tr('httpsLink'));
 
 /** Lowest membership price the api accepts (CommunityCreateUpdateSerializer) */
 export const MIN_MEMBERSHIP_PRICE = 500;
 
-const communitySchema = z
+const communitySchema = () => z
   .object({
-  name: z.string().trim().min(3, 'Au moins 3 caractères').max(150, '150 caractères maximum'),
+  name: z.string().trim().min(3, tr('min3')).max(150, tr('max150')),
   /** Empty until the user edits the address: the one built from the name is sent then */
   slug: z
     .string()
     .trim()
-    .refine((v) => !v || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v), 'Lettres minuscules, chiffres et tirets uniquement')
-    .refine((v) => !v || v.length >= 3, 'Au moins 3 caractères'),
-  tagline: z.string().trim().max(255, '255 caractères maximum'),
+    .refine((v) => !v || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v), tr('slugChars'))
+    .refine((v) => !v || v.length >= 3, tr('min3')),
+  tagline: z.string().trim().max(255, tr('max255')),
   category_id: z.string(),
   privacy_type: z.enum(['public', 'private', 'secret']),
   pricing_type: z.enum(['free', 'paid']),
-  brand_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide'),
+  brand_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, tr('color')),
   /** Url mode of the logo / banner (file mode: the files live in UseCreateCommunity, sent at the end) */
-  avatar_url: optionalImageUrl,
-  banner_url: optionalImageUrl,
+  avatar_url: optionalImageUrl(),
+  banner_url: optionalImageUrl(),
   /** Paid community: its first plan, created by the api with the community (more in /c/<slug>/payments) */
   membership_price: z.string().trim(),
   membership_interval: z.enum(['month', 'year', 'one_time']),
-  membership_plan_name: z.string().trim().max(120, '120 caractères maximum'),
+  membership_plan_name: z.string().trim().max(120, tr('max120')),
 })
   .superRefine((v, ctx) => {
     if (v.pricing_type !== 'paid') return;
     const price = Number(v.membership_price);
     if (!v.membership_price || !Number.isInteger(price)) {
-      ctx.addIssue({ code: 'custom', path: ['membership_price'], message: 'Saisissez un prix en FCFA, sans décimales' });
+      ctx.addIssue({ code: 'custom', path: ['membership_price'], message: tr('price') });
     } else if (price < MIN_MEMBERSHIP_PRICE) {
-      ctx.addIssue({ code: 'custom', path: ['membership_price'], message: `Prix minimum : ${MIN_MEMBERSHIP_PRICE.toLocaleString('fr-FR')} FCFA` });
+      ctx.addIssue({ code: 'custom', path: ['membership_price'], message: tr('minPrice', { price: numberFormat().format(MIN_MEMBERSHIP_PRICE) }) });
     }
   });
 
-export type CommunityValues = z.infer<typeof communitySchema>;
+export type CommunityValues = z.infer<ReturnType<typeof communitySchema>>;
 
-const accountSchema = z.discriminatedUnion('mode', [
-  z.object({
-    mode: z.literal('register'),
-    first_name: z.string().trim().min(1, 'Saisissez votre prénom'),
-    last_name: z.string().trim().min(1, 'Saisissez votre nom'),
-    email: z.string().trim().min(1, 'Saisissez votre email').email('Adresse email invalide'),
-    password: z
-      .string()
-      .min(8, 'Au moins 8 caractères')
-      .refine((v) => !/^\d+$/.test(v), 'Le mot de passe ne peut pas contenir uniquement des chiffres'),
-    terms_accepted: z.boolean().refine((v) => v, "Acceptez les conditions d'utilisation pour continuer"),
-  }),
-  z.object({
-    mode: z.literal('login'),
-    email: z.string().trim().min(1, 'Saisissez votre email').email('Adresse email invalide'),
-    password: z.string().min(1, 'Saisissez votre mot de passe'),
-  }),
-]);
+// Same messages as the sign-up form (auth.validation)
+const auth = (key: string) => (i18n.t as (k: string) => string)(`auth.validation.${key}`);
+const accountSchema = () =>
+  z.discriminatedUnion('mode', [
+    z.object({
+      mode: z.literal('register'),
+      first_name: z.string().trim().min(1, auth('firstNameRequired')),
+      last_name: z.string().trim().min(1, auth('lastNameRequired')),
+      email: z.string().trim().min(1, auth('emailRequired')).email(auth('emailInvalid')),
+      password: z
+        .string()
+        .min(8, auth('min8'))
+        .refine((v) => !/^\d+$/.test(v), auth('passwordNumeric')),
+      terms_accepted: z.boolean().refine((v) => v, auth('termsRequired')),
+    }),
+    z.object({
+      mode: z.literal('login'),
+      email: z.string().trim().min(1, auth('emailRequired')).email(auth('emailInvalid')),
+      password: z.string().min(1, auth('passwordRequired')),
+    }),
+  ]);
 
-export type AccountValues = z.input<typeof accountSchema>;
+export type AccountValues = z.input<ReturnType<typeof accountSchema>>;
 
-export const STEPS = [
-  { id: 'name', label: 'Nom' },
-  { id: 'topic', label: 'Thème' },
-  { id: 'access', label: 'Accès' },
-  { id: 'look', label: 'Identité' },
-  { id: 'account', label: 'Compte' },
-] as const;
+// Labels: create.steps.<id>
+export const STEPS = [{ id: 'name' }, { id: 'topic' }, { id: 'access' }, { id: 'look' }, { id: 'account' }] as const;
 
 export type StepId = (typeof STEPS)[number]['id'];
 
@@ -171,11 +175,11 @@ function UseCreateCommunity() {
   const isLast = index === steps.length - 1;
 
   const form = useForm<CommunityValues>({
-    resolver: zodResolver(communitySchema),
+    resolver: zodResolver(communitySchema()),
     defaultValues: { ...DEFAULTS, ...draft?.values },
   });
   const account = useForm<AccountValues>({
-    resolver: zodResolver(accountSchema),
+    resolver: zodResolver(accountSchema()),
     defaultValues: { mode: 'register', first_name: '', last_name: '', email: '', password: '', terms_accepted: false },
   });
 
@@ -271,7 +275,7 @@ function UseCreateCommunity() {
         setUploadedUrls((prev) => ({ ...prev, [kind]: url }));
         return { kind, url };
       } catch (error) {
-        form.setError(IMAGES[kind], { message: error instanceof Error ? error.message : "L'envoi de l'image a échoué." });
+        form.setError(IMAGES[kind], { message: error instanceof Error ? error.message : tr('imageFailed') });
         throw error;
       } finally {
         setUploading((prev) => ({ ...prev, [kind]: false }));

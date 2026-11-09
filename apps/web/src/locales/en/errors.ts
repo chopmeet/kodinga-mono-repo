@@ -1,0 +1,41 @@
+import type { Translations } from '../types';
+
+export const errors: Translations['errors'] = {
+  network: 'Unable to reach the server. Check your connection.',
+  unexpected: 'An unexpected error occurred.',
+  generic: 'Something went wrong.',
+  codes: {
+    invalid_credentials: 'Incorrect email or password.',
+    account_inactive: 'This account has been deactivated. Contact support.',
+    invalid_reset_token: 'This reset link is invalid or has expired.',
+    throttled: 'Too many attempts. Try again in a few minutes.',
+    invalid_verification_token: 'This verification link is invalid or has expired.',
+    invalid_provider: 'This login method is not available.',
+    oauth_exchange_failed: 'Logging in with this account failed. Try again.',
+    oauth_userinfo_failed: 'Unable to retrieve your profile. Try again.',
+    redirect_uri_mismatch: 'This login method is misconfigured. Try again later or use your email.',
+    disallowed_redirect_uri: 'This login method is not allowed from this site. Use your email.',
+    invalid_redirect_uri: 'This login method is misconfigured. Try again later or use your email.',
+    oauth_email_not_verified:
+      'This address is not verified with the provider: verify it there, or log in with your email and password.',
+    oauth_invalid_state: 'This login link has expired. Start again from Kodinga.',
+    oauth_not_configured: 'This login method is not available yet. Use your email.',
+    oauth_missing_email: 'Your account does not provide a verified email address.',
+  },
+  fields: {
+    emailTaken: 'An account already exists with this email address.',
+    usernameTaken: 'This username is already taken.',
+    usernameShort: 'The username must be at least 3 characters long.',
+    usernameChars: 'Letters, digits, “_” and “-” only.',
+    termsRequired: 'Accept the terms of use to continue.',
+    passwordCommon: 'This password is too common.',
+    passwordNumeric: 'The password cannot contain only digits.',
+    emailInvalid: 'Invalid email address.',
+    urlInvalid: 'Invalid link (https://…).',
+    currentPasswordWrong: 'The current password is incorrect.',
+    passwordsMismatch: 'The two passwords do not match.',
+    passwordSame: 'Choose a password different from the current one.',
+    passwordShort: 'The password must be at least 8 characters long.',
+    passwordSimilar: 'The password is too similar to your personal information.',
+  },
+};

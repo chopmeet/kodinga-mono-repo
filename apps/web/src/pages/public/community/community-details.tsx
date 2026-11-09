@@ -1,4 +1,5 @@
 import { CircleCheck, CircleX, Clock, LoaderCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button, Loader } from '@kodinga/ui';
@@ -23,27 +24,24 @@ import UsePaymentReturn from './form/UsePaymentReturn';
 
 /** Back from PayDunya (?payment=done|cancelled): the real status of the payment */
 function PaymentNotice({ community, param }: { community: CommunityDetail | undefined; param: string | null }) {
+  const { t } = useTranslation();
   const state = UsePaymentReturn(community && { slug: community.slug, communityId: community.id }, param);
   if (!state) return null;
   const notices = {
-    checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950', text: 'Vérification de votre paiement auprès de PayDunya…' },
-    paid: { icon: <CircleCheck className="size-4 shrink-0" />, className: 'border-emerald-200 bg-emerald-50 text-emerald-900', text: 'Paiement confirmé : bienvenue, votre accès est actif !' },
-    pending: {
-      icon: <Clock className="size-4 shrink-0" />,
-      className: 'border-amber-200 bg-amber-50 text-amber-900',
-      text: 'Paiement en attente de confirmation : votre accès s’activera dès que PayDunya l’aura validé. Suivez-le dans Mon compte > Abonnements.',
-    },
-    failed: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-red-200 bg-red-50 text-red-900', text: 'Le paiement n’a pas abouti : vous n’avez pas été débité. Vous pouvez réessayer.' },
-    cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-slate-200 bg-white text-slate-700', text: 'Paiement annulé : vous n’avez pas été débité.' },
+    checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950' },
+    paid: { icon: <CircleCheck className="size-4 shrink-0" />, className: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
+    pending: { icon: <Clock className="size-4 shrink-0" />, className: 'border-amber-200 bg-amber-50 text-amber-900' },
+    failed: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-red-200 bg-red-50 text-red-900' },
+    cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-slate-200 bg-white text-slate-700' },
   } as const;
   const notice = notices[state];
   return (
     <p className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${notice.className}`} role="status">
       {notice.icon}
-      {notice.text}
+      {t(`community.payment.${state}`)}
       {state === 'pending' && (
         <Link to="/dashboard/billing" className="ml-auto shrink-0 font-semibold underline">
-          Voir
+          {t('community.payment.see')}
         </Link>
       )}
     </p>
@@ -52,24 +50,25 @@ function PaymentNotice({ community, param }: { community: CommunityDetail | unde
 
 /** /communities/:slug — public page of a community */
 function CommunityDetails() {
+  const { t } = useTranslation();
   const page = UseCommunityPage();
   const { community, isLoading, activeTab } = page;
 
   if (isLoading) {
     return (
-      <Loader inline className="py-24" message="Chargement de la communauté…" />
+      <Loader inline className="py-24" message={t('community.page.loading')} />
     );
   }
 
   if (!community) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? 'Communauté introuvable' : 'Impossible de charger la communauté'}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('community.page.notFound') : t('community.page.loadFailed')}</h1>
         <p className="text-slate-500">
-          {page.notFound ? 'Elle a peut-être été renommée, supprimée, ou n’est visible que sur invitation.' : parseApiError(page.error).message}
+          {page.notFound ? t('community.page.notFoundText') : parseApiError(page.error).message}
         </p>
         <Button asChild variant="outline">
-          <Link to="/">Découvrir d'autres communautés</Link>
+          <Link to="/">{t('community.page.discoverOthers')}</Link>
         </Button>
       </section>
     );

@@ -1,13 +1,14 @@
 import { Award, Check, ExternalLink, Gavel, ListChecks, Medal, Target } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@kodinga/ui';
 import { formatDateTime } from '@/pages/community-space/hackathons/hackathon-labels';
 import { Markdown } from '@/pages/shared/markdown';
 import type { Hackathon, HackathonPerson } from '@/utils/api/hackathon/hackathon.type';
+import { numberFormat } from '@/utils/format';
 import { timelineOf } from '../form/UseHackathonPage';
 
-const amountFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const person = (p: HackathonPerson) => [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username;
 
 function Block({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
@@ -24,23 +25,27 @@ function Block({ title, icon, children }: { title: string; icon: ReactNode; chil
 
 /** About the hackathon: the challenge, the calendar, the prizes, how projects are judged */
 function OverviewTab({ hackathon: h }: { hackathon: Hackathon }) {
+  const { t } = useTranslation();
   const prizes = [...h.prizes].sort((a, b) => a.rank - b.rank);
   const facts = [
-    { label: 'Thème', value: h.theme },
-    { label: 'Public visé', value: h.target_audience },
-    { label: 'Équipes', value: h.allow_teams ? `De ${h.min_team_size} à ${h.max_team_size} personnes` : 'Participation individuelle' },
-    { label: 'Places', value: h.max_participants ? `${h.max_participants} participants au maximum` : '' },
+    { label: t('hackathon.overview.theme'), value: h.theme },
+    { label: t('hackathon.overview.audience'), value: h.target_audience },
+    {
+      label: t('hackathon.overview.teams'),
+      value: h.allow_teams ? t('hackathon.overview.teamSize', { min: h.min_team_size, max: h.max_team_size }) : t('hackathon.overview.solo'),
+    },
+    { label: t('hackathon.overview.seats'), value: h.max_participants ? t('hackathon.overview.maxParticipants', { count: h.max_participants }) : '' },
   ].filter((f) => f.value);
   const deliverables = [
-    h.require_repo_url && 'un dépôt GitHub ou GitLab',
-    h.require_demo_url && 'une démo en ligne',
-    h.require_video_url && 'une vidéo de présentation',
+    h.require_repo_url && t('hackathon.overview.repo'),
+    h.require_demo_url && t('hackathon.overview.demo'),
+    h.require_video_url && t('hackathon.overview.video'),
   ].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-6">
-      <Block title="Le défi" icon={<Target className="size-5 text-blue-900" />}>
-        {h.description ? <Markdown source={h.description} /> : <p className="text-slate-500">Les organisateurs n’ont pas encore décrit le défi.</p>}
+      <Block title={t('hackathon.overview.challenge')} icon={<Target className="size-5 text-blue-900" />}>
+        {h.description ? <Markdown source={h.description} /> : <p className="text-slate-500">{t('hackathon.overview.noDescription')}</p>}
         {facts.length > 0 && (
           <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
             {facts.map((f) => (
@@ -53,22 +58,22 @@ function OverviewTab({ hackathon: h }: { hackathon: Hackathon }) {
         )}
         {h.prerequisites && (
           <div className="mt-5 border-t border-slate-100 pt-5">
-            <h3 className="text-sm font-semibold text-slate-900">Prérequis</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{t('hackathon.overview.prerequisites')}</h3>
             <p className="mt-1 whitespace-pre-line text-slate-600">{h.prerequisites}</p>
           </div>
         )}
         {deliverables.length > 0 && (
-          <p className="mt-5 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-950">À rendre avec le projet : {deliverables.join(', ')}.</p>
+          <p className="mt-5 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-950">{t('hackathon.overview.deliverables', { list: deliverables.join(', ') })}</p>
         )}
         {h.rules_url && (
           <a href={h.rules_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-900 hover:underline">
-            Lire le règlement complet <ExternalLink className="size-3.5" />
+            {t('hackathon.overview.rules')} <ExternalLink className="size-3.5" />
           </a>
         )}
       </Block>
 
-      <Block title="Calendrier" icon={<ListChecks className="size-5 text-blue-900" />}>
-        <ol aria-label="Calendrier" className="relative ml-2 border-l border-slate-200">
+      <Block title={t('hackathon.overview.calendar')} icon={<ListChecks className="size-5 text-blue-900" />}>
+        <ol aria-label={t('hackathon.overview.calendar')} className="relative ml-2 border-l border-slate-200">
           {timelineOf(h).map((step) => (
             <li key={step.label} className="relative pb-5 pl-6 last:pb-0" aria-current={step.state === 'next' ? 'step' : undefined}>
               <span
@@ -89,8 +94,8 @@ function OverviewTab({ hackathon: h }: { hackathon: Hackathon }) {
       </Block>
 
       {prizes.length > 0 && (
-        <Block title="Prix à gagner" icon={<Award className="size-5 text-amber-600" />}>
-          <ul className="grid gap-3 sm:grid-cols-2" aria-label="Prix">
+        <Block title={t('hackathon.overview.prizes')} icon={<Award className="size-5 text-amber-600" />}>
+          <ul className="grid gap-3 sm:grid-cols-2" aria-label={t('hackathon.overview.prizesLabel')}>
             {prizes.map((p) => (
               <li key={p.id} className="flex gap-3 rounded-lg border border-slate-200 p-4">
                 <Medal className={cn('size-6 shrink-0', p.rank === 1 ? 'text-amber-500' : p.rank === 2 ? 'text-slate-400' : 'text-orange-700')} />
@@ -98,7 +103,7 @@ function OverviewTab({ hackathon: h }: { hackathon: Hackathon }) {
                   <p className="font-semibold text-slate-900">{p.title}</p>
                   {p.reward_amount && Number(p.reward_amount) > 0 && (
                     <p className="text-sm font-semibold text-blue-900">
-                      {amountFormat.format(Number(p.reward_amount))} {p.reward_currency === 'XOF' ? 'FCFA' : p.reward_currency}
+                      {numberFormat({ maximumFractionDigits: 0 }).format(Number(p.reward_amount))} {p.reward_currency === 'XOF' ? 'FCFA' : p.reward_currency}
                     </p>
                   )}
                   {(p.reward_description || p.description) && <p className="mt-1 text-sm text-slate-600">{p.reward_description || p.description}</p>}
@@ -110,9 +115,9 @@ function OverviewTab({ hackathon: h }: { hackathon: Hackathon }) {
       )}
 
       {(h.criteria.length > 0 || h.judges.length > 0) && (
-        <Block title="Évaluation" icon={<Gavel className="size-5 text-blue-900" />}>
+        <Block title={t('hackathon.overview.judging')} icon={<Gavel className="size-5 text-blue-900" />}>
           {h.criteria.length > 0 && (
-            <ul className="flex flex-col divide-y divide-slate-100" aria-label="Critères">
+            <ul className="flex flex-col divide-y divide-slate-100" aria-label={t('hackathon.overview.criteria')}>
               {h.criteria.map((c) => (
                 <li key={c.id} className="flex items-start justify-between gap-4 py-3 first:pt-0">
                   <div>
@@ -126,7 +131,7 @@ function OverviewTab({ hackathon: h }: { hackathon: Hackathon }) {
           )}
           {h.judges.length > 0 && (
             <div className={cn(h.criteria.length > 0 && 'mt-5 border-t border-slate-100 pt-5')}>
-              <h3 className="text-sm font-semibold text-slate-900">Le jury</h3>
+              <h3 className="text-sm font-semibold text-slate-900">{t('hackathon.overview.jury')}</h3>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {h.judges.map((j) => (
                   <li key={j.id} className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">

@@ -1,4 +1,5 @@
 import { ArrowRight, Crown, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@kodinga/ui';
@@ -11,6 +12,7 @@ import { formatCompact, getName, nameInitials } from '@/utils/Utils';
  * count, the creator and the most active members (public leaderboard).
  */
 export function MembersPanel({ community, isTeam }: { community: CommunityDetail; isTeam: boolean }) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useGetCommunityLeaderboardQuery({ slug: community.slug, limit: 12 });
   const owner = getName(community.owner) || community.owner.username;
   const n = community.members_count;
@@ -20,11 +22,11 @@ export function MembersPanel({ community, isTeam }: { community: CommunityDetail
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-lg font-semibold text-slate-900">
           <Users className="size-5 text-brand" />
-          {formatCompact(n)} membre{n > 1 ? 's' : ''}
+          {t('community.hero.members', { count: n, formatted: formatCompact(n) })}
         </p>
         {isTeam && (
           <Link to={`/c/${community.slug}/members`} className="inline-flex items-center gap-1 text-sm font-semibold text-blue-900 hover:underline">
-            Gérer les membres <ArrowRight className="size-4" />
+            {t('community.membersPanel.manage')} <ArrowRight className="size-4" />
           </Link>
         )}
       </div>
@@ -38,20 +40,20 @@ export function MembersPanel({ community, isTeam }: { community: CommunityDetail
           <p className="text-sm text-slate-500">@{community.owner.username}</p>
         </div>
         <span className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
-          <Crown className="size-3.5" /> Créateur
+          <Crown className="size-3.5" /> {t('community.membersPanel.creator')}
         </span>
       </div>
 
       <section aria-labelledby="active-members">
         <h3 id="active-members" className="text-sm font-semibold text-slate-900">
-          Membres les plus actifs
+          {t('community.membersPanel.mostActive')}
         </h3>
         {isLoading ? (
-          <p className="py-6 text-sm text-slate-500">Chargement…</p>
+          <p className="py-6 text-sm text-slate-500">{t('common.actions.loading')}</p>
         ) : data.length === 0 ? (
-          <p className="py-6 text-sm text-slate-500">Les membres apparaîtront ici dès leurs premières contributions.</p>
+          <p className="py-6 text-sm text-slate-500">{t('community.membersPanel.empty')}</p>
         ) : (
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label="Membres les plus actifs">
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label={t('community.membersPanel.mostActive')}>
             {data.map((e) => (
               <li key={e.user.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
                 <Avatar className="size-9">
@@ -66,7 +68,7 @@ export function MembersPanel({ community, isTeam }: { community: CommunityDetail
             ))}
           </ul>
         )}
-        {!isTeam && <p className="mt-4 text-xs text-slate-500">La liste complète des membres est visible par l’équipe de la communauté.</p>}
+        {!isTeam && <p className="mt-4 text-xs text-slate-500">{t('community.membersPanel.teamOnly')}</p>}
       </section>
     </div>
   );

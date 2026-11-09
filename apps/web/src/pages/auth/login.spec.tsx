@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { onLogout } from '@/redux/slice/User.slice';
 import store from '@/redux/store';
 import { renderAppAt, SLOW, stubApi } from '@/test-utils';
+import i18n from '@/utils/i18n';
 import * as oauthState from './hooks/oauth-state';
 
 // Full app tree + network stubs: slow when the whole suite runs in parallel
@@ -72,5 +73,22 @@ describe('Login', () => {
     await screen.findByRole('heading', { name: 'Se connecter' }, SLOW);
     submit('awa@example.com', 'kodinga2026');
     await waitFor(() => expect(where()).toBe('/'), SLOW);
+  });
+
+  it('speaks English: labels, form checks and api errors', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    stubApi({
+      'auth/login/': { status: 401, body: { success: false, code: 'invalid_credentials', message: 'Invalid credentials.' } },
+    });
+    renderAppAt('/auth/login');
+    expect(await screen.findByRole('heading', { name: 'Log in' }, SLOW)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    expect(await screen.findByText('Enter your email', {}, SLOW)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^Email address/), { target: { value: 'awa@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: 'wrong-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    expect(await screen.findByText('Incorrect email or password.', {}, SLOW)).toBeTruthy();
+    await act(() => i18n.changeLanguage('fr'));
   });
 });

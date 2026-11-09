@@ -1,4 +1,5 @@
 import { Mail } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { Button, Input, InputPassword } from '@kodinga/ui';
@@ -11,6 +12,7 @@ import { GoKey } from "react-icons/go";
 
 
 function Login() {
+  const { t } = useTranslation();
   const { 
     register, 
     errors, 
@@ -23,19 +25,19 @@ function Login() {
 
   return (
     <AuthWrapper
-      title="Se connecter"
-      subtitle="Content de vous revoir ! Retrouvez vos communautés."
+      title={t('auth.login.title')}
+      subtitle={t('auth.login.subtitle')}
       footer={
         <>
           <p className="mb-4 text-[15px]">
-            Pas encore de compte ?{' '}
+            {t('auth.login.noAccount')}{' '}
             <Link to={next ? `/auth/register?next=${encodeURIComponent(next)}` : '/auth/register'} className="font-semibold text-brand hover:text-brand-hover hover:underline">
-              S'inscrire
+              {t('auth.login.signup')}
             </Link>
           </p>
-          En vous connectant, vous acceptez nos conditions d'utilisation
+          {t('auth.login.terms')}
           <br />
-          et notre politique de confidentialité.
+          {t('auth.login.privacy')}
         </>
       }
     >
@@ -48,7 +50,7 @@ function Login() {
 
           <Input
             id="__login_email"
-            label="Adresse email"
+            label={t('auth.common.email')}
             type="email"
             icon={<Mail className="size-4" />}
             autoComplete="email"
@@ -60,7 +62,7 @@ function Login() {
           <div>
             <InputPassword
               id="__login_password"
-              label="Mot de passe"
+              label={t('auth.common.password')}
               autoComplete="current-password"
               icon={<GoKey />}
               required
@@ -72,14 +74,14 @@ function Login() {
                 to="/auth/forgot-password"
                 className="text-sm font-semibold text-brand hover:text-brand-hover hover:underline"
               >
-                Mot de passe oublié ?
+                {t('auth.login.forgot')}
               </Link>
             </div>
           </div>
 
           <div className="mt-4">
             <Button type="submit" className="w-full rounded-xl" isLoading={isLoading}>
-              Se connecter
+              {t('auth.login.submit')}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Bookmark, CircleCheck, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage, Button, cn, customToast } from '@kodinga/ui';
@@ -21,16 +22,11 @@ import { Pill } from './section-header';
 import { useRealtime, useRealtimeCommunityFeed } from '@/utils/realtime/use-realtime';
 
 const PAGE_SIZE = 10;
-const FILTERS: { id: PostType | 'all'; label: string }[] = [
-  { id: 'all', label: 'Tout' },
-  { id: 'announcement', label: 'Annonces' },
-  { id: 'discussion', label: 'Discussions' },
-  { id: 'question', label: 'Questions' },
-  { id: 'project_showcase', label: 'Projets' },
-  { id: 'poll', label: 'Sondages' },
-];
+// Labels: community.feed.filters.<id>
+const FILTERS: (PostType | 'all')[] = ['all', 'announcement', 'discussion', 'question', 'project_showcase', 'poll'];
 
 function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; canReact: boolean; href: string; page: CommunityPage }) {
+  const { t } = useTranslation();
   const [toggleLike, { isLoading }] = useTogglePostLikeMutation();
   const [toggleBookmark, { isLoading: isSaving }] = useToggleBookmarkMutation();
   const signedIn = page.membership !== 'visitor';
@@ -62,7 +58,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
     <article className="rounded-xl border border-slate-200 bg-white p-7">
       {post.is_pinned && (
         <p className="mb-4 flex items-center gap-1.5 text-xs font-medium text-blue-900">
-          <Pin className="size-3.5" /> Épinglé par l’équipe
+          <Pin className="size-3.5" /> {t('community.feed.pinned')}
         </p>
       )}
       <header className="flex items-center gap-3">
@@ -81,8 +77,8 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
           onClick={save}
           disabled={!signedIn || isSaving}
           aria-pressed={!!post.is_bookmarked}
-          aria-label={post.is_bookmarked ? 'Retirer des publications enregistrées' : 'Enregistrer la publication'}
-          title={signedIn ? undefined : 'Connectez-vous pour enregistrer'}
+          aria-label={post.is_bookmarked ? t('community.feed.unsave') : t('community.feed.save')}
+          title={signedIn ? undefined : t('community.feed.loginToSave')}
           className={cn('rounded-md p-1 transition-colors disabled:cursor-not-allowed disabled:text-slate-300', post.is_bookmarked ? 'text-blue-900' : 'text-slate-400 hover:text-slate-700')}
         >
           <Bookmark className={cn('size-5', post.is_bookmarked && 'fill-blue-900')} />
@@ -101,7 +97,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
       </p>
       {long && (
         <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-2 text-sm font-semibold text-blue-900 hover:underline">
-          {expanded ? 'Réduire' : 'Lire la suite'}
+          {expanded ? t('community.feed.less') : t('community.feed.readMore')}
         </button>
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={canReact} />}
@@ -115,8 +111,8 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
           onClick={like}
           disabled={!canReact || isLoading}
           aria-pressed={liked}
-          aria-label={liked ? 'Retirer mon j’aime' : 'J’aime'}
-          title={canReact ? undefined : 'Réservé aux membres'}
+          aria-label={liked ? t('community.feed.unlike') : t('community.feed.like')}
+          title={canReact ? undefined : t('community.feed.membersOnly')}
           className={cn('flex items-center gap-2 rounded-md px-2 py-1 transition-colors disabled:cursor-not-allowed', liked ? 'font-semibold text-blue-900' : 'hover:text-slate-900')}
         >
           <ThumbsUp className={cn('size-5', liked && 'fill-blue-900/15')} /> {post.reactions_count}
@@ -129,15 +125,15 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
         >
           <MessageCircle className="size-5" />
           {post.post_type === 'question'
-            ? `${post.comments_count} réponse${post.comments_count > 1 ? 's' : ''}`
-            : `${post.comments_count} commentaire${post.comments_count > 1 ? 's' : ''}`}
+            ? t('community.feed.answers', { count: post.comments_count })
+            : t('community.feed.comments', { count: post.comments_count })}
         </button>
         {post.post_type === 'question' && post.is_resolved && (
           <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-            <CircleCheck className="size-3.5" /> Résolue
+            <CircleCheck className="size-3.5" /> {t('community.feed.resolved')}
           </span>
         )}
-        {post.is_locked && <span className="ml-auto text-xs text-slate-500">Commentaires fermés</span>}
+        {post.is_locked && <span className="ml-auto text-xs text-slate-500">{t('community.feed.commentsClosed')}</span>}
       </footer>
       {showComments && <PostComments post={post} page={page} />}
     </article>
@@ -146,6 +142,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
 
 /** Feed of the community (GET communities/<slug>/feed/, pinned posts first) */
 export function FeedTab({ page }: { page: CommunityPage }) {
+  const { t } = useTranslation();
   const { connected } = useRealtime();
   // New posts, reactions and comment counts of the others appear live
   useRealtimeCommunityFeed(page.canSee ? page.community?.id : undefined);
@@ -173,7 +170,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
   );
 
   if (!page.canSee) {
-    return <LockedPanel page={page}>Rejoignez la communauté pour lire les échanges, publier et commenter.</LockedPanel>;
+    return <LockedPanel page={page}>{t('community.feed.locked')}</LockedPanel>;
   }
 
   const posts = data?.results ?? [];
@@ -192,27 +189,27 @@ export function FeedTab({ page }: { page: CommunityPage }) {
           <Avatar className="size-12">
             <AvatarFallback className="bg-blue-50 font-semibold text-blue-900">{nameInitials(me)}</AvatarFallback>
           </Avatar>
-          <span className="flex-1 text-slate-700">Une question, une idée, un projet ?</span>
+          <span className="flex-1 text-slate-700">{t('community.feed.composer')}</span>
           <PenLine className="size-5 text-slate-600" aria-hidden />
         </button>
       ) : (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-5">
-          <p className="flex-1 text-sm text-slate-500">Rejoignez la communauté pour publier et commenter.</p>
+          <p className="flex-1 text-sm text-slate-500">{t('community.feed.joinToPost')}</p>
           {page.community?.pricing_type !== 'paid' && <MembershipActions page={page} className="w-full sm:w-auto" />}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par type">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t('community.feed.filterLabel')}>
         {FILTERS.map((f) => (
           <Pill
-            key={f.id}
-            active={type === f.id}
+            key={f}
+            active={type === f}
             onClick={() => {
-              setType(f.id);
+              setType(f);
               setCount(PAGE_SIZE);
             }}
           >
-            {f.label}
+            {t(`community.feed.filters.${f}`)}
           </Pill>
         ))}
         {page.membership !== 'visitor' && (
@@ -223,7 +220,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
               setCount(PAGE_SIZE);
             }}
           >
-            <Bookmark className="size-4" aria-hidden /> Enregistrées
+            <Bookmark className="size-4" aria-hidden /> {t('community.feed.saved')}
           </Pill>
         )}
       </div>
@@ -231,7 +228,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
       <div className="flex flex-wrap items-center gap-3">
         {/* Phones: the search takes the whole row, the sort goes under it */}
         <label className="relative min-w-0 flex-1 basis-full sm:basis-0">
-          <span className="sr-only">Rechercher une discussion</span>
+          <span className="sr-only">{t('community.feed.searchLabel')}</span>
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
           <input
             type="search"
@@ -240,14 +237,14 @@ export function FeedTab({ page }: { page: CommunityPage }) {
               setSearch(e.target.value);
               setCount(PAGE_SIZE);
             }}
-            placeholder="Rechercher une discussion…"
+            placeholder={t('community.feed.searchPlaceholder')}
             className="h-12 w-full rounded-lg border border-slate-200 bg-white pr-4 pl-11 text-sm text-slate-800 placeholder:text-slate-400"
           />
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <SlidersHorizontal className="size-4" aria-hidden />
           <select
-            aria-label="Trier les publications"
+            aria-label={t('community.feed.sortLabel')}
             value={sort}
             onChange={(e) => {
               setSort(e.target.value as 'recent' | 'popular');
@@ -255,8 +252,8 @@ export function FeedTab({ page }: { page: CommunityPage }) {
             }}
             className="h-12 rounded-lg bg-transparent pr-2 font-medium"
           >
-            <option value="recent">Récentes</option>
-            <option value="popular">Populaires</option>
+            <option value="recent">{t('community.feed.recent')}</option>
+            <option value="popular">{t('community.feed.popular')}</option>
           </select>
         </label>
       </div>
@@ -264,15 +261,15 @@ export function FeedTab({ page }: { page: CommunityPage }) {
       {isMember && <SemanticSearch slug={page.slug} query={search} />}
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">Chargement du fil…</p>
+        <p className="py-12 text-center text-sm text-slate-500">{t('community.feed.loading')}</p>
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <MessagesSquare className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{saved && !q && type === 'all' ? 'Aucune publication enregistrée' : q || type !== 'all' || saved ? 'Aucune publication ne correspond' : 'Pas encore de publication'}</p>
-          <p className="mt-1 text-sm text-slate-500">{saved ? 'Enregistrez une publication pour la retrouver ici.' : isMember ? 'Lancez la première discussion !' : 'Les premiers échanges apparaîtront ici.'}</p>
+          <p className="mt-3 font-semibold text-slate-900">{saved && !q && type === 'all' ? t('community.feed.noSaved') : q || type !== 'all' || saved ? t('community.feed.noMatch') : t('community.feed.noPost')}</p>
+          <p className="mt-1 text-sm text-slate-500">{saved ? t('community.feed.savedHint') : isMember ? t('community.feed.firstDiscussion') : t('community.feed.firstExchanges')}</p>
         </div>
       ) : (
-        <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label="Publications">
+        <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label={t('community.feed.postsLabel')}>
           {posts.map((post) => (
             <li key={post.id}>
               <PostCard post={post} canReact={isMember} href={postHref(page.slug, post.id)} page={page} />
@@ -283,7 +280,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
 
       {posts.length < total && (
         <Button variant="outline" className="self-center" isLoading={isFetching} onClick={() => setCount((n) => n + PAGE_SIZE)}>
-          Afficher plus
+          {t('common.actions.showMore')}
         </Button>
       )}
 

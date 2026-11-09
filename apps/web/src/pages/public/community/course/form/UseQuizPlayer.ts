@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import i18n from '@/utils/i18n';
 
 import { useSubmitQuizMutation } from '@/utils/api/community/community.api';
 import type { CourseLesson, QuizResult } from '@/utils/api/course/course.type';
@@ -46,7 +47,7 @@ function UseQuizPlayer({ slug, courseSlug, lesson, onGraded }: Options) {
     // Every question is answered: back to the first one left out
     if (missing >= 0) {
       setIndex(missing);
-      setError(`Répondez à la question ${missing + 1} avant de valider.`);
+      setError(i18n.t('course.quiz.answerFirst', { n: missing + 1 }));
       return;
     }
     setError(null);

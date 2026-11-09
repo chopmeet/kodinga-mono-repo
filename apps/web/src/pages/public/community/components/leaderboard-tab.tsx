@@ -1,5 +1,6 @@
 import { Medal, TrendingUp, Trophy } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Avatar, AvatarFallback, AvatarImage, cn } from '@kodinga/ui';
 import { pointsFormat } from '@/pages/community-space/leaderboard/leaderboard-labels';
@@ -12,17 +13,18 @@ const PERIODS: LeaderboardPeriod[] = ['weekly', 'monthly', 'all_time'];
 
 /** Members ranked by the points earned in the community over the chosen period (public leaderboard) */
 export function LeaderboardTab({ slug }: { slug: string }) {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<LeaderboardPeriod>('all_time');
   const { data = [], isLoading } = useGetCommunityLeaderboardQuery({ slug, limit: 50, period });
   const userId = useUser()?.id;
 
   return (
     <section>
-      <SectionHeader eyebrow="Chaque contribution compte" title="Classement" aside={<Trophy className="size-7 text-amber-600" aria-hidden />}>
-        Celles et ceux qui font grandir les échanges.
+      <SectionHeader eyebrow={t('community.leaderboard.eyebrow')} title={t('community.leaderboard.title')} aside={<Trophy className="size-7 text-amber-600" aria-hidden />}>
+        {t('community.leaderboard.intro')}
       </SectionHeader>
 
-      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Période">
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={t('community.leaderboard.period')}>
         {PERIODS.map((p) => (
           <Pill key={p} active={period === p} onClick={() => setPeriod(p)}>
             {PERIOD_LABEL[p]}
@@ -31,22 +33,22 @@ export function LeaderboardTab({ slug }: { slug: string }) {
       </div>
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">Chargement du classement…</p>
+        <p className="py-12 text-center text-sm text-slate-500">{t('community.leaderboard.loading')}</p>
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <Medal className="size-8 text-slate-300" />
           <p className="mt-3 font-semibold text-slate-900">
-            {period === 'all_time' ? "Personne n'a encore marqué de points" : `Aucun point marqué sur les ${PERIOD_LABEL[period].toLowerCase()}`}
+            {period === 'all_time' ? t('community.leaderboard.nobody') : t('community.leaderboard.noneOver', { period: PERIOD_LABEL[period].toLowerCase() })}
           </p>
-          <p className="mt-1 text-sm text-slate-500">Publier, commenter et suivre les formations rapporte des points.</p>
+          <p className="mt-1 text-sm text-slate-500">{t('community.leaderboard.howTo')}</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="flex justify-between border-b border-slate-200 bg-blue-50/70 px-4 py-4 sm:px-6 text-[11px] font-medium tracking-wide text-slate-600 uppercase">
-            <span>Rang · Membre</span>
-            <span>Points</span>
+            <span>{t('community.leaderboard.rankMember')}</span>
+            <span>{t('community.leaderboard.points')}</span>
           </div>
-          <ol aria-label="Classement" className="divide-y divide-slate-100">
+          <ol aria-label={t('community.leaderboard.title')} className="divide-y divide-slate-100">
             {data.map((e) => (
               <li key={e.user.id} className={cn('flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5', e.user.id === userId && 'bg-blue-50/50')}>
                 <span
@@ -55,7 +57,7 @@ export function LeaderboardTab({ slug }: { slug: string }) {
                     e.rank === 1 ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-slate-600',
                   )}
                 >
-                  {e.rank === 1 ? <Trophy className="size-3.5" aria-label="1er" /> : e.rank}
+                  {e.rank === 1 ? <Trophy className="size-3.5" aria-label={t('community.leaderboard.first')} /> : e.rank}
                 </span>
                 <Avatar className="size-10 sm:size-12">
                   {e.user.avatar_url && <AvatarImage src={e.user.avatar_url} alt="" />}
@@ -64,14 +66,14 @@ export function LeaderboardTab({ slug }: { slug: string }) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-900">
                     {e.user.name}
-                    {e.user.id === userId && <span className="ml-2 text-xs font-semibold text-brand">Vous</span>}
+                    {e.user.id === userId && <span className="ml-2 text-xs font-semibold text-brand">{t('community.leaderboard.you')}</span>}
                   </p>
                   <p className="truncate text-sm text-slate-500">
-                    Niveau {e.level} · {e.rank_title}
+                    {t('community.leaderboard.levelTitle', { level: e.level, title: e.rank_title })}
                   </p>
                 </div>
                 <span className="flex shrink-0 items-center gap-2 font-semibold text-blue-900 tabular-nums sm:text-lg">
-                  {pointsFormat.format(e.points)} pts
+                  {t('community.leaderboard.pts', { points: pointsFormat.format(e.points) })}
                   <TrendingUp className="hidden size-4 sm:block" aria-hidden />
                 </span>
               </li>

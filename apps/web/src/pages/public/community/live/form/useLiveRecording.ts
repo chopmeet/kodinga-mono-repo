@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 
 export function formatRecordingTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -91,7 +92,7 @@ export function useLiveRecording() {
   const startRecording = async () => {
     try {
       if (!navigator.mediaDevices?.getDisplayMedia) {
-        customToast.error({ message: "L'enregistrement n'est pas supporté par ce navigateur." });
+        customToast.error({ message: i18n.t('live.toasts.recordingUnsupported') });
         return;
       }
 
@@ -146,13 +147,13 @@ export function useLiveRecording() {
         setSeconds((prev) => prev + 1);
       }, 1000);
 
-      customToast.success({ message: "Enregistrement du live démarré." });
+      customToast.success({ message: i18n.t('live.toasts.recordingStarted') });
     } catch (err) {
       if (err instanceof Error && err.name === 'NotAllowedError') {
         // User cancelled selection dialog
         return;
       }
-      customToast.error({ message: "Impossible de démarrer l'enregistrement." });
+      customToast.error({ message: i18n.t('live.toasts.recordingFailed') });
     }
   };
 

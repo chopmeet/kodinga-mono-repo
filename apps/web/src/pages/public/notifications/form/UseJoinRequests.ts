@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { customToast } from '@kodinga/ui';
+import i18n from '@/utils/i18n';
 import { hasSpacePermission } from '@/pages/community-space/community-space-context';
 import { isManaged, useDecideMemberMutation, useGetJoinRequestsQuery, useGetMyCommunitiesQuery } from '@/utils/api/community/community.api';
 import type { JoinRequest } from '@/utils/api/community/community.type';
@@ -34,7 +35,9 @@ function UseJoinRequests({ skip = false }: { skip?: boolean } = {}) {
     try {
       await decide({ slug: r.community.slug, memberId: r.member.id, approve }).unwrap();
       setDecided((d) => ({ ...d, [r.member.id]: approve ? 'accepted' : 'refused' }));
-      customToast.success({ message: approve ? `${name} a rejoint ${r.community.name}.` : `La demande de ${name} a été refusée.` });
+      customToast.success({
+        message: approve ? i18n.t('inbox.joinRequests.joined', { name, community: r.community.name }) : i18n.t('inbox.joinRequests.refusedToast', { name }),
+      });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     }

@@ -1,5 +1,6 @@
 import { Trophy, Users } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { cn, Skeleton } from '@kodinga/ui';
@@ -12,6 +13,7 @@ const POOL = 30;
 
 
 export function LeaderboardCard() {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useGetCommunitiesQuery({ page: 1, page_size: POOL });
 
   const top = useMemo(
@@ -28,15 +30,15 @@ export function LeaderboardCard() {
         <div>
           <h2 id="pulse-title" className="flex items-center gap-2.5 text-lg font-bold text-slate-900">
             <Trophy className="size-5 text-amber-500" aria-hidden />
-            Le pouls des communautés
+            {t('home.leaderboard.title')}
           </h2>
-          <p className="mt-1.5 text-sm text-slate-500">Les guildes qui rassemblent le plus de développeurs.</p>
+          <p className="mt-1.5 text-sm text-slate-500">{t('home.leaderboard.text')}</p>
         </div>
         <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-hidden />
       </div>
 
       {isLoading ? (
-        <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label="Chargement du classement">
+        <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label={t('home.leaderboard.loading')}>
           {Array.from({ length: TOP }, (_, i) => (
             <li key={i} className="flex items-center gap-3 py-4">
               <Skeleton className="size-7 shrink-0 rounded-full" />
@@ -50,10 +52,10 @@ export function LeaderboardCard() {
         </ol>
       ) : top.length === 0 ? (
         <p className="mt-5 border-y border-slate-100 py-8 text-center text-sm text-slate-500">
-          {isError ? 'Le classement est momentanément indisponible.' : 'Les premières communautés arrivent bientôt.'}
+          {isError ? t('home.leaderboard.unavailable') : t('home.leaderboard.soon')}
         </p>
       ) : (
-        <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label="Communautés les plus suivies">
+        <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label={t('home.leaderboard.label')}>
           {top.map((community, i) => (
             <li key={community.id}>
               <Link to={`/communities/${community.slug}`} className="group flex items-center gap-3 py-4">
@@ -71,7 +73,7 @@ export function LeaderboardCard() {
                   <span className="mt-0.5 flex items-center gap-3 text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <Users className="size-3" aria-hidden />
-                      {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
+                      {t('home.card.members', { count: community.members_count, formatted: formatCompact(community.members_count) })}
                     </span>
                     {/* <span className="flex items-center gap-1">
                       <FileText className="size-3" aria-hidden />
@@ -85,7 +87,7 @@ export function LeaderboardCard() {
         </ol>
       )}
 
-      <p className="mt-4 text-center text-xs text-slate-500">Classées par nombre de membres</p>
+      <p className="mt-4 text-center text-xs text-slate-500">{t('home.leaderboard.footnote')}</p>
     </section>
   );
 }

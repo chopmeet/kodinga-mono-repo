@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { customToast } from '@kodinga/ui';
 import { useCreateProjectMutation, useUpdateProjectMutation } from '@/utils/api/community/community.api';
-import { parseApiError, toFrench } from '@/utils/api/errors';
+import { parseApiError, translateApiMessage } from '@/utils/api/errors';
 import type { Technology } from '@/utils/api/opportunity/opportunity.type';
 import type { Project, ProjectWriteData } from '@/utils/api/project/project.type';
 
@@ -58,7 +58,7 @@ const fromProject = (p: Project): ProjectFormValues => ({
 const flatMessage = (value: unknown): string => {
   if (Array.isArray(value)) return value.length ? flatMessage(value[0]) : '';
   if (value && typeof value === 'object') return flatMessage(Object.values(value));
-  return toFrench(String(value ?? ''));
+  return translateApiMessage(String(value ?? ''));
 };
 
 /**

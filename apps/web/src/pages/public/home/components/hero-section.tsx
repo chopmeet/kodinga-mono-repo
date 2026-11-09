@@ -15,6 +15,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kodinga/ui';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
@@ -73,6 +74,8 @@ function StackChip({
 }
 
 export function HeroSection({ stack, onStackChange }: Props) {
+  const { t } = useTranslation();
+  const label = (id: StackId) => t(`home.stacks.${id}`);
   const query = useAppSelector((s) => s.search.query);
   const dispatch = useAppDispatch();
   const searchRef = useRef<HTMLDivElement>(null);
@@ -100,10 +103,10 @@ export function HeroSection({ stack, onStackChange }: Props) {
       <div className="mx-auto flex max-w-[1440px] flex-col items-center text-center">
         <p className="md:flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase hidden">
           <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-          Les bonnes personnes. Les bonnes connexions.
+          {t('home.hero.eyebrow')}
         </p>
         <h1 className="mt-6 max-w-6xl text-4xl leading-[1.05] font-bold tracking-tight text-balance text-slate-900 sm:text-5xl lg:text-6xl 2xl:text-7xl">
-          Trouvez votre <span className="text-primary">communauté tech.</span>
+          {t('home.hero.titleStart')} <span className="text-primary">{t('home.hero.titleHighlight')}</span>
         </h1>
 
         <div ref={searchRef} role="search" className="mt-10 w-full max-w-3xl">
@@ -118,18 +121,18 @@ export function HeroSection({ stack, onStackChange }: Props) {
             <input
               id="community-search"
               type="search"
-              aria-label="Rechercher une communauté"
-              placeholder="Une stack, une ville, une communauté…"
+              aria-label={t('home.hero.searchLabel')}
+              placeholder={t('home.hero.searchPlaceholder')}
               value={query}
               onChange={(e) => dispatch(onSetSearchQuery(e.target.value))}
               className="h-12 min-w-0 flex-1 bg-transparent text-base text-slate-900 outline-none placeholder:text-slate-500"
             />
             <button
               type="submit"
-              aria-label="Voir les résultats"
+              aria-label={t('home.hero.seeResults')}
               className="flex h-12 shrink-0 items-center gap-2 rounded-lg bg-blue-900 px-5 text-[15px] font-semibold text-white transition-colors hover:bg-blue-950"
             >
-              <span className="hidden sm:inline">Explorer</span>
+              <span className="hidden sm:inline">{t('home.hero.explore')}</span>
               <ArrowRight className="size-4.5" />
             </button>
           </form>
@@ -137,13 +140,13 @@ export function HeroSection({ stack, onStackChange }: Props) {
 
         {/* Shrinks to its content: centered when it fits, scrolls from the start when it does not */}
         <div className="no-scrollbar mx-auto mt-7 flex w-fit max-w-full gap-2.5 overflow-x-auto px-1 py-1 sm:gap-3">
-          <StackChip active={stack === null} icon={Shapes} label="Tout explorer" onClick={() => onStackChange(null)} />
+          <StackChip active={stack === null} icon={Shapes} label={t('home.hero.exploreAll')} onClick={() => onStackChange(null)} />
           {stacks.slice(0, VISIBLE_STACKS).map((s) => (
             <StackChip
               key={s.id}
               active={stack === s.id}
               icon={stackIcons[s.id]}
-              label={s.label}
+              label={label(s.id)}
               onClick={() => onStackChange(stack === s.id ? null : s.id)}
             />
           ))}
@@ -157,7 +160,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
                     : 'border-white/80 bg-white/85 text-slate-700 backdrop-blur hover:border-slate-200 hover:text-slate-900'
                 )}
               >
-                {stacks.slice(VISIBLE_STACKS).find((s) => s.id === stack)?.label ?? 'Plus…'}
+                {stack && stacks.slice(VISIBLE_STACKS).some((s) => s.id === stack) ? label(stack) : t('home.hero.more')}
                 <ChevronDown className="size-4" aria-hidden />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -166,7 +169,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
                   return (
                     <DropdownMenuItem key={s.id} onSelect={() => onStackChange(stack === s.id ? null : s.id)}>
                       <Icon />
-                      {s.label}
+                      {label(s.id)}
                     </DropdownMenuItem>
                   );
                 })}
@@ -177,7 +180,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
 
         <p className="mt-10 flex items-center gap-2 text-sm text-slate-500">
           <Users className="size-4" aria-hidden />
-          Des communautés, des idées, et une place pour vous.
+          {t('home.hero.tagline')}
         </p>
       </div>
     </section>

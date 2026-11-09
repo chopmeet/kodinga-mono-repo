@@ -1,5 +1,6 @@
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { Button } from '@kodinga/ui';
@@ -14,6 +15,7 @@ const MAX_SHOWN = 3;
  * an invitation would not reach: they are left out with the teams of the page.
  */
 export function TeammateSuggestions({ page, hackathonId }: { page: HackathonPage; hackathonId: string }) {
+  const { t } = useTranslation();
   const { data = [] } = useGetTeammateSuggestionsQuery({ slug: page.slug, hackathon_id: hackathonId });
   const [inviting, setInviting] = useState<string | null>(null);
   const taken = new Set(page.teams.flatMap((t) => t.members.map((m) => m.user.id)));
@@ -29,9 +31,9 @@ export function TeammateSuggestions({ page, hackathonId }: { page: HackathonPage
   return (
     <section aria-labelledby="teammates-title" className="mt-5 border-t border-slate-100 pt-5">
       <h3 id="teammates-title" className="text-sm font-semibold text-slate-900">
-        Coéquipiers suggérés
+        {t('hackathon.team.suggested')}
       </h3>
-      <ul className="mt-2 flex flex-col divide-y divide-slate-100" aria-label="Coéquipiers suggérés">
+      <ul className="mt-2 flex flex-col divide-y divide-slate-100" aria-label={t('hackathon.team.suggested')}>
         {suggestions.map((s) => {
           const name = getName(s) || s.username;
           return (
@@ -46,8 +48,8 @@ export function TeammateSuggestions({ page, hackathonId }: { page: HackathonPage
                   </span>
                 ))}
               </span>
-              <Button size="sm" variant="outline" disabled={page.isInviting} isLoading={inviting === s.username} onClick={() => invite(s.username)} aria-label={`Inviter ${name}`}>
-                <UserPlus /> Inviter
+              <Button size="sm" variant="outline" disabled={page.isInviting} isLoading={inviting === s.username} onClick={() => invite(s.username)} aria-label={t('hackathon.team.inviteName', { name })}>
+                <UserPlus /> {t('hackathon.team.inviteButton')}
               </Button>
             </li>
           );

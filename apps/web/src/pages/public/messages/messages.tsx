@@ -1,4 +1,5 @@
 import { MessagesSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
 import { cn } from '@kodinga/ui';
@@ -8,6 +9,7 @@ import { Thread } from './components/thread';
 import UseMessages from './form/UseMessages';
 
 function MessagesContent() {
+  const { t } = useTranslation();
   const page = UseMessages();
   const open = !!page.conversationId;
 
@@ -21,9 +23,9 @@ function MessagesContent() {
         <section className={cn('min-h-0', !open && 'hidden md:block')}>
           {page.notFound ? (
             <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-              <p className="font-semibold text-slate-900">Conversation introuvable</p>
+              <p className="font-semibold text-slate-900">{t('inbox.messages.notFound')}</p>
               <Link to="/messages" className="mt-2 text-sm font-semibold text-blue-900 hover:underline">
-                Retour aux messages
+                {t('inbox.messages.back')}
               </Link>
             </div>
           ) : page.current ? (
@@ -31,8 +33,8 @@ function MessagesContent() {
           ) : (
             <div className="flex h-full flex-col items-center justify-center bg-slate-50 p-6 text-center">
               <MessagesSquare className="size-10 text-slate-300" />
-              <p className="mt-3 font-semibold text-slate-900">Vos conversations</p>
-              <p className="mt-1 max-w-sm text-sm text-slate-500">Choisissez une conversation, ou écrivez à un développeur depuis son profil.</p>
+              <p className="mt-3 font-semibold text-slate-900">{t('inbox.messages.yours')}</p>
+              <p className="mt-1 max-w-sm text-sm text-slate-500">{t('inbox.messages.choose')}</p>
             </div>
           )}
         </section>

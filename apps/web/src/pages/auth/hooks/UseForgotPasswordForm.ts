@@ -1,18 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { useForgotPasswordMutation } from '@/utils/api/auth/auth.api';
 import { parseApiError } from '@/utils/api/errors';
 
-const forgotSchema = z.object({
-  email: z.string().trim().min(1, 'Saisissez votre email').email('Adresse email invalide'),
-});
+const forgotSchema = (t: TFunction) =>
+  z.object({
+    email: z.string().trim().min(1, t('auth.validation.emailRequired')).email(t('auth.validation.emailInvalid')),
+  });
 
-type ForgotValues = z.infer<typeof forgotSchema>;
+type ForgotValues = z.infer<ReturnType<typeof forgotSchema>>;
 
 function UseForgotPasswordForm() {
+  const { t } = useTranslation();
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   // The api never says whether the account exists: once sent, we just show the confirmation
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -24,7 +28,7 @@ function UseForgotPasswordForm() {
     setError,
     getValues,
     formState: { errors },
-  } = useForm<ForgotValues>({ resolver: zodResolver(forgotSchema) });
+  } = useForm<ForgotValues>({ resolver: zodResolver(forgotSchema(t)) });
 
   const send = async (email: string) => {
     setFormError(null);
