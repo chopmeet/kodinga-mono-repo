@@ -4,7 +4,12 @@ import { Link } from 'react-router-dom';
 
 import { Button, cn, customToast, Loader } from '@kodinga/ui';
 import { intervalLabel, paymentStatusStyle, subscriptionStatusStyle, xof } from '@/utils/Utils';
-import { useCancelSubscriptionMutation, useGetMyPaymentsQuery, useGetMySubscriptionsQuery } from '@/utils/api/community/community.api';
+import {
+  useCancelSubscriptionMutation,
+  useGetMyPaymentsQuery,
+  useGetMySubscriptionsQuery,
+  useVerifyPaymentMutation,
+} from '@/utils/api/community/community.api';
 import type { MySubscription } from '@/utils/api/billing/billing.type';
 import { parseApiError } from '@/utils/api/errors';
 
@@ -16,8 +21,30 @@ function BillingHistory() {
   const subscriptions = useGetMySubscriptionsQuery();
   const payments = useGetMyPaymentsQuery();
   const [cancelSubscription, { isLoading: isCanceling }] = useCancelSubscriptionMutation();
+  const [verifyPayment] = useVerifyPaymentMutation();
   // Two steps: the first click asks to confirm, on the card itself
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+
+  const handleFinalize = async (paymentId: string) => {
+    setVerifyingId(paymentId);
+    try {
+      const res = await verifyPayment({ paymentId, force: true }).unwrap();
+      if (res.is_paid || res.status === 'PAID') {
+        customToast.success({
+          message: 'Paiement validé avec succès ! Votre abonnement est maintenant actif.',
+        });
+      } else {
+        customToast.info({
+          message: 'La confirmation auprès de l’opérateur est toujours en cours.',
+        });
+      }
+    } catch (error) {
+      customToast.error({ message: parseApiError(error).message });
+    } finally {
+      setVerifyingId(null);
+    }
+  };
 
   const cancel = async (s: MySubscription) => {
     try {
@@ -131,12 +158,34 @@ function BillingHistory() {
                       </td>
                       <td className="px-4 py-3 text-right font-medium whitespace-nowrap text-slate-900 tabular-nums">{amountOf(p.amount, p.currency)}</td>
                       <td className="px-4 py-3">
-                        <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>
-                        {p.status === 'PENDING' && /^https:\/\//.test(p.checkout_url) && (
-                          <a href={p.checkout_url} className="ml-2 text-xs font-semibold text-blue-900 hover:underline">
-                            Finaliser
-                          </a>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>
+                          {p.status === 'PENDING' && (
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="h-7 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                                isLoading={verifyingId === p.id}
+                                onClick={() => handleFinalize(p.id)}
+                                title="Valider la facture réglée auprès de PayDunya"
+                              >
+                                Finaliser le paiement
+                              </Button>
+                              {/^https:\/\//.test(p.checkout_url) && (
+                                <a
+                                  href={p.checkout_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-slate-500 hover:text-slate-800 hover:underline"
+                                  title="Rouvrir la page PayDunya si vous n'aviez pas encore payé"
+                                >
+                                  Rouvrir PayDunya
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

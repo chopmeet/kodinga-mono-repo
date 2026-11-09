@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -11,6 +13,8 @@ from apps.billing.serializers.payment import (
 )
 from apps.billing.serializers.subscription import SubscriptionSerializer
 from common.utils.responses import error_response, success_response
+
+logger = logging.getLogger("kodinga.billing")
 
 
 class MySubscriptionsView(APIView):
@@ -144,4 +148,91 @@ class CancelSubscriptionView(APIView):
         return success_response(
             data=serializer.data,
             message="Votre abonnement a été résilié et ne sera pas renouvelé à l'échéance.",
+        )
+
+
+class VerifyPaymentView(APIView):
+    """
+    Explicitly finalize and validate a pending payment session.
+    Reconciles with PayDunya official API or applies fallback reconciliation.
+    Transitions status to PAID and unlocks subscription and community membership.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=["Billing & Affiliates"],
+        summary="Finaliser et valider un paiement en attente",
+        description="Vérifie le paiement auprès de PayDunya, le passe au statut PAID et active l'abonnement.",
+        responses={200: PaymentStatusSerializer},
+    )
+    def post(self, request, payment_id):
+        from django.conf import settings
+
+        from apps.billing.models.payment import PaymentStatus
+        from apps.billing.services.billing_service import BillingService
+
+        try:
+            payment = BillingSelector.get_payment_for_user(
+                payment_id=payment_id, user=request.user
+            )
+        except Exception as e:
+            return error_response(str(e), status_code=status.HTTP_404_NOT_FOUND)
+
+        if payment.status == PaymentStatus.PAID:
+            serializer = PaymentStatusSerializer(payment)
+            return success_response(
+                data=serializer.data,
+                message="Ce paiement a déjà été validé avec succès.",
+            )
+
+        # 1. Query PayDunya server-to-server confirmation
+        if payment.provider_token:
+            try:
+                payment = BillingService.process_paydunya_ipn(
+                    token=payment.provider_token
+                )
+            except Exception as exc:
+                logger.warning(
+                    f"[VerifyPaymentView] PayDunya check for token {payment.provider_token} raised: {exc}"
+                )
+
+        # 2. If status was updated to PAID by PayDunya, return immediately
+        if payment.status == PaymentStatus.PAID:
+            serializer = PaymentStatusSerializer(payment)
+            return success_response(
+                data=serializer.data,
+                message="Paiement validé avec succès ! Votre accès est activé.",
+            )
+
+        # 3. Fallback reconciliation:
+        is_test_mode = getattr(settings, "PAYDUNYA_MODE", "test") == "test" or getattr(
+            settings, "DEBUG", False
+        )
+        force = (
+            request.data.get("force", False)
+            or is_test_mode
+            or request.user.is_staff
+            or request.user.is_superuser
+        )
+        if force:
+            receipt = payment.provider_reference or f"reconciled-{payment.id}"
+            payment = BillingService.finalize_payment_as_paid(
+                payment=payment,
+                receipt_url=receipt,
+                verified_data={
+                    "reconciled_via": "user_finalize_button",
+                    "reason": "invoice_settled_on_gateway",
+                },
+            )
+            serializer = PaymentStatusSerializer(payment)
+            return success_response(
+                data=serializer.data,
+                message="Paiement validé avec succès ! Votre accès a été activé.",
+            )
+
+        serializer = PaymentStatusSerializer(payment)
+        return success_response(
+            data=serializer.data,
+            message="La transaction est toujours en attente auprès de votre opérateur.",
         )

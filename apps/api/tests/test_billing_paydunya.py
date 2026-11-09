@@ -724,7 +724,7 @@ class TestPayDunyaBilling:
             f"/api/v1/billing/communities/{community.slug}/subscribers/"
         )
         assert res_sub.status_code == status.HTTP_200_OK
-        subs_data = (res_sub.data.get("data") or res_sub.data)
+        subs_data = res_sub.data.get("data") or res_sub.data
         assert len(subs_data) == 1
         assert subs_data[0]["user"]["username"] == user_bob.username
 
@@ -733,7 +733,7 @@ class TestPayDunyaBilling:
             f"/api/v1/billing/communities/{community.slug}/transactions/"
         )
         assert res_tx.status_code == status.HTTP_200_OK
-        tx_data = (res_tx.data.get("data") or res_tx.data)
+        tx_data = res_tx.data.get("data") or res_tx.data
         assert len(tx_data) == 1
         assert Decimal(str(tx_data[0]["platform_fee"])) == Decimal("500.00")
         assert Decimal(str(tx_data[0]["net_amount"])) == Decimal("4500.00")
@@ -743,7 +743,7 @@ class TestPayDunyaBilling:
             f"/api/v1/billing/communities/{community.slug}/revenue/"
         )
         assert res_rev.status_code == status.HTTP_200_OK
-        rev_data = (res_rev.data.get("data") or res_rev.data)
+        rev_data = res_rev.data.get("data") or res_rev.data
         assert Decimal(str(rev_data["available_balance"])) == Decimal("9000.00")
         assert len(rev_data["monthly_revenue"]) >= 1
 
@@ -771,3 +771,53 @@ class TestPayDunyaBilling:
         )
         assert sec_res.status_code == status.HTTP_403_FORBIDDEN
 
+    @patch("apps.billing.gateways.paydunya.PayDunyaGateway.confirm_invoice")
+    def test_verify_payment_endpoint_reconciles_and_activates_access(
+        self,
+        mock_confirm_invoice,
+        api_client,
+        user_alice,
+        community_plan,
+    ):
+        """
+        Verify that POST /api/v1/billing/payments/<payment_id>/verify/ directly
+        reconciles with PayDunya, handles outer joins properly without Postgres lock error,
+        marks the payment PAID, and activates subscription and community membership.
+        """
+        community = community_plan.community
+        payment = Payment.objects.create(
+            user=user_alice,
+            plan=community_plan,
+            amount=community_plan.price,
+            currency="XOF",
+            status=PaymentStatus.PENDING,
+            provider="paydunya",
+            provider_token="test_token_verify_endpoint",
+        )
+
+        mock_confirm_invoice.return_value = {
+            "response_code": "00",
+            "status": "completed",
+            "receipt_url": "https://paydunya.com/receipt.pdf",
+            "custom_data": {"payment_id": str(payment.id)},
+        }
+
+        api_client.force_authenticate(user=user_alice)
+        res = api_client.post(f"/api/v1/billing/payments/{payment.id}/verify/")
+
+        assert res.status_code == status.HTTP_200_OK
+        data = res.data.get("data") or res.data
+        assert data["status"] == "PAID"
+        assert data["is_paid"] is True
+
+        payment.refresh_from_db()
+        assert payment.status == PaymentStatus.PAID
+        assert payment.subscription is not None
+        assert payment.subscription.status == SubscriptionStatus.ACTIVE
+
+        member = CommunityMember.objects.filter(
+            community=community, user=user_alice
+        ).first()
+        assert member is not None
+        assert member.status == MembershipStatus.ACTIVE
+        assert member.role == "member"

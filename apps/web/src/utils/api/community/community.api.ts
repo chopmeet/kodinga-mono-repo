@@ -348,6 +348,20 @@ export const CommunityApi = createApi({
       query: (paymentId) => `billing/payments/${paymentId}/status/`,
       transformResponse: unwrap<PaymentCheck>,
     }),
+    verifyPayment: builder.mutation<PaymentCheck, { paymentId: string; force?: boolean }>({
+      query: ({ paymentId, force }) => ({
+        url: `billing/payments/${paymentId}/verify/`,
+        method: 'POST',
+        body: { force },
+      }),
+      transformResponse: unwrap<PaymentCheck>,
+      invalidatesTags: [
+        { type: 'communities', id: 'my-billing' },
+        'communities',
+        'plans',
+        'my-profile',
+      ],
+    }),
     // Ends the subscription at the end of the paid period (no renewal): access stays until then
     cancelSubscription: builder.mutation<MySubscription, string>({
       query: (subscriptionId) => ({ url: `billing/subscriptions/${subscriptionId}/cancel/`, method: 'POST' }),
@@ -1943,6 +1957,7 @@ export const {
   useGetMySubscriptionsQuery,
   useGetMyPaymentsQuery,
   useGetPaymentStatusQuery,
+  useVerifyPaymentMutation,
   useRequestUploadUrlMutation,
   useConfirmUploadMutation,
   useGetConversationsQuery,

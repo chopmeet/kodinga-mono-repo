@@ -226,6 +226,160 @@ class BillingService:
             return payment, payment.checkout_url
 
     @classmethod
+    def finalize_payment_as_paid(
+        cls,
+        payment: Payment,
+        receipt_url: str = "",
+        verified_data: Optional[dict] = None,
+    ) -> Payment:
+        """
+        Marks a payment as PAID, creates/extends subscription, credits community wallet,
+        and unlocks community membership. Single source of truth for payment completion.
+        """
+        with transaction.atomic():
+            payment = (
+                Payment.objects.select_for_update(of=("self",))
+                .select_related("plan", "plan__community", "user")
+                .get(id=payment.id)
+            )
+
+            if payment.status == PaymentStatus.PAID:
+                return payment
+
+            now = timezone.now()
+            plan = payment.plan
+
+            commission_rate = getattr(
+                settings, "KODINGA_COMMISSION_RATE", Decimal("0.10")
+            )
+            if plan.community:
+                platform_fee = (
+                    payment.amount * Decimal(str(commission_rate))
+                ).quantize(Decimal("0.01"))
+                net_amount = payment.amount - platform_fee
+                payment.platform_fee = platform_fee
+                payment.net_amount = net_amount
+
+                wallet, _ = CommunityWallet.objects.select_for_update().get_or_create(
+                    community=plan.community,
+                    defaults={"currency": payment.currency},
+                )
+                wallet.total_gross += payment.amount
+                wallet.total_platform_fees += platform_fee
+                wallet.total_net += net_amount
+                wallet.available_balance += net_amount
+                wallet.save()
+            else:
+                payment.platform_fee = payment.amount
+                payment.net_amount = Decimal("0.00")
+
+            payment.status = PaymentStatus.PAID
+            payment.paid_at = now
+            if receipt_url:
+                payment.provider_reference = receipt_url
+            if verified_data:
+                payment.raw_callback_data = verified_data
+
+            # Create or extend active Subscription
+            period_end = cls.calculate_period_end(
+                now, plan.billing_interval, plan.interval_count
+            )
+
+            existing_sub = (
+                Subscription.objects.select_for_update()
+                .filter(user=payment.user, plan=plan, status=SubscriptionStatus.ACTIVE)
+                .first()
+            )
+
+            if existing_sub and existing_sub.current_period_end > now:
+                new_period_end = cls.calculate_period_end(
+                    existing_sub.current_period_end,
+                    plan.billing_interval,
+                    plan.interval_count,
+                )
+                existing_sub.current_period_end = new_period_end
+                existing_sub.paydunya_token = payment.provider_token
+                existing_sub.cancel_at_period_end = False
+                existing_sub.save(
+                    update_fields=[
+                        "current_period_end",
+                        "paydunya_token",
+                        "cancel_at_period_end",
+                        "updated_at",
+                    ]
+                )
+                subscription = existing_sub
+            else:
+                subscription = Subscription.objects.create(
+                    user=payment.user,
+                    plan=plan,
+                    community=plan.community,
+                    status=SubscriptionStatus.ACTIVE,
+                    current_period_start=now,
+                    current_period_end=period_end,
+                    paydunya_token=payment.provider_token,
+                )
+
+            payment.subscription = subscription
+            payment.save()
+
+            # Unlock Community Membership if plan is community-specific
+            if plan.community:
+                from django.db.models import F
+
+                from apps.communities.models.community import Community
+
+                member, created = (
+                    CommunityMember.objects.select_for_update().get_or_create(
+                        community=plan.community,
+                        user=payment.user,
+                        defaults={
+                            "role": CommunityRole.MEMBER,
+                            "status": MembershipStatus.ACTIVE,
+                        },
+                    )
+                )
+                if created:
+                    Community.objects.filter(id=plan.community_id).update(
+                        members_count=F("members_count") + 1
+                    )
+                elif member.status not in [
+                    MembershipStatus.ACTIVE,
+                    MembershipStatus.BANNED,
+                ]:
+                    from apps.memberships.models.sanction import (
+                        MemberSanction,
+                        SanctionType,
+                    )
+
+                    has_active_suspension = MemberSanction.objects.filter(
+                        member=member,
+                        sanction_type=SanctionType.SUSPENSION,
+                        is_active=True,
+                    ).exists()
+                    if not has_active_suspension:
+                        member.status = MembershipStatus.ACTIVE
+                        member.save(update_fields=["status", "updated_at"])
+                        Community.objects.filter(id=plan.community_id).update(
+                            members_count=F("members_count") + 1
+                        )
+
+            try:
+                ref_code = payment.referral_code
+                AffiliateService.process_first_subscription_commission(
+                    payment, referral_code=ref_code
+                )
+            except Exception as aff_err:
+                logger.warning(
+                    f"[Billing] Affiliate commission processing failed for Payment {payment.id}: {aff_err}"
+                )
+
+            logger.info(
+                f"[Billing] Payment {payment.id} confirmed and Subscription {subscription.id} activated successfully."
+            )
+            return payment
+
+    @classmethod
     def process_paydunya_ipn(
         cls, token: str, raw_payload: Optional[dict] = None
     ) -> Payment:
@@ -240,17 +394,53 @@ class BillingService:
         verified_data = PayDunyaGateway.confirm_invoice(token)
         if not isinstance(verified_data, dict):
             verified_data = {}
-        paydunya_status = str(verified_data.get("status", "")).lower()
+
+        invoice_obj = verified_data.get("invoice")
+        if not isinstance(invoice_obj, dict):
+            invoice_obj = {}
+
+        data_obj = verified_data.get("data")
+        if not isinstance(data_obj, dict):
+            data_obj = {}
+
+        # Look in all potential status locations from PayDunya API responses
+        raw_status = (
+            verified_data.get("status")
+            or invoice_obj.get("status")
+            or data_obj.get("status")
+            or verified_data.get("transaction_status")
+            or ""
+        )
+        paydunya_status = str(raw_status).strip().lower()
 
         # 2. Extract payment id or token to identify record (guard against PHP [] list serialization)
-        custom_data = verified_data.get("custom_data")
+        custom_data = (
+            verified_data.get("custom_data")
+            or invoice_obj.get("custom_data")
+            or data_obj.get("custom_data")
+        )
         if not isinstance(custom_data, dict):
             custom_data = {}
         payment_id = custom_data.get("payment_id")
 
+        SUCCESS_STATUSES = {
+            "completed",
+            "paid",
+            "success",
+            "succeeded",
+            "confirmée",
+            "confirmee",
+            "succès",
+            "succes",
+            "payé",
+            "paye",
+        }
+        CANCEL_STATUSES = {"cancelled", "canceled", "annulée", "annulee"}
+        FAIL_STATUSES = {"failed", "fail", "échoué", "echoue", "error"}
+
         # 3. Process DB state transition with pessimistic locking inside transaction
         with transaction.atomic():
-            payment_qs = Payment.objects.select_for_update().select_related(
+            payment_qs = Payment.objects.select_for_update(of=("self",)).select_related(
                 "plan", "plan__community", "user"
             )
             payment = None
@@ -277,161 +467,29 @@ class BillingService:
                 return payment
 
             # Handle transaction statuses
-            if paydunya_status in ["completed", "paid", "success"]:
-                invoice_obj = verified_data.get("invoice")
-                if not isinstance(invoice_obj, dict):
-                    invoice_obj = {}
+            if paydunya_status in SUCCESS_STATUSES:
                 receipt_url = (
                     verified_data.get("receipt_url")
-                    or invoice_obj.get("receipt_url", "")
+                    or verified_data.get("receiptURL")
+                    or invoice_obj.get("receipt_url")
+                    or invoice_obj.get("receiptURL")
+                    or data_obj.get("receipt_url")
                     or ""
                 )
-                now = timezone.now()
-                plan = payment.plan
-
-                # Calculate Kodinga Platform Commission & Creator Net
-                commission_rate = getattr(
-                    settings, "KODINGA_COMMISSION_RATE", Decimal("0.10")
-                )
-                if plan.community:
-                    platform_fee = (
-                        payment.amount * Decimal(str(commission_rate))
-                    ).quantize(Decimal("0.01"))
-                    net_amount = payment.amount - platform_fee
-                    payment.platform_fee = platform_fee
-                    payment.net_amount = net_amount
-
-                    # Credit Community Wallet
-                    wallet, _ = (
-                        CommunityWallet.objects.select_for_update().get_or_create(
-                            community=plan.community,
-                            defaults={"currency": payment.currency},
-                        )
-                    )
-                    wallet.total_gross += payment.amount
-                    wallet.total_platform_fees += platform_fee
-                    wallet.total_net += net_amount
-                    wallet.available_balance += net_amount
-                    wallet.save()
-                else:
-                    payment.platform_fee = payment.amount
-                    payment.net_amount = Decimal("0.00")
-
-                payment.status = PaymentStatus.PAID
-                payment.paid_at = now
-                payment.provider_reference = receipt_url
-                payment.raw_callback_data = verified_data
-
-                # Create or extend active Subscription
-                period_end = cls.calculate_period_end(
-                    now, plan.billing_interval, plan.interval_count
+                return cls.finalize_payment_as_paid(
+                    payment=payment,
+                    receipt_url=receipt_url,
+                    verified_data=verified_data,
                 )
 
-                existing_sub = (
-                    Subscription.objects.select_for_update()
-                    .filter(
-                        user=payment.user, plan=plan, status=SubscriptionStatus.ACTIVE
-                    )
-                    .first()
-                )
-
-                if existing_sub and existing_sub.current_period_end > now:
-                    # Extend period from current end
-                    new_period_end = cls.calculate_period_end(
-                        existing_sub.current_period_end,
-                        plan.billing_interval,
-                        plan.interval_count,
-                    )
-                    existing_sub.current_period_end = new_period_end
-                    existing_sub.paydunya_token = token
-                    existing_sub.cancel_at_period_end = False
-                    existing_sub.save(
-                        update_fields=[
-                            "current_period_end",
-                            "paydunya_token",
-                            "cancel_at_period_end",
-                            "updated_at",
-                        ]
-                    )
-                    subscription = existing_sub
-                else:
-                    subscription = Subscription.objects.create(
-                        user=payment.user,
-                        plan=plan,
-                        community=plan.community,
-                        status=SubscriptionStatus.ACTIVE,
-                        current_period_start=now,
-                        current_period_end=period_end,
-                        paydunya_token=token,
-                    )
-
-                payment.subscription = subscription
-                payment.save()
-
-                # Unlock Community Membership if plan is community-specific
-                if plan.community:
-                    from django.db.models import F
-
-                    from apps.communities.models.community import Community
-
-                    member, created = (
-                        CommunityMember.objects.select_for_update().get_or_create(
-                            community=plan.community,
-                            user=payment.user,
-                            defaults={
-                                "role": CommunityRole.MEMBER,
-                                "status": MembershipStatus.ACTIVE,
-                            },
-                        )
-                    )
-                    if created:
-                        Community.objects.filter(id=plan.community_id).update(
-                            members_count=F("members_count") + 1
-                        )
-                    elif member.status not in [
-                        MembershipStatus.ACTIVE,
-                        MembershipStatus.BANNED,
-                    ]:
-                        # B2: Check if member has an active disciplinary suspension sanction before reactivating to ACTIVE
-                        from apps.memberships.models.sanction import (
-                            MemberSanction,
-                            SanctionType,
-                        )
-
-                        has_active_suspension = MemberSanction.objects.filter(
-                            member=member,
-                            sanction_type=SanctionType.SUSPENSION,
-                            is_active=True,
-                        ).exists()
-                        if not has_active_suspension:
-                            member.status = MembershipStatus.ACTIVE
-                            member.save(update_fields=["status", "updated_at"])
-                            Community.objects.filter(id=plan.community_id).update(
-                                members_count=F("members_count") + 1
-                            )
-                        else:
-                            logger.info(
-                                f"[Billing] Member {member.id} renewed subscription but remains SUSPENDED due to active disciplinary sanction."
-                            )
-
-                # Process 50% affiliate commission on first paid subscription (isolated so it never rolls back payment)
-                try:
-                    ref_code = payment.referral_code or custom_data.get("referral_code")
-                    AffiliateService.process_first_subscription_commission(
-                        payment, referral_code=ref_code
-                    )
-                except Exception as aff_err:
-                    logger.warning(
-                        f"[Billing] Affiliate commission processing failed for Payment {payment.id}: {aff_err}"
-                    )
-
-                logger.info(
-                    f"[Billing] Payment {payment.id} confirmed and Subscription {subscription.id} activated successfully."
-                )
-                return payment
-
-            elif paydunya_status in ["pending", "in_progress", "created", "processing"]:
-                # Feedback 2: Maintain PENDING if PayDunya returns pending
+            elif paydunya_status in [
+                "pending",
+                "in_progress",
+                "created",
+                "processing",
+                "en attente",
+                "en_attente",
+            ]:
                 logger.info(
                     f"[Billing] Payment {payment.id} is still {paydunya_status}. Maintaining PENDING status."
                 )
@@ -442,7 +500,7 @@ class BillingService:
                 )
                 return payment
 
-            elif paydunya_status in ["cancelled", "canceled"]:
+            elif paydunya_status in CANCEL_STATUSES:
                 payment.status = PaymentStatus.CANCELLED
                 payment.raw_callback_data = verified_data
                 payment.save(
@@ -450,12 +508,20 @@ class BillingService:
                 )
                 return payment
 
-            else:
+            elif paydunya_status in FAIL_STATUSES:
                 payment.status = PaymentStatus.FAILED
                 payment.raw_callback_data = verified_data
                 payment.save(
                     update_fields=["status", "raw_callback_data", "updated_at"]
                 )
+                return payment
+
+            else:
+                logger.warning(
+                    f"[Billing] Unhandled PayDunya status '{paydunya_status}' for Payment {payment.id}"
+                )
+                payment.raw_callback_data = verified_data
+                payment.save(update_fields=["raw_callback_data", "updated_at"])
                 return payment
 
     @classmethod
