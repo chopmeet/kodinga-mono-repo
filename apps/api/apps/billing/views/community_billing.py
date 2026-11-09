@@ -33,7 +33,11 @@ class CommunitySubscribersView(APIView):
         responses={200: CommunitySubscriberSerializer(many=True)}
     )
     def get(self, request, community_slug):
+        from apps.billing.models.payment import Payment
+        from apps.billing.services.billing_service import BillingService
+
         community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        BillingService.reconcile_pending_payments(Payment.objects.filter(plan__community=community))
         subscribers = BillingSelector.get_community_subscribers(community=community)
         serializer = CommunitySubscriberSerializer(subscribers, many=True, context={'request': request})
         return success_response(data=serializer.data)
@@ -52,7 +56,11 @@ class CommunityTransactionsView(APIView):
         responses={200: CommunityTransactionSerializer(many=True)}
     )
     def get(self, request, community_slug):
+        from apps.billing.models.payment import Payment
+        from apps.billing.services.billing_service import BillingService
+
         community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        BillingService.reconcile_pending_payments(Payment.objects.filter(plan__community=community))
         payments = BillingSelector.get_community_payments(community=community)
         serializer = CommunityTransactionSerializer(payments, many=True, context={'request': request})
         return success_response(data=serializer.data)
@@ -71,7 +79,11 @@ class CommunityRevenueView(APIView):
         responses={200: CommunityRevenueOverviewSerializer}
     )
     def get(self, request, community_slug):
+        from apps.billing.models.payment import Payment
+        from apps.billing.services.billing_service import BillingService
+
         community = BillingSelector.get_community_for_creator(community_slug=community_slug, user=request.user)
+        BillingService.reconcile_pending_payments(Payment.objects.filter(plan__community=community))
         revenue_overview = BillingSelector.get_community_revenue_overview(community=community)
         serializer = CommunityRevenueOverviewSerializer(revenue_overview)
         return success_response(data=serializer.data)

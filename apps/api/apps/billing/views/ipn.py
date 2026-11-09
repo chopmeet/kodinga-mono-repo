@@ -33,20 +33,21 @@ class PayDunyaIPNView(APIView):
     def post(self, request):
         logger.info(f"[PayDunya IPN] Received notification: {request.data}")
 
-        # Optional SHA-512 Master Key hash verification as per PayDunya IPN specs
+        # Optional SHA-512 Master Key hash check as per PayDunya IPN specs.
+        # Note: process_paydunya_ipn below queries PayDunya's official server directly using
+        # private API credentials, so we log hash discrepancies without blocking server-verified tokens.
         received_hash = (
             request.data.get('data[hash]')
             or (request.data.get('data', {}).get('hash') if isinstance(request.data.get('data'), dict) else None)
             or request.data.get('hash')
         )
-        master_key = getattr(settings, 'PAYDUNYA_MASTER_KEY', '')
+        master_key = getattr(settings, 'PAYDUNYA_MASTER_KEY', '').strip()
         if received_hash and master_key:
             expected_hash = hashlib.sha512(master_key.encode('utf-8')).hexdigest()
-            if not hmac.compare_digest(str(received_hash).lower(), expected_hash.lower()):
-                logger.warning(f"[PayDunya IPN] Hash mismatch. Expected {expected_hash}, got {received_hash}")
-                return error_response(
-                    "Signature de sécurité PayDunya invalide.",
-                    status_code=status.HTTP_400_BAD_REQUEST
+            if not hmac.compare_digest(str(received_hash).strip().lower(), expected_hash.lower()):
+                logger.warning(
+                    f"[PayDunya IPN] Hash mismatch (continuing with direct API verification). "
+                    f"Expected {expected_hash}, got {received_hash}"
                 )
 
         # Extract invoice token from various PayDunya IPN payload formats

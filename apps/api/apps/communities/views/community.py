@@ -139,6 +139,14 @@ class CommunityDetailView(APIView):
         except Community.DoesNotExist:
             return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
 
+        if request.user and request.user.is_authenticated and community.pricing_type == 'paid':
+            from apps.billing.models.payment import Payment
+            from apps.billing.services.billing_service import BillingService
+
+            BillingService.reconcile_pending_payments(
+                Payment.objects.filter(user=request.user, plan__community=community)
+            )
+
         serializer = CommunityDetailSerializer(community, context={'request': request})
         return success_response(data=serializer.data)
 

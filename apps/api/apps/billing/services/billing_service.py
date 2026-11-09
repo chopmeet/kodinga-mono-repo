@@ -217,10 +217,14 @@ class BillingService:
 
         # 1. Fetch official transaction status from PayDunya official API
         verified_data = PayDunyaGateway.confirm_invoice(token)
+        if not isinstance(verified_data, dict):
+            verified_data = {}
         paydunya_status = str(verified_data.get('status', '')).lower()
 
-        # 2. Extract payment id or token to identify record
-        custom_data = verified_data.get('custom_data', {})
+        # 2. Extract payment id or token to identify record (guard against PHP [] list serialization)
+        custom_data = verified_data.get('custom_data')
+        if not isinstance(custom_data, dict):
+            custom_data = {}
         payment_id = custom_data.get('payment_id')
 
         # 3. Process DB state transition with pessimistic locking inside transaction
@@ -228,7 +232,10 @@ class BillingService:
             payment_qs = Payment.objects.select_for_update().select_related('plan', 'plan__community', 'user')
             payment = None
             if payment_id:
-                payment = payment_qs.filter(id=payment_id).first()
+                try:
+                    payment = payment_qs.filter(id=payment_id).first()
+                except Exception:
+                    payment = None
 
             if not payment:
                 payment = payment_qs.filter(provider_token=token).first()
@@ -243,8 +250,11 @@ class BillingService:
                 return payment
 
             # Handle transaction statuses
-            if paydunya_status == 'completed':
-                receipt_url = verified_data.get('receipt_url') or verified_data.get('invoice', {}).get('receipt_url', '')
+            if paydunya_status in ['completed', 'paid', 'success']:
+                invoice_obj = verified_data.get('invoice')
+                if not isinstance(invoice_obj, dict):
+                    invoice_obj = {}
+                receipt_url = verified_data.get('receipt_url') or invoice_obj.get('receipt_url', '') or ''
                 now = timezone.now()
                 plan = payment.plan
 
@@ -346,9 +356,12 @@ class BillingService:
                                 f"[Billing] Member {member.id} renewed subscription but remains SUSPENDED due to active disciplinary sanction."
                             )
 
-                # Process 50% affiliate commission on first paid subscription
-                ref_code = payment.referral_code or custom_data.get('referral_code')
-                AffiliateService.process_first_subscription_commission(payment, referral_code=ref_code)
+                # Process 50% affiliate commission on first paid subscription (isolated so it never rolls back payment)
+                try:
+                    ref_code = payment.referral_code or custom_data.get('referral_code')
+                    AffiliateService.process_first_subscription_commission(payment, referral_code=ref_code)
+                except Exception as aff_err:
+                    logger.warning(f"[Billing] Affiliate commission processing failed for Payment {payment.id}: {aff_err}")
 
                 logger.info(f"[Billing] Payment {payment.id} confirmed and Subscription {subscription.id} activated successfully.")
                 return payment
@@ -372,3 +385,26 @@ class BillingService:
                 payment.raw_callback_data = verified_data
                 payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
                 return payment
+
+    @classmethod
+    def reconcile_pending_payments(cls, payments_qs) -> None:
+        """
+        Proactively checks up to 3 recent PENDING payments with PayDunya in case
+        the webhook IPN was delayed/blocked or the user returned without hitting ?payment=done.
+        """
+        if getattr(settings, 'IS_TESTING', False):
+            return
+        try:
+            pending_list = list(
+                payments_qs.filter(status=PaymentStatus.PENDING)
+                .exclude(provider_token='')
+                .exclude(provider_token__isnull=True)
+                .order_by('-created_at')[:3]
+            )
+            for p in pending_list:
+                try:
+                    cls.process_paydunya_ipn(token=p.provider_token)
+                except Exception as e:
+                    logger.debug(f"[Billing] Auto-reconcile skipped for Payment {p.id}: {e}")
+        except Exception as e:
+            logger.debug(f"[Billing] reconcile_pending_payments error: {e}")

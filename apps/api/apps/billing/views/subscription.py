@@ -25,6 +25,10 @@ class MySubscriptionsView(APIView):
         responses={200: SubscriptionSerializer(many=True)}
     )
     def get(self, request):
+        from apps.billing.models.payment import Payment
+        from apps.billing.services.billing_service import BillingService
+
+        BillingService.reconcile_pending_payments(Payment.objects.filter(user=request.user))
         subscriptions = BillingSelector.get_user_subscriptions(user=request.user)
         serializer = SubscriptionSerializer(subscriptions, many=True, context={'request': request})
         return success_response(data=serializer.data)
@@ -42,6 +46,10 @@ class MyPaymentsView(APIView):
         responses={200: PaymentDetailSerializer(many=True)}
     )
     def get(self, request):
+        from apps.billing.models.payment import Payment
+        from apps.billing.services.billing_service import BillingService
+
+        BillingService.reconcile_pending_payments(Payment.objects.filter(user=request.user))
         payments = BillingSelector.get_user_payments(user=request.user)
         serializer = PaymentDetailSerializer(payments, many=True, context={'request': request})
         return success_response(data=serializer.data)

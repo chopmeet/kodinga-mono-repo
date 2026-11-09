@@ -14,6 +14,7 @@ import Notifications from '@/pages/public/notifications/notifications';
 import GlobalSearchPage from '@/pages/public/search/search';
 import OpportunityPageView from '@/pages/public/opportunity/opportunity-page';
 import ProjectPageView from '@/pages/public/project/project-page';
+import PaymentReturnRedirect from '@/pages/public/community/payment-return-redirect';
 import Dashboard, { LegacyAccountRedirect, LegacyCommunitiesRedirect } from '@/pages/dashboard/dashboard';
 import DashboardOverview from '@/pages/dashboard/overview/overview';
 import MyCommunities from '@/pages/dashboard/communities/my-communities';
@@ -206,6 +207,14 @@ export const AppRoutes: RouteObject[] = [
         // Old list of the user's communities, now in /dashboard
         path: 'c',
         element: <LegacyCommunitiesRedirect />,
+      },
+      {
+        path: 'payment/success',
+        element: <PaymentReturnRedirect mode="done" />,
+      },
+      {
+        path: 'payment/cancel',
+        element: <PaymentReturnRedirect mode="cancelled" />,
       },
     ],
   },
