@@ -31,7 +31,7 @@ function UseOpportunityPage() {
     offer,
     isLoading: query.isLoading,
     notFound: (query.error as FetchBaseQueryError | undefined)?.status === 404,
-    back: from ? { to: `/communities/${from}?tab=opportunities`, label: 'Opportunités de la communauté' } : { to: '/', label: 'Explorer les communautés' },
+    back: from ? { to: `/communities/${from}?tab=opportunities`, label: 'Opportunités de la communauté' } : { to: '/opportunities', label: 'Toutes les offres' },
     signedIn,
     loginUrl: `/auth/login?next=${encodeURIComponent(pathname + search)}`,
     isPoster: !!offer && offer.poster?.id === meId,

@@ -1,13 +1,17 @@
 import { CalendarDays, FileText, GraduationCap, UserPlus, Users, Wallet } from 'lucide-react';
 
 import { type CardType, OverviewCardItem } from '@kodinga/ui';
-import { useGetCommunityMembersQuery } from '@/utils/api/community/community.api';
+import { useGetCommunityMembersQuery, useGetCommunityRevenueQuery } from '@/utils/api/community/community.api';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
 import { formatCompact } from '@/utils/Utils';
 
 function CommunityOverview({ community }: { community: CommunityListItem }) {
   // Only the total is needed: one pending request per page
   const { data: pending } = useGetCommunityMembersQuery({ slug: community.slug, status: 'pending', page_size: 1 });
+  // Same cache entry as the Paiements tab (billing/communities/<slug>/revenue/, owner or platform admin)
+  const paid = community.pricing_type === 'paid';
+  const revenue = useGetCommunityRevenueQuery(community.slug, { skip: !paid });
+  const revenueValue = revenue.data ? `${formatCompact(Number(revenue.data.total_gross))} FCFA` : revenue.isLoading ? '…' : '—';
 
   const cards: CardType[] = [
     { id: 'members', label: 'Membres', value: formatCompact(community.members_count), icon: <Users size={18} />, color: '#1D4ED8' },
@@ -23,9 +27,9 @@ function CommunityOverview({ community }: { community: CommunityListItem }) {
     { id: 'events', label: 'Événements', value: community.events_count, icon: <CalendarDays size={18} />, color: '#b45309' },
     {
       id: 'revenue',
-      // No billing endpoint per community yet
-      label: community.pricing_type === 'paid' ? 'Revenus (bientôt disponibles)' : 'Communauté gratuite',
-      value: '—',
+      // What the members paid in total, before the Kodinga commission
+      label: paid ? 'Revenus encaissés (total)' : 'Communauté gratuite',
+      value: paid ? revenueValue : '—',
       icon: <Wallet size={18} />,
       color: '#15803d',
     },

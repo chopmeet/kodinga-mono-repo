@@ -11,6 +11,15 @@ export type HackathonStatus =
   | 'judging'
   | 'completed'
   | 'cancelled';
+/** GET hackathons/: every published hackathon of the platform (drafts and secret communities excluded) */
+export type PublicHackathonsQuery = {
+  search?: string;
+  format?: HackathonFormat;
+  theme?: string;
+  status?: HackathonStatus;
+  page?: number;
+  page_size?: number;
+};
 export type ApplicationStatus = 'pending' | 'accepted' | 'rejected' | 'waitlisted' | 'withdrawn';
 export type ParticipationMode = 'individual' | 'team';
 

@@ -83,6 +83,20 @@ afterEach(() => {
 });
 
 describe('Opportunities of a community (members)', () => {
+  it('filters the offers by type on the page (the api ignores the type)', async () => {
+    signIn();
+    const calls = stubApi();
+    renderAppAt('/communities/abidjan-react?tab=opportunities');
+    const list = await screen.findByRole('list', { name: 'Opportunités' }, SLOW);
+    expect(within(list).getByRole('link', { name: 'Développeuse React' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stages' }));
+    expect(await screen.findByText('Aucune offre pour le moment', {}, SLOW)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Emplois' }));
+    expect(await screen.findByRole('link', { name: 'Développeuse React' }, SLOW)).toBeTruthy();
+    expect(calls.filter((c) => c.url.pathname.endsWith('/opportunities/')).every((c) => !c.url.searchParams.has('type'))).toBe(true);
+  });
+
   it('lists the open offers, opens one and applies to it', async () => {
     signIn();
     const calls = stubApi();

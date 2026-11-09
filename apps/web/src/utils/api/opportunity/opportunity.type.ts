@@ -83,6 +83,12 @@ export type OpportunitiesQuery = {
   search?: string;
 };
 
+/**
+ * GET opportunities/ without a community: the open offers the viewer may see (no private or paid
+ * community offer unless member). The api ignores type and workplace: filter those on the page.
+ */
+export type GlobalOpportunitiesQuery = { search?: string; experience?: ExperienceLevel; tech?: string };
+
 /** OpportunityApplicationSerializer */
 export type OpportunityApplication = {
   id: string;

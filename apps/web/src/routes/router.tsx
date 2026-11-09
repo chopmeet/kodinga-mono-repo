@@ -13,6 +13,8 @@ import Messages from '@/pages/public/messages/messages';
 import Notifications from '@/pages/public/notifications/notifications';
 import GlobalSearchPage from '@/pages/public/search/search';
 import OpportunityPageView from '@/pages/public/opportunity/opportunity-page';
+import PublicOpportunities from '@/pages/public/opportunities/public-opportunities';
+import PublicHackathons from '@/pages/public/hackathons/public-hackathons';
 import ProjectPageView from '@/pages/public/project/project-page';
 import PaymentReturnRedirect from '@/pages/public/community/payment-return-redirect';
 import Dashboard, { LegacyAccountRedirect, LegacyCommunitiesRedirect } from '@/pages/dashboard/dashboard';
@@ -165,6 +167,14 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities/:slug/posts/:postId',
         element: <PostDetails />,
+      },
+      {
+        path: 'hackathons',
+        element: <PublicHackathons />,
+      },
+      {
+        path: 'opportunities',
+        element: <PublicOpportunities />,
       },
       {
         path: 'opportunities/:opportunitySlug',

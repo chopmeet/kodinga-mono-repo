@@ -33,6 +33,9 @@ describe('Footer', () => {
     within(footer)
       .getAllByRole('link', { name: /Créer une communauté/ })
       .forEach((link) => expect(link.getAttribute('href')).toBe('/create-community'));
+    const platform = within(footer).getByRole('navigation', { name: 'Plateforme' });
+    expect(within(platform).getByRole('link', { name: 'Hackathons & défis' }).getAttribute('href')).toBe('/hackathons');
+    expect(within(platform).getByRole('link', { name: 'Offres & missions' }).getAttribute('href')).toBe('/opportunities');
     // Pages that do not exist yet: shown, not linked
     const kodinga = within(footer).getByRole('navigation', { name: 'Kodinga' });
     expect(within(kodinga).queryAllByRole('link')).toHaveLength(0);

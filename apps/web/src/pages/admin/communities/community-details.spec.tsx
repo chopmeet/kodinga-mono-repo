@@ -306,6 +306,9 @@ describe('Admin community details', () => {
     expect(screen.getByText('Awa Ndiaye')).toBeTruthy();
     // No action on the owner
     expect(screen.queryByRole('button', { name: 'Actions pour Chidi Okafor' })).toBeNull();
+    // Revenue of the paid community, from billing/communities/<slug>/revenue/
+    const revenueCard = screen.getByText('Revenus encaissés (total)').closest('div')?.parentElement as HTMLElement;
+    await waitFor(() => expect(within(revenueCard).getByText(/^45\s?k FCFA$/)).toBeTruthy(), SLOW);
   });
 
   it('approves a join request through the api', async () => {

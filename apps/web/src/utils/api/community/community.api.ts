@@ -48,6 +48,7 @@ import type {
   HackathonStatus,
   HackathonWriteData,
   HackathonApplyData,
+  PublicHackathonsQuery,
   HackathonSubmissionWriteData,
   SubmissionFileType,
 } from '../hackathon/hackathon.type';
@@ -65,6 +66,7 @@ import type {
 import type { MemberActivity } from '../analytics/member-activity.type';
 import type { Project, ProjectComment, ProjectListItem, ProjectsQuery, ProjectWriteData } from '../project/project.type';
 import type {
+  GlobalOpportunitiesQuery,
   OpportunitiesQuery,
   Opportunity,
   OpportunityApplication,
@@ -1261,6 +1263,11 @@ export const CommunityApi = createApi({
       invalidatesTags: ['notifications'],
     }),
     // Hackathons of a community (apps/hackathons): owner and admins manage them
+    // Every published hackathon of the platform (public page /hackathons)
+    getPublicHackathons: builder.query<ApiPaginated<HackathonListItem>, PublicHackathonsQuery>({
+      query: (params) => ({ url: 'hackathons/', params: cleanParams(params) }),
+      providesTags: ['hackathons'],
+    }),
     getCommunityHackathons: builder.query<ApiPaginated<HackathonListItem>, { slug: string; status?: HackathonStatus; page?: number; page_size?: number }>({
       query: ({ slug, ...params }) => ({ url: `communities/${slug}/hackathons/`, params: cleanParams(params) }),
       providesTags: ['hackathons'],
@@ -1681,6 +1688,12 @@ export const CommunityApi = createApi({
       invalidatesTags: (_result, _error, { projectSlug }) => [{ type: 'projects', id: `${projectSlug}-comments` }],
     }),
     // Opportunities: lists and details wrapped in standard ApiSuccess envelope
+    // Open offers of the whole platform the viewer may see (public page /opportunities)
+    getOpportunities: builder.query<OpportunityListItem[], GlobalOpportunitiesQuery>({
+      query: (params) => ({ url: 'opportunities/', params: cleanParams(params) }),
+      transformResponse: (response: ApiSuccess<OpportunityListItem[]>) => unwrap(response),
+      providesTags: ['opportunities'],
+    }),
     getCommunityOpportunities: builder.query<OpportunityListItem[], OpportunitiesQuery>({
       query: (params) => ({ url: 'opportunities/', params: cleanParams(params) }),
       transformResponse: (response: ApiSuccess<OpportunityListItem[]>) => unwrap(response),
@@ -2014,6 +2027,7 @@ export const {
   useMarkAllNotificationsReadMutation,
   useDeleteNotificationMutation,
   useGetCommunityHackathonsQuery,
+  useGetPublicHackathonsQuery,
   useGetHackathonQuery,
   useCreateHackathonMutation,
   useUpdateHackathonMutation,
@@ -2064,6 +2078,7 @@ export const {
   useUpdateLessonProgressMutation,
   useSubmitQuizMutation,
   useGetCommunityOpportunitiesQuery,
+  useGetOpportunitiesQuery,
   useGetOpportunityQuery,
   useCreateOpportunityMutation,
   useUpdateOpportunityMutation,

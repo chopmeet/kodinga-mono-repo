@@ -77,8 +77,8 @@ function Footer() {
   const platform: FooterLink[] = [
     { label: 'Explorer les communautés', onClick: explore },
     { label: 'Créer une communauté', to: '/create-community' },
-    { label: 'Hackathons & défis', soon: true },
-    { label: 'Offres & missions', soon: true },
+    { label: 'Hackathons & défis', to: '/hackathons' },
+    { label: 'Offres & missions', to: '/opportunities' },
   ];
   const account: FooterLink[] = signedIn
     ? [
