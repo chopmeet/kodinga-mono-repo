@@ -53,8 +53,11 @@ class PayDunyaIPNView(APIView):
                 str(received_hash).strip().lower(), expected_hash.lower()
             ):
                 logger.warning(
-                    f"[PayDunya IPN] Hash mismatch (continuing with direct API verification). "
-                    f"Expected {expected_hash}, got {received_hash}"
+                    f"[PayDunya IPN] Hash mismatch. Expected {expected_hash}, got {received_hash}"
+                )
+                return error_response(
+                    "Signature IPN invalide.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
         # Extract invoice token from various PayDunya IPN payload formats
