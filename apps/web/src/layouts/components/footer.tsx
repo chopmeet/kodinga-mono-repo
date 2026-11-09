@@ -8,7 +8,7 @@ import { useAppSelector } from '@/redux/hook';
 import { languages } from '@/utils/i18n';
 import { scrollToResults, useUser } from '@/utils/Utils';
 
-type FooterLink = { label: string; to?: string; onClick?: () => void; soon?: boolean };
+type FooterLink = { label: string; to?: string; onClick?: () => void };
 
 /** Ways to pay a paid community (PayDunya) */
 const PAYMENTS = ['Orange Money', 'Wave', 'MTN MoMo', 'Moov Money', 'Carte bancaire'];
@@ -20,12 +20,7 @@ function Column({ title, links }: { title: string; links: FooterLink[] }) {
       <ul className="mt-5 space-y-3 text-[15px]">
         {links.map((link) => (
           <li key={link.label}>
-            {link.soon ? (
-              <span className="inline-flex cursor-default items-center gap-2 text-white/45" title="Bientôt disponible">
-                {link.label}
-                <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white/60 uppercase">Bientôt</span>
-              </span>
-            ) : link.onClick ? (
+            {link.onClick ? (
               <button type="button" onClick={link.onClick} className="text-white/80 transition-colors hover:text-white">
                 {link.label}
               </button>
@@ -91,12 +86,6 @@ function Footer() {
         { label: 'Créer un compte', to: '/auth/register' },
         { label: 'Mot de passe oublié', to: '/auth/forgot-password' },
       ];
-  const company: FooterLink[] = [
-    { label: 'À propos', soon: true },
-    { label: 'Contact', soon: true },
-    { label: 'Conditions d’utilisation', soon: true },
-    { label: 'Confidentialité', soon: true },
-  ];
 
   return (
     <footer className="relative overflow-hidden bg-blue-950 text-white">
@@ -118,7 +107,7 @@ function Footer() {
           </Link>
         </div>
 
-        <div className="grid gap-12 py-14 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-12 py-14 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div className="max-w-sm">
             <FooterLogo />
             <p className="mt-5 leading-relaxed text-white/70">
@@ -135,7 +124,6 @@ function Footer() {
           </div>
           <Column title="Plateforme" links={platform} />
           <Column title={signedIn ? 'Mon espace' : 'Compte'} links={account} />
-          <Column title="Kodinga" links={company} />
         </div>
 
         {/* Legal line: kept on the left, the bottom right corner belongs to the floating assistant */}

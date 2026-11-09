@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 describe('Footer', () => {
-  it('offers the account links to a visitor, and keeps the pages to come out of reach', async () => {
+  it('offers the platform and account links to a visitor', async () => {
     renderAppAt('/');
     const footer = await screen.findByRole('contentinfo', {}, SLOW);
     const account = within(footer).getByRole('navigation', { name: 'Compte' });
@@ -36,10 +36,9 @@ describe('Footer', () => {
     const platform = within(footer).getByRole('navigation', { name: 'Plateforme' });
     expect(within(platform).getByRole('link', { name: 'Hackathons & défis' }).getAttribute('href')).toBe('/hackathons');
     expect(within(platform).getByRole('link', { name: 'Offres & missions' }).getAttribute('href')).toBe('/opportunities');
-    // Pages that do not exist yet: shown, not linked
-    const kodinga = within(footer).getByRole('navigation', { name: 'Kodinga' });
-    expect(within(kodinga).queryAllByRole('link')).toHaveLength(0);
-    expect(within(kodinga).getByText('Confidentialité')).toBeTruthy();
+    // No page to come is announced anymore
+    expect(within(footer).queryByRole('navigation', { name: 'Kodinga' })).toBeNull();
+    expect(within(footer).queryByText('Bientôt')).toBeNull();
     expect(within(footer).getByRole('list', { name: 'Moyens de paiement' }).textContent).toContain('Wave');
   });
 
