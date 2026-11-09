@@ -21,10 +21,10 @@ from apps.memberships.models.member import (
     MembershipStatus,
 )
 
-logger = logging.getLogger('kodinga.billing')
+logger = logging.getLogger("kodinga.billing")
 
-PRO_MONTHLY_PLAN_SLUG = 'kodinga-pro-monthly'
-PRO_MONTHLY_PRICE_SETTING_KEY = 'pro_monthly_price'
+PRO_MONTHLY_PLAN_SLUG = "kodinga-pro-monthly"
+PRO_MONTHLY_PRICE_SETTING_KEY = "pro_monthly_price"
 
 
 class BillingService:
@@ -42,15 +42,15 @@ class BillingService:
             return None
         if isinstance(raw_val, dict):
             raw_val = (
-                raw_val.get('amount')
-                if 'amount' in raw_val
-                else raw_val.get('price', raw_val.get('value'))
+                raw_val.get("amount")
+                if "amount" in raw_val
+                else raw_val.get("price", raw_val.get("value"))
             )
         if raw_val is None or isinstance(raw_val, (dict, list, bool)):
             return None
         try:
-            dec = Decimal(str(raw_val).strip()).quantize(Decimal('0.01'))
-            return dec if dec > Decimal('0.00') else None
+            dec = Decimal(str(raw_val).strip()).quantize(Decimal("0.01"))
+            return dec if dec > Decimal("0.00") else None
         except (InvalidOperation, ValueError, TypeError):
             return None
 
@@ -63,19 +63,21 @@ class BillingService:
         """
         from apps.administration.models.setting import SystemSetting
 
-        setting = SystemSetting.objects.filter(key=PRO_MONTHLY_PRICE_SETTING_KEY).first()
+        setting = SystemSetting.objects.filter(
+            key=PRO_MONTHLY_PRICE_SETTING_KEY
+        ).first()
         if setting is not None:
             parsed = cls.parse_price_value(setting.value)
             if parsed is not None:
                 return parsed
 
         plan = Plan.objects.filter(slug=PRO_MONTHLY_PLAN_SLUG).first()
-        if plan is not None and plan.price > Decimal('0.00'):
+        if plan is not None and plan.price > Decimal("0.00"):
             return plan.price
 
-        default_env = getattr(settings, 'KODINGA_PRO_MONTHLY_PRICE', '5000.00')
+        default_env = getattr(settings, "KODINGA_PRO_MONTHLY_PRICE", "5000.00")
         parsed_env = cls.parse_price_value(default_env)
-        return parsed_env if parsed_env is not None else Decimal('5000.00')
+        return parsed_env if parsed_env is not None else Decimal("5000.00")
 
     @classmethod
     def get_pro_monthly_price_label(cls) -> str:
@@ -100,7 +102,9 @@ class BillingService:
 
         price_dec = cls.parse_price_value(new_price)
         if price_dec is None:
-            raise ValidationError("Le montant de l'abonnement mensuel doit être un nombre strictement positif.")
+            raise ValidationError(
+                "Le montant de l'abonnement mensuel doit être un nombre strictement positif."
+            )
 
         with transaction.atomic():
             setting = AdministrationService.set_setting(
@@ -119,7 +123,9 @@ class BillingService:
         return plan, setting
 
     @classmethod
-    def calculate_period_end(cls, start_time, billing_interval: str, interval_count: int = 1):
+    def calculate_period_end(
+        cls, start_time, billing_interval: str, interval_count: int = 1
+    ):
         if billing_interval == BillingInterval.MONTH:
             return start_time + timedelta(days=30 * interval_count)
         elif billing_interval == BillingInterval.YEAR:
@@ -143,34 +149,45 @@ class BillingService:
         initializes the PayDunya checkout invoice session, and returns (payment, checkout_url).
         """
         try:
-            plan = Plan.objects.select_related('community').get(id=plan_id, is_active=True)
+            plan = Plan.objects.select_related("community").get(
+                id=plan_id, is_active=True
+            )
         except Plan.DoesNotExist as err:
             raise NotFound("Plan de souscription introuvable ou inactif.") from err
 
         if plan.price <= Decimal("0.00"):
-            raise ValidationError("Ce forfait est gratuit et ne nécessite aucun paiement.")
+            raise ValidationError(
+                "Ce forfait est gratuit et ne nécessite aucun paiement."
+            )
 
         if plan.community:
             if plan.community.owner_id == user.id:
-                raise ValidationError("Vous êtes le propriétaire de cette communauté et y avez déjà un accès complet.")
+                raise ValidationError(
+                    "Vous êtes le propriétaire de cette communauté et y avez déjà un accès complet."
+                )
             is_banned = CommunityMember.objects.filter(
                 community=plan.community,
                 user=user,
                 status=MembershipStatus.BANNED,
             ).exists()
             if is_banned:
-                raise ValidationError("Vous êtes banni de cette communauté et ne pouvez pas souscrire à son abonnement.")
+                raise ValidationError(
+                    "Vous êtes banni de cette communauté et ne pouvez pas souscrire à son abonnement."
+                )
 
             # B2: Check for active disciplinary suspension sanction
             from apps.memberships.models.sanction import MemberSanction, SanctionType
+
             has_active_suspension = MemberSanction.objects.filter(
                 member__community=plan.community,
                 member__user=user,
                 sanction_type=SanctionType.SUSPENSION,
-                is_active=True
+                is_active=True,
             ).exists()
             if has_active_suspension:
-                raise ValidationError("Votre compte fait l'objet d'une suspension disciplinaire active dans cette communauté.")
+                raise ValidationError(
+                    "Votre compte fait l'objet d'une suspension disciplinaire active dans cette communauté."
+                )
 
         with transaction.atomic():
             # Create local pending payment
@@ -180,8 +197,8 @@ class BillingService:
                 amount=plan.price,
                 currency=plan.currency,
                 status=PaymentStatus.PENDING,
-                provider='paydunya',
-                referral_code=referral_code or ''
+                provider="paydunya",
+                referral_code=referral_code or "",
             )
 
             # Initialize PayDunya Checkout
@@ -196,18 +213,22 @@ class BillingService:
                 referral_code=referral_code,
                 return_url=return_url,
                 cancel_url=cancel_url,
-                callback_url=callback_url
+                callback_url=callback_url,
             )
 
-            payment.provider_token = invoice_data['token']
-            payment.checkout_url = invoice_data['checkout_url']
-            payment.save(update_fields=['provider_token', 'checkout_url', 'updated_at'])
+            payment.provider_token = invoice_data["token"]
+            payment.checkout_url = invoice_data["checkout_url"]
+            payment.save(update_fields=["provider_token", "checkout_url", "updated_at"])
 
-            logger.info(f"[Billing] Checkout session created for User={user.username}, Payment={payment.id}, Token={payment.provider_token}")
+            logger.info(
+                f"[Billing] Checkout session created for User={user.username}, Payment={payment.id}, Token={payment.provider_token}"
+            )
             return payment, payment.checkout_url
 
     @classmethod
-    def process_paydunya_ipn(cls, token: str, raw_payload: Optional[dict] = None) -> Payment:
+    def process_paydunya_ipn(
+        cls, token: str, raw_payload: Optional[dict] = None
+    ) -> Payment:
         """
         Idempotent verification of PayDunya IPN callback.
         Calls PayDunya servers directly to verify transaction status before modifying any DB state.
@@ -219,17 +240,19 @@ class BillingService:
         verified_data = PayDunyaGateway.confirm_invoice(token)
         if not isinstance(verified_data, dict):
             verified_data = {}
-        paydunya_status = str(verified_data.get('status', '')).lower()
+        paydunya_status = str(verified_data.get("status", "")).lower()
 
         # 2. Extract payment id or token to identify record (guard against PHP [] list serialization)
-        custom_data = verified_data.get('custom_data')
+        custom_data = verified_data.get("custom_data")
         if not isinstance(custom_data, dict):
             custom_data = {}
-        payment_id = custom_data.get('payment_id')
+        payment_id = custom_data.get("payment_id")
 
         # 3. Process DB state transition with pessimistic locking inside transaction
         with transaction.atomic():
-            payment_qs = Payment.objects.select_for_update().select_related('plan', 'plan__community', 'user')
+            payment_qs = Payment.objects.select_for_update().select_related(
+                "plan", "plan__community", "user"
+            )
             payment = None
             if payment_id:
                 try:
@@ -241,35 +264,49 @@ class BillingService:
                 payment = payment_qs.filter(provider_token=token).first()
 
             if not payment:
-                logger.error(f"[Billing] Payment not found for verified token {token} / id {payment_id}")
+                logger.error(
+                    f"[Billing] Payment not found for verified token {token} / id {payment_id}"
+                )
                 raise NotFound("Paiement local introuvable pour ce jeton PayDunya.")
 
             # Idempotency guard: If already paid, return early without re-executing
             if payment.status == PaymentStatus.PAID:
-                logger.info(f"[Billing] Payment {payment.id} is already marked PAID. Idempotent skip.")
+                logger.info(
+                    f"[Billing] Payment {payment.id} is already marked PAID. Idempotent skip."
+                )
                 return payment
 
             # Handle transaction statuses
-            if paydunya_status in ['completed', 'paid', 'success']:
-                invoice_obj = verified_data.get('invoice')
+            if paydunya_status in ["completed", "paid", "success"]:
+                invoice_obj = verified_data.get("invoice")
                 if not isinstance(invoice_obj, dict):
                     invoice_obj = {}
-                receipt_url = verified_data.get('receipt_url') or invoice_obj.get('receipt_url', '') or ''
+                receipt_url = (
+                    verified_data.get("receipt_url")
+                    or invoice_obj.get("receipt_url", "")
+                    or ""
+                )
                 now = timezone.now()
                 plan = payment.plan
 
                 # Calculate Kodinga Platform Commission & Creator Net
-                commission_rate = getattr(settings, 'KODINGA_COMMISSION_RATE', Decimal('0.10'))
+                commission_rate = getattr(
+                    settings, "KODINGA_COMMISSION_RATE", Decimal("0.10")
+                )
                 if plan.community:
-                    platform_fee = (payment.amount * Decimal(str(commission_rate))).quantize(Decimal('0.01'))
+                    platform_fee = (
+                        payment.amount * Decimal(str(commission_rate))
+                    ).quantize(Decimal("0.01"))
                     net_amount = payment.amount - platform_fee
                     payment.platform_fee = platform_fee
                     payment.net_amount = net_amount
 
                     # Credit Community Wallet
-                    wallet, _ = CommunityWallet.objects.select_for_update().get_or_create(
-                        community=plan.community,
-                        defaults={'currency': payment.currency}
+                    wallet, _ = (
+                        CommunityWallet.objects.select_for_update().get_or_create(
+                            community=plan.community,
+                            defaults={"currency": payment.currency},
+                        )
                     )
                     wallet.total_gross += payment.amount
                     wallet.total_platform_fees += platform_fee
@@ -278,7 +315,7 @@ class BillingService:
                     wallet.save()
                 else:
                     payment.platform_fee = payment.amount
-                    payment.net_amount = Decimal('0.00')
+                    payment.net_amount = Decimal("0.00")
 
                 payment.status = PaymentStatus.PAID
                 payment.paid_at = now
@@ -286,21 +323,36 @@ class BillingService:
                 payment.raw_callback_data = verified_data
 
                 # Create or extend active Subscription
-                period_end = cls.calculate_period_end(now, plan.billing_interval, plan.interval_count)
+                period_end = cls.calculate_period_end(
+                    now, plan.billing_interval, plan.interval_count
+                )
 
-                existing_sub = Subscription.objects.select_for_update().filter(
-                    user=payment.user,
-                    plan=plan,
-                    status=SubscriptionStatus.ACTIVE
-                ).first()
+                existing_sub = (
+                    Subscription.objects.select_for_update()
+                    .filter(
+                        user=payment.user, plan=plan, status=SubscriptionStatus.ACTIVE
+                    )
+                    .first()
+                )
 
                 if existing_sub and existing_sub.current_period_end > now:
                     # Extend period from current end
-                    new_period_end = cls.calculate_period_end(existing_sub.current_period_end, plan.billing_interval, plan.interval_count)
+                    new_period_end = cls.calculate_period_end(
+                        existing_sub.current_period_end,
+                        plan.billing_interval,
+                        plan.interval_count,
+                    )
                     existing_sub.current_period_end = new_period_end
                     existing_sub.paydunya_token = token
                     existing_sub.cancel_at_period_end = False
-                    existing_sub.save(update_fields=['current_period_end', 'paydunya_token', 'cancel_at_period_end', 'updated_at'])
+                    existing_sub.save(
+                        update_fields=[
+                            "current_period_end",
+                            "paydunya_token",
+                            "cancel_at_period_end",
+                            "updated_at",
+                        ]
+                    )
                     subscription = existing_sub
                 else:
                     subscription = Subscription.objects.create(
@@ -310,7 +362,7 @@ class BillingService:
                         status=SubscriptionStatus.ACTIVE,
                         current_period_start=now,
                         current_period_end=period_end,
-                        paydunya_token=token
+                        paydunya_token=token,
                     )
 
                 payment.subscription = subscription
@@ -322,34 +374,40 @@ class BillingService:
 
                     from apps.communities.models.community import Community
 
-                    member, created = CommunityMember.objects.select_for_update().get_or_create(
-                        community=plan.community,
-                        user=payment.user,
-                        defaults={
-                            'role': CommunityRole.MEMBER,
-                            'status': MembershipStatus.ACTIVE
-                        }
+                    member, created = (
+                        CommunityMember.objects.select_for_update().get_or_create(
+                            community=plan.community,
+                            user=payment.user,
+                            defaults={
+                                "role": CommunityRole.MEMBER,
+                                "status": MembershipStatus.ACTIVE,
+                            },
+                        )
                     )
                     if created:
                         Community.objects.filter(id=plan.community_id).update(
-                            members_count=F('members_count') + 1
+                            members_count=F("members_count") + 1
                         )
-                    elif member.status not in [MembershipStatus.ACTIVE, MembershipStatus.BANNED]:
+                    elif member.status not in [
+                        MembershipStatus.ACTIVE,
+                        MembershipStatus.BANNED,
+                    ]:
                         # B2: Check if member has an active disciplinary suspension sanction before reactivating to ACTIVE
                         from apps.memberships.models.sanction import (
                             MemberSanction,
                             SanctionType,
                         )
+
                         has_active_suspension = MemberSanction.objects.filter(
                             member=member,
                             sanction_type=SanctionType.SUSPENSION,
-                            is_active=True
+                            is_active=True,
                         ).exists()
                         if not has_active_suspension:
                             member.status = MembershipStatus.ACTIVE
-                            member.save(update_fields=['status', 'updated_at'])
+                            member.save(update_fields=["status", "updated_at"])
                             Community.objects.filter(id=plan.community_id).update(
-                                members_count=F('members_count') + 1
+                                members_count=F("members_count") + 1
                             )
                         else:
                             logger.info(
@@ -358,32 +416,46 @@ class BillingService:
 
                 # Process 50% affiliate commission on first paid subscription (isolated so it never rolls back payment)
                 try:
-                    ref_code = payment.referral_code or custom_data.get('referral_code')
-                    AffiliateService.process_first_subscription_commission(payment, referral_code=ref_code)
+                    ref_code = payment.referral_code or custom_data.get("referral_code")
+                    AffiliateService.process_first_subscription_commission(
+                        payment, referral_code=ref_code
+                    )
                 except Exception as aff_err:
-                    logger.warning(f"[Billing] Affiliate commission processing failed for Payment {payment.id}: {aff_err}")
+                    logger.warning(
+                        f"[Billing] Affiliate commission processing failed for Payment {payment.id}: {aff_err}"
+                    )
 
-                logger.info(f"[Billing] Payment {payment.id} confirmed and Subscription {subscription.id} activated successfully.")
+                logger.info(
+                    f"[Billing] Payment {payment.id} confirmed and Subscription {subscription.id} activated successfully."
+                )
                 return payment
 
-            elif paydunya_status in ['pending', 'in_progress', 'created', 'processing']:
+            elif paydunya_status in ["pending", "in_progress", "created", "processing"]:
                 # Feedback 2: Maintain PENDING if PayDunya returns pending
-                logger.info(f"[Billing] Payment {payment.id} is still {paydunya_status}. Maintaining PENDING status.")
+                logger.info(
+                    f"[Billing] Payment {payment.id} is still {paydunya_status}. Maintaining PENDING status."
+                )
                 payment.status = PaymentStatus.PENDING
                 payment.raw_callback_data = verified_data
-                payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
+                payment.save(
+                    update_fields=["status", "raw_callback_data", "updated_at"]
+                )
                 return payment
 
-            elif paydunya_status in ['cancelled', 'canceled']:
+            elif paydunya_status in ["cancelled", "canceled"]:
                 payment.status = PaymentStatus.CANCELLED
                 payment.raw_callback_data = verified_data
-                payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
+                payment.save(
+                    update_fields=["status", "raw_callback_data", "updated_at"]
+                )
                 return payment
 
             else:
                 payment.status = PaymentStatus.FAILED
                 payment.raw_callback_data = verified_data
-                payment.save(update_fields=['status', 'raw_callback_data', 'updated_at'])
+                payment.save(
+                    update_fields=["status", "raw_callback_data", "updated_at"]
+                )
                 return payment
 
     @classmethod
@@ -392,19 +464,21 @@ class BillingService:
         Proactively checks up to 3 recent PENDING payments with PayDunya in case
         the webhook IPN was delayed/blocked or the user returned without hitting ?payment=done.
         """
-        if getattr(settings, 'IS_TESTING', False):
+        if getattr(settings, "IS_TESTING", False):
             return
         try:
             pending_list = list(
                 payments_qs.filter(status=PaymentStatus.PENDING)
-                .exclude(provider_token='')
+                .exclude(provider_token="")
                 .exclude(provider_token__isnull=True)
-                .order_by('-created_at')[:3]
+                .order_by("-created_at")[:3]
             )
             for p in pending_list:
                 try:
                     cls.process_paydunya_ipn(token=p.provider_token)
                 except Exception as e:
-                    logger.debug(f"[Billing] Auto-reconcile skipped for Payment {p.id}: {e}")
+                    logger.debug(
+                        f"[Billing] Auto-reconcile skipped for Payment {p.id}: {e}"
+                    )
         except Exception as e:
             logger.debug(f"[Billing] reconcile_pending_payments error: {e}")
