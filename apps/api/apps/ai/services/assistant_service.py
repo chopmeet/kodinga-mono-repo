@@ -8,7 +8,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.models.user import User
 from apps.ai.models.assistant import AssistantConversation, AssistantMessage
-from apps.ai.router import ai_router
+from apps.ai.router import AIProviderStrategy, ai_router
 from apps.ai.schemas import (
     CommunityAnalysisResult,
     CommunityProposalResult,
@@ -41,7 +41,9 @@ class AIAssistantService:
     """
 
     @classmethod
-    def _resolve_user_language(cls, user: Optional[User], requested_language: Optional[str] = None) -> str:
+    def _resolve_user_language(
+        cls, user: Optional[User], requested_language: Optional[str] = None
+    ) -> str:
         """Determines the preferred language: requested -> user profile -> default 'fr'."""
         if requested_language and requested_language in ["fr", "en", "wo", "bm"]:
             return requested_language
@@ -96,10 +98,9 @@ class AIAssistantService:
         q_filter = Q(is_active=True)
         if user and user.is_authenticated:
             if not is_superadmin_user(user):
-                q_filter &= (
-                    Q(privacy_type__in=[CommunityPrivacy.PUBLIC, CommunityPrivacy.PRIVATE])
-                    | Q(id__in=user_joined_community_ids)
-                )
+                q_filter &= Q(
+                    privacy_type__in=[CommunityPrivacy.PUBLIC, CommunityPrivacy.PRIVATE]
+                ) | Q(id__in=user_joined_community_ids)
         else:
             q_filter &= Q(privacy_type=CommunityPrivacy.PUBLIC)
 
@@ -139,7 +140,7 @@ class AIAssistantService:
             c_lang = "fr"
             if hasattr(c, "settings") and c.settings:
                 c_lang = c.settings.default_community_language or "fr"
-            
+
             c_dict = {
                 "id": str(c.id),
                 "name": c.name,
@@ -169,7 +170,9 @@ class AIAssistantService:
             # Check by ID or slug
             db_community = candidates_by_id.get(rec.id)
             if not db_community:
-                db_community = Community.objects.filter(slug=rec.slug, is_active=True).first()
+                db_community = Community.objects.filter(
+                    slug=rec.slug, is_active=True
+                ).first()
 
             if db_community:
                 c_lang = "fr"
@@ -182,12 +185,15 @@ class AIAssistantService:
                     slug=db_community.slug,
                     tagline=db_community.tagline or rec.tagline,
                     description=db_community.description or rec.description,
-                    category=db_community.category.name if db_community.category else rec.category,
+                    category=db_community.category.name
+                    if db_community.category
+                    else rec.category,
                     privacy_type=db_community.privacy_type,
                     pricing_type=db_community.pricing_type,
                     members_count=db_community.members_count,
                     language=c_lang,
-                    relevance_reason=rec.relevance_reason or "Correspond à vos centres d'intérêt.",
+                    relevance_reason=rec.relevance_reason
+                    or "Correspond à vos centres d'intérêt.",
                     match_score=rec.match_score,
                 )
                 verified_recommendations.append(verified_card)
@@ -283,7 +289,9 @@ class AIAssistantService:
         concrete improvements for owners and moderators.
         """
         if not user or not user.is_authenticated:
-            raise PermissionDenied("Authentification requise pour analyser une communauté.")
+            raise PermissionDenied(
+                "Authentification requise pour analyser une communauté."
+            )
 
         community = cls._get_community_with_access_check(community_identifier, user)
 
@@ -292,12 +300,20 @@ class AIAssistantService:
         is_mod_or_admin = CommunityMember.objects.filter(
             community=community,
             user=user,
-            role__in=[CommunityRole.OWNER, CommunityRole.ADMIN, CommunityRole.MODERATOR],
+            role__in=[
+                CommunityRole.OWNER,
+                CommunityRole.ADMIN,
+                CommunityRole.MODERATOR,
+            ],
             status=MembershipStatus.ACTIVE,
         ).exists()
 
-        if not (is_owner or is_mod_or_admin or user.is_staff or is_superadmin_user(user)):
-            raise PermissionDenied("Vous devez être administrateur ou modérateur de cette communauté.")
+        if not (
+            is_owner or is_mod_or_admin or user.is_staff or is_superadmin_user(user)
+        ):
+            raise PermissionDenied(
+                "Vous devez être administrateur ou modérateur de cette communauté."
+            )
 
         resolved_lang = cls._resolve_user_language(user, language)
 
@@ -380,20 +396,27 @@ class AIAssistantService:
 
         # Retrieve or create conversation session
         conversation = None
+        is_new_conversation = False
         if conversation_id:
             try:
                 c_filter = Q(id=conversation_id)
                 if user and user.is_authenticated:
                     # Allow user to access their own conversation or adopt an anonymous guest conversation
-                    c_filter &= (Q(user=user) | Q(user__isnull=True))
+                    c_filter &= Q(user=user) | Q(user__isnull=True)
                 conversation = AssistantConversation.objects.filter(c_filter).first()
-                if conversation and not conversation.user and user and user.is_authenticated:
+                if (
+                    conversation
+                    and not conversation.user
+                    and user
+                    and user.is_authenticated
+                ):
                     conversation.user = user
                     conversation.save(update_fields=["user"])
             except Exception:
                 conversation = None
 
         if not conversation:
+            is_new_conversation = True
             # Create new conversation with clean title preview
             title_preview = clean_message[:50].strip()
             if len(clean_message) > 50:
@@ -405,22 +428,20 @@ class AIAssistantService:
                 context_type="general",
             )
 
-        # Retrieve recent message history (sliding window of latest 10 messages BEFORE this turn)
-        # Ordered chronologically for the LLM
-        recent_messages = list(conversation.messages.order_by("-created_at")[:10])
-        recent_messages.reverse()
-        history = [
-            {"role": m.role, "content": m.content}
-            for m in recent_messages
-            if m.role in ["user", "assistant"]
-        ]
-
-        # Store user message
-        AssistantMessage.objects.create(
-            conversation=conversation,
-            role="user",
-            content=clean_message,
-        )
+        # Retrieve recent message history (sliding window of latest 6 messages BEFORE this turn)
+        history = []
+        if not is_new_conversation:
+            recent_messages = list(
+                conversation.messages.order_by("-created_at").values("role", "content")[
+                    :6
+                ]
+            )
+            recent_messages.reverse()
+            history = [
+                {"role": m["role"], "content": m["content"]}
+                for m in recent_messages
+                if m["role"] in ["user", "assistant"]
+            ]
 
         context = {
             "user_authenticated": bool(user and user.is_authenticated),
@@ -431,40 +452,81 @@ class AIAssistantService:
             context["current_community"] = {
                 "name": community.name,
                 "slug": community.slug,
-                "category": community.category.name if community.category else "Général",
+                "category": community.category.name
+                if community.category
+                else "Général",
             }
 
-        # Check if user is asking for recommendations -> fetch candidate names to ground response
+        # Check if user is asking for recommendations -> fetch candidate cards to ground response
         lower_msg = clean_message.lower()
-        if any(w in lower_msg for w in ["trouve", "trouver", "cherche", "recommande", "rejoindre", "find", "recommend"]):
+        if any(
+            w in lower_msg
+            for w in [
+                "trouve",
+                "trouver",
+                "cherche",
+                "recherche",
+                "recommande",
+                "découvrir",
+                "conseille",
+                "rejoindre",
+                "find",
+                "recommend",
+                "discover",
+            ]
+        ):
             public_communities = list(
                 Community.objects.filter(
                     privacy_type=CommunityPrivacy.PUBLIC, is_active=True
-                ).values("id", "name", "slug", "tagline", "members_count")[:10]
+                )
+                .order_by("-members_count")
+                .values(
+                    "id",
+                    "name",
+                    "slug",
+                    "tagline",
+                    "description",
+                    "category__name",
+                    "privacy_type",
+                    "pricing_type",
+                    "members_count",
+                )[:8]
             )
             context["available_public_communities"] = public_communities
 
+        # User requirement: Exclusively use OpenAI for assistant chat with automatic sub-second response
         chat_result = ai_router.assistant_chat(
             message=clean_message,
             history=history,
             context=context,
             language=resolved_lang,
+            strategy=AIProviderStrategy.OPENAI_ONLY,
         )
 
-        # Store assistant response
-        AssistantMessage.objects.create(
-            conversation=conversation,
-            role="assistant",
-            content=chat_result.reply,
-            metadata={
-                "suggested_follow_ups": chat_result.suggested_follow_ups,
-                "suggested_action": chat_result.suggested_action,
-                "data": chat_result.data,
-            },
-            provider=chat_result.provider,
+        # Persist user + assistant messages in a single DB round-trip
+        now = timezone.now()
+        AssistantMessage.objects.bulk_create(
+            [
+                AssistantMessage(
+                    conversation=conversation,
+                    role="user",
+                    content=clean_message,
+                    created_at=now,
+                ),
+                AssistantMessage(
+                    conversation=conversation,
+                    role="assistant",
+                    content=chat_result.reply,
+                    metadata={
+                        "suggested_follow_ups": chat_result.suggested_follow_ups,
+                        "suggested_action": chat_result.suggested_action,
+                        "data": chat_result.data,
+                    },
+                    provider=chat_result.provider,
+                    created_at=now + timedelta(milliseconds=1),
+                ),
+            ]
         )
-
-        conversation.save(update_fields=["updated_at"])
 
         return {
             "conversation_id": str(conversation.id),
@@ -484,6 +546,7 @@ class AIAssistantService:
         cls, identifier: str, user: Optional[User] = None
     ) -> Community:
         import uuid
+
         is_valid_uuid = False
         try:
             uuid.UUID(str(identifier))
@@ -492,7 +555,9 @@ class AIAssistantService:
             is_valid_uuid = False
 
         if is_valid_uuid:
-            community = Community.objects.filter(Q(id=identifier) | Q(slug=identifier)).first()
+            community = Community.objects.filter(
+                Q(id=identifier) | Q(slug=identifier)
+            ).first()
         else:
             community = Community.objects.filter(slug=identifier).first()
 
@@ -510,6 +575,8 @@ class AIAssistantService:
                     status=MembershipStatus.ACTIVE,
                 ).exists()
                 if not is_member and not user.is_staff:
-                    raise PermissionDenied("Accès restreint à cette communauté secrète.")
+                    raise PermissionDenied(
+                        "Accès restreint à cette communauté secrète."
+                    )
 
         return community

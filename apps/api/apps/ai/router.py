@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 
 class AIProviderStrategy:
-    AUTO = "auto"                     # Gemini first, fallback to OpenAI on failure/quota
-    GEMINI_ONLY = "gemini_only"       # Strictly Gemini, no fallback
-    OPENAI_ONLY = "openai_only"       # Strictly OpenAI, no fallback
-    OPENAI_FIRST = "openai_first"     # OpenAI first, fallback to Gemini
+    AUTO = "auto"  # Gemini first, fallback to OpenAI on failure/quota
+    GEMINI_ONLY = "gemini_only"  # Strictly Gemini, no fallback
+    OPENAI_ONLY = "openai_only"  # Strictly OpenAI, no fallback
+    OPENAI_FIRST = "openai_first"  # OpenAI first, fallback to Gemini
 
     CHOICES = [
         (AUTO, "Automatique (Gemini prioritaire avec secours OpenAI)"),
@@ -83,12 +83,18 @@ class ProviderRouter:
 
         try:
             from django.core.cache import cache
+
             cached_strategy = cache.get("kodinga_ai_provider_strategy")
             if cached_strategy:
                 return cached_strategy
             from apps.administration.models.setting import SystemSetting
+
             setting = SystemSetting.objects.filter(key="ai_provider_strategy").first()
-            if setting and isinstance(setting.value, dict) and "strategy" in setting.value:
+            if (
+                setting
+                and isinstance(setting.value, dict)
+                and "strategy" in setting.value
+            ):
                 strategy = setting.value["strategy"]
                 cache.set("kodinga_ai_provider_strategy", strategy, timeout=300)
                 return strategy
@@ -111,7 +117,9 @@ class ProviderRouter:
             AIProviderStrategy.OPENAI_FIRST,
         ]
         if strategy not in valid_strategies:
-            raise ValueError(f"Stratégie invalide '{strategy}'. Valeurs possibles: {valid_strategies}")
+            raise ValueError(
+                f"Stratégie invalide '{strategy}'. Valeurs possibles: {valid_strategies}"
+            )
 
         SystemSetting.objects.update_or_create(
             key="ai_provider_strategy",
@@ -131,21 +139,34 @@ class ProviderRouter:
         latency_ms: int,
         error_message: str = "",
     ) -> None:
-        """Records metric asynchronously or via database without throwing exceptions."""
-        try:
-            from apps.ai.models.provider_metric import ProviderMetric
+        """Records metric asynchronously in background thread without blocking request latency."""
+        import threading
 
-            ProviderMetric.objects.create(
-                provider=provider,
-                operation=operation,
-                status=status,
-                latency_ms=latency_ms,
-                error_message=error_message[:1000] if error_message else "",
-            )
-        except Exception:
-            pass
+        def _write():
+            try:
+                from django.db import close_old_connections
 
-    def _execute_gemini_attempt(self, operation: str, method_name: str, *args, **kwargs):
+                from apps.ai.models.provider_metric import ProviderMetric
+
+                close_old_connections()
+                ProviderMetric.objects.create(
+                    provider=provider,
+                    operation=operation,
+                    status=status,
+                    latency_ms=latency_ms,
+                    error_message=error_message[:1000] if error_message else "",
+                )
+            except Exception:
+                pass
+
+        if getattr(settings, "IS_TESTING", False):
+            _write()
+        else:
+            threading.Thread(target=_write, daemon=True).start()
+
+    def _execute_gemini_attempt(
+        self, operation: str, method_name: str, *args, **kwargs
+    ):
         call_start = time.time()
         target_func = getattr(self.gemini, method_name)
         result = target_func(*args, **kwargs)
@@ -160,7 +181,9 @@ class ProviderRouter:
         )
         return result
 
-    def _execute_openai_attempt(self, operation: str, method_name: str, *args, **kwargs):
+    def _execute_openai_attempt(
+        self, operation: str, method_name: str, *args, **kwargs
+    ):
         call_start = time.time()
         target_func = getattr(self.openai, method_name)
         result = target_func(*args, **kwargs)
@@ -174,10 +197,14 @@ class ProviderRouter:
         )
         return result
 
-    def _execute_with_fallback(self, operation: str, method_name: str, *args, **kwargs) -> Any:
+    def _execute_with_fallback(
+        self, operation: str, method_name: str, *args, **kwargs
+    ) -> Any:
         start_time = time.time()
         community = kwargs.pop("community", None)
-        strategy = kwargs.pop("strategy", None) or self.get_effective_strategy(community=community)
+        strategy = kwargs.pop("strategy", None) or self.get_effective_strategy(
+            community=community
+        )
 
         gemini_error = None
         openai_error = None
@@ -192,7 +219,9 @@ class ProviderRouter:
                     provider="gemini",
                 )
             try:
-                return self._execute_gemini_attempt(operation, method_name, *args, **kwargs)
+                return self._execute_gemini_attempt(
+                    operation, method_name, *args, **kwargs
+                )
             except SafetyRejectionError as e:
                 if method_name == "moderate_content":
                     return ModerationResult(
@@ -223,7 +252,9 @@ class ProviderRouter:
         # =============================================================
         if strategy == AIProviderStrategy.OPENAI_ONLY:
             try:
-                return self._execute_openai_attempt(operation, method_name, *args, **kwargs)
+                return self._execute_openai_attempt(
+                    operation, method_name, *args, **kwargs
+                )
             except Exception as e:
                 total_latency = int((time.time() - start_time) * 1000)
                 self._record_metric(
@@ -243,14 +274,20 @@ class ProviderRouter:
         # =============================================================
         if strategy == AIProviderStrategy.OPENAI_FIRST:
             try:
-                return self._execute_openai_attempt(operation, method_name, *args, **kwargs)
+                return self._execute_openai_attempt(
+                    operation, method_name, *args, **kwargs
+                )
             except Exception as e:
                 openai_error = e
-                logger.warning(f"[{operation}] OpenAI principal a échoué ({e}). Basculement vers Gemini...")
+                logger.warning(
+                    f"[{operation}] OpenAI principal a échoué ({e}). Basculement vers Gemini..."
+                )
 
             if self.fallback_enabled and self.circuit_breaker.can_attempt():
                 try:
-                    res = self._execute_gemini_attempt(operation, method_name, *args, **kwargs)
+                    res = self._execute_gemini_attempt(
+                        operation, method_name, *args, **kwargs
+                    )
                     logger.info(f"[{operation}] Secours Gemini réussi.")
                     return res
                 except Exception as e:
@@ -267,7 +304,10 @@ class ProviderRouter:
             raise AllProvidersFailedError(
                 f"Tous les services d'intelligence artificielle ont échoué pour l'opération '{operation}'.",
                 provider="all",
-                details={"openai_error": str(openai_error), "gemini_error": str(gemini_error)},
+                details={
+                    "openai_error": str(openai_error),
+                    "gemini_error": str(gemini_error),
+                },
             )
 
         # =============================================================
@@ -278,9 +318,13 @@ class ProviderRouter:
             retry_count = 0
             while retry_count <= self.max_retries:
                 try:
-                    return self._execute_gemini_attempt(operation, method_name, *args, **kwargs)
+                    return self._execute_gemini_attempt(
+                        operation, method_name, *args, **kwargs
+                    )
                 except SafetyRejectionError as e:
-                    logger.info(f"[{operation}] Gemini safety rejection is a policy decision. Returning rejection.")
+                    logger.info(
+                        f"[{operation}] Gemini safety rejection is a policy decision. Returning rejection."
+                    )
                     if method_name == "moderate_content":
                         return ModerationResult(
                             decision="reject",
@@ -294,11 +338,15 @@ class ProviderRouter:
                 except QuotaExhaustedError as e:
                     gemini_error = e
                     self.circuit_breaker.record_quota_exhausted(str(e))
-                    logger.warning(f"[{operation}] Gemini quota exhausted. Circuit breaker opened. Switching to fallback.")
+                    logger.warning(
+                        f"[{operation}] Gemini quota exhausted. Circuit breaker opened. Switching to fallback."
+                    )
                     break
                 except ConfigurationError as e:
                     gemini_error = e
-                    logger.critical(f"[{operation}] Gemini configuration error. Switching to fallback: {e}")
+                    logger.critical(
+                        f"[{operation}] Gemini configuration error. Switching to fallback: {e}"
+                    )
                     break
                 except (RateLimitError, RecoverableProviderError) as e:
                     gemini_error = e
@@ -307,15 +355,23 @@ class ProviderRouter:
                         time.sleep(0.3 * retry_count)
                     else:
                         self.circuit_breaker.record_transient_error(str(e))
-                        logger.warning(f"[{operation}] Gemini failed after retries. Switching to fallback.")
+                        logger.warning(
+                            f"[{operation}] Gemini failed after retries. Switching to fallback."
+                        )
                 except Exception as e:
                     gemini_error = e
                     self.circuit_breaker.record_transient_error(str(e))
-                    logger.warning(f"[{operation}] Gemini unexpected error ({e}). Switching to fallback.")
+                    logger.warning(
+                        f"[{operation}] Gemini unexpected error ({e}). Switching to fallback."
+                    )
                     break
         else:
-            logger.info(f"[{operation}] Gemini quota circuit breaker is OPEN. Directly routing to OpenAI fallback.")
-            gemini_error = QuotaExhaustedError("Gemini circuit breaker is OPEN (quota exhausted)")
+            logger.info(
+                f"[{operation}] Gemini quota circuit breaker is OPEN. Directly routing to OpenAI fallback."
+            )
+            gemini_error = QuotaExhaustedError(
+                "Gemini circuit breaker is OPEN (quota exhausted)"
+            )
 
         if not self.fallback_enabled:
             total_latency = int((time.time() - start_time) * 1000)
@@ -354,7 +410,9 @@ class ProviderRouter:
                 latency_ms=total_latency,
                 error_message=f"Gemini: {gemini_error} | OpenAI: {openai_err}",
             )
-            logger.error(f"[{operation}] Both Gemini and OpenAI failed! Gemini: {gemini_error}. OpenAI: {openai_err}")
+            logger.error(
+                f"[{operation}] Both Gemini and OpenAI failed! Gemini: {gemini_error}. OpenAI: {openai_err}"
+            )
             raise AllProvidersFailedError(
                 f"Tous les services d'intelligence artificielle ont échoué pour l'opération '{operation}'. "
                 f"Veuillez réessayer plus tard.",
@@ -370,7 +428,9 @@ class ProviderRouter:
     # -----------------------------------------------------------------
 
     def detect_language(self, text: str, **kwargs) -> LanguageDetectionResult:
-        return self._execute_with_fallback("detect_language", "detect_language", text, **kwargs)
+        return self._execute_with_fallback(
+            "detect_language", "detect_language", text, **kwargs
+        )
 
     def translate_text(
         self, text: str, target_lang: str, source_lang: Optional[str] = None, **kwargs
@@ -380,7 +440,9 @@ class ProviderRouter:
         )
 
     def analyze_sentiment(self, text: str, **kwargs) -> SentimentResult:
-        return self._execute_with_fallback("analyze_sentiment", "analyze_sentiment", text, **kwargs)
+        return self._execute_with_fallback(
+            "analyze_sentiment", "analyze_sentiment", text, **kwargs
+        )
 
     def moderate_content(
         self, text: str, context: Optional[dict[str, Any]] = None, **kwargs
@@ -472,6 +534,8 @@ class ProviderRouter:
         language: str = "fr",
         **kwargs,
     ) -> AssistantChatResult:
+        # User requirement: Assistant chat must exclusively use OpenAI for automatic sub-second responses
+        kwargs.setdefault("strategy", AIProviderStrategy.OPENAI_ONLY)
         return self._execute_with_fallback(
             "assistant_chat",
             "assistant_chat",
@@ -482,18 +546,20 @@ class ProviderRouter:
             **kwargs,
         )
 
-
-
     def generate_text(
         self,
         prompt: str,
         system_instruction: Optional[str] = None,
         **kwargs,
     ) -> str:
-        return self._execute_with_fallback("_generate", "_generate", prompt, system_instruction, **kwargs)
+        return self._execute_with_fallback(
+            "_generate", "_generate", prompt, system_instruction, **kwargs
+        )
 
     def generate_embedding(self, text: str, **kwargs) -> list[float]:
-        return self._execute_with_fallback("generate_embedding", "generate_embedding", text, **kwargs)
+        return self._execute_with_fallback(
+            "generate_embedding", "generate_embedding", text, **kwargs
+        )
 
 
 # Global singleton router instance
