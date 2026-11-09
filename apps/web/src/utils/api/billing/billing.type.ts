@@ -63,7 +63,14 @@ export type MyPayment = {
 };
 
 /** PaymentStatusSerializer (GET billing/payments/<id>/status/, checks PayDunya while pending) */
-export type PaymentCheck = { payment_id: string; status: PaymentStatus; is_paid: boolean; receipt_url: string; paid_at: string | null };
+export type PaymentCheck = {
+  payment_id: string;
+  status: PaymentStatus;
+  is_paid: boolean;
+  receipt_url: string;
+  paid_at: string | null;
+  community_slug?: string | null;
+};
 
 /** CommunityPlanCreateUpdateSerializer (owner and admins; the price is at least 500 FCFA) */
 export type PlanWriteData = {

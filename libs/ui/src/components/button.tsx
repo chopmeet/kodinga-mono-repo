@@ -94,32 +94,32 @@ function Button({
   const Comp = asChild ? Slot : "button"
   const IconItem = icon ? icones[icon] : null
 
+  if (isLink === true) {
+    return (
+      <NavLink
+        className={cn(buttonVariants({ variant, size }), className)}
+        to={link || ""}
+      >
+        {IconItem && iconPosition === "left" && <IconItem />}
+        {children}
+        {IconItem && iconPosition === "right" && <IconItem />}
+      </NavLink>
+    )
+  }
+
   return (
-    <>
-      {isLink === true ? (
-        <NavLink
-          className={cn(buttonVariants({ variant, size }), className)}
-          to={link || ""}
-        >
-          {IconItem && iconPosition === "left" && <IconItem />}
-          {children}
-          {IconItem && iconPosition === "right" && <IconItem />}
-        </NavLink>
-      ) : (
-        <Comp
-          data-slot="button"
-          className={cn(buttonVariants({ variant, size, className }))}
-          {...props}
-        >
-          {IconItem && iconPosition === 'left' && <IconItem />}
-          {isLoading && <Spinner />}
-          {/* With asChild, Slot needs exactly one element to merge into (e.g. a <Link>):
-              Slottable marks it, the icons/spinner are rendered inside that element */}
-          <Slottable>{isLoading && !asChild ? "En cours..." : children}</Slottable>
-          {IconItem && iconPosition === 'right' && <IconItem />}
-        </Comp>
-      )}
-    </>
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    >
+      {IconItem && iconPosition === 'left' && <IconItem />}
+      {isLoading && <Spinner />}
+      {/* With asChild, Slot needs exactly one element to merge into (e.g. a <Link>):
+          Slottable marks it, the icons/spinner are rendered inside that element */}
+      <Slottable>{isLoading && !asChild ? "En cours..." : children}</Slottable>
+      {IconItem && iconPosition === 'right' && <IconItem />}
+    </Comp>
   )
 }
 
