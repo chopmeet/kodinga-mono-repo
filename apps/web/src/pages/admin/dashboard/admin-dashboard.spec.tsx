@@ -6,11 +6,11 @@ import { vi } from 'vitest';
 import store from '@/redux/store';
 import { stubApi } from '@/test-utils';
 import { AdminApi } from '@/utils/api/admin/admin.api';
-import type { AnalyticsOverview, DashboardAuditLog } from '@/utils/api/admin/admin.type';
+import type { AnalyticsOverview, DashboardAuditLog, MonthlyGrowthPoint, PlatformActivity } from '@/utils/api/admin/admin.type';
 import CommunityApi from '@/utils/api/community/community.api';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
 import AdminDashboard from './admin-dashboard';
-import { rankCommunities, toActivity } from './form/UseAdminDashboard';
+import { rankCommunities, toActivity, toFeedActivity } from './form/UseAdminDashboard';
 
 const overview: AnalyticsOverview = {
   users: { total: 48500, active_30d: 9000, active_24h: 1200, new_7d: 740 },
@@ -32,21 +32,52 @@ const log = (action: string, extra: Partial<DashboardAuditLog> = {}): DashboardA
   ...extra,
 });
 
+const feed = (id: string, type: PlatformActivity['type'], action: string, action_label: string, target: string | null): PlatformActivity => ({
+  id,
+  type,
+  actor: 'fatou',
+  action,
+  action_label,
+  target,
+  at: new Date().toISOString(),
+});
+
+const MONTHS = ['Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov'];
+const growth: MonthlyGrowthPoint[] = MONTHS.map((month, i) => ({
+  month,
+  year: 2026,
+  date: `2026-${String(i + 1).padStart(2, '0')}`,
+  newMembers: 100 + i,
+  new_members: 100 + i,
+  posts: 1000 + i,
+  revenue: 0,
+}));
+
 const community = (name: string, members_count: number, is_featured = false) =>
   ({ id: name, name, slug: name.toLowerCase(), members_count, is_featured }) as CommunityListItem;
 
 const ok = (data: unknown) => ({ body: { success: true, data } });
 
-const stubDashboard = (dashboard: { status?: number; body: unknown } = ok({
-  overview,
-  recent_audit_logs: [
-    log('system.update_setting', { target_type: 'setting', target_id: 'pro_monthly_price' }),
-    log('user.suspend'),
-  ],
-})) =>
+const stubDashboard = (
+  dashboard: { status?: number; body: unknown } = ok({
+    overview,
+    recent_audit_logs: [],
+    recent_activities: [
+      feed('c1', 'community', 'community.created', "a créé la communauté 'Dakar Data'", 'Dakar Data'),
+      feed('audit-1', 'admin', 'user.suspend', 'user.suspend', '3f2c0d6e-0000-0000-0000-000000000000'),
+      feed('audit-2', 'setting', 'system.update_setting', 'system.update_setting', 'pro_monthly_price'),
+    ],
+  }),
+  {
+    methods = [{ method: 'Orange Money', amount: 1_890_000, count: 60 }, { method: 'Wave', amount: 1_420_000, count: 40 }],
+    financial,
+  }: { methods?: unknown[]; financial?: { status?: number; body: unknown } } = {},
+) =>
   stubApi({
     'admin/dashboard/': dashboard,
-    'analytics/financial/': ok({ recent_30d_revenue: 4_850_000, recent_30d_transactions: 310, generated_at: '' }),
+    'analytics/growth/': ok(growth),
+    'analytics/financial/':
+      financial ?? ok({ recent_30d_revenue: 4_850_000, recent_30d_transactions: 310, payment_methods_30d: methods, generated_at: '' }),
     'analytics/engagement/': ok({ dau: 1, wau: 2, mau: 3, posts_last_7d: 4200, comments_last_7d: 9000, generated_at: '' }),
     'communities/': {
       body: {
@@ -90,24 +121,45 @@ describe('AdminDashboard', () => {
       expect(getByRole('heading', { name: panel })).toBeTruthy();
     }
     const list = calls.find((c) => new URL(c.url).pathname.endsWith('communities/'));
-    expect(new URL(list?.url ?? 'http://x').searchParams.get('sort')).toBe('popular');
+    expect(new URL(list?.url ?? 'http://x').searchParams.get('sort')).toBe('members_count');
+    expect(new URL(list?.url ?? 'http://x').searchParams.get('page_size')).toBe('6');
   });
 
-  it('flags the blocks still on mock data', async () => {
+  it('shows the growth and the payment channels of the api, only the access split stays mock', async () => {
     stubDashboard();
-    const { getAllByText, findByText } = renderDashboard();
-    await findByText('4,9 M FCFA');
-    expect(getAllByText('Données fictives')).toHaveLength(3);
+    const { getAllByText, findAllByText, findByText, getByText } = renderDashboard();
+    // Last month of the series of the api, under both small charts
+    expect(await findAllByText('en nov.')).toHaveLength(2);
     // Payment amounts are written as text, not only as bar lengths
-    expect(getAllByText('1 890 000 FCFA')).toHaveLength(1);
+    expect(await findByText('1 890 000 FCFA')).toBeTruthy();
+    expect(getByText('Wave')).toBeTruthy();
+    expect(getAllByText('Données fictives')).toHaveLength(1);
   });
 
-  it('lists the audit log as readable activities', async () => {
+  it('says when nothing was collected, instead of showing made-up amounts', async () => {
+    stubDashboard(undefined, { methods: [] });
+    const { findByText, queryByText } = renderDashboard();
+    expect(await findByText('Aucun paiement encaissé sur les 30 derniers jours.')).toBeTruthy();
+    expect(queryByText('Orange Money')).toBeNull();
+  });
+
+  it('lists the activity feed of the platform, without ids as targets', async () => {
     stubDashboard();
-    const { findByText, getByText } = renderDashboard();
-    expect(await findByText(/a modifié le paramètre/)).toBeTruthy();
-    expect(getByText(/pro_monthly_price/)).toBeTruthy();
+    const { findByText, getByText, queryByText } = renderDashboard();
+    expect(await findByText(/a créé la communauté 'Dakar Data'/)).toBeTruthy();
     expect(getByText(/a suspendu un compte/)).toBeTruthy();
+    expect(queryByText(/3f2c0d6e/)).toBeNull();
+    expect(getByText(/pro_monthly_price/)).toBeTruthy();
+  });
+
+  it('keeps the other key figures when the financial analytics fail', async () => {
+    stubDashboard(undefined, { financial: { status: 500, body: { success: false, code: 'server_error', message: 'Erreur' } } });
+    const { findByText, getByText, findAllByRole } = renderDashboard();
+    expect(await findByText('812')).toBeTruthy();
+    expect(getByText('Revenus (30 j)')).toBeTruthy();
+    expect(getByText('—')).toBeTruthy();
+    // Only the payments panel offers a retry
+    expect(await findAllByRole('button', { name: 'Réessayer' })).toHaveLength(1);
   });
 
   it('shows the api error with a retry button', async () => {
@@ -127,5 +179,20 @@ describe('rankCommunities', () => {
 describe('toActivity', () => {
   it('keeps an unknown action code as is, without a uuid target', () => {
     expect(toActivity(log('billing.refund'))).toMatchObject({ action: 'billing.refund', target: null, actor: 'fatou' });
+  });
+});
+
+describe('toFeedActivity', () => {
+  it('words the admin actions, keeps the sentence of the api for the rest', () => {
+    expect(toFeedActivity(feed('a', 'admin', 'user.promote_superadmin', 'user.promote_superadmin', '3f2c0d6e-0000-0000-0000-000000000000'))).toMatchObject({
+      type: 'admin',
+      action: 'a nommé un super-administrateur',
+      target: null,
+    });
+    expect(toFeedActivity(feed('p', 'payment', 'payment.paid', 'a souscrit à Pass mensuel', '5000 XOF'))).toMatchObject({
+      type: 'payment',
+      action: 'a souscrit à Pass mensuel',
+      target: '5000 XOF',
+    });
   });
 });

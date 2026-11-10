@@ -48,8 +48,10 @@ function AdminDashboard() {
     refetchKpis, 
     topCommunities, 
     communities, 
-    activities, 
-    dashboard 
+    activities,
+    dashboard,
+    growth,
+    financial,
   } = useAdminDashboard();
 
   return (
@@ -64,8 +66,10 @@ function AdminDashboard() {
 
       <div className="grid gap-3.5 pb-4 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-5">
-          <Panel title="Croissance de la plateforme" description="Publications et nouveaux membres, 12 derniers mois" mock>
-            <PlatformGrowthCharts />
+          <Panel title="Croissance de la plateforme" description="Publications et nouveaux membres, 12 derniers mois">
+            <QueryState isLoading={growth.isLoading} error={growth.error} onRetry={growth.refetch} skeleton="h-64">
+              <PlatformGrowthCharts data={growth.data ?? []} />
+            </QueryState>
           </Panel>
         </div>
         <div className="min-w-0 lg:col-span-3">
@@ -81,12 +85,14 @@ function AdminDashboard() {
           </Panel>
         </div>
         <div className="min-w-0 lg:col-span-2">
-          <Panel title="Moyens de paiement" description="Montants encaissés, 30 derniers jours" mock>
-            <PaymentMethodsBars />
+          <Panel title="Moyens de paiement" description="Montants encaissés, 30 derniers jours">
+            <QueryState isLoading={financial.isLoading} error={financial.error} onRetry={financial.refetch}>
+              <PaymentMethodsBars methods={financial.data?.payment_methods_30d ?? []} />
+            </QueryState>
           </Panel>
         </div>
         <div className="min-w-0 lg:col-span-3">
-          <Panel title="Activités récentes" description="Dernières actions d'administration sur la plateforme">
+          <Panel title="Activités récentes" description="Inscriptions, communautés, paiements, publications et actions d'administration">
             <QueryState isLoading={dashboard.isLoading} error={dashboard.error} onRetry={dashboard.refetch}>
               <RecentActivities activities={activities} />
             </QueryState>

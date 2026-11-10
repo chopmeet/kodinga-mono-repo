@@ -1,10 +1,9 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { type MonthlyGrowth, monthlyGrowth as fallbackGrowth } from '@/data/admin-dashboard.data';
 import { ChartTooltip, formatCompact, formatNumber, GRID_COLOR, SERIES, TICK } from '@/pages/shared/chart-theme';
-import { useGetMonthlyGrowthAnalyticsQuery } from '@/utils/api/admin/admin.api';
+import type { MonthlyGrowthPoint } from '@/utils/api/admin/admin.type';
 
-type Metric = { key: keyof Omit<MonthlyGrowth, 'month'>; label: string };
+type Metric = { key: 'newMembers' | 'posts'; label: string };
 
 // Publications (~19k) and new members (~3k) differ too much for one axis: small multiples,
 // one series and one axis each. The title names the series, so no legend box.
@@ -13,7 +12,7 @@ const METRICS: Metric[] = [
   { key: 'posts', label: 'Publications' },
 ];
 
-function MiniLine({ metric, data }: { metric: Metric; data: MonthlyGrowth[] }) {
+function MiniLine({ metric, data }: { metric: Metric; data: MonthlyGrowthPoint[] }) {
   const lastPoint = data[data.length - 1];
   const last = lastPoint ? lastPoint[metric.key] : 0;
   const monthLabel = lastPoint ? `en ${lastPoint.month.toLowerCase()}.` : '';
@@ -50,14 +49,13 @@ function MiniLine({ metric, data }: { metric: Metric; data: MonthlyGrowth[] }) {
   );
 }
 
-export default function PlatformGrowthCharts() {
-  const { data: apiGrowth } = useGetMonthlyGrowthAnalyticsQuery();
-  const growthData = apiGrowth && apiGrowth.length > 0 ? apiGrowth : fallbackGrowth;
-
+/** analytics/growth/: the 12 last months (the api fills the months without activity with 0) */
+export default function PlatformGrowthCharts({ data }: { data: MonthlyGrowthPoint[] }) {
+  if (data.length === 0) return <p className="py-10 text-center text-sm text-slate-500">Pas encore d’activité à afficher.</p>;
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {METRICS.map((metric) => (
-        <MiniLine key={metric.key} metric={metric} data={growthData} />
+        <MiniLine key={metric.key} metric={metric} data={data} />
       ))}
     </div>
   );
