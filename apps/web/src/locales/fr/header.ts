@@ -5,6 +5,7 @@ export const header = {
   profile: 'Le profil',
   signup: "S'inscrire",
   mySpace: 'Mon espace',
+  overview: 'Tableau de bord',
   myCommunities: 'Mes communautés',
   admin: 'Administration',
   publicProfile: 'Mon profil public',

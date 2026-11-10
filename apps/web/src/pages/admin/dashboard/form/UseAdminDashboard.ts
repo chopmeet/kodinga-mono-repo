@@ -3,8 +3,9 @@ import {
   useGetAdminDashboardQuery,
   useGetEngagementAnalyticsQuery,
   useGetFinancialAnalyticsQuery,
+  useGetMonthlyGrowthAnalyticsQuery,
 } from '@/utils/api/admin/admin.api';
-import type { DashboardAuditLog } from '@/utils/api/admin/admin.type';
+import type { DashboardAuditLog, PlatformActivity } from '@/utils/api/admin/admin.type';
 import { useGetCommunitiesQuery } from '@/utils/api/community/community.api';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
 
@@ -36,6 +37,9 @@ const AUDIT_ACTIONS: Record<string, Pick<DashboardActivity, 'type' | 'action'>> 
   'workspace.invitation_revoked': { type: 'community', action: 'a révoqué une invitation' },
 };
 
+const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+/** An entry of the older api (admin actions only) */
 export const toActivity = (log: DashboardAuditLog): DashboardActivity => {
   const known = AUDIT_ACTIONS[log.action];
   return {
@@ -49,6 +53,23 @@ export const toActivity = (log: DashboardAuditLog): DashboardActivity => {
   };
 };
 
+/**
+ * An entry of the activity feed: its sentence from the api, except for the admin actions whose
+ * audit code we word ourselves. Never an id as target (users and members are uuids).
+ */
+export const toFeedActivity = (entry: PlatformActivity): DashboardActivity => {
+  const known = AUDIT_ACTIONS[entry.action];
+  const target = entry.target && !isUuid(entry.target) ? entry.target : null;
+  return {
+    id: entry.id,
+    type: known?.type ?? entry.type,
+    actor: entry.actor,
+    action: known?.action ?? entry.action_label ?? entry.action,
+    target,
+    at: entry.at,
+  };
+};
+
 /** The `size` communities with the most members */
 export const rankCommunities = (list: CommunityListItem[], size = TOP_SIZE): CommunityRanking[] =>
   [...list]
@@ -56,14 +77,13 @@ export const rankCommunities = (list: CommunityListItem[], size = TOP_SIZE): Com
     .slice(0, size)
     .map((c) => ({ name: c.name, members: c.members_count }));
 
-/** Data of the admin dashboard; blocks the api does not cover yet stay on data/admin-dashboard.data.ts */
+/** Data of the admin dashboard; the communities by access stay on data/admin-dashboard.data.ts until the api counts them */
 export default function useAdminDashboard() {
   const dashboard = useGetAdminDashboardQuery();
   const financial = useGetFinancialAnalyticsQuery();
   const engagement = useGetEngagementAnalyticsQuery();
-  // The api puts featured communities first even when sorted by popularity: take a wider page
-  // and rank it here by members
-  const communities = useGetCommunitiesQuery({ sort: 'popular', page_size: 50 });
+  const growth = useGetMonthlyGrowthAnalyticsQuery();
+  const communities = useGetCommunitiesQuery({ sort: 'members_count', page_size: TOP_SIZE });
 
   const overview = dashboard.data?.overview;
 
@@ -82,7 +102,8 @@ export default function useAdminDashboard() {
   return {
     kpis,
     kpisLoading: dashboard.isLoading || financial.isLoading || engagement.isLoading,
-    kpisError: dashboard.error ?? financial.error ?? engagement.error,
+    // Only the main summary (4 cards of 6) fails the block: a failing analytics endpoint leaves its card on '—'
+    kpisError: dashboard.error,
     refetchKpis: () => {
       dashboard.refetch();
       financial.refetch();
@@ -90,7 +111,11 @@ export default function useAdminDashboard() {
     },
     topCommunities,
     communities,
-    activities: (dashboard.data?.recent_audit_logs ?? []).map(toActivity),
+    activities: dashboard.data?.recent_activities
+      ? dashboard.data.recent_activities.map(toFeedActivity)
+      : (dashboard.data?.recent_audit_logs ?? []).map(toActivity),
     dashboard,
+    growth,
+    financial,
   };
 }

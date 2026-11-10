@@ -1,10 +1,12 @@
-import { paymentMethods } from '@/data/admin-dashboard.data';
 import { formatXof, SERIES } from '@/pages/shared/chart-theme';
+import type { PaymentMethodStat } from '@/utils/api/admin/admin.type';
 
 // 5 parts of a whole are easier to compare as sorted bars than as pie slices.
 // Plain HTML bars: one hue, value + share written next to each.
-export default function PaymentMethodsBars() {
-  const data = [...paymentMethods].sort((a, b) => b.amount - a.amount);
+// analytics/financial/ → payment_methods_30d: what was collected per PayDunya channel over 30 days
+export default function PaymentMethodsBars({ methods }: { methods: PaymentMethodStat[] }) {
+  const data = [...methods].sort((a, b) => b.amount - a.amount);
+  if (data.length === 0) return <p className="py-10 text-center text-sm text-slate-500">Aucun paiement encaissé sur les 30 derniers jours.</p>;
   const total = data.reduce((sum, d) => sum + d.amount, 0);
   const max = data[0]?.amount ?? 1;
 

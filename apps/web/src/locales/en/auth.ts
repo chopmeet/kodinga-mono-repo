@@ -50,8 +50,6 @@ export const auth: Translations['auth'] = {
     subtitle: 'Welcome back! Find your communities.',
     noAccount: 'No account yet?',
     signup: 'Sign up',
-    terms: 'By logging in, you accept our terms of use',
-    privacy: 'and our privacy policy.',
     forgot: 'Forgot password?',
     submit: 'Log in',
   },

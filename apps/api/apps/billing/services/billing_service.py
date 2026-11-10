@@ -225,6 +225,29 @@ class BillingService:
             )
             return payment, payment.checkout_url
 
+    @staticmethod
+    def normalize_payment_channel(raw_channel: str) -> str:
+        """
+        Normalizes PayDunya or raw gateway payment method names into human-readable channels.
+        e.g. orange-money-senegal -> Orange Money, wave -> Wave, mtn -> MTN MoMo, etc.
+        """
+        if not raw_channel or not isinstance(raw_channel, str):
+            return ""
+        c = raw_channel.lower().strip()
+        if "orange" in c:
+            return "Orange Money"
+        if "wave" in c:
+            return "Wave"
+        if "mtn" in c:
+            return "MTN MoMo"
+        if "moov" in c:
+            return "Moov Money"
+        if any(k in c for k in ["card", "carte", "visa", "mastercard", "cb"]):
+            return "Carte bancaire"
+        if "free" in c:
+            return "Free Money"
+        return raw_channel.strip().title()
+
     @classmethod
     def finalize_payment_as_paid(
         cls,
@@ -279,6 +302,26 @@ class BillingService:
                 payment.provider_reference = receipt_url
             if verified_data:
                 payment.raw_callback_data = verified_data
+                invoice_data = (
+                    verified_data.get("invoice")
+                    if isinstance(verified_data.get("invoice"), dict)
+                    else {}
+                )
+                custom_data = (
+                    verified_data.get("custom_data")
+                    if isinstance(verified_data.get("custom_data"), dict)
+                    else {}
+                )
+                raw_chan = (
+                    verified_data.get("payment_method")
+                    or invoice_data.get("payment_method")
+                    or verified_data.get("channel")
+                    or invoice_data.get("channel")
+                    or verified_data.get("mode")
+                    or custom_data.get("payment_channel")
+                )
+                if raw_chan:
+                    payment.payment_channel = cls.normalize_payment_channel(raw_chan)
 
             # Create or extend active Subscription
             period_end = cls.calculate_period_end(

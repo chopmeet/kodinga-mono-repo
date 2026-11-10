@@ -43,17 +43,61 @@ export type DashboardAuditLog = {
   created_at: string;
 };
 
+/** Kind of an entry of the activity feed (administration/services/admin_service.py) */
+export type PlatformActivityType = 'member' | 'community' | 'payment' | 'post' | 'admin' | 'setting';
+
+/**
+ * One entry of recent_activities: sign-ups, new communities, payments, posts and admin actions.
+ * Admin actions keep their audit code in `action` and their target uuid in `target`.
+ */
+export type PlatformActivity = {
+  id: string;
+  type: PlatformActivityType;
+  actor: string;
+  /** Audit code (user.suspend…) or the kind of event */
+  action: string;
+  /** Readable sentence written by the api, in French ("a créé la communauté…") */
+  action_label: string;
+  target: string | null;
+  target_type?: string;
+  at: string;
+};
+
 /** GET admin/dashboard/ */
 export type AdminDashboardSummary = {
   overview: AnalyticsOverview;
+  /** Older api: admin actions only */
   recent_audit_logs: DashboardAuditLog[];
+  /** The whole platform, most recent first */
+  recent_activities?: PlatformActivity[];
+};
+
+export type PaymentMethodStat = {
+  method: string;
+  amount: number;
+  count: number;
 };
 
 /** GET analytics/financial/ (fields used by the front) */
 export type FinancialAnalytics = {
   recent_30d_revenue: number;
   recent_30d_transactions: number;
+  payment_methods_30d?: PaymentMethodStat[];
   generated_at: string;
+};
+
+/** GET analytics/growth/: the 12 last months, oldest first */
+export type MonthlyGrowthPoint = {
+  /** Short French month name ("Oct") */
+  month: string;
+  year: number;
+  /** yyyy-mm */
+  date: string;
+  newMembers: number;
+  new_members: number;
+  posts: number;
+  /** XOF */
+  revenue: number;
 };
 
 /** GET analytics/engagement/ (fields used by the front) */

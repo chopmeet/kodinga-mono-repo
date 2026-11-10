@@ -34,16 +34,6 @@ export type MonetizationSettings = {
   channels: PaymentChannel[];
 };
 
-export type LegalPageId = 'terms' | 'privacy' | 'refund';
-
-export type LegalPage = {
-  id: LegalPageId;
-  title: string;
-  /** HTML (edited with the rich text editor) */
-  content: string;
-  updated_at: string;
-};
-
 export const platformSettings: PlatformSettings = {
   platform_name: 'Kodinga',
   support_email: 'support@kodinga.com',
@@ -73,33 +63,4 @@ export const monetizationSettings: MonetizationSettings = {
     { id: 'moov_money', label: 'Moov Money', enabled: true },
     { id: 'card', label: 'Carte bancaire', enabled: false },
   ],
-};
-
-export const legalPages: Record<LegalPageId, LegalPage> = {
-  terms: {
-    id: 'terms',
-    title: "Conditions générales d'utilisation",
-    updated_at: '2026-09-15T10:00:00Z',
-    content:
-      '<h2>1. Objet</h2><p>Kodinga met en relation des développeurs au sein de communautés thématiques. Les présentes conditions encadrent l’utilisation de la plateforme.</p>' +
-      '<h2>2. Compte</h2><p>Chaque membre est responsable de la confidentialité de ses identifiants et des contenus qu’il publie.</p>' +
-      '<h2>3. Communautés payantes</h2><p>Les abonnements sont réglés via PayDunya (Mobile Money ou carte). Kodinga prélève une commission sur chaque paiement.</p>',
-  },
-  privacy: {
-    id: 'privacy',
-    title: 'Politique de confidentialité',
-    updated_at: '2026-08-02T10:00:00Z',
-    content:
-      '<h2>Données collectées</h2><p>Nom, adresse email, ville et activité sur la plateforme (publications, adhésions).</p>' +
-      '<h2>Utilisation</h2><p>Ces données servent au fonctionnement du service et ne sont jamais revendues.</p>' +
-      '<h2>Vos droits</h2><p>Vous pouvez demander l’accès, la rectification ou la suppression de vos données à support@kodinga.com.</p>',
-  },
-  refund: {
-    id: 'refund',
-    title: 'Politique de remboursement',
-    updated_at: '2026-07-20T10:00:00Z',
-    content:
-      '<h2>Délai</h2><p>Un abonnement peut être remboursé dans les 7 jours suivant le premier paiement.</p>' +
-      '<h2>Procédure</h2><p>La demande se fait depuis l’espace membre ; le remboursement est versé sur le moyen de paiement d’origine.</p>',
-  },
 };

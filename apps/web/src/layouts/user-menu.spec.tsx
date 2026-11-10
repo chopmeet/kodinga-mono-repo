@@ -47,7 +47,7 @@ describe('User menu of the header', () => {
     const menu = await openMenu();
     expect(within(menu).getByText('Ousmane Diallo')).toBeTruthy();
     expect(within(menu).getByText('@ousmane')).toBeTruthy();
-    expect(within(menu).getAllByRole('menuitem').map((item) => item.getAttribute('href'))).toEqual(['/dashboard/communities', '/profiles/ousmane', '/dashboard/profile', null]);
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.getAttribute('href'))).toEqual(['/dashboard/overview', '/dashboard/communities', '/profiles/ousmane', '/dashboard/profile', null]);
     expect(within(menu).queryByText('Administration')).toBeNull();
 
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Log out' }));

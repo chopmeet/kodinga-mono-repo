@@ -28,17 +28,12 @@ function Login() {
       title={t('auth.login.title')}
       subtitle={t('auth.login.subtitle')}
       footer={
-        <>
-          <p className="mb-4 text-[15px]">
-            {t('auth.login.noAccount')}{' '}
-            <Link to={next ? `/auth/register?next=${encodeURIComponent(next)}` : '/auth/register'} className="font-semibold text-brand hover:text-brand-hover hover:underline">
-              {t('auth.login.signup')}
-            </Link>
-          </p>
-          {t('auth.login.terms')}
-          <br />
-          {t('auth.login.privacy')}
-        </>
+        <p className="text-[15px]">
+          {t('auth.login.noAccount')}{' '}
+          <Link to={next ? `/auth/register?next=${encodeURIComponent(next)}` : '/auth/register'} className="font-semibold text-brand hover:text-brand-hover hover:underline">
+            {t('auth.login.signup')}
+          </Link>
+        </p>
       }
     >
       <OAuthButtons />

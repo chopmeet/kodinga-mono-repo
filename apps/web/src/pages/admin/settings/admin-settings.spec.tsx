@@ -13,7 +13,6 @@ import AdminSettings from './admin-settings';
 import AdministratorsSettingsTab from './tabs/administrators';
 import CategoriesSettingsTab from './tabs/categories';
 import GeneralSettingsTab from './tabs/general';
-import LegalPageTab from './tabs/legal-page';
 import MonetizationSettingsTab from './tabs/monetization';
 
 const SLOW = { timeout: 3000 };
@@ -29,7 +28,6 @@ const renderAt = (tab: string) =>
             <Route path="general" element={<GeneralSettingsTab />} />
             <Route path="categories" element={<CategoriesSettingsTab />} />
             <Route path="monetization" element={<MonetizationSettingsTab />} />
-            <Route path="terms" element={<LegalPageTab key="terms" pageId="terms" />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -262,12 +260,5 @@ describe('AdminSettings', () => {
     await waitFor(() => expect(utils.queryByText('Game Development')).toBeNull(), SLOW);
     const del = calls.find((c) => c.method === 'DELETE');
     expect(del?.url.searchParams.get('hard_delete')).toBe('true');
-  });
-
-  it('shows a legal page and opens the editor', async () => {
-    const { getByRole, findByText, findByRole } = renderAt('terms');
-    expect(await findByText(/Kodinga met en relation des développeurs/)).toBeTruthy();
-    fireEvent.click(getByRole('button', { name: 'Modifier' }));
-    expect(await findByRole('button', { name: 'Annuler' })).toBeTruthy();
   });
 });

@@ -11,6 +11,13 @@ export const common: Translations['common'] = {
     badFormat: 'Format not accepted: {{formats}}.',
     tooHeavy: 'Image too large: {{max}} MB maximum.',
   },
+  notFound: {
+    title: 'Page not found',
+    text: 'The page you are looking for does not exist or has been moved.',
+    illustration: 'Illustration: page not found',
+    back: 'Back',
+    home: 'Back to home',
+  },
   actions: {
     retry: 'Try again',
     cancel: 'Cancel',
