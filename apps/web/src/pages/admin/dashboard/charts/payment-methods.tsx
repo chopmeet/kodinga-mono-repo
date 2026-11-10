@@ -1,10 +1,16 @@
-import { paymentMethods } from '@/data/admin-dashboard.data';
+import { paymentMethods as fallbackMethods } from '@/data/admin-dashboard.data';
 import { formatXof, SERIES } from '@/pages/shared/chart-theme';
+import { useGetFinancialAnalyticsQuery } from '@/utils/api/admin/admin.api';
 
 // 5 parts of a whole are easier to compare as sorted bars than as pie slices.
 // Plain HTML bars: one hue, value + share written next to each.
 export default function PaymentMethodsBars() {
-  const data = [...paymentMethods].sort((a, b) => b.amount - a.amount);
+  const financial = useGetFinancialAnalyticsQuery();
+  const rawData =
+    financial.data?.payment_methods_30d && financial.data.payment_methods_30d.length > 0
+      ? financial.data.payment_methods_30d
+      : fallbackMethods;
+  const data = [...rawData].sort((a, b) => b.amount - a.amount);
   const total = data.reduce((sum, d) => sum + d.amount, 0);
   const max = data[0]?.amount ?? 1;
 

@@ -47,13 +47,31 @@ export type DashboardAuditLog = {
 export type AdminDashboardSummary = {
   overview: AnalyticsOverview;
   recent_audit_logs: DashboardAuditLog[];
+  recent_activities?: DashboardAuditLog[];
+};
+
+export type PaymentMethodStat = {
+  method: string;
+  amount: number;
+  count: number;
 };
 
 /** GET analytics/financial/ (fields used by the front) */
 export type FinancialAnalytics = {
   recent_30d_revenue: number;
   recent_30d_transactions: number;
+  payment_methods_30d?: PaymentMethodStat[];
   generated_at: string;
+};
+
+export type MonthlyGrowthPoint = {
+  month: string;
+  year: number;
+  date: string;
+  newMembers: number;
+  new_members: number;
+  posts: number;
+  revenue: number;
 };
 
 /** GET analytics/engagement/ (fields used by the front) */

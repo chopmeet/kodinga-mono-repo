@@ -38,14 +38,15 @@ const AUDIT_ACTIONS: Record<string, Pick<DashboardActivity, 'type' | 'action'>> 
 
 export const toActivity = (log: DashboardAuditLog): DashboardActivity => {
   const known = AUDIT_ACTIONS[log.action];
+  const anyLog = log as unknown as Partial<DashboardActivity> & { action_label?: string };
   return {
     id: log.id,
-    type: known?.type ?? 'setting',
-    actor: log.actor_username,
-    action: known?.action ?? log.action,
+    type: known?.type ?? anyLog.type ?? 'setting',
+    actor: anyLog.actor ?? log.actor_username,
+    action: known?.action ?? anyLog.action_label ?? log.action,
     // Only settings have a readable target (their key); users and members are uuids
-    target: log.action === 'system.update_setting' ? log.target_id : null,
-    at: log.created_at,
+    target: anyLog.target ?? (log.action === 'system.update_setting' ? log.target_id : null),
+    at: anyLog.at ?? log.created_at,
   };
 };
 
@@ -90,7 +91,7 @@ export default function useAdminDashboard() {
     },
     topCommunities,
     communities,
-    activities: (dashboard.data?.recent_audit_logs ?? []).map(toActivity),
+    activities: (dashboard.data?.recent_activities ?? dashboard.data?.recent_audit_logs ?? []).map(toActivity),
     dashboard,
   };
 }

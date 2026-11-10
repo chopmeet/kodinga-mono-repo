@@ -27,7 +27,7 @@ class CommunitySelector:
     @classmethod
     def get_base_queryset(cls) -> QuerySet[Community]:
         return Community.objects.filter(is_active=True).select_related(
-            'owner', 'category', 'settings'
+            "owner", "category", "settings"
         )
 
     @classmethod
@@ -35,7 +35,7 @@ class CommunitySelector:
         cls, identifier: str, user: Optional[User] = None
     ) -> Community:
         rules_prefetch = Prefetch(
-            'rules', queryset=CommunityRule.objects.order_by('order')
+            "rules", queryset=CommunityRule.objects.order_by("order")
         )
         qs = cls.get_base_queryset().prefetch_related(rules_prefetch)
 
@@ -49,6 +49,7 @@ class CommunitySelector:
             if not user or not user.is_authenticated:
                 raise Community.DoesNotExist("Communauté introuvable.")
             from common.permissions.base import is_superadmin_user
+
             if (
                 not is_superadmin_user(user)
                 and community.owner_id != user.id
@@ -99,6 +100,10 @@ class CommunitySelector:
         if is_featured is not None:
             qs = qs.filter(is_featured=is_featured)
 
+        if sort in ("members_count", "members", "-members_count", "most_members"):
+            return qs.order_by("-members_count", "-created_at")
+        if sort in ("newest", "-created_at", "recent"):
+            return qs.order_by("-created_at")
         if sort == "popular":
             return qs.order_by("-is_featured", "-members_count", "-created_at")
         return qs.order_by("-is_featured", "-created_at")
@@ -113,13 +118,13 @@ class CommunitySelector:
 
         member_community_ids = CommunityMember.objects.filter(
             user=user, status=MembershipStatus.ACTIVE
-        ).values_list('community_id', flat=True)
+        ).values_list("community_id", flat=True)
 
         return (
             cls.get_base_queryset()
             .filter(Q(owner=user) | Q(id__in=member_community_ids))
             .distinct()
-            .order_by('-created_at')
+            .order_by("-created_at")
         )
 
     @classmethod
@@ -129,7 +134,7 @@ class CommunitySelector:
         qs = CommunityCategory.objects.all()
         if not include_inactive:
             qs = qs.filter(is_active=True)
-        return qs.order_by('order', 'name')
+        return qs.order_by("order", "name")
 
     @classmethod
     def get_category_by_slug(cls, identifier: str) -> CommunityCategory:
