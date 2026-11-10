@@ -252,3 +252,129 @@ class TestPhase10AdministrationAPI:
         )
         assert res_owner.status_code == status.HTTP_200_OK
         assert len(res_owner.json()["results"]) >= 1
+
+    def test_monthly_growth_endpoint_12_months(
+        self, api_client, regular_user, superadmin_user
+    ):
+        """
+        Verify that GET /api/v1/analytics/growth/ returns 12 continuous rolling months
+        with new members, posts and revenue.
+        """
+        # Unauthenticated -> 401
+        res_unauth = api_client.get("/api/v1/analytics/growth/")
+        assert res_unauth.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # Regular user -> 403
+        api_client.force_authenticate(user=regular_user)
+        res_reg = api_client.get("/api/v1/analytics/growth/")
+        assert res_reg.status_code == status.HTTP_403_FORBIDDEN
+
+        # Superadmin -> 200
+        api_client.force_authenticate(user=superadmin_user)
+        res_admin = api_client.get("/api/v1/analytics/growth/?refresh=true")
+        assert res_admin.status_code == status.HTTP_200_OK
+        data = res_admin.json()["data"]
+        assert len(data) == 12
+        for item in data:
+            assert "month" in item
+            assert "year" in item
+            assert "date" in item
+            assert "newMembers" in item
+            assert "posts" in item
+            assert "revenue" in item
+
+    def test_payment_channel_and_30d_financial_aggregation(
+        self, api_client, superadmin_user, regular_user, test_community
+    ):
+        """
+        Verify that Payment supports payment_channel and GET /api/v1/analytics/financial/
+        aggregates revenue by payment channel over 30 days.
+        """
+        from django.utils import timezone
+
+        from apps.billing.models.payment import Payment, PaymentStatus
+        from apps.billing.models.plan import BillingInterval, Plan
+
+        plan = Plan.objects.create(
+            community=test_community,
+            name="Pass Pro",
+            slug="pass-pro-analytics-test",
+            price=15000,
+            currency="XOF",
+            billing_interval=BillingInterval.MONTH,
+        )
+
+        now = timezone.now()
+        Payment.objects.create(
+            user=regular_user,
+            plan=plan,
+            amount=15000,
+            currency="XOF",
+            status=PaymentStatus.PAID,
+            payment_channel="Orange Money",
+            paid_at=now,
+        )
+        Payment.objects.create(
+            user=regular_user,
+            plan=plan,
+            amount=30000,
+            currency="XOF",
+            status=PaymentStatus.PAID,
+            payment_channel="Wave",
+            paid_at=now,
+        )
+
+        api_client.force_authenticate(user=superadmin_user)
+        res = api_client.get("/api/v1/analytics/financial/?refresh=true")
+        assert res.status_code == status.HTTP_200_OK
+        data = res.json()["data"]
+        assert "payment_methods_30d" in data
+        methods = {m["method"]: m["amount"] for m in data["payment_methods_30d"]}
+        assert methods.get("Wave") == 30000.0
+        assert methods.get("Orange Money") == 15000.0
+
+    def test_communities_sort_by_members_count_without_featured_precedence(
+        self, api_client, superadmin_user
+    ):
+        """
+        Verify sort=members_count sorts strictly by members_count descending
+        WITHOUT putting is_featured communities first.
+        """
+        c_featured = Community.objects.create(
+            name="Featured Small Community",
+            slug="featured-small",
+            owner=superadmin_user,
+            privacy_type=CommunityPrivacy.PUBLIC,
+            is_featured=True,
+            members_count=2,
+        )
+        c_big = Community.objects.create(
+            name="Unfeatured Huge Community",
+            slug="unfeatured-huge",
+            owner=superadmin_user,
+            privacy_type=CommunityPrivacy.PUBLIC,
+            is_featured=False,
+            members_count=5000,
+        )
+
+        api_client.force_authenticate(user=superadmin_user)
+        res = api_client.get("/api/v1/communities/?sort=members_count&page_size=10")
+        assert res.status_code == status.HTTP_200_OK
+        results = res.json()["results"]
+        slugs = [c["slug"] for c in results]
+        assert slugs.index(c_big.slug) < slugs.index(c_featured.slug)
+
+    def test_admin_dashboard_recent_platform_activities(
+        self, api_client, superadmin_user
+    ):
+        """
+        Verify GET /api/v1/admin/dashboard/ returns unified platform activities
+        covering member, community, and audit log events.
+        """
+        api_client.force_authenticate(user=superadmin_user)
+        res = api_client.get("/api/v1/admin/dashboard/")
+        assert res.status_code == status.HTTP_200_OK
+        data = res.json()["data"]
+        assert "recent_activities" in data
+        assert "recent_audit_logs" in data
+        assert len(data["recent_activities"]) >= 1

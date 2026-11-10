@@ -5,6 +5,7 @@ import type {
   AdminDashboardSummary,
   EngagementAnalytics,
   FinancialAnalytics,
+  MonthlyGrowthPoint,
   SystemSetting,
   SystemSettingWrite,
 } from './admin.type';
@@ -29,6 +30,10 @@ export const AdminApi = createApi({
       query: () => 'analytics/engagement/',
       transformResponse: unwrap<EngagementAnalytics>,
     }),
+    getMonthlyGrowthAnalytics: builder.query<MonthlyGrowthPoint[], void>({
+      query: () => 'analytics/growth/',
+      transformResponse: unwrap<MonthlyGrowthPoint[]>,
+    }),
     getSystemSettings: builder.query<SystemSetting[], void>({
       query: () => 'admin/settings/',
       transformResponse: unwrap<SystemSetting[]>,
@@ -47,6 +52,7 @@ export const {
   useGetAdminDashboardQuery,
   useGetFinancialAnalyticsQuery,
   useGetEngagementAnalyticsQuery,
+  useGetMonthlyGrowthAnalyticsQuery,
   useGetSystemSettingsQuery,
   useUpdateSystemSettingMutation,
 } = AdminApi;

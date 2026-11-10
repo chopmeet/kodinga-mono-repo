@@ -67,6 +67,12 @@ class CommunityListCreateView(APIView):
                 type=bool,
             ),
             OpenApiParameter(
+                name="sort",
+                description="Tri des résultats: popular (à la une puis membres), members_count (strictement par nombre de membres sans priorité aux en avant), newest",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
                 name="page",
                 description="Numéro de la page (Infinite Scroll)",
                 required=False,
