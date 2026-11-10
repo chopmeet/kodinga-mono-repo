@@ -1,4 +1,4 @@
-import { LayoutGrid, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
+import { LayoutDashboard, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -15,6 +15,7 @@ import {
 } from '@kodinga/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { getInitials, getName, isAdmin, useUser } from '@/utils/Utils';
+import { LuUsers } from 'react-icons/lu';
 
 const itemClassName = 'gap-3 px-3 py-2.5 text-[15px] text-slate-700';
 
@@ -51,8 +52,14 @@ export function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className={itemClassName}>
+          <Link to="/dashboard/overview">
+            <LayoutDashboard className="size-5" />
+            {t('header.overview')}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className={itemClassName}>
           <Link to="/dashboard/communities">
-            <LayoutGrid className="size-5" />
+            <LuUsers className="size-5" />
             {t('header.myCommunities')}
           </Link>
         </DropdownMenuItem>

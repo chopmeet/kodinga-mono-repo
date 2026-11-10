@@ -49,8 +49,6 @@ export const auth = {
     subtitle: 'Content de vous revoir ! Retrouvez vos communautés.',
     noAccount: 'Pas encore de compte ?',
     signup: 'S\'inscrire',
-    terms: 'En vous connectant, vous acceptez nos conditions d\'utilisation',
-    privacy: 'et notre politique de confidentialité.',
     forgot: 'Mot de passe oublié ?',
     submit: 'Se connecter',
   },

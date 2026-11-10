@@ -7,6 +7,7 @@ export const header: Translations['header'] = {
   profile: 'Profile',
   signup: 'Sign up',
   mySpace: 'My space',
+  overview: 'Dashboard',
   myCommunities: 'My communities',
   admin: 'Administration',
   publicProfile: 'My public profile',

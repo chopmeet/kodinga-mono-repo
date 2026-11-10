@@ -10,6 +10,13 @@ export const common = {
     badFormat: 'Format non accepté : {{formats}}.',
     tooHeavy: 'Image trop lourde : {{max}} Mo maximum.',
   },
+  notFound: {
+    title: 'Page introuvable',
+    text: 'La page que vous cherchez n’existe pas ou a été déplacée.',
+    illustration: 'Illustration : page introuvable',
+    back: 'Retour',
+    home: 'Retour à l’accueil',
+  },
   actions: {
     retry: 'Réessayer',
     cancel: 'Annuler',

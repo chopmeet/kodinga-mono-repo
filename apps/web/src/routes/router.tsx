@@ -81,7 +81,6 @@ import AdminSettings from '@/pages/admin/settings/admin-settings';
 import AdministratorsSettingsTab from '@/pages/admin/settings/tabs/administrators';
 import CategoriesSettingsTab from '@/pages/admin/settings/tabs/categories';
 import GeneralSettingsTab from '@/pages/admin/settings/tabs/general';
-import LegalPageTab from '@/pages/admin/settings/tabs/legal-page';
 import MonetizationSettingsTab from '@/pages/admin/settings/tabs/monetization';
 import NotFound from '@/pages/extra/not-found';
 
@@ -345,9 +344,6 @@ export const AppRoutes: RouteObject[] = [
           { path: 'general', element: <GeneralSettingsTab /> },
           { path: 'categories', element: <CategoriesSettingsTab /> },
           { path: 'monetization', element: <MonetizationSettingsTab /> },
-          { path: 'terms', element: <LegalPageTab key="terms" pageId="terms" /> },
-          { path: 'privacy', element: <LegalPageTab key="privacy" pageId="privacy" /> },
-          { path: 'refund', element: <LegalPageTab key="refund" pageId="refund" /> },
         ],
       },
       {

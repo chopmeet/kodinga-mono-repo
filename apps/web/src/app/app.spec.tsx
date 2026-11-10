@@ -50,8 +50,8 @@ describe('App', () => {
   });
 
   it('renders the 404 page for unknown routes', () => {
-    const { getByText } = renderAt('/nope');
-    expect(getByText('404')).toBeTruthy();
+    const { getByRole } = renderAt('/nope');
+    expect(getByRole('heading', { level: 1, name: 'Page introuvable' })).toBeTruthy();
   });
 
   it('renders the login link in the header', () => {

@@ -3,9 +3,6 @@ import { Outlet, useOutletContext } from 'react-router-dom';
 
 import { ColgateWrapper, NavTabs, type Tab, TopTitle } from '@kodinga/ui';
 import {
-  type LegalPage,
-  type LegalPageId,
-  legalPages,
   type MonetizationSettings,
   monetizationSettings,
   platformSettings,
@@ -17,9 +14,6 @@ const tabs: Tab[] = [
   { id: 'general', title: 'Général', link: 'general' },
   { id: 'categories', title: 'Catégories', link: 'categories' },
   { id: 'monetization', title: 'Monétisation', link: 'monetization' },
-  { id: 'terms', title: 'CGU', link: 'terms' },
-  { id: 'privacy', title: 'Confidentialité', link: 'privacy' },
-  { id: 'refund', title: 'Remboursement', link: 'refund' },
 ];
 
 export type SettingsContext = {
@@ -27,8 +21,6 @@ export type SettingsContext = {
   saveGeneral: (value: PlatformSettings) => void;
   monetization: MonetizationSettings;
   saveMonetization: (value: MonetizationSettings) => void;
-  legal: Record<LegalPageId, LegalPage>;
-  saveLegal: (id: LegalPageId, content: string) => void;
 };
 
 /** Tabs read and save the settings held by this page (mock: local state, lost on reload) */
@@ -37,16 +29,12 @@ export const useSettings = () => useOutletContext<SettingsContext>();
 function AdminSettings() {
   const [general, saveGeneral] = useState(platformSettings);
   const [monetization, saveMonetization] = useState(monetizationSettings);
-  const [legal, setLegal] = useState(legalPages);
 
   const context: SettingsContext = {
     general,
     saveGeneral,
     monetization,
     saveMonetization,
-    legal,
-    saveLegal: (id, content) =>
-      setLegal((pages) => ({ ...pages, [id]: { ...pages[id], content, updated_at: new Date().toISOString() } })),
   };
 
   return (
