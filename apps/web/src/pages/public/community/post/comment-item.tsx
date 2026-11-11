@@ -1,4 +1,4 @@
-import { CircleCheck, CornerDownRight, ThumbsUp, Trash2 } from 'lucide-react';
+import { CircleCheck, CornerDownRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +7,7 @@ import type { PostComment } from '@/utils/api/community/community.type';
 import { ago, getName, nameInitials, plain } from '@/utils/Utils';
 import type { PostComments } from '../form/UsePostComments';
 import { CommentForm } from './comment-form';
+import { ReactionBar } from '../components/reaction-bar';
 
 type Props = {
   comment: PostComment;
@@ -20,7 +21,6 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
   const { t } = useTranslation();
   const [replying, setReplying] = useState(false);
   const author = getName(c.author) || c.author.username;
-  const liked = c.user_reactions.includes('like');
   const accepted = c.is_accepted_answer && !isReply;
 
   return (
@@ -52,17 +52,13 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
       <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-slate-700">{plain(c.content)}</p>
 
       <footer className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
-        <button
-          type="button"
-          onClick={() => page.likeComment(c)}
-          disabled={!page.isMember}
-          aria-pressed={liked}
-          aria-label={t('community.comment.likeOf', { action: liked ? t('community.feed.unlike') : t('community.feed.like'), author })}
-          title={page.isMember ? undefined : t('community.feed.membersOnly')}
-          className={cn('flex items-center gap-1.5 disabled:cursor-not-allowed', liked ? 'font-semibold text-blue-900' : 'hover:text-slate-900')}
-        >
-          <ThumbsUp className="size-4" /> {c.reactions_count}
-        </button>
+        <ReactionBar
+          target={c}
+          size="sm"
+          canReact={page.isMember}
+          onToggle={(reaction) => page.reactComment(c, reaction)}
+          likeLabel={(liked) => t('community.comment.likeOf', { action: liked ? t('community.feed.unlike') : t('community.feed.like'), author })}
+        />
         {!isReply && page.canComment && (
           <button type="button" onClick={() => setReplying((v) => !v)} aria-expanded={replying} className="hover:text-slate-900">
             {t('community.comment.reply')}

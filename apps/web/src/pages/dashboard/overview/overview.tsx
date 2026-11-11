@@ -8,7 +8,7 @@ import { MemberActivityView } from '@/pages/shared/member-activity';
 import { MyPointsAndBadges } from '@/pages/shared/member-points';
 import { useGetMemberActivityQuery, useGetMyCommunitiesQuery, useGetMySubscriptionsQuery, useGetOwnedRevenuesQuery } from '@/utils/api/community/community.api';
 import { useGetMyProfileQuery } from '@/utils/api/user/user.api';
-import { formatCompact, getName, useUser, xof } from '@/utils/Utils';
+import { formatCompact, getName, monthKey, useUser, xof } from '@/utils/Utils';
 
 function Stat({ value, label, to }: { value: ReactNode; label: string; to: string }) {
   return (
@@ -23,7 +23,6 @@ function Stat({ value, label, to }: { value: ReactNode; label: string; to: strin
 const figure = (n: number | undefined) => (n === undefined ? '—' : formatCompact(n));
 
 /** YYYY-MM of today, the key of monthly_revenue */
-const thisMonth = () => new Date().toISOString().slice(0, 7);
 
 
 function Overview() {
@@ -39,9 +38,9 @@ function Overview() {
   // Only a paid community receives payments
   const paidSlugs = (ownedList ?? []).filter((m) => m.community.pricing_type === 'paid').map((m) => m.community.slug);
   const revenues = useGetOwnedRevenuesQuery(paidSlugs, { skip: paidSlugs.length === 0 }).data;
-  const month = thisMonth();
+  const month = monthKey();
   const netThisMonth =
-    paidSlugs.length === 0 ? 0 : revenues?.reduce((sum, r) => sum + Number(r.monthly_revenue.find((m) => m.month === month)?.net ?? 0), 0);
+    paidSlugs.length === 0 ? 0 : revenues?.reduce((sum, r) => sum + Number(r.monthly_revenue?.find((m) => m.month === month)?.net ?? 0), 0);
   const activeSubscriptions = subscriptions?.filter((s) => s.is_active).length;
 
   return (

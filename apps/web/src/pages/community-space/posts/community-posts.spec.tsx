@@ -7,6 +7,14 @@ import { CommunityApi } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import type { User } from '@/utils/api/user/user.type';
 
+// The PUT to Mux (XMLHttpRequest, not stubbed by fetch): reports its progress at once
+vi.mock('@/utils/api/media/put-file', () => ({
+  putFile: vi.fn(async (_url: string, _file: File, onProgress: (percent: number) => void) => {
+    onProgress(40);
+    onProgress(100);
+  }),
+}));
+
 // Full app tree + Radix dialogs/menus: slow when the whole suite runs in parallel
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -37,18 +45,29 @@ const POSTS = [
 type Call = { method: string; url: URL; body: Record<string, unknown> | null };
 
 /** Fake feed api: type / q / pinned filters, pin, lock, delete */
-function stubFeedApi() {
-  let posts = [...POSTS];
+function stubFeedApi(initial: CommunityPostItem[] = POSTS) {
+  let posts = [...initial];
+  let uploads = 0;
   const calls: Call[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const request = input as Request;
     const url = new URL(request.url);
-    const text = request.method === 'GET' ? '' : await request.text();
+    // Files go as multipart: only JSON bodies are read
+    const json_ = request.headers.get('content-type')?.includes('json');
+    const text = request.method === 'GET' || !json_ ? '' : await request.text();
     const body = text ? JSON.parse(text) : null;
     calls.push({ method: request.method, url, body });
     const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
     const id = url.pathname.match(/posts\/([^/]+)\//)?.[1];
 
+    if (url.pathname.endsWith('/media/upload/')) {
+      uploads += 1;
+      return json({ success: true, data: { asset_id: `asset-${uploads}`, file_url: `https://utfs.io/f/${uploads}`, file_key: 'k', file_size: 3, mime_type: 'image/png' } }, 201);
+    }
+    if (id && request.method === 'DELETE' && url.pathname.includes('/media/')) return json({ success: true });
+    if (url.pathname.endsWith('/media/videos/upload-url/')) {
+      return json({ success: true, data: { video_asset_id: 'video-1', upload_id: 'u1', upload_url: 'https://storage.googleapis.com/mux-upload', status: 'waiting' } }, 201);
+    }
     if (id && url.pathname.endsWith('/pin/')) {
       posts = posts.map((p) => (p.id === id ? { ...p, is_pinned: !p.is_pinned } : p));
       return json({ success: true });
@@ -206,6 +225,78 @@ describe('Community space: posts', () => {
       code_language: '',
     });
     expect(await screen.findByText('Publication partagée avec la communauté.', {}, SLOW)).toBeTruthy();
+  });
+
+  it('attaches images and documents to a new post, checked before any upload', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const calls = stubFeedApi();
+    renderAppAt('/c/frontend-francophone/posts');
+    fireEvent.click(await screen.findByRole('button', { name: /Nouvelle publication/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    expect(within(dialog).queryByText('Bientôt')).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText(/^Titre/), { target: { value: 'Photos du meetup' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Contenu/), { target: { value: 'Merci à tous !' } });
+
+    // A pdf is not an image: refused here, never sent
+    fireEvent.change(within(dialog).getByLabelText('Choisir des images'), {
+      target: { files: [new File(['png'], 'scene.png', { type: 'image/png' }), new File(['%PDF'], 'plan.pdf', { type: 'application/pdf' })] },
+    });
+    expect(await within(dialog).findByText(/« plan\.pdf » : formats acceptés JPG, PNG, WEBP, GIF\./, {}, SLOW)).toBeTruthy();
+    const images = await within(dialog).findByRole('list', { name: 'Images jointes' }, SLOW);
+    expect(within(images).getByRole('img', { name: 'scene.png' })).toBeTruthy();
+    await waitFor(() => expect(within(dialog).queryByRole('status', { name: /Envoi de/ })).toBeNull(), SLOW);
+
+    fireEvent.change(within(dialog).getByLabelText('Choisir des documents'), { target: { files: [new File(['%PDF'], 'programme.pdf', { type: 'application/pdf' })] } });
+    expect(await within(within(dialog).getByRole('list', { name: 'Documents joints' })).findByText('programme.pdf', {}, SLOW)).toBeTruthy();
+    await waitFor(() => expect((within(dialog).getByRole('button', { name: 'Publier' }) as HTMLButtonElement).disabled).toBe(false), SLOW);
+    expect(calls.filter((c) => c.url.pathname.endsWith('/media/upload/'))).toHaveLength(2);
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publier' }));
+    await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/feed/'))?.body).toMatchObject({ media_ids: ['asset-1', 'asset-2'] }), SLOW);
+  });
+
+  it('sends a video straight to Mux, then publishes it with the post', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const calls = stubFeedApi();
+    renderAppAt('/c/frontend-francophone/posts');
+    fireEvent.click(await screen.findByRole('button', { name: /Nouvelle publication/ }, SLOW));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.change(within(dialog).getByLabelText(/^Titre/), { target: { value: 'Démo du projet' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Contenu/), { target: { value: 'La démo en vidéo.' } });
+
+    fireEvent.change(within(dialog).getByLabelText('Choisir des vidéos'), {
+      target: { files: [new File(['avi'], 'demo.avi', { type: 'video/x-msvideo' }), new File(['mp4'], 'demo.mp4', { type: 'video/mp4' })] },
+    });
+    expect(await within(dialog).findByText(/« demo\.avi » : formats acceptés MP4, MOV, WEBM\./, {}, SLOW)).toBeTruthy();
+    const videos = await within(dialog).findByRole('list', { name: 'Vidéos jointes' }, SLOW);
+    expect(await within(videos).findByText(/prête, traitée après publication/, {}, SLOW)).toBeTruthy();
+    expect(calls.find((c) => c.url.pathname.endsWith('/media/videos/upload-url/'))?.body).toMatchObject({ file_name: 'demo.mp4', mime_type: 'video/mp4', purpose: 'post_video' });
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publier' }));
+    await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/feed/'))?.body).toMatchObject({ video_ids: ['video-1'] }), SLOW);
+  });
+
+  it('removes an attachment of a published post when it is saved', async () => {
+    act(() => {
+      store.dispatch(onSetUserToken({ user: { id: 'u1', username: 'awa' } as User, token: 'access', refresh: 'r' }));
+    });
+    const media = (id: string, type: 'IMAGE' | 'DOCUMENT', filename: string) => ({
+      id, type, provider: 'UPLOADTHING' as const, url: `https://utfs.io/f/${id}`, playback_url: null, thumbnail_url: type === 'IMAGE' ? `https://utfs.io/f/${id}` : null,
+      filename, mime_type: '', size: 2048, duration: null, width: null, height: null, status: 'READY' as const, order: 0,
+    });
+    const calls = stubFeedApi([post('p2', 'Comment typer un hook générique ?', 'question', { media: [media('m1', 'IMAGE', 'schema.png'), media('m2', 'DOCUMENT', 'notes.pdf')] })]);
+    renderAppAt('/c/frontend-francophone/posts');
+    const menu = await openMenu('Actions pour Comment typer un hook générique ?');
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Modifier' }));
+    const dialog = await screen.findByRole('dialog', {}, SLOW);
+    fireEvent.click(await within(dialog).findByRole('button', { name: 'Retirer « schema.png »' }, SLOW));
+    // Not deleted yet: "Annuler" would keep it
+    expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(calls.find((c) => c.method === 'PATCH')?.body).toMatchObject({ media_ids: ['m2'] }), SLOW);
+    expect(calls.find((c) => c.method === 'DELETE')?.url.pathname).toMatch(/\/posts\/p2\/media\/m1\/$/);
   });
 
   it('creates a poll with at least two options', async () => {

@@ -246,6 +246,44 @@ export type SanctionData = {
 
 export type PostType = 'discussion' | 'question' | 'project_showcase' | 'poll' | 'announcement';
 
+export type PostMediaType = 'IMAGE' | 'VIDEO' | 'DOCUMENT';
+export type PostMediaStatus = 'PENDING_UPLOAD' | 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED' | 'DELETED';
+
+/** One attachment of a post (PostListSerializer.get_media: MediaAsset / VideoAsset.to_unified_dict) */
+export type PostMedia = {
+  id: string;
+  type: PostMediaType;
+  provider: 'UPLOADTHING' | 'MUX' | 'LOCAL' | 'S3';
+  url: string | null;
+  /** HLS (.m3u8) of a Mux video */
+  playback_url: string | null;
+  playback_id?: string | null;
+  thumbnail_url: string | null;
+  /** HD poster of a Mux video */
+  poster_url?: string | null;
+  /** "16:9", "9:16"… (video) */
+  aspect_ratio?: string | null;
+  filename: string;
+  mime_type: string;
+  /** Bytes */
+  size: number;
+  /** Seconds (video) */
+  duration: number | null;
+  width: number | null;
+  height: number | null;
+  status: PostMediaStatus;
+  order: number;
+};
+
+/** POST media/upload/ (one file): the MediaAsset to put in media_ids */
+export type UploadedPostFile = { asset_id: string; file_url: string; file_key: string; file_size: number; mime_type: string };
+
+/** GET media/assets/<id>/download/ */
+export type MediaDownload = { id: string; file_name: string; file_url: string; mime_type: string; file_size: number };
+
+/** Reaction key ('like', 'fire'…) or any Unicode emoji, with how many members chose it */
+export type ReactionsSummary = Record<string, number>;
+
 export type CommunityPostItem = {
   id: string;
   community_id: string;
@@ -255,8 +293,12 @@ export type CommunityPostItem = {
   post_type: PostType;
   code_snippet?: string;
   code_language?: string;
-  /** Reactions of the signed-in user ('like', 'fire'…) */
+  /** Reactions of the signed-in user ('like', 'fire'… or an emoji) */
   user_reactions?: string[];
+  /** Count per reaction, e.g. { like: 4, '🎉': 1 } */
+  reactions_summary?: ReactionsSummary;
+  /** Images, documents and videos, in display order */
+  media?: PostMedia[];
   /** Saved by the signed-in user */
   is_bookmarked?: boolean;
   poll?: PostPoll | null;
@@ -292,6 +334,7 @@ export type PostComment = {
   is_accepted_answer: boolean;
   reactions_count: number;
   user_reactions: string[];
+  reactions_summary?: ReactionsSummary;
   replies: PostComment[];
   created_at: string;
   updated_at: string;
@@ -305,6 +348,10 @@ export type PostWriteData = {
   code_snippet: string;
   code_language: string;
   poll?: { question?: string; options: string[]; is_multiple_choice: boolean; duration_days: number };
+  /** Images and documents uploaded first (MediaAsset ids), attached in this order */
+  media_ids?: string[];
+  /** Mux videos (VideoAsset ids) */
+  video_ids?: string[];
 };
 
 export type CommunityFeedQuery = {

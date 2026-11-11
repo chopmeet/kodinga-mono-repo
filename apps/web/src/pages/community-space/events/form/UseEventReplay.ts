@@ -5,6 +5,7 @@ import { useAttachEventReplayMutation, useCreateVideoUploadMutation } from '@/ut
 import type { CommunityEvent } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
 import { isPlatformUrl } from '@/utils/Utils';
+import { putFile } from '@/utils/api/media/put-file';
 
 export const REPLAY_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 export const REPLAY_MAX_GB = 5;
@@ -17,17 +18,6 @@ export function checkReplay(file: File) {
 }
 
 /** PUT of the file to the direct upload url of Mux, with its progress (fetch has none) */
-function putToMux(url: string, file: File, onProgress: (percent: number) => void) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(String(xhr.status))));
-    xhr.onerror = () => reject(new Error('network'));
-    xhr.send(file);
-  });
-}
-
 /**
  * Replay of a finished event, by its team: a video is created on the api (media/videos/upload-url/),
  * the file goes straight to Mux, then the video is attached to the event (events/<id>/replay/).
@@ -92,7 +82,7 @@ function UseEventReplay(slug: string, event: CommunityEvent | undefined) {
     try {
       try {
         const target = await createUpload({ title: `${event.title} (replay)`, cors_origin: window.location.origin }).unwrap();
-        await putToMux(target.upload_url, file, setProgress);
+        await putFile(target.upload_url, file, setProgress);
         await attach({ slug, eventId: event.id, video_asset_id: target.video_asset_id }).unwrap();
         customToast.success({ message: 'Replay ajouté : il sera visible sous peu.' });
       } catch {

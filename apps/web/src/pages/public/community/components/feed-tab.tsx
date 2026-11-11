@@ -1,4 +1,4 @@
-import { Bookmark, CircleCheck, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal, ThumbsUp } from 'lucide-react';
+import { Bookmark, CircleCheck, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -8,7 +8,7 @@ import PostFormModal from '@/pages/community-space/posts/modals/post-form-modal'
 import { WeeklyDigest } from '@/pages/shared/weekly-digest';
 import { SemanticSearch } from './semantic-search';
 import { CodeBlock } from '@/pages/shared/code-block';
-import { useGetCommunityFeedQuery, useToggleBookmarkMutation, useTogglePostLikeMutation } from '@/utils/api/community/community.api';
+import { useGetCommunityFeedQuery, useToggleBookmarkMutation, useTogglePostReactionMutation } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, PostType } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { useDebounced } from '@/utils/hooks/useDebounced';
@@ -20,6 +20,8 @@ import { PollCard } from './poll-card';
 import { PostComments } from './post-comments';
 import { Pill } from './section-header';
 import { useRealtime, useRealtimeCommunityFeed } from '@/utils/realtime/use-realtime';
+import { PostMediaView } from './post-media';
+import { ReactionBar } from './reaction-bar';
 
 const PAGE_SIZE = 10;
 // Labels: community.feed.filters.<id>
@@ -27,20 +29,19 @@ const FILTERS: (PostType | 'all')[] = ['all', 'announcement', 'discussion', 'que
 
 function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; canReact: boolean; href: string; page: CommunityPage }) {
   const { t } = useTranslation();
-  const [toggleLike, { isLoading }] = useTogglePostLikeMutation();
+  const [toggleReaction, { isLoading }] = useTogglePostReactionMutation();
   const [toggleBookmark, { isLoading: isSaving }] = useToggleBookmarkMutation();
   const signedIn = page.membership !== 'visitor';
   const [expanded, setExpanded] = useState(false);
   // The comments open under the card: no page change, the feed keeps its scroll
   const [showComments, setShowComments] = useState(false);
   const author = getName(post.author) || post.author.username;
-  const liked = !!post.user_reactions?.includes('like');
   const text = plain(post.content);
   const long = text.length > 420;
 
-  const like = async () => {
+  const react = async (reaction: string) => {
     try {
-      await toggleLike(post.id).unwrap();
+      await toggleReaction({ postId: post.id, reaction }).unwrap();
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     }
@@ -100,23 +101,20 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
           {expanded ? t('community.feed.less') : t('community.feed.readMore')}
         </button>
       )}
+      <PostMediaView media={post.media} />
       {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={canReact} />}
       {post.code_snippet && (
         <CodeBlock code={post.code_snippet} language={post.code_language} />
       )}
 
       <footer className="mt-6 flex items-center gap-6 border-t border-slate-200 pt-4 text-sm text-slate-600">
-        <button
-          type="button"
-          onClick={like}
-          disabled={!canReact || isLoading}
-          aria-pressed={liked}
-          aria-label={liked ? t('community.feed.unlike') : t('community.feed.like')}
-          title={canReact ? undefined : t('community.feed.membersOnly')}
-          className={cn('flex items-center gap-2 rounded-md px-2 py-1 transition-colors disabled:cursor-not-allowed', liked ? 'font-semibold text-blue-900' : 'hover:text-slate-900')}
-        >
-          <ThumbsUp className={cn('size-5', liked && 'fill-blue-900/15')} /> {post.reactions_count}
-        </button>
+        <ReactionBar
+          target={post}
+          canReact={canReact}
+          busy={isLoading}
+          onToggle={react}
+          likeLabel={(liked) => (liked ? t('community.feed.unlike') : t('community.feed.like'))}
+        />
         <button
           type="button"
           onClick={() => setShowComments((v) => !v)}

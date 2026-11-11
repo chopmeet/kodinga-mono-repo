@@ -19,6 +19,8 @@ import i18n from '@/utils/i18n';
 import type { ChatMessage } from '@/utils/api/messaging/messaging.type';
 import { nameInitials } from '@/utils/Utils';
 import { conversationName, otherPerson, type MessagesPage } from '../form/UseMessages';
+import { EmojiPickerButton } from '@/pages/shared/emoji-picker-button';
+import { useEmojiInsert } from '@/pages/shared/use-emoji-insert';
 
 
 /** "Aujourd’hui", "Hier", "lundi 12 octobre" */
@@ -35,6 +37,7 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(m.content);
+  const draftEmoji = useEmojiInsert(draft, setDraft);
 
   const save = async () => {
     const text = draft.trim();
@@ -75,6 +78,7 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
         {editing ? (
           <div className="flex flex-col gap-2">
             <textarea
+              ref={draftEmoji.ref}
               aria-label={t('inbox.messages.editLabel')}
               value={draft}
               autoFocus
@@ -82,7 +86,8 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
               onChange={(e) => setDraft(e.target.value)}
               className="w-64 max-w-full resize-y rounded-md bg-white/95 p-2 text-sm text-slate-900"
             />
-            <div className="flex justify-end gap-2 text-xs">
+            <div className="flex items-center justify-end gap-2 text-xs">
+              <EmojiPickerButton onSelect={draftEmoji.insert} className="mr-auto p-1 text-blue-100 hover:bg-white/10 hover:text-white" />
               <button type="button" onClick={() => setEditing(false)} className="opacity-80 hover:opacity-100">
                 {t('common.actions.cancel')}
               </button>
@@ -115,6 +120,10 @@ export function typingLabel(names: string[]) {
 export function Thread({ page }: { page: MessagesPage }) {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
+  const contentEmoji = useEmojiInsert(content, (next) => {
+    setContent(next);
+    page.sendTyping(!!next.trim());
+  });
   const endRef = useRef<HTMLDivElement>(null);
   const conversation = page.current;
   const count = page.messages.length;
@@ -197,7 +206,9 @@ export function Thread({ page }: { page: MessagesPage }) {
         <label className="sr-only" htmlFor="message-input">
           {t('inbox.messages.yourMessage')}
         </label>
+        <EmojiPickerButton onSelect={contentEmoji.insert} align="start" className="mb-1.5" />
         <textarea
+          ref={contentEmoji.ref}
           id="message-input"
           rows={1}
           value={content}

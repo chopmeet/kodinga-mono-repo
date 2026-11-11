@@ -1,5 +1,23 @@
 // Texts shared by many pages (time, amounts, generic actions and states)
 export const common = {
+  emoji: {
+    open: 'Insérer un emoji',
+    react: 'Ajouter une réaction',
+    loading: 'Chargement des emojis…',
+    search: 'Rechercher un emoji',
+    noResults: 'Aucun emoji trouvé',
+    categories: {
+      suggested: 'Récents',
+      smileys_people: 'Smileys et personnes',
+      animals_nature: 'Animaux et nature',
+      food_drink: 'Nourriture et boissons',
+      travel_places: 'Voyages et lieux',
+      activities: 'Activités',
+      objects: 'Objets',
+      symbols: 'Symboles',
+      flags: 'Drapeaux',
+    },
+  },
   time: {
     now: 'À l’instant',
     minutesAgo: 'Il y a {{count}} min',

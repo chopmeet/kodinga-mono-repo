@@ -96,6 +96,16 @@ export function ago(iso: string) {
 }
 
 /** Plain text of a Markdown post or comment */
+/**
+ * Text with `insert` put at the caret of `el` (replacing the selection), and where the caret goes
+ * after it; at the end when the field is unknown. For emojis, which are several code units.
+ */
+export function insertAtCursor(el: HTMLInputElement | HTMLTextAreaElement | null, value: string, insert: string) {
+  const start = el?.selectionStart ?? value.length;
+  const end = el?.selectionEnd ?? start;
+  return { value: value.slice(0, start) + insert + value.slice(end), caret: start + insert.length };
+}
+
 export const plain = (content: string) => content.replace(/[#*_`>[\]]/g, '').replace(/[ \t]+/g, ' ').trim();
 
 /** /communities/<slug>/posts/<id> */
@@ -349,6 +359,9 @@ export const intervalLabel = Object.fromEntries(
     },
   ]),
 ) as Record<BillingInterval, { label: string; suffix: string }>;
+
+/** "2026-11": the month of a date (local time, like monthly_revenue[].month), this month by default */
+export const monthKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
 export const xof = (value: number) => `${numberFormat().format(value)} FCFA`;
 

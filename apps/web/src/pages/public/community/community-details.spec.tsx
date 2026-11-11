@@ -10,7 +10,11 @@ import i18n from '@/utils/i18n';
 vi.setConfig({ testTimeout: 15_000 });
 
 type Membership = { is_member: boolean; role: string | null; status: string | null };
-type Options = { privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean; commentsFail?: boolean; membersFail?: boolean; notificationsOn?: boolean };
+type Options = {
+  /** reactions_summary of the post p1 (none: before the emoji reactions) */
+  summary?: Record<string, number>;
+  /** Attachments of the post p1 */
+  media?: Record<string, unknown>[]; privacy?: 'public' | 'private'; pricing?: 'free' | 'paid'; approval?: boolean; membership?: Membership; status?: number; plansInDetail?: boolean; commentsFail?: boolean; membersFail?: boolean; notificationsOn?: boolean };
 
 const monthlyPlan = { id: 'plan-m', name: 'Mensuel', slug: 'mensuel', description: '', price: '5000.00', currency: 'XOF', billing_interval: 'month', interval_count: 1, community_id: 'c1', community_name: 'Abidjan React', features: ['Lives mensuels'], is_active: true, order: 1 };
 
@@ -94,6 +98,7 @@ function stubCommunityApi(o: Options = {}) {
       return json({ success: true, data: { ...community(o, membership), ...(o.plansInDetail ? { subscription_plans: [monthlyPlan] } : {}), notifications_enabled: !!o.notificationsOn } });
     }
     if (path.endsWith('/posts/p1/react/')) return json({ success: true, data: { reacted: true } });
+    if (path.endsWith('/media/assets/m3/download/')) return json({ success: true, data: { id: 'm3', file_name: 'slides.pdf', file_url: 'https://utfs.io/f/m3', mime_type: 'application/pdf', file_size: 2048 } });
     if (path.endsWith('/posts/p1/bookmark/')) return json({ success: true, data: { is_bookmarked: true } });
     if (path.endsWith('/ai/semantic-search/')) {
       return json({ success: true, data: { query: body?.query, count: 2, results: [
@@ -131,7 +136,7 @@ function stubCommunityApi(o: Options = {}) {
       return json({ success: true, data: comments });
     }
     if (path.endsWith('/communities/abidjan-react/feed/')) {
-      const post = { id: 'p1', community_id: 'c1', author: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye' }, title: 'Retour sur React Conf', content: 'Les **Server Components** en prod.', post_type: 'discussion', is_pinned: true, is_locked: false, is_resolved: false, views_count: 1, reactions_count: 12, comments_count: 3, created_at: '2026-10-10T10:00:00Z' };
+      const post = { id: 'p1', community_id: 'c1', author: { id: 'u2', username: 'awa', first_name: 'Awa', last_name: 'Ndiaye' }, title: 'Retour sur React Conf', content: 'Les **Server Components** en prod.', post_type: 'discussion', is_pinned: true, is_locked: false, is_resolved: false, views_count: 1, reactions_count: 12, comments_count: 3, created_at: '2026-10-10T10:00:00Z', ...(o.summary ? { reactions_summary: o.summary } : {}), ...(o.media ? { media: o.media } : {}) };
       return json({ success: true, pagination: { count: 1 }, results: [post] });
     }
     if (path.endsWith('/communities/abidjan-react/leaderboard/')) {
@@ -345,6 +350,63 @@ describe('Public community page', () => {
     fireEvent.click(screen.getByRole('button', { name: /Une question, une idée, un projet/ }));
     const dialog = await screen.findByRole('dialog', {}, SLOW);
     expect(within(dialog).getByRole('radio', { name: /Discussion/ }).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('shows the emoji reactions of a post, and reacts with one of them', async () => {
+    signIn();
+    const calls = stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' }, summary: { like: 10, '🎉': 2 } });
+    renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    // The like button counts the likes only, each other emoji has its chip
+    expect(within(feed).getByRole('button', { name: 'J’aime' }).textContent).toContain('10');
+    fireEvent.click(within(feed).getByRole('button', { name: '🎉 : 2, réagir aussi' }));
+    expect(await within(feed).findByRole('button', { name: '🎉 : 3, retirer ma réaction' }, SLOW)).toBeTruthy();
+    expect(calls.find((c) => c.url.pathname.endsWith('/posts/p1/react/'))?.body).toEqual({ reaction_type: '🎉' });
+    expect(within(feed).getByRole('button', { name: 'Ajouter une réaction' })).toBeTruthy();
+  });
+
+  it('shows the images of a post in a grid and a viewer, and downloads its documents', async () => {
+    signIn();
+    const media = (id: string, type: string, filename: string, order: number) => ({
+      id, type, provider: 'UPLOADTHING', url: `https://utfs.io/f/${id}`, playback_url: null, thumbnail_url: null, filename,
+      mime_type: '', size: 2048, duration: null, width: null, height: null, status: 'READY', order,
+    });
+    const calls = stubCommunityApi({
+      membership: { is_member: true, role: 'member', status: 'active' },
+      media: [media('m1', 'IMAGE', 'scene.png', 0), media('m2', 'IMAGE', 'public.png', 1), media('m3', 'DOCUMENT', 'slides.pdf', 2)],
+    });
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    const images = within(feed).getByRole('list', { name: 'Images de la publication' });
+    fireEvent.click(within(images).getByRole('button', { name: 'Agrandir l’image public.png' }));
+    const viewer = await screen.findByRole('dialog', { name: 'public.png' }, SLOW);
+    fireEvent.click(within(viewer).getByRole('button', { name: /Suivante/ }));
+    expect(await screen.findByRole('dialog', { name: 'scene.png' }, SLOW)).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+    fireEvent.click(await within(feed).findByRole('button', { name: 'Télécharger slides.pdf' }, SLOW));
+    await waitFor(() => expect(open).toHaveBeenCalledWith('https://utfs.io/f/m3', '_blank', 'noopener'), SLOW);
+    expect(calls.some((c) => c.url.pathname.endsWith('/media/assets/m3/download/'))).toBe(true);
+  });
+
+  it('plays a ready video on demand, and tells when one is still being processed', async () => {
+    signIn();
+    const video = (id: string, status: string, extra: Record<string, unknown> = {}) => ({
+      id, type: 'VIDEO', provider: 'MUX', url: null, playback_url: status === 'READY' ? `https://stream.mux.com/${id}.m3u8` : null, thumbnail_url: `https://image.mux.com/${id}/thumbnail.webp`,
+      filename: `${id}.mp4`, mime_type: 'video/mp4', size: 1000, duration: 102, width: 1920, height: 1080, status, order: 0, ...extra,
+    });
+    stubCommunityApi({ membership: { is_member: true, role: 'member', status: 'active' }, media: [video('demo', 'READY'), video('live', 'PROCESSING')] });
+    renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    const videos = within(feed).getByRole('list', { name: 'Vidéos de la publication' });
+    expect(within(videos).getByText('Vidéo en cours de traitement')).toBeTruthy();
+    // Nothing loaded before the click: the poster, the duration and a play button
+    expect(within(videos).queryByLabelText('Vidéo demo.mp4')).toBeNull();
+    const play = within(videos).getByRole('button', { name: 'Lire la vidéo demo.mp4' });
+    expect(play.textContent).toContain('1:42');
+    fireEvent.click(play);
+    expect(await within(videos).findByLabelText('Vidéo demo.mp4', {}, SLOW)).toBeTruthy();
   });
 
   it('comments a post right in the feed, without leaving it', async () => {

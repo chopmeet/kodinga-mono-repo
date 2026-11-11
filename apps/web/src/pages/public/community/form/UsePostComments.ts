@@ -5,7 +5,7 @@ import {
   useAddPostCommentMutation,
   useDeletePostCommentMutation,
   useGetPostCommentsQuery,
-  useToggleCommentLikeMutation,
+  useToggleCommentReactionMutation,
 } from '@/utils/api/community/community.api';
 import type { CommunityPostItem, CommunityRole, PostComment } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
@@ -32,7 +32,7 @@ function UsePostComments({ post, isMember, role, enabled = true }: Options) {
 
   const [addComment] = useAddPostCommentMutation();
   const [deleteComment] = useDeletePostCommentMutation();
-  const [toggleCommentLike] = useToggleCommentLikeMutation();
+  const [toggleCommentReaction] = useToggleCommentReactionMutation();
   const [acceptAnswer, { isLoading: isAccepting }] = useAcceptAnswerMutation();
 
   const isModerator = isMember && !!role && role !== 'member';
@@ -73,7 +73,8 @@ function UsePostComments({ post, isMember, role, enabled = true }: Options) {
       return true;
     },
     remove: (c: PostComment) => run(deleteComment({ postId, commentId: c.id }).unwrap(), i18n.t('community.toasts.commentDeleted')),
-    likeComment: (c: PostComment) => run(toggleCommentLike({ postId, commentId: c.id }).unwrap()),
+    /** Adds or removes a reaction of the user on a comment ('like' or any emoji) */
+    reactComment: (c: PostComment, reaction: string) => run(toggleCommentReaction({ postId, commentId: c.id, reaction }).unwrap()),
     accept: (c: PostComment) => run(acceptAnswer({ postId, commentId: c.id }).unwrap(), i18n.t('community.toasts.answerAccepted')),
   };
 }

@@ -4,9 +4,10 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { customToast } from '@kodinga/ui';
-import { useCreatePostMutation, useUpdatePostMutation } from '@/utils/api/community/community.api';
+import { useCreatePostMutation, useDeletePostMediaMutation, useUpdatePostMutation } from '@/utils/api/community/community.api';
 import type { PostWriteData } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
+import UsePostAttachments from './UsePostAttachments';
 import type { SpacePost } from './UseSpacePosts';
 
 /** A discussion may go without a title (the feed shows its first words); the other types need one */
@@ -78,6 +79,8 @@ function UsePostForm({
 }) {
   const [createPost] = useCreatePostMutation();
   const [updatePost] = useUpdatePostMutation();
+  const [deletePostMedia] = useDeletePostMediaMutation();
+  const attachments = UsePostAttachments({ open, media: post?.media });
   const form = useForm<PostFormValues>({ resolver: zodResolver(schema), defaultValues: DEFAULTS });
   const { control, reset, setError, watch, handleSubmit } = form;
   const options = useFieldArray({ control, name: 'poll_options' });
@@ -94,13 +97,24 @@ function UsePostForm({
       code_snippet: v.with_code ? v.code_snippet : '',
       code_language: v.with_code ? v.code_language : '',
     };
+    // Images and documents: their ids in display order (on edit, only when they changed: the list replaces the previous one)
+    if (!post && attachments.mediaIds.length) body.media_ids = attachments.mediaIds;
+    if (!post && attachments.videoIds.length) body.video_ids = attachments.videoIds;
     try {
       if (post) {
+        if (attachments.changed) {
+          // Removed attachments are deleted from the storage, then the list of the post is replaced
+          for (const mediaId of attachments.removedExisting) await deletePostMedia({ postId: post.id, mediaId }).unwrap();
+          body.media_ids = attachments.mediaIds;
+          body.video_ids = attachments.videoIds;
+        }
         await updatePost({ postId: post.id, ...body }).unwrap();
+        attachments.markPublished();
         customToast.success({ message: 'Publication mise à jour.' });
         onDone();
       } else {
         // Optimistic instant feedback (Facebook/LinkedIn-style: 0ms close & DOM insertion)
+        attachments.markPublished();
         onDone();
         customToast.success({ message: 'Publication partagée avec la communauté.' });
         createPost({
@@ -135,6 +149,7 @@ function UsePostForm({
   return {
     form,
     options,
+    attachments,
     type: watch('post_type'),
     withCode: watch('with_code'),
     titleOptional: watch('post_type') === TITLE_OPTIONAL,

@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { ChartTooltip, formatCompact, formatXof, GRID_COLOR, SERIES, TICK } from '@/pages/shared/chart-theme';
 import type { MonthlyRevenue } from '@/utils/api/billing/billing.type';
 import { dateFormat } from '@/utils/format';
+import { monthKey } from '@/utils/Utils';
 
 const MONTHS = 12;
 type Point = { month: string; label: string; gross: number; fees: number; net: number; count: number };
@@ -16,7 +17,7 @@ function toPoints(monthly: MonthlyRevenue[]): Point[] {
   const [year, month] = monthly[monthly.length - 1].month.split('-').map(Number);
   return Array.from({ length: MONTHS }, (_, i) => {
     const date = new Date(year, month - 1 - (MONTHS - 1 - i), 1);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const key = monthKey(date);
     const m = byMonth.get(key);
     return { month: key, label: dateFormat({ month: 'short', year: '2-digit' }).format(date), gross: Number(m?.gross ?? 0), fees: Number(m?.fees ?? 0), net: Number(m?.net ?? 0), count: m?.payments_count ?? 0 };
   });

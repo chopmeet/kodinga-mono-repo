@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, CircleCheck, Lock, MessageCircle, Pin } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -12,6 +12,8 @@ import { ago, getName, nameInitials, plain, postTypeLabel, useUser } from '@/uti
 import { PollCard } from '../components/poll-card';
 import UsePostDetails, { type PostDetailsPage } from '../form/UsePostDetails';
 import { CommentForm } from './comment-form';
+import { PostMediaView } from '../components/post-media';
+import { ReactionBar } from '../components/reaction-bar';
 import { CommentItem } from './comment-item';
 import { DeleteCommentDialog } from './delete-comment-dialog';
 import { HelpPanel } from './help-panel';
@@ -19,7 +21,6 @@ import { HelpPanel } from './help-panel';
 function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetailsPage }) {
   const { t } = useTranslation();
   const author = getName(post.author) || post.author.username;
-  const liked = !!post.user_reactions?.includes('like');
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-7">
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-medium">
@@ -49,23 +50,20 @@ function PostArticle({ post, page }: { post: CommunityPostItem; page: PostDetail
 
       {post.title && <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-900">{post.title}</h1>}
       <p className={cn('leading-relaxed whitespace-pre-line text-slate-700', post.title ? 'mt-4' : 'mt-5')}>{plain(post.content)}</p>
+      <PostMediaView media={post.media} />
       {post.code_snippet && (
         <CodeBlock code={post.code_snippet} language={post.code_language} />
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} canVote={page.isMember} />}
 
       <footer className="mt-6 flex items-center gap-6 border-t border-slate-200 pt-4 text-sm text-slate-600">
-        <button
-          type="button"
-          onClick={page.likePost}
-          disabled={!page.isMember || page.isLiking}
-          aria-pressed={liked}
-          aria-label={liked ? t('community.feed.unlike') : t('community.feed.like')}
-          title={page.isMember ? undefined : t('community.feed.membersOnly')}
-          className={cn('flex items-center gap-2 disabled:cursor-not-allowed', liked ? 'font-semibold text-blue-900' : 'hover:text-slate-900')}
-        >
-          <ThumbsUp className="size-5" /> {post.reactions_count}
-        </button>
+        <ReactionBar
+          target={post}
+          canReact={page.isMember}
+          busy={page.isReacting}
+          onToggle={page.reactPost}
+          likeLabel={(liked) => (liked ? t('community.feed.unlike') : t('community.feed.like'))}
+        />
         <span className="flex items-center gap-2">
           <MessageCircle className="size-5" /> {post.comments_count}
         </span>
