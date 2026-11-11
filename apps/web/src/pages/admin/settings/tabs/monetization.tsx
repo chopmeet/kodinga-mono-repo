@@ -78,7 +78,7 @@ function MonetizationSettingsTab() {
           <TextareaInput
             id="pro_yearly_description"
             label="Description du Pro annuel"
-            rows={2}
+            rows={3}
             fieldHelp="Affichée avec la formule annuelle. Elle ne suit pas les prix toute seule : mettez-la à jour quand vous les changez."
             customClassContainer="mb-1"
             error={errors.pro_yearly_description?.message}

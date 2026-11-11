@@ -5,7 +5,7 @@ import { cn, Input, InputPassword, SelectInput } from '@kodinga/ui';
 import { PasswordCheck } from '@/pages/auth/components/password-check';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
 import { useGetProPlansQuery } from '@/utils/api/community/community.api';
-import { intervalLabel, xof } from '@/utils/Utils';
+import { intervalLabel, planPrice, xof } from '@/utils/Utils';
 import { BRAND_COLORS, type CreateCommunityFlow, MIN_MEMBERSHIP_PRICE } from '../form/UseCreateCommunity';
 import { ImageField } from './image-field';
 import { OptionCard } from './option-card';
@@ -113,7 +113,7 @@ function useProPrice() {
   const { data } = useGetProPlansQuery();
   // Not a list (api error page, older api): no price shown, the page still works
   const monthly = (Array.isArray(data) ? data : []).find((p) => p.billing_interval === 'month' && Number(p.price) > 0);
-  return monthly ? `${xof(Number(monthly.price))} ${intervalLabel.month.suffix}` : null;
+  return monthly ? planPrice(monthly) : null;
 }
 
 export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
@@ -146,11 +146,29 @@ export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
           <OptionCard
             icon={Wallet}
             title={t('create.access.paid')}
-            description={proPrice ? t('create.access.paidPro', { price: proPrice }) : t('create.access.paidProNoPrice')}
+            description={
+              flow.pro.isPro
+                ? t('create.access.paidReady')
+                : flow.canChoosePaid
+                  ? t('create.access.paidChosen')
+                  : proPrice
+                    ? t('create.access.paidPro', { price: proPrice })
+                    : t('create.access.paidProNoPrice')
+            }
             value="paid"
+            disabled={!flow.canChoosePaid}
+            className={!flow.canChoosePaid ? 'cursor-not-allowed opacity-60' : undefined}
             {...register('pricing_type')}
           />
         </div>
+        {!flow.canChoosePaid && (
+          <p className="mt-3 text-sm text-slate-600">
+            {t('create.access.paidLocked')}{' '}
+            <button type="button" onClick={flow.switchToPro} className="font-semibold text-brand hover:underline">
+              {t('create.access.goPro')}
+            </button>
+          </p>
+        )}
         {paid && (
           <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-semibold text-slate-900">{t('create.access.priceTitle')}</p>

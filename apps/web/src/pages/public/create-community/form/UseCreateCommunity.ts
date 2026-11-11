@@ -11,10 +11,12 @@ import { suggestUsername } from '@/pages/auth/hooks/UseRegisterForm';
 import { useLoginUserMutation, useRegisterUserMutation } from '@/utils/api/auth/auth.api';
 import { useCreateCommunityMutation } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
+import type { User } from '@/utils/api/user/user.type';
 import { slugify, useImageUpload } from '@/utils/Utils';
 import i18n from '@/utils/i18n';
 import { numberFormat } from '@/utils/format';
 import { type ImageSource, useFilePreview } from '../components/image-field';
+import UseProChoice from './UseProChoice';
 
 
 // Schemas built when the flow opens: their messages follow the current language
@@ -51,8 +53,12 @@ const communitySchema = () => z
   membership_price: z.string().trim(),
   membership_interval: z.enum(['month', 'year', 'one_time']),
   membership_plan_name: z.string().trim().max(120, tr('max120')),
+  /** Plan chooser (over the flow): free, or Kodinga Pro paid before the steps (with the Pro plan chosen) */
+  formula: z.enum(['free', 'pro']),
+  pro_plan_id: z.string(),
 })
   .superRefine((v, ctx) => {
+    if (v.formula === 'pro' && !v.pro_plan_id) ctx.addIssue({ code: 'custom', path: ['pro_plan_id'], message: tr('proPlan') });
     if (v.pricing_type !== 'paid') return;
     const price = Number(v.membership_price);
     if (!v.membership_price || !Number.isInteger(price)) {
@@ -92,6 +98,8 @@ export type AccountValues = z.input<ReturnType<typeof accountSchema>>;
 export const STEPS = [{ id: 'name' }, { id: 'topic' }, { id: 'access' }, { id: 'look' }, { id: 'account' }] as const;
 
 export type StepId = (typeof STEPS)[number]['id'];
+type Step = (typeof STEPS)[number];
+const stepOf = (id: StepId) => STEPS.find((s) => s.id === id) as Step;
 
 const STEP_FIELDS: Record<Exclude<StepId, 'account'>, (keyof CommunityValues)[]> = {
   name: ['name', 'slug'],
@@ -115,16 +123,21 @@ const DEFAULTS: CommunityValues = {
   membership_price: '5000',
   membership_interval: 'month',
   membership_plan_name: '',
+  formula: 'free',
+  pro_plan_id: '',
 };
 
 // The draft survives a reload or a detour (sessionStorage: this tab only, never the password)
 const DRAFT_KEY = 'create_community_draft';
-type Draft = { values: CommunityValues; step: number; slugEdited: boolean };
+/** planChosen: the plan chooser was answered (it opens again only from "Modifier") */
+type Draft = { values: CommunityValues; step: StepId; slugEdited: boolean; planChosen?: boolean };
 
 function readDraft(): Draft | null {
   try {
     const raw = sessionStorage.getItem(DRAFT_KEY);
-    return raw ? (JSON.parse(raw) as Draft) : null;
+    const draft = raw ? (JSON.parse(raw) as Draft) : null;
+    // Older drafts: the step kept by position, or the plan as a step
+    return draft && (typeof draft.step !== 'string' || (draft.step as string) === 'plan') ? { ...draft, step: 'name' } : draft;
   } catch {
     return null;
   }
@@ -150,14 +163,20 @@ const ACCOUNT_FIELDS = ['first_name', 'last_name', 'email', 'password', 'terms_a
 function UseCreateCommunity() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const token = useAppSelector((s) => s.user.token);
   const [createCommunity] = useCreateCommunityMutation();
   const [registerUser] = useRegisterUserMutation();
   const [loginUser] = useLoginUserMutation();
 
   const draft = useMemo(readDraft, []);
-  const [stepIndex, setStepIndex] = useState(draft?.step ?? 0);
+  const pro = UseProChoice();
+  const [stepId, setStepId] = useState<StepId>(draft?.step ?? 'name');
+  // The plan chooser opens on arrival (non-Pro), and again from "Modifier" or "Passer Pro"
+  const [planChosen, setPlanChosen] = useState(draft?.planChosen ?? false);
+  const [planOpen, setPlanOpen] = useState(!draft?.planChosen);
+  // Paid community chosen, Pro not confirmed yet: offer to create it free for now
+  const [proPending, setProPending] = useState(false);
   const [slugEdited, setSlugEdited] = useState(draft?.slugEdited ?? false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -168,16 +187,34 @@ function UseCreateCommunity() {
   });
   const uploadImage = useImageUpload();
 
-  // Signed-in visitors skip the account step
-  const steps = useMemo(() => (token ? STEPS.filter((s) => s.id !== 'account') : [...STEPS]), [token]);
-  const index = Math.min(stepIndex, steps.length - 1);
-  const step = steps[index];
-  const isLast = index === steps.length - 1;
-
   const form = useForm<CommunityValues>({
     resolver: zodResolver(communitySchema()),
     defaultValues: { ...DEFAULTS, ...draft?.values },
   });
+  const formula = form.watch('formula');
+
+  /**
+   * Choosing Pro (not Pro yet) asks the account first (paying needs one), then PayDunya, then the
+   * other steps; free asks the account at the end. Signed-in users never see the account step.
+   */
+  const proPath = formula === 'pro' && !pro.isPro;
+  // A Pro payment is on its way (back from PayDunya, not confirmed yet): never pay twice
+  const paymentUnderway = pro.payment === 'checking' || pro.payment === 'pending';
+  const steps = useMemo(() => {
+    const ids: StepId[] = [
+      ...(!token && proPath ? (['account'] as StepId[]) : []),
+      'name',
+      'topic',
+      'access',
+      'look',
+      ...(!token && !proPath ? (['account'] as StepId[]) : []),
+    ];
+    return ids.map(stepOf);
+  }, [pro.isPro, token, proPath]);
+  const index = Math.max(0, steps.findIndex((s) => s.id === stepId));
+  const step = steps[index];
+  const isLast = index === steps.length - 1;
+  const setStepIndex = (i: number) => setStepId(steps[Math.min(Math.max(i, 0), steps.length - 1)].id);
   const account = useForm<AccountValues>({
     resolver: zodResolver(accountSchema()),
     defaultValues: { mode: 'register', first_name: '', last_name: '', email: '', password: '', terms_accepted: false },
@@ -294,21 +331,82 @@ function UseCreateCommunity() {
     }
   };
 
+  // Leaving for PayDunya: the draft says where to resume, the steps changing meanwhile (sign-in) must not rewrite it
+  const leaving = useRef(false);
   useEffect(() => {
-    writeDraft({ values, step: index, slugEdited });
-  }, [values, index, slugEdited]);
+    if (!leaving.current) writeDraft({ values, step: step.id, slugEdited, planChosen });
+  }, [values, step.id, slugEdited, planChosen]);
+
+  // Back from PayDunya without paying: the plan chooser again, free stays possible
+  useEffect(() => {
+    if (pro.payment === 'cancelled' || pro.payment === 'failed') setPlanOpen(true);
+  }, [pro.payment]);
+
+  // Creation reserved to Pro by the superadmin: the free plan is not offered
+  useEffect(() => {
+    if (pro.proOnly && !pro.isPro && formula === 'free') form.setValue('formula', 'pro');
+  }, [pro.proOnly, pro.isPro, formula, form]);
 
   const goTo = (id: StepId) => {
-    const target = steps.findIndex((s) => s.id === id);
-    if (target >= 0) setStepIndex(target);
+    if (steps.some((s) => s.id === id)) setStepId(id);
+  };
+
+  /** The formula, and what the access step offers with it */
+  const chooseFormula = (next: 'free' | 'pro') => {
+    form.setValue('formula', next, { shouldDirty: true });
+    form.clearErrors('pro_plan_id');
+    form.setValue('pricing_type', next === 'pro' ? 'paid' : 'free', { shouldDirty: true });
+  };
+
+  /** "Passer Pro" from the access step: the chooser, Pro selected */
+  const switchToPro = () => {
+    chooseFormula('pro');
+    setPlanOpen(true);
+  };
+
+  /**
+   * The chooser answered. Free: the flow from the name step. Pro (not Pro yet): a signed-in user
+   * pays now; a visitor gets the account step first, the payment follows it.
+   */
+  const confirmPlan = async (next: 'free' | 'pro') => {
+    setFormError(null);
+    chooseFormula(next);
+    if (next === 'pro') {
+      const ok = await form.trigger(['formula', 'pro_plan_id']);
+      if (!ok) return;
+    }
+    setPlanChosen(true);
+    const pays = next === 'pro' && !pro.isPro;
+    if (pays && token && !paymentUnderway) {
+      setIsSubmitting(true);
+      if (!(await payPro())) setIsSubmitting(false);
+      return;
+    }
+    setPlanOpen(false);
+    setStepId(pays && !token ? 'account' : 'name');
+  };
+
+  /** Pays the chosen Pro plan on PayDunya; the flow resumes on the name step when back */
+  const payPro = async () => {
+    leaving.current = true;
+    writeDraft({ values: form.getValues(), step: 'name', slugEdited, planChosen: true });
+    try {
+      await pro.checkout(form.getValues('pro_plan_id'));
+      return true;
+    } catch (error) {
+      leaving.current = false;
+      writeDraft({ values: form.getValues(), step: step.id, slugEdited, planChosen });
+      setFormError(parseApiError(error).message);
+      return false;
+    }
   };
 
   const back = () => setStepIndex(Math.max(0, index - 1));
 
   /** Signs up (or in) inside the flow: register, then login with the same credentials */
-  const signIn = async (): Promise<boolean> => {
+  const signIn = async (): Promise<User | null> => {
     const ok = await account.trigger();
-    if (!ok) return false;
+    if (!ok) return null;
     const data = account.getValues();
     const email = data.email.trim().toLowerCase();
     try {
@@ -333,7 +431,7 @@ function UseCreateCommunity() {
       }
       const result = await loginUser({ email, password: data.password }).unwrap();
       dispatch(onSetUserToken({ user: result.user, token: result.access, refresh: result.refresh }));
-      return true;
+      return result.user;
     } catch (error) {
       const { message, fields } = parseApiError(error);
       let onField = false;
@@ -344,7 +442,7 @@ function UseCreateCommunity() {
         }
       }
       if (!onField) setFormError(message);
-      return false;
+      return null;
     }
   };
 
@@ -398,17 +496,60 @@ function UseCreateCommunity() {
 
   const next = async () => {
     setFormError(null);
+    setProPending(false);
     if (step.id !== 'account') {
       const ok = await form.trigger(fieldsOf(step.id));
       if (!ok) return;
     }
+
+    // Account asked right after the plan (Pro): sign in, then pay unless the account is Pro already
+    if (step.id === 'account' && !isLast) {
+      setIsSubmitting(true);
+      const user = await signIn();
+      if (!user) {
+        setIsSubmitting(false);
+        return;
+      }
+      if (await pro.fetchIsPro(user)) {
+        setStepId('name');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!(await payPro())) setIsSubmitting(false);
+      return;
+    }
+
     if (!isLast) {
       setStepIndex(index + 1);
       return;
     }
     setIsSubmitting(true);
     try {
-      if (!token && !(await signIn())) return;
+      let isPro = pro.isPro;
+      if (!token) {
+        const user = await signIn();
+        if (!user) return;
+        isPro = await pro.fetchIsPro(user);
+      }
+      // The api refuses a paid community until the Pro payment is confirmed (pending Mobile Money)
+      if (form.getValues('pricing_type') === 'paid' && !isPro) {
+        setProPending(true);
+        setFormError(t('create.payment.notConfirmed'));
+        return;
+      }
+      await create();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /** Pro still pending at the end: create the community free now (paid later, once Pro) */
+  const createFree = async () => {
+    form.setValue('pricing_type', 'free', { shouldDirty: true });
+    setProPending(false);
+    setFormError(null);
+    setIsSubmitting(true);
+    try {
       await create();
     } finally {
       setIsSubmitting(false);
@@ -434,6 +575,25 @@ function UseCreateCommunity() {
     isLast,
     next,
     back,
+    goTo,
+    pro,
+    /** The paid access can be chosen: Pro already, or Pro chosen in the plan chooser */
+    canChoosePaid: pro.isPro || formula === 'pro',
+    chooseFormula,
+    switchToPro,
+    /** The next click opens PayDunya (account step on the Pro path) */
+    paysNext: proPath && !paymentUnderway && step.id === 'account' && !isLast,
+    /** The plan chooser shows (never to Pro members) */
+    planOpen: planOpen && !pro.isPro,
+    /** It can be closed without answering only once a plan was chosen */
+    planChosen,
+    openPlan: () => setPlanOpen(true),
+    closePlan: () => setPlanOpen(false),
+    confirmPlan,
+    /** A signed-in user choosing Pro pays straight from the chooser */
+    paysFromPlan: !!token && !pro.isPro && !paymentUnderway,
+    proPending,
+    createFree,
     isSubmitting,
     formError,
     uploading,

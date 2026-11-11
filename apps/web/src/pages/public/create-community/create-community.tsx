@@ -1,26 +1,43 @@
-import { ArrowLeft, ArrowRight, Check, LoaderCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Clock, LoaderCircle, Lock, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cn } from '@kodinga/ui';
+import { Button, cn } from '@kodinga/ui';
 import { Logo } from '@/layouts/components/header';
 import { FormAlert } from '@/pages/auth/components/form-alert';
+import type { PaymentReturn } from '@/pages/public/community/form/UsePaymentReturn';
 import { useGetCommunityCategoriesQuery } from '@/utils/api/community/community.api';
+import { planPrice } from '@/utils/Utils';
 import { CommunityPreview } from './components/community-preview';
 import { AccessStep, AccountStep, LookStep, NameStep, TopicStep } from './components/steps';
 import { AIWizardModal } from './components/ai-wizard-modal';
+import { PlanChooser } from './components/plan-step';
 import UseCreateCommunity from './form/UseCreateCommunity';
 
 
-/** /create-community — Skool-like creation flow, open to visitors (account asked at the end) */
+const notices: Record<Exclude<PaymentReturn, null>, { icon: ReactNode; className: string }> = {
+  checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950' },
+  paid: { icon: <CircleCheck className="size-4 shrink-0" />, className: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
+  pending: { icon: <Clock className="size-4 shrink-0" />, className: 'border-amber-200 bg-amber-50 text-amber-900' },
+  failed: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-red-200 bg-red-50 text-red-900' },
+  cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-slate-200 bg-white text-slate-700' },
+};
+
+/**
+ * /create-community — Skool-like creation flow, open to visitors: the plan chooser first, over the
+ * flow (free, or Kodinga Pro paid on PayDunya before the steps), then name, topic, access, look;
+ * the account is asked first for Pro, at the end otherwise.
+ */
 function CreateCommunity() {
   const { t } = useTranslation();
   const flow = UseCreateCommunity();
   const { data: categories = [], isLoading: categoriesLoading } = useGetCommunityCategoriesQuery();
+  // The account asked before paying Pro is not the last step: its own heading
+  const headingId = flow.step.id === 'account' && !flow.isLast ? 'accountPro' : flow.step.id;
   const heading = {
-    title: t(`create.headings.${flow.step.id}Title`),
-    subtitle: t(`create.headings.${flow.step.id}Subtitle`),
+    title: t(`create.headings.${headingId}Title`),
+    subtitle: t(`create.headings.${headingId}Subtitle`),
   };
   const titleRef = useRef<HTMLHeadingElement>(null);
   const category = categories.find((c) => c.id === flow.values.category_id);
@@ -35,8 +52,14 @@ function CreateCommunity() {
     titleRef.current?.focus();
   }, [flow.step.id]);
 
-  // Step 1 waits for a usable name, like in the design (the button lights up once it is typed)
+  // The name step waits for a usable name, like in the design (the button lights up once it is typed)
   const canContinue = flow.step.id !== 'name' || flow.values.name.trim().length >= 3;
+  const payment = flow.pro.payment;
+  // Cancelled or failed: told in the plan chooser, which opens again
+  const notice = payment && payment !== 'cancelled' && payment !== 'failed' ? notices[payment] : null;
+  const proPlan = flow.pro.plans.find((p) => p.id === flow.values.pro_plan_id);
+  // Pro members never choose: no recap for them
+  const showsPlan = flow.planChosen && !flow.pro.isPro;
 
   return (
     <div className="min-h-svh bg-slate-50">
@@ -64,6 +87,28 @@ function CreateCommunity() {
             ))}
           </div>
 
+          {payment && notice && (
+            <p role="status" className={cn('mt-6 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm', notice.className)}>
+              {notice.icon}
+              {t(`create.payment.${payment}`)}
+            </p>
+          )}
+
+          {/* Like the "(modifier)" of the plan recap: the choice stays at hand on every step */}
+          {showsPlan && (
+            <p className="mt-6 text-sm text-slate-600">
+              {t('create.plan.recap')}{' '}
+              <span className="font-semibold text-slate-900">
+                {flow.values.formula === 'pro'
+                  ? `${t('create.plan.pro')}${proPlan ? ` (${planPrice(proPlan, true)})` : ''}`
+                  : t('create.plan.free')}
+              </span>{' '}
+              <button type="button" onClick={flow.openPlan} className="font-semibold text-brand hover:underline">
+                {t('create.plan.change')}
+              </button>
+            </p>
+          )}
+
           {flow.step.id === 'name' && (
             <div className="mt-6">
               <AIWizardModal flow={flow} />
@@ -82,6 +127,11 @@ function CreateCommunity() {
             {flow.formError && (
               <div className="mb-4">
                 <FormAlert>{flow.formError}</FormAlert>
+                {flow.proPending && (
+                  <Button type="button" variant="outline" className="mt-3" onClick={flow.createFree} disabled={flow.isSubmitting}>
+                    {t('create.payment.createFree')}
+                  </Button>
+                )}
               </div>
             )}
             {flow.step.id === 'name' && <NameStep flow={flow} />}
@@ -111,7 +161,12 @@ function CreateCommunity() {
               className="inline-flex h-12 items-center gap-2 rounded-lg bg-blue-900 px-5 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-950 disabled:cursor-not-allowed disabled:bg-blue-900/45"
             >
               {flow.isSubmitting && <LoaderCircle className="size-4.5 animate-spin" />}
-              {flow.isLast ? (
+              {flow.paysNext ? (
+                <>
+                  {!flow.isSubmitting && <Lock className="size-4.5" />}
+                  {flow.isSubmitting ? t('create.page.redirecting') : t('create.page.pay')}
+                </>
+              ) : flow.isLast ? (
                 <>
                   <Sparkles className="size-4.5" />
                   {flow.isSubmitting
@@ -159,6 +214,8 @@ function CreateCommunity() {
           </ol>
         </aside>
       </main>
+
+      <PlanChooser flow={flow} />
     </div>
   );
 }

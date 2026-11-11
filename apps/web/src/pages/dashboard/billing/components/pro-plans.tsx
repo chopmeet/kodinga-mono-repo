@@ -1,7 +1,7 @@
 import { Check, CircleCheck, CircleX, Clock, Crown, LoaderCircle } from 'lucide-react';
 
 import { Badge, Button, cn } from '@kodinga/ui';
-import { intervalLabel, xof } from '@/utils/Utils';
+import { periodSuffix, xof } from '@/utils/Utils';
 import { parseApiError } from '@/utils/api/errors';
 import { formatLongDate } from '@/utils/format';
 import type { KodingaPro } from '../form/UseKodingaPro';
@@ -75,7 +75,7 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
                 </div>
                 <p className="mt-2">
                   <span className="text-2xl font-bold text-slate-900">{xof(Number(plan.price))}</span>{' '}
-                  <span className="text-sm text-slate-500">{intervalLabel[plan.billing_interval]?.suffix}</span>
+                  <span className="text-sm text-slate-500">{periodSuffix(plan.billing_interval, true)}</span>
                 </p>
                 {plan.description && <p className="mt-2 text-sm text-slate-500">{plan.description}</p>}
                 {plan.features.length > 0 && (

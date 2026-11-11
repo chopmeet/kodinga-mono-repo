@@ -1,7 +1,7 @@
 import { Layers, PiggyBank, Users, Wallet } from 'lucide-react';
 
 import { type CardType, OverviewCardItem } from '@kodinga/ui';
-import { intervalLabel, xof } from '@/utils/Utils';
+import { planPrice, xof } from '@/utils/Utils';
 import type { CommunityPlan, CommunityRevenue } from '@/utils/api/billing/billing.type';
 
 /** Key figures of the billing: the plans, then the subscribers and the net revenue (billing/communities/<slug>/revenue/) */
@@ -12,7 +12,7 @@ function BillingOverview({ plans, revenue }: { plans: CommunityPlan[]; revenue: 
     {
       id: 'entry',
       label: 'Prix d’entrée',
-      value: cheapest ? `${xof(Number(cheapest.price))} ${intervalLabel[cheapest.billing_interval]?.suffix ?? ''}` : '—',
+      value: cheapest ? planPrice(cheapest) : '—',
       icon: <Wallet size={18} />,
       color: '#15803d',
     },

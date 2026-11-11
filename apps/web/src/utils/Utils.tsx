@@ -352,6 +352,19 @@ export const intervalLabel = Object.fromEntries(
 
 export const xof = (value: number) => `${numberFormat().format(value)} FCFA`;
 
+type Priced = { price: string | number; billing_interval: BillingInterval };
+
+/** "Annuel"; a Kodinga Pro bought once reads "À vie" (a community plan: "Paiement unique") */
+export const periodLabel = (interval: BillingInterval, pro = false) =>
+  pro && interval === 'one_time' ? i18n.t('labels.proLifetime.label') : intervalLabel[interval].label;
+
+/** "/ an"; a Kodinga Pro bought once reads "à vie" (a community plan: "une fois") */
+export const periodSuffix = (interval: BillingInterval, pro = false) =>
+  pro && interval === 'one_time' ? i18n.t('labels.proLifetime.suffix') : intervalLabel[interval].suffix;
+
+/** "5 000 FCFA / mois" (the price as the api sends it: "5000.00") */
+export const planPrice = (plan: Priced, pro = false) => `${xof(Number(plan.price))} ${periodSuffix(plan.billing_interval, pro)}`;
+
 /** FCFA as usual, any other currency with its code (amounts arrive as strings: "15000.00") */
 export const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${numberFormat().format(Number(value))} ${currency}`);
 
