@@ -10,70 +10,99 @@ class VideoAssetSerializer(BaseModelSerializer):
     thumbnail_url = serializers.CharField(read_only=True)
     poster_url = serializers.CharField(read_only=True)
     animated_gif_url = serializers.CharField(read_only=True)
+    normalized_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = VideoAsset
         fields = [
-            'id',
-            'title',
-            'description',
-            'upload_id',
-            'asset_id',
-            'playback_id',
-            'duration',
-            'aspect_ratio',
-            'resolution',
-            'status',
-            'is_public',
-            'provider',
-            'hls_url',
-            'source_url',
-            'thumbnail_url',
-            'poster_url',
-            'animated_gif_url',
-            'created_at',
-            'updated_at',
+            "id",
+            "title",
+            "description",
+            "upload_id",
+            "asset_id",
+            "playback_id",
+            "duration",
+            "aspect_ratio",
+            "resolution",
+            "status",
+            "normalized_status",
+            "error_message",
+            "is_public",
+            "provider",
+            "hls_url",
+            "source_url",
+            "thumbnail_url",
+            "poster_url",
+            "animated_gif_url",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = [
-            'id',
-            'upload_id',
-            'asset_id',
-            'playback_id',
-            'duration',
-            'aspect_ratio',
-            'resolution',
-            'status',
-            'provider',
-            'hls_url',
-            'source_url',
-            'thumbnail_url',
-            'poster_url',
-            'animated_gif_url',
-            'created_at',
-            'updated_at',
+            "id",
+            "upload_id",
+            "asset_id",
+            "playback_id",
+            "duration",
+            "aspect_ratio",
+            "resolution",
+            "status",
+            "normalized_status",
+            "error_message",
+            "provider",
+            "hls_url",
+            "source_url",
+            "thumbnail_url",
+            "poster_url",
+            "animated_gif_url",
+            "created_at",
+            "updated_at",
         ]
 
 
 class VideoUploadRequestSerializer(serializers.Serializer):
-    file = serializers.FileField(required=False, help_text="Fichier vidéo binaire (multipart/form-data)")
-    file_url = serializers.URLField(required=False, allow_blank=True, help_text="URL brute UploadThing ou externe")
-    video_url = serializers.URLField(required=False, allow_blank=True, help_text="Alias de file_url")
-    title = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
-    description = serializers.CharField(required=False, allow_blank=True, default='')
+    file = serializers.FileField(
+        required=False, help_text="Fichier vidéo binaire (multipart/form-data)"
+    )
+    file_url = serializers.URLField(
+        required=False, allow_blank=True, help_text="URL brute UploadThing ou externe"
+    )
+    video_url = serializers.URLField(
+        required=False, allow_blank=True, help_text="Alias de file_url"
+    )
+    title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    description = serializers.CharField(required=False, allow_blank=True, default="")
     is_public = serializers.BooleanField(required=False, default=True)
 
 
 class VideoIngestRequestSerializer(serializers.Serializer):
-    file_url = serializers.URLField(required=True, help_text="URL du fichier vidéo hébergé sur UploadThing")
-    title = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
-    description = serializers.CharField(required=False, allow_blank=True, default='')
+    file_url = serializers.URLField(
+        required=True, help_text="URL du fichier vidéo hébergé sur UploadThing"
+    )
+    title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    description = serializers.CharField(required=False, allow_blank=True, default="")
     is_public = serializers.BooleanField(required=False, default=True)
 
 
 class MuxUploadRequestSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=False, allow_blank=True)
     description = serializers.CharField(required=False, allow_blank=True)
-    cors_origin = serializers.CharField(max_length=255, default='*')
+    cors_origin = serializers.CharField(max_length=255, default="*")
+    file_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    file_size = serializers.IntegerField(min_value=1, required=False)
+    mime_type = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, default=""
+    )
+    purpose = serializers.ChoiceField(
+        choices=["post_video", "lesson_video"],
+        required=False,
+        default="post_video",
+    )
 
 
 class MuxUploadResponseSerializer(serializers.Serializer):

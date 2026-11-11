@@ -107,7 +107,9 @@ class ModerationService:
         # Check community-specific non-mandatory rules if present
         if community and getattr(community, "settings", None):
             settings = community.settings
-            non_mandatory_config = getattr(settings, "non_mandatory_moderation", {}) or {}
+            non_mandatory_config = (
+                getattr(settings, "non_mandatory_moderation", {}) or {}
+            )
             for cat in mod_result.categories:
                 if (
                     cat in non_mandatory_config
@@ -162,7 +164,9 @@ class ModerationService:
             ) from err
 
         if result.decision == "reject":
-            violation_names = ", ".join(result.categories) if result.categories else "sécurité"
+            violation_names = (
+                ", ".join(result.categories) if result.categories else "sécurité"
+            )
             raise PermissionDenied(
                 f"Ce contenu enfreint les règles strictes de sécurité de la plateforme "
                 f"({violation_names}) et ne peut pas être publié."

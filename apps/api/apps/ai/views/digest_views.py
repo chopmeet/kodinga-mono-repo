@@ -28,25 +28,41 @@ class CommunityDigestCurrentView(APIView):
 
         is_owner = community.owner_id == request.user.id
         is_super = is_superadmin_user(request.user)
-        is_member = is_owner or is_super or CommunityMember.objects.filter(
-            community=community,
-            user=request.user,
-            status=MembershipStatus.ACTIVE,
-        ).exists()
+        is_member = (
+            is_owner
+            or is_super
+            or CommunityMember.objects.filter(
+                community=community,
+                user=request.user,
+                status=MembershipStatus.ACTIVE,
+            ).exists()
+        )
 
         # Strict privacy check: private and secret communities are reserved for members only
-        if community.privacy_type in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET] and not is_member:
+        if (
+            community.privacy_type
+            in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET]
+            and not is_member
+        ):
             raise PermissionDenied(
                 "Cette communauté est privée. Vous devez être membre pour consulter son résumé hebdomadaire."
             )
 
         # Do not allow non-members to trigger costly on-the-fly AI generation
         if not is_member:
-            digest = CommunityWeeklyDigest.objects.filter(community=community).order_by("-created_at").first()
+            digest = (
+                CommunityWeeklyDigest.objects.filter(community=community)
+                .order_by("-created_at")
+                .first()
+            )
             if not digest:
-                raise NotFound("Aucun résumé n'a encore été généré pour cette communauté.")
+                raise NotFound(
+                    "Aucun résumé n'a encore été généré pour cette communauté."
+                )
         else:
-            digest = CommunityDigestService.get_or_create_current_digest(community=community)
+            digest = CommunityDigestService.get_or_create_current_digest(
+                community=community
+            )
 
         serializer = CommunityWeeklyDigestSerializer(digest)
         return ai_success_response(serializer.data, status_code=status.HTTP_200_OK)

@@ -2,6 +2,10 @@ from apps.ai.models.assistant import AssistantConversation, AssistantMessage
 from apps.ai.models.audit import ModerationAuditLog, ModerationDecision
 from apps.ai.models.churn import ChurnRiskLevel, MemberChurnRisk
 from apps.ai.models.digest import CommunityWeeklyDigest, UserDigestDelivery
+from apps.ai.models.documentation import (
+    DocumentationCategory,
+    PlatformDocumentation,
+)
 from apps.ai.models.embedding import ContentEmbedding
 from apps.ai.models.help_assistance import PostHelpAssistance
 from apps.ai.models.peer_match import (
@@ -22,6 +26,8 @@ __all__ = [
     "AssistantConversation",
     "AssistantMessage",
     "ContentEmbedding",
+    "PlatformDocumentation",
+    "DocumentationCategory",
     "PeerMatchRecommendation",
     "MatchType",
     "MatchStatus",

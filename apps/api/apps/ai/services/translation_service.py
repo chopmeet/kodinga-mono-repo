@@ -305,7 +305,9 @@ class TranslationService:
                         },
                     )
                 except Exception as cache_err:
-                    logger.warning(f"[TranslationService] Cache save failed: {cache_err}")
+                    logger.warning(
+                        f"[TranslationService] Cache save failed: {cache_err}"
+                    )
 
             return result
 

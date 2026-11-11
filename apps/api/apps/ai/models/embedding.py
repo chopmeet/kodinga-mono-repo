@@ -57,4 +57,3 @@ class ContentEmbedding(BaseModel):
 
     def __str__(self) -> str:
         return f"[{self.content_type}] {self.title} ({self.community.slug})"
-

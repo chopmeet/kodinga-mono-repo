@@ -80,4 +80,3 @@ class PeerMatchRecommendation(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.source_user.username} <-> {self.target_user.username} ({self.compatibility_score:.2f})"
-

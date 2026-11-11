@@ -33,6 +33,7 @@ class AIAssistantRecommendCommunitiesView(APIView):
     POST /api/v1/ai-assistant/recommend-communities/
     Grounded discovery: returns real matching communities with explanations.
     """
+
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -82,6 +83,7 @@ class AIAssistantPlanCommunityView(APIView):
     POST /api/v1/ai-assistant/plan-community/
     Community Creation Wizard: generates a structured proposal from a concept.
     """
+
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -133,6 +135,7 @@ class AIAssistantSuggestContentView(APIView):
     POST /api/v1/ai-assistant/suggest-content/
     Generates actionable discussion categories, first post draft, and event ideas.
     """
+
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -184,6 +187,7 @@ class AIAssistantAnalyzeCommunityView(APIView):
     POST /api/v1/ai-assistant/analyze-community/
     Improvement Assistant: analyzes real metrics and suggests concrete actions for owners/mods.
     """
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -232,6 +236,7 @@ class AIAssistantChatView(APIView):
     POST /api/v1/ai-assistant/chat/
     Conversational Assistant: answers queries, suggests follow-ups, and triggers assistant workflows.
     """
+
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -285,6 +290,7 @@ class AIAssistantConversationListView(APIView):
     GET / POST /api/v1/ai-assistant/conversations/
     Lists past assistant conversations or initializes a new explicit discussion session.
     """
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -292,8 +298,18 @@ class AIAssistantConversationListView(APIView):
         summary="Lister les conversations de l'utilisateur",
         description="Retourne les sessions de discussion de l'utilisateur, avec historique des messages et tri chronologique.",
         parameters=[
-            OpenApiParameter(name="context_type", type=str, description="Filtrer par type de contexte (general, discovery, creation, management)", required=False),
-            OpenApiParameter(name="community", type=str, description="Filtrer par slug de communauté", required=False),
+            OpenApiParameter(
+                name="context_type",
+                type=str,
+                description="Filtrer par type de contexte (general, discovery, creation, management)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="community",
+                type=str,
+                description="Filtrer par slug de communauté",
+                required=False,
+            ),
         ],
         responses={200: AssistantConversationSerializer(many=True)},
     )
@@ -332,7 +348,9 @@ class AIAssistantConversationListView(APIView):
         community = None
         community_id = serializer.validated_data.get("community")
         if community_id:
-            community = AIAssistantService._get_community_with_access_check(community_id, request.user)
+            community = AIAssistantService._get_community_with_access_check(
+                community_id, request.user
+            )
 
         conversation = AssistantConversation.objects.create(
             user=request.user,
@@ -355,6 +373,7 @@ class AIAssistantConversationDetailView(APIView):
     GET / PATCH / DELETE /api/v1/ai-assistant/conversations/<uuid:conversation_id>/
     Retrieves, updates (renames), or deletes a specific assistant conversation.
     """
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -364,9 +383,11 @@ class AIAssistantConversationDetailView(APIView):
         responses={200: AssistantConversationSerializer},
     )
     def get(self, request, conversation_id, *args, **kwargs):
-        conversation = AssistantConversation.objects.filter(
-            id=conversation_id, user=request.user
-        ).prefetch_related("messages").first()
+        conversation = (
+            AssistantConversation.objects.filter(id=conversation_id, user=request.user)
+            .prefetch_related("messages")
+            .first()
+        )
 
         if not conversation:
             return Response(
@@ -400,7 +421,9 @@ class AIAssistantConversationDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = UpdateConversationRequestSerializer(data=request.data, partial=True)
+        serializer = UpdateConversationRequestSerializer(
+            data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
 
         if "title" in serializer.validated_data:
@@ -445,6 +468,7 @@ class AIAssistantConversationClearView(APIView):
     POST /api/v1/ai-assistant/conversations/<uuid:conversation_id>/clear/
     Clears all messages within an existing session without deleting the conversation ID.
     """
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -469,7 +493,9 @@ class AIAssistantConversationClearView(APIView):
         conversation.save(update_fields=["title", "updated_at"])
 
         return Response(
-            {"success": True, "message": "Historique de la conversation effacé avec succès."},
+            {
+                "success": True,
+                "message": "Historique de la conversation effacé avec succès.",
+            },
             status=status.HTTP_200_OK,
         )
-

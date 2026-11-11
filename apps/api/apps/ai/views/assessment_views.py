@@ -50,7 +50,9 @@ def resolve_course(request, course_slug: str, community_slug: str = None) -> Cou
         ).values_list("community_id", flat=True)
     )
     user_managed_ids.update(
-        Course.objects.filter(slug=course_slug, community__owner=request.user).values_list("community_id", flat=True)
+        Course.objects.filter(
+            slug=course_slug, community__owner=request.user
+        ).values_list("community_id", flat=True)
     )
 
     scoped = [c for c in matching if c.community_id in user_managed_ids]
@@ -72,7 +74,9 @@ class GenerateQuizView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsCommunityClassroomManager]
 
     def post(self, request, course_slug: str, community_slug: str = None):
-        course = resolve_course(request, course_slug=course_slug, community_slug=community_slug)
+        course = resolve_course(
+            request, course_slug=course_slug, community_slug=community_slug
+        )
         self.check_object_permissions(request, course)
 
         serializer = GenerateQuizRequestSerializer(data=request.data)
@@ -99,7 +103,9 @@ class GenerateQuizView(APIView):
             "is_ai_generated": is_ai_generated,
         }
         if not is_ai_generated:
-            resp_data["warning"] = "Génération IA temporairement indisponible. Modèle de base fourni à titre indicatif."
+            resp_data["warning"] = (
+                "Génération IA temporairement indisponible. Modèle de base fourni à titre indicatif."
+            )
 
         return ai_success_response(resp_data, status_code=status.HTTP_200_OK)
 
@@ -113,7 +119,9 @@ class GenerateCodeExerciseView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsCommunityClassroomManager]
 
     def post(self, request, course_slug: str, community_slug: str = None):
-        course = resolve_course(request, course_slug=course_slug, community_slug=community_slug)
+        course = resolve_course(
+            request, course_slug=course_slug, community_slug=community_slug
+        )
         self.check_object_permissions(request, course)
 
         serializer = GenerateExerciseRequestSerializer(data=request.data)
@@ -139,7 +147,9 @@ class GenerateCodeExerciseView(APIView):
             "is_ai_generated": is_ai_generated,
         }
         if not is_ai_generated:
-            resp_data["warning"] = "Génération IA temporairement indisponible. Modèle de base fourni à titre indicatif."
+            resp_data["warning"] = (
+                "Génération IA temporairement indisponible. Modèle de base fourni à titre indicatif."
+            )
 
         return ai_success_response(resp_data, status_code=status.HTTP_200_OK)
 
@@ -153,7 +163,9 @@ class ApplyAssessmentView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsCommunityClassroomManager]
 
     def post(self, request, course_slug: str, community_slug: str = None):
-        course = resolve_course(request, course_slug=course_slug, community_slug=community_slug)
+        course = resolve_course(
+            request, course_slug=course_slug, community_slug=community_slug
+        )
         self.check_object_permissions(request, course)
 
         serializer = ApplyAssessmentSerializer(data=request.data)

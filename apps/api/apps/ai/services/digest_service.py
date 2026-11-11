@@ -120,7 +120,8 @@ class CommunityDigestService:
                 "title": highlighted_proj_obj.title,
                 "slug": highlighted_proj_obj.slug,
                 "owner": highlighted_proj_obj.owner.username,
-                "tagline": highlighted_proj_obj.tagline or highlighted_proj_obj.description[:120],
+                "tagline": highlighted_proj_obj.tagline
+                or highlighted_proj_obj.description[:120],
                 "repository_url": highlighted_proj_obj.repository_url,
                 "demo_url": highlighted_proj_obj.demo_url,
             }
@@ -146,7 +147,9 @@ class CommunityDigestService:
                     "slug": evt.slug,
                     "event_type": evt.event_type,
                     "event_format": getattr(evt, "format", "livekit"),
-                    "start_date": evt.start_time.isoformat() if getattr(evt, "start_time", None) else None,
+                    "start_date": evt.start_time.isoformat()
+                    if getattr(evt, "start_time", None)
+                    else None,
                     "host": evt.host.username,
                 }
             )
@@ -162,7 +165,7 @@ class CommunityDigestService:
             f"Génère une réponse structurée au format JSON strict avec les clés :\n"
             f'- "headline": une phrase percutante d\'accroche (max 100 caractères)\n'
             f'- "summary_markdown": un texte markdown vivant et bien structuré résumant la semaine, valorisant les '
-            f'contributeurs et incitant à participer aux événements futurs.\n'
+            f"contributeurs et incitant à participer aux événements futurs.\n"
         )
 
         headline = f"L'essentiel de la semaine sur {community.name} ({week_id})"
@@ -181,7 +184,11 @@ class CommunityDigestService:
                 response_format={"type": "json_object"},
                 max_tokens=1000,
             )
-            raw = (ai_response.content if hasattr(ai_response, "content") else str(ai_response)).strip()
+            raw = (
+                ai_response.content
+                if hasattr(ai_response, "content")
+                else str(ai_response)
+            ).strip()
             if raw.startswith("```json"):
                 raw = raw[7:]
             if raw.startswith("```"):
@@ -195,7 +202,9 @@ class CommunityDigestService:
                 if parsed.get("summary_markdown"):
                     summary_markdown = str(parsed["summary_markdown"]).strip()
         except Exception as exc:
-            logger.warning("AI digest generation failed for community %s: %s", community.slug, exc)
+            logger.warning(
+                "AI digest generation failed for community %s: %s", community.slug, exc
+            )
 
         with transaction.atomic():
             digest, _ = CommunityWeeklyDigest.objects.update_or_create(
@@ -214,9 +223,13 @@ class CommunityDigestService:
         return digest
 
     @classmethod
-    def get_or_create_current_digest(cls, community: Community) -> CommunityWeeklyDigest:
+    def get_or_create_current_digest(
+        cls, community: Community
+    ) -> CommunityWeeklyDigest:
         week_id = cls.get_week_identifier()
-        digest = CommunityWeeklyDigest.objects.filter(community=community, week_identifier=week_id).first()
+        digest = CommunityWeeklyDigest.objects.filter(
+            community=community, week_identifier=week_id
+        ).first()
         if digest:
             return digest
         return cls.generate_weekly_digest(community, week_identifier=week_id)

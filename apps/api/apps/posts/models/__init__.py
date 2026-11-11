@@ -10,15 +10,15 @@ from apps.posts.models.reaction import (
 )
 
 __all__ = [
-    'PostBookmark',
-    'PostCategory',
-    'PostType',
-    'Post',
-    'Comment',
-    'ReactionType',
-    'PostReaction',
-    'CommentReaction',
-    'Poll',
-    'PollOption',
-    'PollVote',
+    "PostBookmark",
+    "PostCategory",
+    "PostType",
+    "Post",
+    "Comment",
+    "ReactionType",
+    "PostReaction",
+    "CommentReaction",
+    "Poll",
+    "PollOption",
+    "PollVote",
 ]

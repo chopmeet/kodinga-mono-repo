@@ -26,7 +26,9 @@ class LanguageDetectionService:
         try:
             return ai_router.detect_language(clean)
         except Exception as e:
-            logger.warning(f"[LanguageDetectionService] Detection failed: {e}. Defaulting to 'fr'.")
+            logger.warning(
+                f"[LanguageDetectionService] Detection failed: {e}. Defaulting to 'fr'."
+            )
             return LanguageDetectionResult(
                 language_code="fr",
                 confidence=0.5,

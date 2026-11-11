@@ -38,7 +38,9 @@ class LanguageItemSerializer(serializers.Serializer):
     native_name = serializers.CharField(help_text="Nom dans la langue d'origine")
     region = serializers.CharField(help_text="Région ou pays où la langue est parlée")
     category = serializers.CharField(help_text="'african' ou 'international'")
-    default = serializers.BooleanField(help_text="Vrai si c'est la langue par défaut du système")
+    default = serializers.BooleanField(
+        help_text="Vrai si c'est la langue par défaut du système"
+    )
     capabilities = serializers.ListField(
         child=serializers.CharField(),
         help_text="Capacités IA (translation, chat, moderation, detection)",
@@ -47,8 +49,12 @@ class LanguageItemSerializer(serializers.Serializer):
 
 class LanguageListResponseSerializer(serializers.Serializer):
     total = serializers.IntegerField(help_text="Nombre total de langues supportées")
-    african_languages_count = serializers.IntegerField(help_text="Nombre de langues africaines")
-    international_languages_count = serializers.IntegerField(help_text="Nombre de langues internationales")
+    african_languages_count = serializers.IntegerField(
+        help_text="Nombre de langues africaines"
+    )
+    international_languages_count = serializers.IntegerField(
+        help_text="Nombre de langues internationales"
+    )
     languages = LanguageItemSerializer(many=True, help_text="Liste des langues")
 
 
@@ -142,6 +148,7 @@ class CommunityAISettingsSerializer(serializers.Serializer):
 # ==============================================================================
 # AI Community Assistant Serializers
 # ==============================================================================
+
 
 class RecommendCommunitiesRequestSerializer(serializers.Serializer):
     interests = serializers.CharField(
@@ -250,10 +257,18 @@ class AssistantMessageSerializer(serializers.Serializer):
 class AssistantConversationSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     title = serializers.CharField(help_text="Titre de la session de discussion")
-    context_type = serializers.CharField(help_text="Type de contexte (general, discovery, creation, management)")
-    community_name = serializers.CharField(source="community.name", read_only=True, allow_null=True)
-    community_slug = serializers.CharField(source="community.slug", read_only=True, allow_null=True)
-    messages_count = serializers.SerializerMethodField(help_text="Nombre total de messages dans la discussion")
+    context_type = serializers.CharField(
+        help_text="Type de contexte (general, discovery, creation, management)"
+    )
+    community_name = serializers.CharField(
+        source="community.name", read_only=True, allow_null=True
+    )
+    community_slug = serializers.CharField(
+        source="community.slug", read_only=True, allow_null=True
+    )
+    messages_count = serializers.SerializerMethodField(
+        help_text="Nombre total de messages dans la discussion"
+    )
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     messages = AssistantMessageSerializer(many=True, read_only=True)
@@ -313,7 +328,9 @@ class CommunityProposalResponseSerializer(serializers.Serializer):
         child=serializers.CharField(),
         help_text="Suggestions de noms originaux pour la communauté",
     )
-    description = serializers.CharField(help_text="Description complète de la communauté")
+    description = serializers.CharField(
+        help_text="Description complète de la communauté"
+    )
     purpose = serializers.CharField(help_text="Mission et proposition de valeur")
     target_audience = serializers.CharField(help_text="Public cible visé")
     suggested_categories = serializers.ListField(
@@ -325,8 +342,12 @@ class CommunityProposalResponseSerializer(serializers.Serializer):
         help_text="Règles de communauté recommandées",
     )
     recommended_language = serializers.CharField(help_text="Code langue recommandé")
-    recommended_visibility = serializers.CharField(help_text="Visibilité recommandée (public/private)")
-    welcome_message = serializers.CharField(help_text="Message de bienvenue pour les nouveaux membres")
+    recommended_visibility = serializers.CharField(
+        help_text="Visibilité recommandée (public/private)"
+    )
+    welcome_message = serializers.CharField(
+        help_text="Message de bienvenue pour les nouveaux membres"
+    )
     first_discussion_prompts = serializers.ListField(
         child=serializers.CharField(),
         help_text="Sujets pour lancer les premières discussions",
@@ -343,7 +364,9 @@ class CommunityProposalResponseSerializer(serializers.Serializer):
         child=serializers.CharField(),
         help_text="Questions pour affiner la stratégie",
     )
-    provider = serializers.CharField(help_text="Fournisseur d'IA utilisé (gemini ou openai)")
+    provider = serializers.CharField(
+        help_text="Fournisseur d'IA utilisé (gemini ou openai)"
+    )
 
 
 class CommunityRecommendationCardSerializer(serializers.Serializer):
@@ -357,7 +380,9 @@ class CommunityRecommendationCardSerializer(serializers.Serializer):
     pricing_type = serializers.CharField(help_text="free ou paid")
     members_count = serializers.IntegerField(help_text="Nombre de membres actifs")
     language = serializers.CharField(help_text="Langue principale")
-    relevance_reason = serializers.CharField(help_text="Pourquoi cette communauté correspond aux intérêts")
+    relevance_reason = serializers.CharField(
+        help_text="Pourquoi cette communauté correspond aux intérêts"
+    )
     match_score = serializers.FloatField(help_text="Score de pertinence (0 à 1)")
 
 
@@ -366,12 +391,16 @@ class CommunityRecommendationResponseSerializer(serializers.Serializer):
         many=True,
         help_text="Liste des communautés existantes recommandées",
     )
-    reasoning = serializers.CharField(help_text="Explication globale de la recommandation")
+    reasoning = serializers.CharField(
+        help_text="Explication globale de la recommandation"
+    )
     suggested_alternatives = serializers.ListField(
         child=serializers.CharField(),
         help_text="Suggestions alternatives de recherche",
     )
-    provider = serializers.CharField(help_text="Fournisseur d'IA utilisé (gemini ou openai)")
+    provider = serializers.CharField(
+        help_text="Fournisseur d'IA utilisé (gemini ou openai)"
+    )
 
 
 class ContentSuggestionResponseSerializer(serializers.Serializer):
@@ -379,7 +408,9 @@ class ContentSuggestionResponseSerializer(serializers.Serializer):
         child=serializers.CharField(),
         help_text="Catégories de discussion suggérées",
     )
-    first_post = serializers.DictField(help_text="Modèle pour le premier post d'accueil")
+    first_post = serializers.DictField(
+        help_text="Modèle pour le premier post d'accueil"
+    )
     weekly_activities = serializers.ListField(
         child=serializers.DictField(),
         help_text="Activités hebdomadaires pour engager les membres",
@@ -393,17 +424,30 @@ class ContentSuggestionResponseSerializer(serializers.Serializer):
         child=serializers.DictField(),
         help_text="Calendrier éditorial de la semaine",
     )
-    provider = serializers.CharField(help_text="Fournisseur d'IA utilisé (gemini ou openai)")
+    provider = serializers.CharField(
+        help_text="Fournisseur d'IA utilisé (gemini ou openai)"
+    )
 
 
 class CommunityAnalysisResponseSerializer(serializers.Serializer):
     community_name = serializers.CharField(help_text="Nom de la communauté")
     overview_assessment = serializers.CharField(help_text="Bilan global de l'activité")
-    strengths = serializers.ListField(child=serializers.CharField(), help_text="Points forts constatés")
-    improvement_areas = serializers.ListField(child=serializers.DictField(), help_text="Axes d'amélioration prioritaires")
-    quick_wins = serializers.ListField(child=serializers.DictField(), help_text="Actions rapides à fort impact")
-    long_term_strategy = serializers.ListField(child=serializers.DictField(), help_text="Recommandations stratégiques à long terme")
-    provider = serializers.CharField(help_text="Fournisseur d'IA utilisé (gemini ou openai)")
+    strengths = serializers.ListField(
+        child=serializers.CharField(), help_text="Points forts constatés"
+    )
+    improvement_areas = serializers.ListField(
+        child=serializers.DictField(), help_text="Axes d'amélioration prioritaires"
+    )
+    quick_wins = serializers.ListField(
+        child=serializers.DictField(), help_text="Actions rapides à fort impact"
+    )
+    long_term_strategy = serializers.ListField(
+        child=serializers.DictField(),
+        help_text="Recommandations stratégiques à long terme",
+    )
+    provider = serializers.CharField(
+        help_text="Fournisseur d'IA utilisé (gemini ou openai)"
+    )
 
 
 class AssistantChatResponseSerializer(serializers.Serializer):
@@ -412,14 +456,14 @@ class AssistantChatResponseSerializer(serializers.Serializer):
         child=serializers.CharField(),
         help_text="Suggestions de questions de relance",
     )
-    provider = serializers.CharField(help_text="Fournisseur d'IA utilisé (gemini ou openai)")
+    provider = serializers.CharField(
+        help_text="Fournisseur d'IA utilisé (gemini ou openai)"
+    )
     conversation_id = serializers.UUIDField(
         required=False,
         allow_null=True,
         help_text="ID de session de conversation",
     )
-
-
 
 
 class GlobalAISettingsSerializer(serializers.Serializer):
@@ -442,6 +486,7 @@ class GlobalAISettingsSerializer(serializers.Serializer):
 # ==============================================================================
 # Feature 2: Semantic Search & Duplicate Detection Serializers
 # ==============================================================================
+
 
 class CheckDuplicatePostRequestSerializer(serializers.Serializer):
     title = serializers.CharField(
@@ -519,6 +564,7 @@ class SemanticSearchResultItemSerializer(serializers.Serializer):
 # Feature 6: Assessment Generation (Quiz & Code Exercises) Serializers
 # ==============================================================================
 
+
 class GenerateQuizRequestSerializer(serializers.Serializer):
     lesson_id = serializers.UUIDField(required=True)
     question_count = serializers.IntegerField(
@@ -594,6 +640,7 @@ class CodeExerciseGeneratedSerializer(serializers.Serializer):
 # Feature 1: Peer Matchmaking Serializers
 # ==============================================================================
 
+
 class PeerMatchItemSerializer(serializers.Serializer):
     id = serializers.CharField()
     user_id = serializers.CharField()
@@ -642,6 +689,7 @@ class HackathonTeammateSuggestionRequestSerializer(serializers.Serializer):
 # Feature 4: Post Help & Mentor Tagging Serializers
 # ==============================================================================
 
+
 class MentorSuggestionItemSerializer(serializers.Serializer):
     user_id = serializers.CharField()
     username = serializers.CharField()
@@ -678,6 +726,7 @@ class PingMentorsRequestSerializer(serializers.Serializer):
 # Feature 5: Churn Risk & Smart Nudges Serializers
 # ==============================================================================
 
+
 class MemberChurnRiskItemSerializer(serializers.Serializer):
     id = serializers.CharField()
     member_id = serializers.CharField(source="member.id", read_only=True)
@@ -689,7 +738,12 @@ class MemberChurnRiskItemSerializer(serializers.Serializer):
 
     def get_avatar_url(self, obj):
         user = getattr(getattr(obj, "member", None), "user", None)
-        return getattr(getattr(user, "profile", None), "avatar_url", None) if user else None
+        return (
+            getattr(getattr(user, "profile", None), "avatar_url", None)
+            if user
+            else None
+        )
+
     risk_level = serializers.CharField()
     risk_score = serializers.FloatField()
     signals = serializers.DictField()
@@ -706,6 +760,7 @@ class SendNudgeRequestSerializer(serializers.Serializer):
 # ==============================================================================
 # Feature 3: Community Weekly Digest Serializers
 # ==============================================================================
+
 
 class CommunityWeeklyDigestSerializer(serializers.Serializer):
     id = serializers.CharField()

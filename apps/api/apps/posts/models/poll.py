@@ -10,11 +10,9 @@ class Poll(BaseModel):
     """
     Interactive poll embedded within a post.
     """
+
     post = models.OneToOneField(
-        Post,
-        on_delete=models.CASCADE,
-        related_name='poll',
-        db_index=True
+        Post, on_delete=models.CASCADE, related_name="poll", db_index=True
     )
     question = models.CharField(max_length=255)
     is_multiple_choice = models.BooleanField(default=False)
@@ -22,9 +20,9 @@ class Poll(BaseModel):
     total_votes = models.PositiveIntegerField(default=0)
 
     class Meta:
-        db_table = 'posts_polls'
-        verbose_name = 'Poll'
-        verbose_name_plural = 'Polls'
+        db_table = "posts_polls"
+        verbose_name = "Poll"
+        verbose_name_plural = "Polls"
 
     def __str__(self):
         return f"Poll: {self.question}"
@@ -38,21 +36,19 @@ class PollOption(BaseModel):
     """
     Individual choice within a poll.
     """
+
     poll = models.ForeignKey(
-        Poll,
-        on_delete=models.CASCADE,
-        related_name='options',
-        db_index=True
+        Poll, on_delete=models.CASCADE, related_name="options", db_index=True
     )
     text = models.CharField(max_length=200)
     votes_count = models.PositiveIntegerField(default=0)
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        db_table = 'posts_poll_options'
-        verbose_name = 'Poll Option'
-        verbose_name_plural = 'Poll Options'
-        ordering = ['order', 'created_at']
+        db_table = "posts_poll_options"
+        verbose_name = "Poll Option"
+        verbose_name_plural = "Poll Options"
+        ordering = ["order", "created_at"]
 
     def __str__(self):
         return f"{self.text} ({self.votes_count} votes)"
@@ -68,24 +64,22 @@ class PollVote(BaseModel):
     """
     User vote tracking for a poll option.
     """
+
     option = models.ForeignKey(
-        PollOption,
-        on_delete=models.CASCADE,
-        related_name='votes',
-        db_index=True
+        PollOption, on_delete=models.CASCADE, related_name="votes", db_index=True
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='poll_votes',
-        db_index=True
+        related_name="poll_votes",
+        db_index=True,
     )
 
     class Meta:
-        db_table = 'posts_poll_votes'
-        verbose_name = 'Poll Vote'
-        verbose_name_plural = 'Poll Votes'
-        unique_together = ('option', 'user')
+        db_table = "posts_poll_votes"
+        verbose_name = "Poll Vote"
+        verbose_name_plural = "Poll Votes"
+        unique_together = ("option", "user")
 
     def __str__(self):
         return f"{self.user.username} voted on {self.option.text}"
