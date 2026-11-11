@@ -13,6 +13,7 @@ import {
 } from '@/utils/api/community/community.api';
 import type { CommunityEvent, EventStatus } from '@/utils/api/event/event.type';
 import { parseApiError } from '@/utils/api/errors';
+import { dateFormat } from '@/utils/format';
 import { useDetailsCommunity } from '../form/UseCommunityFromParams';
 import ConfirmActionModal, { type ConfirmAction } from '../modals/confirm-action-modal';
 
@@ -23,8 +24,6 @@ const FILTERS: { id: EventStatus | 'all'; label: string }[] = [
   { id: 'completed', label: 'Terminés' },
   { id: 'cancelled', label: 'Annulés' },
 ];
-
-const when = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 /**
  * Events of the community (communities/<slug>/events/): a platform admin sees them all, members-only
@@ -109,7 +108,7 @@ function CommunityEventsTab() {
     {
       id: 'date',
       header: 'Date',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{when.format(new Date(row.original.start_time))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat({ day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(row.original.start_time))}</span>,
     },
     {
       id: 'attendees',

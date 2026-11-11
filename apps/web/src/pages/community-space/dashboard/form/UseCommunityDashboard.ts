@@ -7,9 +7,9 @@ import {
   useGetCommunityMembersQuery,
 } from '@/utils/api/community/community.api';
 import { getName } from '@/utils/Utils';
+import { dateFormat } from '@/utils/format';
 
 const DAY = 86_400_000;
-const monthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'short' });
 /** Recent posts read for the activity and the popular posts (max page size of the api) */
 export const RECENT_POSTS = 100;
 
@@ -20,7 +20,7 @@ function monthlyNewMembers(joinedAt: string[], now: Date): MonthlyNewMembers {
   const months = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), now.getMonth() - 11 + i, 1));
   return months.map((start, i) => {
     const end = months[i + 1] ?? new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const label = monthLabel.format(start).replace('.', '');
+    const label = dateFormat({ month: 'short' }).format(start).replace('.', '');
     return {
       month: label.charAt(0).toUpperCase() + label.slice(1),
       newMembers: joinedAt.filter((d) => {

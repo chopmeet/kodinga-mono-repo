@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 
 import { type CardType, OverviewCardItem } from '@kodinga/ui';
 import RevenueChart from '@/pages/shared/billing/revenue-chart';
-import SubscribersTable from '@/pages/shared/billing/subscribers-table';
-import TransactionsTable from '@/pages/shared/billing/transactions-table';
+import SubscribersTable from '@/pages/shared/billing/tables/subscribers-table';
+import TransactionsTable from '@/pages/shared/billing/tables/transactions-table';
 import QueryState from '@/pages/shared/query-state';
 import {
   useGetCommunityRevenueQuery,

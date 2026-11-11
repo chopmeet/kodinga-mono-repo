@@ -1,13 +1,12 @@
 import { Banknote } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, cn, Loader } from '@kodinga/ui';
-import { payoutMethodLabel, payoutStatusStyle, xof } from '@/utils/Utils';
+import { Button, Loader } from '@kodinga/ui';
+import { xof } from '@/utils/Utils';
 import { parseApiError } from '@/utils/api/errors';
 import { MIN_PAYOUT, useSpaceBilling } from '../form/UseSpaceBilling';
 import PayoutModal from '../modals/payout-modal';
-
-const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+import PayoutsTable from '../tables/payouts-table';
 
 /** Available balance of the community and the payout requests (billing/communities/<slug>/payouts/) */
 function PayoutsTab() {
@@ -40,38 +39,7 @@ function PayoutsTab() {
       {list.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Aucune demande de reversement pour l’instant.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <caption className="sr-only">Demandes de reversement</caption>
-            <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 text-right font-semibold">Montant</th>
-                <th className="px-4 py-3 font-semibold">Moyen</th>
-                <th className="px-4 py-3 font-semibold">Statut</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {list.map((p) => {
-                const style = payoutStatusStyle[p.status] ?? payoutStatusStyle.pending;
-                return (
-                  <tr key={p.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-700">{day.format(new Date(p.created_at))}</td>
-                    <td className="px-4 py-3 text-right font-semibold whitespace-nowrap text-slate-900 tabular-nums">{xof(Number(p.amount))}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {payoutMethodLabel[p.payment_method] ?? p.payment_method}
-                      <span className="block text-xs text-slate-500">{p.account_identifier}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>
-                      {p.status === 'rejected' && p.rejection_reason && <span className="mt-1 block text-xs text-red-700">{p.rejection_reason}</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <PayoutsTable payouts={list} />
       )}
 
       <PayoutModal open={open} balance={balance} onOpenChange={setOpen} onRequest={requestPayout} />

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
 export type Tab = {
@@ -6,6 +6,24 @@ export type Tab = {
     title: string,
     link: string,
     icon?: ReactNode,
+}
+
+/**
+ * The tabs scroll sideways on narrow screens: bring the active one into view, else on mobile the
+ * current tab (often the last one) stays hidden off-screen. scrollLeft only, never the page.
+ */
+function useActiveTabInView(pathname: string) {
+    const ref = useRef<HTMLUListElement>(null);
+    useEffect(() => {
+        const list = ref.current;
+        const active = list?.querySelector<HTMLElement>(".tab_item__active");
+        if (!list || !active) return;
+        const left = active.offsetLeft - list.offsetLeft;
+        if (left < list.scrollLeft || left + active.offsetWidth > list.scrollLeft + list.clientWidth) {
+            list.scrollLeft = left - (list.clientWidth - active.offsetWidth) / 2;
+        }
+    }, [pathname]);
+    return ref;
 }
 
 function NavTabs({
@@ -16,10 +34,11 @@ function NavTabs({
     wrapperClass?: string,
 }) {
     const { pathname } = useLocation();
+    const listRef = useActiveTabInView(pathname);
     return (
         <div className="custom_tabs__wrapper">
             <div className="border-b border-slate-200 dark:border-slate-800 mb-8">
-                <ul className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 ${wrapperClass}`}>
+                <ul ref={listRef} className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 ${wrapperClass}`}>
                     {tabs.map((tab, key) => (
                         <NavLink
                             role="button"
@@ -50,9 +69,10 @@ function RoundedNavTabs({
     wrapperClass?: string,
 }) {
     const { pathname } = useLocation();
+    const listRef = useActiveTabInView(pathname);
     return (
         <div className="mb-8 custom_tabs__wrapper">
-            <ul className={`flex list-none p-0 flex-nowrap overflow-x-auto tabs__container mb-0 ${wrapperClass}`}>
+            <ul ref={listRef} className={`flex list-none p-0 flex-nowrap overflow-x-auto tabs__container mb-0 ${wrapperClass}`}>
                 {tabs.map((tab, key) => (
                     <NavLink
                         role="button"
@@ -84,9 +104,10 @@ function FloatedNavTabs({
     wrapperClass?: string,
 }) {
     const { pathname } = useLocation();
+    const listRef = useActiveTabInView(pathname);
     return (
         <div className="custom_tabs__wrapper">
-            <ul className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 rounded-lg bg-white/90 shadow-2xl ${wrapperClass}`}>
+            <ul ref={listRef} className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 rounded-lg bg-white/90 shadow-2xl ${wrapperClass}`}>
                 {tabs.map((tab, key) => (
                     <NavLink
                         role="button"

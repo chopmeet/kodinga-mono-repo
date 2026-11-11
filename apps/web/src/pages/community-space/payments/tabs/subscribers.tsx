@@ -1,4 +1,4 @@
-import SubscribersTable from '@/pages/shared/billing/subscribers-table';
+import SubscribersTable from '@/pages/shared/billing/tables/subscribers-table';
 import { useSpaceBilling } from '../form/UseSpaceBilling';
 
 function SubscribersTab() {

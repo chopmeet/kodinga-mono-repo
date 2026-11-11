@@ -10,6 +10,7 @@ import {
 import {
     Table,
     TableBody,
+    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -28,6 +29,8 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[] | undefined | null,
     isLoading: boolean
+    /** Accessible name of the table (read by screen readers, not shown) */
+    caption?: string
 }
 
 
@@ -37,7 +40,8 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
     columns,
     data,
-    isLoading
+    isLoading,
+    caption,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnVisibility, setColumnVisibility] = 
@@ -46,9 +50,6 @@ export function DataTable<TData, TValue>({
     const table = useReactTable({
         data: data ?? [],
         columns,
-        // Key rows by their entity id when they have one (index otherwise): with index keys, a
-        // filter or a removal makes React reuse another row's components (and their state,
-        // e.g. an open "…" menu) for the rows that shifted.
         getRowId: (row, index) => {
             const id = (row as { id?: string | number } | null)?.id
             return id !== undefined && id !== null ? String(id) : String(index)
@@ -100,6 +101,7 @@ export function DataTable<TData, TValue>({
                 </div>
                 <div className="overflow-hidden rounded-md border border-slate-100">
                     <Table>
+                        {!!caption && <TableCaption className="sr-only">{caption}</TableCaption>}
                         <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow 

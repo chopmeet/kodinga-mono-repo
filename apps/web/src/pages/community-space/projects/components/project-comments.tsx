@@ -6,8 +6,7 @@ import { useAddProjectCommentMutation, useGetProjectCommentsQuery } from '@/util
 import { parseApiError } from '@/utils/api/errors';
 import type { ProjectPerson } from '@/utils/api/project/project.type';
 import { getName, nameInitials } from '@/utils/Utils';
-
-const when = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+import { formatDateTime } from '@/utils/format';
 
 function Author({ person, at }: { person: ProjectPerson; at: string }) {
   const name = getName(person);
@@ -19,7 +18,7 @@ function Author({ person, at }: { person: ProjectPerson; at: string }) {
       </Avatar>
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
-        <p className="text-xs text-slate-500">{when.format(new Date(at))}</p>
+        <p className="text-xs text-slate-500">{formatDateTime(at)}</p>
       </div>
     </div>
   );

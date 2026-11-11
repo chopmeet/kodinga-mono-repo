@@ -352,6 +352,9 @@ export const intervalLabel = Object.fromEntries(
 
 export const xof = (value: number) => `${numberFormat().format(value)} FCFA`;
 
+/** FCFA as usual, any other currency with its code (amounts arrive as strings: "15000.00") */
+export const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${numberFormat().format(Number(value))} ${currency}`);
+
 // Labels of the developer profile, shared by /dashboard/profile and the public profile
 // Texts in locales/*/labels.ts, read in the current language
 export const availabilityLabel = translatedLabels<AvailabilityStatus>('labels.availability.', ['available', 'open_to_offers', 'busy', 'unavailable']);

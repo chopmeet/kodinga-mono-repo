@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga/ui';
 import type { ActivityCommunity, HackathonResult, MemberActivity } from '@/utils/api/analytics/member-activity.type';
+import { formatDayMonth } from '@/utils/format';
 
-const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 const percent = (n: number) => `${Math.round(n)} %`;
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -102,7 +102,7 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
                   {e.title}
                 </Link>
                 <span className="text-xs text-slate-500">
-                  {day.format(new Date(e.start_time))} · {e.event_type_display}
+                  {formatDayMonth(e.start_time)} · {e.event_type_display}
                   {where(e.community)}
                 </span>
               </span>
@@ -151,7 +151,7 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
                   {a.opportunity.title}
                 </Link>
                 <span className="text-xs text-slate-500">
-                  {a.opportunity.company_name} · {day.format(new Date(a.applied_at))}
+                  {a.opportunity.company_name} · {formatDayMonth(a.applied_at)}
                 </span>
               </span>
               <Badge className={applicationStyle(a)}>{a.status_display}</Badge>

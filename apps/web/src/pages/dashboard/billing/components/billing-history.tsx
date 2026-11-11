@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Button, cn, customToast, Loader } from '@kodinga/ui';
-import { intervalLabel, paymentStatusStyle, subscriptionStatusStyle, xof } from '@/utils/Utils';
+import { amountOf, intervalLabel, subscriptionStatusStyle } from '@/utils/Utils';
 import {
   useCancelSubscriptionMutation,
   useGetMyPaymentsQuery,
@@ -12,9 +12,8 @@ import {
 } from '@/utils/api/community/community.api';
 import type { MySubscription } from '@/utils/api/billing/billing.type';
 import { parseApiError } from '@/utils/api/errors';
-
-const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${Number(value).toLocaleString('fr-FR')} ${currency}`);
+import { formatLongDate } from '@/utils/format';
+import PaymentsHistoryTable from '../tables/payments-history-table';
 
 /** The memberships paid by the user (PayDunya) and their payments */
 function BillingHistory() {
@@ -49,7 +48,7 @@ function BillingHistory() {
   const cancel = async (s: MySubscription) => {
     try {
       await cancelSubscription(s.id).unwrap();
-      customToast.success({ message: `Abonnement résilié : vous gardez l’accès jusqu’au ${day.format(new Date(s.current_period_end))}.` });
+      customToast.success({ message: `Abonnement résilié : vous gardez l’accès jusqu’au ${formatLongDate(s.current_period_end)}.` });
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });
     } finally {
@@ -96,10 +95,10 @@ function BillingHistory() {
                     {oneTime
                       ? 'Accès à vie'
                       : s.cancel_at_period_end || s.status === 'canceled'
-                        ? `Accès jusqu’au ${day.format(new Date(s.current_period_end))}`
+                        ? `Accès jusqu’au ${formatLongDate(s.current_period_end)}`
                         : s.is_active
-                          ? `Renouvellement le ${day.format(new Date(s.current_period_end))}`
-                          : `Terminé le ${day.format(new Date(s.current_period_end))}`}
+                          ? `Renouvellement le ${formatLongDate(s.current_period_end)}`
+                          : `Terminé le ${formatLongDate(s.current_period_end)}`}
                   </p>
                   {/* Renewable and not already stopped: the member can end it at the end of the period */}
                   {s.status === 'active' && s.is_active && !oneTime && !s.cancel_at_period_end && (
@@ -135,63 +134,8 @@ function BillingHistory() {
         {history.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">Aucun paiement pour le moment.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <caption className="sr-only">Historique des paiements</caption>
-              <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold">Formule</th>
-                  <th className="px-4 py-3 text-right font-semibold">Montant</th>
-                  <th className="px-4 py-3 font-semibold">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {history.map((p) => {
-                  const style = paymentStatusStyle[p.status] ?? paymentStatusStyle.PENDING;
-                  return (
-                    <tr key={p.id}>
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-700">{day.format(new Date(p.paid_at ?? p.created_at))}</td>
-                      <td className="px-4 py-3 text-slate-700">
-                        {p.plan?.community_name && <span className="block font-medium text-slate-900">{p.plan.community_name}</span>}
-                        {p.plan?.name ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium whitespace-nowrap text-slate-900 tabular-nums">{amountOf(p.amount, p.currency)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>
-                          {p.status === 'PENDING' && (
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="h-7 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                                isLoading={verifyingId === p.id}
-                                onClick={() => handleFinalize(p.id)}
-                                title="Valider la facture réglée auprès de PayDunya"
-                              >
-                                Finaliser le paiement
-                              </Button>
-                              {/^https:\/\//.test(p.checkout_url) && (
-                                <a
-                                  href={p.checkout_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs text-slate-500 hover:text-slate-800 hover:underline"
-                                  title="Rouvrir la page PayDunya si vous n'aviez pas encore payé"
-                                >
-                                  Finaliser
-                                </a>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="mt-4">
+            <PaymentsHistoryTable payments={history} verifyingId={verifyingId} onFinalize={handleFinalize} />
           </div>
         )}
         <p className="mt-3 text-xs text-slate-500">Paiements sécurisés par PayDunya (Orange Money, Wave, MTN MoMo, Moov Money, carte).</p>

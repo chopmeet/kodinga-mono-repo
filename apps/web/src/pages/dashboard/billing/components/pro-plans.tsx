@@ -3,9 +3,8 @@ import { Check, CircleCheck, CircleX, Clock, Crown, LoaderCircle } from 'lucide-
 import { Badge, Button, cn } from '@kodinga/ui';
 import { intervalLabel, xof } from '@/utils/Utils';
 import { parseApiError } from '@/utils/api/errors';
+import { formatLongDate } from '@/utils/format';
 import type { KodingaPro } from '../form/UseKodingaPro';
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
 const notices = {
   checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950', text: 'Vérification de votre paiement auprès de PayDunya…' },
@@ -49,7 +48,7 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
       {pro.subscription && (
         <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           Formule {pro.subscription.plan.name} :{' '}
-          {pro.subscription.cancel_at_period_end ? 'se termine' : 'renouvelée'} le {dateFormat.format(new Date(pro.subscription.current_period_end))}.{' '}
+          {pro.subscription.cancel_at_period_end ? 'se termine' : 'renouvelée'} le {formatLongDate(pro.subscription.current_period_end)}.{' '}
           <a href="#subscriptions-title" className="font-semibold underline">
             Gérer
           </a>

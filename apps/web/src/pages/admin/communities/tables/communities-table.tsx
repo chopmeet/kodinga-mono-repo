@@ -13,14 +13,13 @@ import {
 } from '@kodinga/ui';
 import type { CommunityListItem, CommunityPrivacy } from '@/utils/api/community/community.type';
 import { formatCompact, getName, nameInitials } from '@/utils/Utils';
+import { formatDate } from '@/utils/format';
 
 const privacyBadge: Record<CommunityPrivacy, { label: string; icon: typeof Globe }> = {
   public: { label: 'Publique', icon: Globe },
   private: { label: 'Privée', icon: Lock },
   secret: { label: 'Secrète', icon: EyeOff },
 };
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
 
 function CommunityCell({ community }: { community: CommunityListItem }) {
@@ -117,7 +116,7 @@ function CommunitiesTable({ communities, isLoading, onArchive }: Props) {
       header: 'Créée le',
       cell: ({ row }) => (
         <time dateTime={row.original.created_at} className="whitespace-nowrap text-slate-600">
-          {dateFormat.format(new Date(row.original.created_at))}
+          {formatDate(row.original.created_at)}
         </time>
       ),
     },

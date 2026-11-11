@@ -4,9 +4,8 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@kodinga/ui';
 import { type RowAction, RowActions } from '@/pages/shared/row-actions';
 import type { CommunityEvent } from '@/utils/api/event/event.type';
+import { dateFormat } from '@/utils/format';
 import { eventStatusStyle, eventTypeLabel, formatEventPlace, formatEventWhen } from '../event-labels';
-
-const monthFormat = new Intl.DateTimeFormat('fr-FR', { month: 'short' });
 
 /** One event of the list: date tile, title, when / where / attendees, status and actions */
 export function EventRow({ event, href, actions }: { event: CommunityEvent; href: string; actions: RowAction[] }) {
@@ -20,7 +19,7 @@ export function EventRow({ event, href, actions }: { event: CommunityEvent; href
         className={`flex w-14 shrink-0 flex-col items-center rounded-xl border py-2 ${event.status === 'cancelled' ? 'border-slate-200 text-slate-400' : 'border-blue-100 bg-blue-50 text-blue-900'}`}
         aria-hidden
       >
-        <span className="text-xs font-semibold uppercase">{monthFormat.format(start).replace('.', '')}</span>
+        <span className="text-xs font-semibold uppercase">{dateFormat({ month: 'short' }).format(start).replace('.', '')}</span>
         <span className="text-xl leading-tight font-bold">{start.getDate()}</span>
       </div>
 

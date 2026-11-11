@@ -4,9 +4,9 @@ import type { ReactNode } from 'react';
 import { cn } from '@kodinga/ui';
 import { useGetMyBadgesQuery, useGetMyCommunityPointsQuery, useGetMyPointsHistoryQuery, useGetMyReputationQuery } from '@/utils/api/community/community.api';
 import type { PointsTransaction } from '@/utils/api/gamification/gamification.type';
+import { formatDayMonth } from '@/utils/format';
 
 const points = new Intl.NumberFormat('fr-FR');
-const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 const ordinal = (n: number) => (n === 1 ? '1er' : `${n}e`);
 const signed = (n: number) => `${n > 0 ? '+' : ''}${points.format(n)}`;
 
@@ -36,7 +36,7 @@ function History({ items, showCommunity }: { items: PointsTransaction[]; showCom
               <span className="min-w-0">
                 <span className="block truncate text-slate-900">{t.description || t.action_label}</span>
                 <span className="text-xs text-slate-500">
-                  {day.format(new Date(t.created_at))}
+                  {formatDayMonth(t.created_at)}
                   {showCommunity && t.community_name ? ` · ${t.community_name}` : ''}
                   {t.source === 'manual_adjustment' ? ' · ajustement manuel' : ''}
                 </span>

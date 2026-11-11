@@ -26,3 +26,17 @@ export const relativeFormat = (options: Intl.RelativeTimeFormatOptions = {}) =>
 
 /** 15000 → "15 000" (fr) / "15,000" (en) */
 export const formatNumber = (value: number) => numberFormat().format(value);
+
+type DateInput = string | number | Date;
+
+/** "12 sept. 2026" (tables, lists) */
+export const formatDate = (date: DateInput) => dateFormat({ day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date));
+
+/** "12 septembre 2026" (sentences: "Renouvellement le …") */
+export const formatLongDate = (date: DateInput) => dateFormat({ day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(date));
+
+/** "12 sept." (recent activity, the year is implied) */
+export const formatDayMonth = (date: DateInput) => dateFormat({ day: 'numeric', month: 'short' }).format(new Date(date));
+
+/** "12 sept., 14:30" (comments, journals) */
+export const formatDateTime = (date: DateInput) => dateFormat({ day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date));

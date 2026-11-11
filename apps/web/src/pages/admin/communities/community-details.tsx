@@ -12,6 +12,7 @@ import {
   type Tab,
 } from '@kodinga/ui';
 import type { CommunityPrivacy } from '@/utils/api/community/community.type';
+import { formatLongDate } from '@/utils/format';
 import CommunityOverview from './components/community-overview';
 import UseArchiveCommunity from './form/UseArchiveCommunity';
 import { UseCommunityFromParams } from './form/UseCommunityFromParams';
@@ -35,8 +36,6 @@ const privacyLabel: Record<CommunityPrivacy, { label: string; icon: typeof Globe
   private: { label: 'Privée', icon: Lock },
   secret: { label: 'Secrète', icon: EyeOff },
 };
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
 
 function CommunityDetails() {
@@ -126,7 +125,7 @@ function CommunityDetails() {
                 )}
                 <span className="flex items-center gap-1.5">
                   <CalendarDays className="size-4 text-slate-400" />
-                  Créée le {dateFormat.format(new Date(community.created_at))}
+                  Créée le {formatLongDate(community.created_at)}
                 </span>
               </div>
             </div>

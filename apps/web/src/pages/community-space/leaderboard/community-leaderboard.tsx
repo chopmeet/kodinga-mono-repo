@@ -19,7 +19,7 @@ import { parseApiError } from '@/utils/api/errors';
 import { type LeaderboardEntry, type LeaderboardPeriod, PERIOD_LABEL } from '@/utils/api/gamification/gamification.type';
 import { nameInitials } from '@/utils/Utils';
 import { useCommunitySpace } from '../community-space-context';
-import PointsJournal from './components/points-journal';
+import PointsJournalTable from './tables/points-journal-table';
 import UseCommunityLeaderboard, { LIMITS, type Limit } from './form/UseCommunityLeaderboard';
 import UsePointsAdmin from './form/UsePointsAdmin';
 import { LEVELS, pointsFormat } from './leaderboard-labels';
@@ -265,7 +265,7 @@ function CommunityLeaderboard() {
       {points.canManage && (
         <ColgateWrapper className="mt-6 border border-neutral-200 p-4">
           <h2 className="mb-3 font-semibold text-slate-900">Journal des points</h2>
-          <PointsJournal items={points.journal} isLoading={points.journalLoading} />
+          <PointsJournalTable items={points.journal} isLoading={points.journalLoading} />
         </ColgateWrapper>
       )}
 
