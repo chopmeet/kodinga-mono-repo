@@ -194,6 +194,46 @@ describe('AdminSettings', () => {
     expect(calls.find((c) => c.method === 'PATCH')?.body).toMatchObject({ key: 'pro_monthly_price', value: 7500, is_public: true });
   });
 
+  it('reads and saves the yearly and lifetime Pro prices on their plans', async () => {
+    const calls: { method: string; path: string; body: unknown }[] = [];
+    const plan = (id: string, price: string, billing_interval: string) => ({
+      id, name: id, slug: id, description: '', price, currency: 'XOF', billing_interval, interval_count: 1,
+      community_id: null, community_name: null, features: [], is_active: true, order: 0,
+    });
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const request = input as Request;
+      const path = new URL(request.url).pathname;
+      const text = request.method === 'GET' ? '' : await request.text();
+      calls.push({ method: request.method, path, body: text ? JSON.parse(text) : null });
+      const data = path.endsWith('/billing/plans/')
+        ? [plan('hobby', '0.00', 'month'), plan('pro-month', '5000.00', 'month'), { ...plan('pro-year', '50000.00', 'year'), description: '2 mois offerts (50 000 FCFA/an au lieu de 60 000 FCFA).' }, plan('pro-life', '150000.00', 'one_time')]
+        : request.method === 'PATCH'
+          ? JSON.parse(text)
+          : [{ key: 'pro_monthly_price', value: 5000, description: '', is_public: true }];
+      return new Response(JSON.stringify({ success: true, data }), { headers: { 'Content-Type': 'application/json' } });
+    });
+    const { findByLabelText, getByRole, findByText } = renderAt('monetization');
+    const yearly = (await findByLabelText(/Kodinga Pro, prix annuel/)) as HTMLInputElement;
+    const lifetime = (await findByLabelText(/Kodinga Pro à vie/)) as HTMLInputElement;
+    await waitFor(() => expect(yearly.value).toBe('50000'), SLOW);
+    expect(lifetime.value).toBe('150000');
+    expect(await findByText(/Soit 10\s000 FCFA d’économie sur un an/)).toBeTruthy();
+    const description = (await findByLabelText('Description du Pro annuel')) as HTMLTextAreaElement;
+    await waitFor(() => expect(description.value).toBe('2 mois offerts (50 000 FCFA/an au lieu de 60 000 FCFA).'), SLOW);
+
+    fireEvent.change(yearly, { target: { value: '55000' } });
+    // The suggested text follows the prices on the form
+    fireEvent.click(getByRole('button', { name: 'Utiliser ce texte' }));
+    await waitFor(() => expect(description.value).toMatch(/55\s000 FCFA par an au lieu de 60\s000 FCFA, soit 5\s000 FCFA d’économie/), SLOW);
+    fireEvent.click(getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'PATCH')).toBe(true), SLOW);
+    // Only the edited plan, at its own address
+    const patches = calls.filter((c) => c.method === 'PATCH');
+    expect(patches).toHaveLength(1);
+    expect(patches[0].path).toMatch(/\/billing\/plans\/pro-year\/$/);
+    expect(patches[0].body).toEqual({ price: 55000, description: description.value });
+  });
+
   it('reads and saves who may create a community through the api', async () => {
     const calls: { method: string; body: unknown }[] = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
