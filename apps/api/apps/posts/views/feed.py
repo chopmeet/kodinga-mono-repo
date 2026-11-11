@@ -1,5 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -21,56 +22,110 @@ from common.utils.responses import error_response, success_response
 class CommunityFeedView(APIView):
     """
     List feed posts or create a new post in a community.
+    Supports both JSON (with pre-uploaded media_ids/video_ids) and direct multipart/form-data
+    file attachments (image/images, document/documents, file/files, video/videos).
     """
+
     pagination_class = StandardResultsSetPagination
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return [IsAuthenticated()]
         return [AllowAny()]
 
     @extend_schema(
-        tags=['Feed & Posts'],
+        tags=["Feed & Posts"],
         summary="Explorer le flux de publications d'une communauté",
         parameters=[
-            OpenApiParameter(name='category', description="Slug du canal (#general, #help...)", required=False, type=str),
-            OpenApiParameter(name='type', description="Type de post (discussion, question, project_showcase, poll, announcement)", required=False, type=str),
-            OpenApiParameter(name='q', description="Recherche par mot-clé", required=False, type=str),
-            OpenApiParameter(name='pinned', description="Filtrer les posts épinglés (true/false)", required=False, type=bool),
-            OpenApiParameter(name='sort', description="Tri (popular, recent, oldest, views)", required=False, type=str),
-            OpenApiParameter(name='ordering', description="Alias de tri (popular, recent...)", required=False, type=str),
-            OpenApiParameter(name='bookmarked', description="Filtrer uniquement les favoris (true/false)", required=False, type=bool),
-            OpenApiParameter(name='author', description="Filtrer par nom d'auteur", required=False, type=str),
-            OpenApiParameter(name='tag', description="Filtrer par hashtag (#python...)", required=False, type=str),
+            OpenApiParameter(
+                name="category",
+                description="Slug du canal (#general, #help...)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="type",
+                description="Type de post (discussion, question, project_showcase, poll, announcement)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="q", description="Recherche par mot-clé", required=False, type=str
+            ),
+            OpenApiParameter(
+                name="pinned",
+                description="Filtrer les posts épinglés (true/false)",
+                required=False,
+                type=bool,
+            ),
+            OpenApiParameter(
+                name="sort",
+                description="Tri (popular, recent, oldest, views)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="ordering",
+                description="Alias de tri (popular, recent...)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="bookmarked",
+                description="Filtrer uniquement les favoris (true/false)",
+                required=False,
+                type=bool,
+            ),
+            OpenApiParameter(
+                name="author",
+                description="Filtrer par nom d'auteur",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="tag",
+                description="Filtrer par hashtag (#python...)",
+                required=False,
+                type=str,
+            ),
         ],
-        responses={200: PostListSerializer(many=True)}
+        responses={200: PostListSerializer(many=True)},
     )
     def get(self, request, slug):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
-            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
 
         check_community_read_permission(request.user, community)
 
-        category = request.query_params.get('category')
-        post_type = request.query_params.get('type')
-        q = request.query_params.get('q')
-        pinned_param = request.query_params.get('pinned')
-        is_pinned = pinned_param.lower() in ['true', '1'] if pinned_param else None
+        category = request.query_params.get("category")
+        post_type = request.query_params.get("type")
+        q = request.query_params.get("q")
+        pinned_param = request.query_params.get("pinned")
+        is_pinned = pinned_param.lower() in ["true", "1"] if pinned_param else None
 
-        locked_param = request.query_params.get('locked') or request.query_params.get('is_locked')
+        locked_param = request.query_params.get("locked") or request.query_params.get(
+            "is_locked"
+        )
         is_locked = None
         if locked_param is not None:
-            is_locked = locked_param.lower() in ['true', '1', 'yes']
+            is_locked = locked_param.lower() in ["true", "1", "yes"]
 
-        sort = request.query_params.get('sort') or request.query_params.get('ordering')
-        bookmarked_param = request.query_params.get('bookmarked') or request.query_params.get('saved')
-        bookmarked = bookmarked_param.lower() in ['true', '1'] if bookmarked_param else None
-        author = request.query_params.get('author')
-        tag = request.query_params.get('tag')
+        sort = request.query_params.get("sort") or request.query_params.get("ordering")
+        bookmarked_param = request.query_params.get(
+            "bookmarked"
+        ) or request.query_params.get("saved")
+        bookmarked = (
+            bookmarked_param.lower() in ["true", "1"] if bookmarked_param else None
+        )
+        author = request.query_params.get("author")
+        tag = request.query_params.get("tag")
 
-        since_param = request.query_params.get('since')
+        since_param = request.query_params.get("since")
         since = None
         if since_param:
             try:
@@ -97,39 +152,53 @@ class CommunityFeedView(APIView):
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = PostListSerializer(page, many=True, context={'request': request})
+        serializer = PostListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
-        tags=['Feed & Posts'],
+        tags=["Feed & Posts"],
         summary="Publier un nouveau post dans la communauté",
         request=PostCreateUpdateSerializer,
-        responses={201: PostDetailSerializer}
+        responses={201: PostDetailSerializer},
     )
     def post(self, request, slug):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
-            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
 
         serializer = PostCreateUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        media_ids = serializer.validated_data.pop('media_ids', None)
-        poll_data = serializer.validated_data.pop('poll', None)
+        media_ids = list(serializer.validated_data.pop("media_ids", None) or [])
+        video_ids = list(serializer.validated_data.pop("video_ids", None) or [])
+        poll_data = serializer.validated_data.pop("poll", None)
+
+        if request.FILES:
+            uploaded_m_ids, uploaded_v_ids = (
+                PostService.upload_and_extract_multipart_files(
+                    user=request.user,
+                    files_dict=request.FILES,
+                )
+            )
+            media_ids.extend(uploaded_m_ids)
+            video_ids.extend(uploaded_v_ids)
 
         post = PostService.create_post(
             author=request.user,
             community=community,
             data=serializer.validated_data,
             poll_data=poll_data,
-            media_ids=media_ids
+            media_ids=media_ids or None,
+            video_ids=video_ids or None,
         )
 
         return success_response(
-            data=PostDetailSerializer(post, context={'request': request}).data,
+            data=PostDetailSerializer(post, context={"request": request}).data,
             message="Publication partagée avec succès !",
-            status_code=status.HTTP_201_CREATED
+            status_code=status.HTTP_201_CREATED,
         )
 
 
@@ -137,22 +206,25 @@ class CommunityPostCategoriesView(APIView):
     """
     List or create post categories / channels in a community.
     """
+
     def get_permissions(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return [IsAuthenticated()]
         return [AllowAny()]
 
     @extend_schema(
-        tags=['Feed & Posts'],
+        tags=["Feed & Posts"],
         summary="Lister les canaux / catégories de publications",
         operation_id="community_post_channels_list",
-        responses={200: PostCategorySerializer(many=True)}
+        responses={200: PostCategorySerializer(many=True)},
     )
     def get(self, request, slug):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
-            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
 
         check_community_read_permission(request.user, community)
 
@@ -160,27 +232,28 @@ class CommunityPostCategoriesView(APIView):
         return success_response(data=PostCategorySerializer(categories, many=True).data)
 
     @extend_schema(
-        tags=['Feed & Posts'],
+        tags=["Feed & Posts"],
         summary="Créer un nouveau canal de discussion (#canal)",
         operation_id="community_post_channels_create",
         request=PostCategorySerializer,
-        responses={201: PostCategorySerializer}
+        responses={201: PostCategorySerializer},
     )
     def post(self, request, slug):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
-            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
 
         serializer = PostCategorySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         cat = PostCategory.objects.create(
-            community=community,
-            **serializer.validated_data
+            community=community, **serializer.validated_data
         )
         return success_response(
             data=PostCategorySerializer(cat).data,
             message="Canal créé avec succès.",
-            status_code=status.HTTP_201_CREATED
+            status_code=status.HTTP_201_CREATED,
         )

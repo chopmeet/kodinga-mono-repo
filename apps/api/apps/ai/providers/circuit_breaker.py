@@ -112,7 +112,9 @@ class QuotaCircuitBreaker:
             now = time.time()
             remaining_cooldown = 0
             if self.state == self.STATE_OPEN:
-                remaining_cooldown = max(0, int(self.cooldown_seconds - (now - self.last_opened_at)))
+                remaining_cooldown = max(
+                    0, int(self.cooldown_seconds - (now - self.last_opened_at))
+                )
 
             return {
                 "provider": self.provider_name,
@@ -128,4 +130,6 @@ class QuotaCircuitBreaker:
 
 
 # Centralized singleton circuit breaker for Gemini
-gemini_circuit_breaker = QuotaCircuitBreaker(provider_name="gemini", cooldown_seconds=60)
+gemini_circuit_breaker = QuotaCircuitBreaker(
+    provider_name="gemini", cooldown_seconds=60
+)

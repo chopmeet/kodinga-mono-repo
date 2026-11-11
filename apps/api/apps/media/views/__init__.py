@@ -15,15 +15,15 @@ from apps.media.views.video import (
 from apps.media.views.webhooks import MuxWebhookView
 
 __all__ = [
-    'PresignedUploadView',
-    'ConfirmUploadView',
-    'DirectFileUploadView',
-    'BannerUploadView',
-    'MediaAssetListView',
-    'MediaAssetDetailView',
-    'MuxDirectUploadView',
-    'VideoAssetListView',
-    'VideoAssetIngestView',
-    'VideoAssetDetailView',
-    'MuxWebhookView',
+    "PresignedUploadView",
+    "ConfirmUploadView",
+    "DirectFileUploadView",
+    "BannerUploadView",
+    "MediaAssetListView",
+    "MediaAssetDetailView",
+    "MuxDirectUploadView",
+    "VideoAssetListView",
+    "VideoAssetIngestView",
+    "VideoAssetDetailView",
+    "MuxWebhookView",
 ]

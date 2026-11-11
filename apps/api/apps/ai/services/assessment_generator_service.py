@@ -47,16 +47,16 @@ class AssessmentGeneratorService:
             f"2. Une seule option doit être correcte (indiquée par son index 0, 1, 2 ou 3).\n"
             f"3. Fournis une explication pédagogique claire justifiant la bonne réponse.\n\n"
             f"Réponds STRICTEMENT sous forme de JSON valide avec le schéma suivant :\n"
-            f'{{\n'
+            f"{{\n"
             f'  "questions": [\n'
-            f'    {{\n'
+            f"    {{\n"
             f'      "question": "Texte clair et précis de la question",\n'
             f'      "options": ["Option 0", "Option 1", "Option 2", "Option 3"],\n'
             f'      "correct_index": 1,\n'
             f'      "explanation": "Explication pédagogique détaillée"\n'
-            f'    }}\n'
-            f'  ]\n'
-            f'}}'
+            f"    }}\n"
+            f"  ]\n"
+            f"}}"
         )
 
         try:
@@ -77,7 +77,9 @@ class AssessmentGeneratorService:
             if questions:
                 return questions, True
         except Exception as err:
-            logger.warning(f"[generate_quiz] AI generation or parsing failed: {err}. Returning structured fallback.")
+            logger.warning(
+                f"[generate_quiz] AI generation or parsing failed: {err}. Returning structured fallback."
+            )
 
         return [
             {
@@ -115,16 +117,16 @@ class AssessmentGeneratorService:
             f"Focus supplémentaire : {instructions or 'Mettre en pratique les concepts clés de la leçon'}.\n\n"
             f"Leçon :\n{context_text}\n\n"
             f"Réponds STRICTEMENT en JSON valide avec la structure suivante :\n"
-            f'{{\n'
+            f"{{\n"
             f'  "title": "Titre percutant de l\'exercice",\n'
             f'  "instructions_markdown": "Consignes détaillées au format Markdown avec exemples",\n'
             f'  "starter_code": "# Signature de fonction avec docstring et pass ou TODO",\n'
             f'  "solution_code": "# Solution de référence fonctionnelle",\n'
             f'  "test_cases": [\n'
             f'    {{"input": "param", "expected_output": "valeur"}}\n'
-            f'  ],\n'
+            f"  ],\n"
             f'  "language": "{language_code}"\n'
-            f'}}'
+            f"}}"
         )
 
         try:
@@ -143,14 +145,24 @@ class AssessmentGeneratorService:
             data = json.loads(clean)
             return {
                 "title": data.get("title", f"Exercice pratique : {lesson.title}"),
-                "instructions_markdown": data.get("instructions_markdown", "Implémentez la fonction demandée."),
-                "starter_code": data.get("starter_code", "def solution():\n    # Votre code ici\n    pass\n"),
-                "solution_code": data.get("solution_code", "def solution():\n    return True\n"),
-                "test_cases": data.get("test_cases", [{"input": "test", "expected_output": "True"}]),
+                "instructions_markdown": data.get(
+                    "instructions_markdown", "Implémentez la fonction demandée."
+                ),
+                "starter_code": data.get(
+                    "starter_code", "def solution():\n    # Votre code ici\n    pass\n"
+                ),
+                "solution_code": data.get(
+                    "solution_code", "def solution():\n    return True\n"
+                ),
+                "test_cases": data.get(
+                    "test_cases", [{"input": "test", "expected_output": "True"}]
+                ),
                 "language": data.get("language", language_code),
             }, True
         except Exception as err:
-            logger.warning(f"[generate_code_exercise] AI generation or parsing failed: {err}. Returning fallback.")
+            logger.warning(
+                f"[generate_code_exercise] AI generation or parsing failed: {err}. Returning fallback."
+            )
             return {
                 "title": f"Exercice pratique : {lesson.title}",
                 "instructions_markdown": f"Mettez en application les notions découvertes dans **{lesson.title}**.",

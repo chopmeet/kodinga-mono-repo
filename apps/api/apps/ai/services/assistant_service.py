@@ -10,6 +10,7 @@ from apps.accounts.models.user import User
 from apps.ai.models.assistant import AssistantConversation, AssistantMessage
 from apps.ai.router import AIProviderStrategy, ai_router
 from apps.ai.schemas import (
+    AssistantChatResult,
     CommunityAnalysisResult,
     CommunityProposalResult,
     CommunityRecommendationCard,
@@ -17,6 +18,16 @@ from apps.ai.schemas import (
     ContentSuggestionResult,
 )
 from apps.ai.services.moderation_service import ModerationService
+from apps.ai.services.platform_knowledge_service import (
+    MISSING_INFORMATION_TEXT,
+    OUT_OF_SCOPE_REFUSAL_TEXT,
+    AssistantIntent,
+    CommunityDynamicDataService,
+    CommunityPrivateContentService,
+    PlatformDocumentationRAGService,
+    PlatformIntentClassifier,
+    build_private_content_denied_text,
+)
 from apps.communities.models.community import Community, CommunityPrivacy
 from apps.events.models.event import Event
 from apps.memberships.models.member import (
@@ -443,13 +454,16 @@ class AIAssistantService:
                 if m["role"] in ["user", "assistant"]
             ]
 
-        context = {
-            "user_authenticated": bool(user and user.is_authenticated),
-            "username": user.username if user and user.is_authenticated else "Invité",
+        # Step 1 & 2: Identify authenticated user and session context
+        is_auth = bool(user and user.is_authenticated)
+        context: dict[str, Any] = {
+            "user_authenticated": is_auth,
+            "username": user.username if is_auth else "Invité",
             "preferred_language": resolved_lang,
         }
         if community:
             context["current_community"] = {
+                "id": str(community.id),
                 "name": community.name,
                 "slug": community.slug,
                 "category": community.category.name
@@ -457,51 +471,185 @@ class AIAssistantService:
                 else "Général",
             }
 
-        # Check if user is asking for recommendations -> fetch candidate cards to ground response
-        lower_msg = clean_message.lower()
-        if any(
-            w in lower_msg
-            for w in [
-                "trouve",
-                "trouver",
-                "cherche",
-                "recherche",
-                "recommande",
-                "découvrir",
-                "conseille",
-                "rejoindre",
-                "find",
-                "recommend",
-                "discover",
-            ]
-        ):
-            public_communities = list(
-                Community.objects.filter(
-                    privacy_type=CommunityPrivacy.PUBLIC, is_active=True
+        # Step 3: Classify user question intent
+        classification = PlatformIntentClassifier.classify(
+            message=clean_message,
+            community_identifier=community.slug if community else community_identifier,
+        )
+        intent = classification["intent"]
+        context["intent"] = intent
+
+        chat_result: Optional[AssistantChatResult] = None
+
+        # Step 4: Controlled refusal for OUT_OF_SCOPE or prompt injection (no LLM general knowledge call)
+        if intent == AssistantIntent.OUT_OF_SCOPE:
+            chat_result = AssistantChatResult(
+                reply=OUT_OF_SCOPE_REFUSAL_TEXT,
+                suggested_follow_ups=[
+                    "Comment créer une communauté sur Kodinga ?",
+                    "Quelles communautés gratuites sont disponibles ?",
+                    "Quelles sont les fonctionnalités de la plateforme ?",
+                ],
+                suggested_action="explore_communities",
+                data={
+                    "intent": intent,
+                    "refused": True,
+                    "is_prompt_injection": classification.get(
+                        "is_prompt_injection", False
+                    ),
+                },
+                provider="kodinga_guard",
+            )
+
+        # Step 5 & 6: Determine authorized sources, verify permissions, and query relevant sources
+        elif intent == AssistantIntent.COMMUNITY_PRIVATE_CONTENT:
+            target_ref = classification.get("extracted_community_ref")
+            if not target_ref and community:
+                target_ref = community.slug
+            if not target_ref and is_auth:
+                # Resolve user's active community when asking "Quels sont les modules de ma communauté ?"
+                owned = Community.objects.filter(owner=user, is_active=True).first()
+                if owned:
+                    target_ref = owned.slug
+                else:
+                    mem = (
+                        CommunityMember.objects.filter(
+                            user=user, status=MembershipStatus.ACTIVE
+                        )
+                        .select_related("community")
+                        .first()
+                    )
+                    if mem and mem.community:
+                        target_ref = mem.community.slug
+
+            private_res = CommunityPrivateContentService.get_authorized_private_content(
+                user=user,
+                community_id_or_slug=target_ref or "",
+            )
+
+            if not private_res["found"]:
+                chat_result = AssistantChatResult(
+                    reply=MISSING_INFORMATION_TEXT,
+                    suggested_follow_ups=[
+                        "Quelles communautés sont disponibles ?",
+                        "Comment rejoindre une communauté ?",
+                    ],
+                    suggested_action="explore_communities",
+                    data={"intent": intent, "authorized": False},
+                    provider="kodinga_guard",
                 )
-                .order_by("-members_count")
-                .values(
-                    "id",
-                    "name",
-                    "slug",
-                    "tagline",
-                    "description",
-                    "category__name",
-                    "privacy_type",
-                    "pricing_type",
-                    "members_count",
-                )[:8]
+            elif not private_res["authorized"]:
+                # Strict backend block: never pass private content to LLM or unauthorized user
+                chat_result = AssistantChatResult(
+                    reply=build_private_content_denied_text(
+                        private_res.get("community_name")
+                    ),
+                    suggested_follow_ups=[
+                        f"À quoi sert la communauté {private_res.get('community_name')} ?",
+                        "Comment rejoindre cette communauté ?",
+                        "Quelles communautés gratuites sont disponibles ?",
+                    ],
+                    suggested_action="request_join_community",
+                    data={
+                        "intent": intent,
+                        "authorized": False,
+                        "reason": private_res.get("reason"),
+                        "community_slug": private_res.get("community_slug"),
+                    },
+                    provider="kodinga_guard",
+                )
+            else:
+                context["authorized_private_content"] = private_res
+
+        elif intent == AssistantIntent.COMMUNITY_INFORMATION:
+            target_ref = classification.get("extracted_community_ref") or (
+                community.slug if community else community_identifier
+            )
+            if target_ref:
+                details = CommunityDynamicDataService.get_accessible_community_context(
+                    user=user, community_id=target_ref
+                )
+                members_info = CommunityDynamicDataService.get_community_members_count(
+                    community_id=target_ref, user=user
+                )
+                access_info = CommunityDynamicDataService.get_community_access_type(
+                    community_id=target_ref, user=user
+                )
+                if details:
+                    context["dynamic_community_data"] = {
+                        "details": details,
+                        "members_info": members_info,
+                        "access_info": access_info,
+                    }
+                else:
+                    chat_result = AssistantChatResult(
+                        reply=MISSING_INFORMATION_TEXT,
+                        suggested_follow_ups=[
+                            "Quelles communautés gratuites sont disponibles ?",
+                            "Comment créer une communauté ?",
+                        ],
+                        suggested_action="explore_communities",
+                        data={"intent": intent, "reason": "community_not_found"},
+                        provider="kodinga_guard",
+                    )
+            else:
+                chat_result = AssistantChatResult(
+                    reply=MISSING_INFORMATION_TEXT,
+                    suggested_follow_ups=[
+                        "Quelles communautés gratuites sont disponibles ?",
+                        "Comment créer une communauté ?",
+                    ],
+                    suggested_action="explore_communities",
+                    data={"intent": intent, "reason": "missing_community_reference"},
+                    provider="kodinga_guard",
+                )
+
+        elif intent == AssistantIntent.COMMUNITY_DISCOVERY:
+            filters = classification.get("filters") or {}
+            public_communities = CommunityDynamicDataService.search_public_communities(
+                query=clean_message,
+                filters=filters,
+                user=user,
+                limit=8,
             )
             context["available_public_communities"] = public_communities
+            context["discovery_filters"] = filters
 
-        # User requirement: Exclusively use OpenAI for assistant chat with automatic sub-second response
-        chat_result = ai_router.assistant_chat(
-            message=clean_message,
-            history=history,
-            context=context,
-            language=resolved_lang,
-            strategy=AIProviderStrategy.OPENAI_ONLY,
-        )
+        else:
+            # Intents: PLATFORM_HELP, PLATFORM_FEATURE, ACCOUNT_HELP, SUBSCRIPTION_HELP, PLATFORM_TROUBLESHOOTING, UNKNOWN
+            if not classification.get("is_greeting"):
+                rag_result = PlatformDocumentationRAGService.retrieve_relevant_docs(
+                    query=clean_message,
+                    intent=intent,
+                )
+                # Step 7: Evaluate relevance of retrieved official documentation
+                if not rag_result["has_sufficient_knowledge"]:
+                    chat_result = AssistantChatResult(
+                        reply=MISSING_INFORMATION_TEXT,
+                        suggested_follow_ups=[
+                            "Quelles sont les fonctionnalités de Kodinga ?",
+                            "Comment créer une communauté ?",
+                            "Quelles communautés gratuites sont disponibles ?",
+                        ],
+                        suggested_action=None,
+                        data={
+                            "intent": intent,
+                            "has_sufficient_knowledge": False,
+                        },
+                        provider="kodinga_guard",
+                    )
+                else:
+                    context["official_documentation"] = rag_result["documents"]
+
+        # Step 8, 9 & 10: Build bounded context, send to OpenAI if not already resolved by guard, and validate response
+        if chat_result is None:
+            chat_result = ai_router.assistant_chat(
+                message=clean_message,
+                history=history,
+                context=context,
+                language=resolved_lang,
+                strategy=AIProviderStrategy.OPENAI_ONLY,
+            )
 
         # Persist user + assistant messages in a single DB round-trip
         now = timezone.now()

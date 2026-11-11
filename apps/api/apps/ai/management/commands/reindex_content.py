@@ -60,7 +60,9 @@ class Command(BaseCommand):
                 index_content_embedding_task.delay(**task_args)
             post_count += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Queued re-indexing for {post_count} posts."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Queued re-indexing for {post_count} posts.")
+        )
 
         # 2. Reindex Lessons (only for published courses)
         lessons_qs = Lesson.objects.filter(
@@ -98,4 +100,3 @@ class Command(BaseCommand):
                 f"Successfully triggered re-indexing for {post_count} posts and {lesson_count} lessons."
             )
         )
-

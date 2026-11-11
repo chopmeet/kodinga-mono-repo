@@ -632,6 +632,156 @@ class OpenAIAdapter(BaseAIProvider):
         lang = (language or "fr").lower()
         ctx = context or {}
 
+        # 0A. SOURCE C: Authorized Private Community Content (Courses, Modules, Lessons)
+        private_ctx = ctx.get("authorized_private_content")
+        if (
+            private_ctx
+            and isinstance(private_ctx, dict)
+            and private_ctx.get("authorized")
+        ):
+            comm_name = private_ctx.get("community_name") or "votre communauté"
+            modules = private_ctx.get("modules") or []
+            courses = private_ctx.get("courses") or []
+            if modules:
+                mod_lines = []
+                for idx, m in enumerate(modules, 1):
+                    lessons_list = m.get("lessons") or []
+                    lessons_str = (
+                        f" — Leçons : {', '.join(lessons_list)}" if lessons_list else ""
+                    )
+                    mod_lines.append(
+                        f"{idx}. **{m['module_title']}** *(Cours : {m['course_title']})*{lessons_str}"
+                    )
+                reply_text = (
+                    f"Voici les modules de formation disponibles dans la communauté **{comm_name}** :\n\n"
+                    + "\n".join(mod_lines)
+                    + "\n\nVous pouvez y accéder directement depuis l'onglet **Classroom** de la communauté."
+                )
+            elif courses:
+                course_lines = [
+                    f"- **{c['title']}** ({c.get('level', 'Tous niveaux')})"
+                    for c in courses
+                ]
+                reply_text = (
+                    f"Voici les cours disponibles dans la communauté **{comm_name}** :\n\n"
+                    + "\n".join(course_lines)
+                )
+            else:
+                reply_text = f"La communauté **{comm_name}** ne contient actuellement aucun module ou cours publié dans son Classroom."
+
+            return AssistantChatResult(
+                reply=reply_text,
+                suggested_follow_ups=[
+                    "Comment suivre ma progression dans le Classroom ?",
+                    f"À quoi sert la communauté {comm_name} ?",
+                    "Quelles sont les dernières discussions de la communauté ?",
+                ],
+                suggested_action="open_classroom",
+                data={"private_content": private_ctx},
+                provider=self.provider_name,
+            )
+
+        # 0B. SOURCE B: Dynamic Community Information (Member count, Presentation, Access type)
+        dyn_comm = ctx.get("dynamic_community_data")
+        if dyn_comm and isinstance(dyn_comm, dict) and dyn_comm.get("details"):
+            details = dyn_comm["details"]
+            comm_name = details.get("name", "")
+            members_count = details.get("members_count", 0)
+            tagline = details.get("tagline") or ""
+            description = (
+                details.get("description")
+                or tagline
+                or "Aucune description renseignée."
+            )
+            pricing_label = (
+                "Gratuite"
+                if details.get("pricing_type") == "free"
+                else "Payante (sur abonnement)"
+            )
+            privacy_label = (
+                "Publique" if details.get("privacy_type") == "public" else "Privée"
+            )
+
+            if any(
+                w in lower
+                for w in [
+                    "combien de membres",
+                    "nombre de membres",
+                    "membres possède",
+                    "membres compte",
+                ]
+            ):
+                reply_text = (
+                    f"La communauté **{comm_name}** compte actuellement **{members_count} membre(s)** "
+                    f"(donnée récupérée en temps réel depuis la plateforme).\n\n"
+                    f"- **Accès** : {privacy_label} ({pricing_label})\n"
+                    f"- **Catégorie** : {details.get('category', 'Général')}"
+                )
+            elif any(
+                w in lower
+                for w in [
+                    "à quoi sert",
+                    "présentation",
+                    "à propos",
+                    "description",
+                    "objectif",
+                    "but",
+                ]
+            ):
+                reply_text = (
+                    f"**Présentation de la communauté {comm_name}** :\n\n"
+                    f"- **Accroche** : {tagline or 'Communauté Kodinga'}\n"
+                    f"- **À propos** : {description}\n"
+                    f"- **Catégorie** : {details.get('category', 'Général')}\n"
+                    f"- **Type d'accès** : {privacy_label} — {pricing_label}\n"
+                    f"- **Membres actifs** : {members_count} membre(s)"
+                )
+            else:
+                reply_text = (
+                    f"Voici les informations actuelles sur la communauté **{comm_name}** :\n\n"
+                    f"- **Description** : {description}\n"
+                    f"- **Nombre de membres** : {members_count} membre(s)\n"
+                    f"- **Type d'accès** : {privacy_label} ({pricing_label})\n"
+                    f"- **Propriétaire** : @{details.get('owner_username', 'kodinga')}"
+                )
+
+            return AssistantChatResult(
+                reply=reply_text,
+                suggested_follow_ups=[
+                    f"Comment rejoindre la communauté {comm_name} ?",
+                    "Quelles autres communautés sont disponibles ?",
+                    "Comment créer ma propre communauté ?",
+                ],
+                suggested_action="view_community",
+                data={"community": details},
+                provider=self.provider_name,
+            )
+
+        # 0C. SOURCE A: Official Documentation procedure for "Comment créer une communauté ?"
+        official_docs = ctx.get("official_documentation") or []
+        if (
+            official_docs
+            and "comment" in lower
+            and any(w in lower for w in ["créer", "lancer", "gérer"])
+            and "communauté" in lower
+        ):
+            doc = official_docs[0]
+            return AssistantChatResult(
+                reply=(
+                    f"D'après la documentation officielle de Kodinga (**{doc.get('title')}**, v{doc.get('version', '1.0')}) :\n\n"
+                    f"{doc.get('content', '')}\n\n"
+                    f"Vous pouvez démarrer immédiatement depuis la page de création de communauté (`/communities/create`)."
+                ),
+                suggested_follow_ups=[
+                    "Génère-moi un plan de lancement pour ma communauté",
+                    "Quelle est la différence entre communauté publique, privée et secrète ?",
+                    "Comment configurer un abonnement payant avec PayDunya ?",
+                ],
+                suggested_action="create_community",
+                data={"documentation": doc},
+                provider=self.provider_name,
+            )
+
         # 1. Intent: Community Creation / Launch Plan
         is_creation = any(
             w in lower
@@ -772,7 +922,7 @@ class OpenAIAdapter(BaseAIProvider):
             )
 
         # 2. Intent: Community Discovery / Recommendations
-        is_discovery = any(
+        is_discovery = ctx.get("intent") == "COMMUNITY_DISCOVERY" or any(
             w in lower
             for w in [
                 "recommande",
@@ -783,6 +933,9 @@ class OpenAIAdapter(BaseAIProvider):
                 "découvrir",
                 "rejoindre",
                 "quelles communautés",
+                "communautés gratuites",
+                "communautés payantes",
+                "communautés disponibles",
                 "recommend",
                 "find",
                 "discover",
@@ -808,6 +961,15 @@ class OpenAIAdapter(BaseAIProvider):
                     "quelles",
                     "communautés",
                     "communaute",
+                    "gratuites",
+                    "gratuite",
+                    "gratuit",
+                    "payantes",
+                    "payante",
+                    "payant",
+                    "disponibles",
+                    "disponible",
+                    "sont",
                     "conseilles",
                     "recommande",
                     "cherche",
@@ -819,15 +981,19 @@ class OpenAIAdapter(BaseAIProvider):
 
             scored = []
             for c in public_list:
-                haystack = f"{c.get('name', '')} {c.get('tagline', '')} {c.get('description', '')} {c.get('category__name', '')}".lower()
+                cat_name = c.get("category") or c.get("category__name") or ""
+                haystack = f"{c.get('name', '')} {c.get('tagline', '')} {c.get('description', '')} {cat_name}".lower()
                 hits = sum(1 for kw in keywords if kw in haystack)
                 scored.append((hits, c.get("members_count", 0), c))
 
             scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
-            selected = [item[2] for item in scored[:3]]
+            selected = [item[2] for item in scored[:5]]
 
             cards = []
             for c in selected:
+                cat_name = (
+                    c.get("category") or c.get("category__name") or "Tech & Communauté"
+                )
                 cards.append(
                     {
                         "id": str(c.get("id", "")),
@@ -835,7 +1001,7 @@ class OpenAIAdapter(BaseAIProvider):
                         "slug": c.get("slug", ""),
                         "tagline": c.get("tagline") or "Communauté active sur Kodinga",
                         "description": c.get("description") or c.get("tagline") or "",
-                        "category": c.get("category__name") or "Tech & Communauté",
+                        "category": cat_name,
                         "privacy_type": c.get("privacy_type") or "public",
                         "pricing_type": c.get("pricing_type") or "free",
                         "members_count": c.get("members_count", 0),
@@ -846,15 +1012,19 @@ class OpenAIAdapter(BaseAIProvider):
                 )
 
             if cards:
-                names = ", ".join(f"**{c['name']}**" for c in cards)
+                bullet_lines = [
+                    f"- **{c['name']}** ({c['members_count']} membre(s), {'gratuite' if c['pricing_type'] == 'free' else 'payante'}) : {c['tagline']}"
+                    for c in cards
+                ]
                 reply_text = (
-                    f"Voici les communautés Kodinga les plus pertinentes pour vous : {names}. "
-                    f"Cliquez sur **Découvrir** dans les cartes ci-dessous pour les rejoindre directement !"
+                    "Voici les communautés disponibles sur Kodinga correspondant à votre recherche :\n\n"
+                    + "\n".join(bullet_lines)
+                    + "\n\nCliquez sur **Découvrir** dans les cartes ci-dessous pour les rejoindre directement !"
                 )
             else:
                 reply_text = (
-                    "Il n'y a pas encore de communauté publique sur ce thème exact. "
-                    "C'est le moment idéal pour créer la vôtre sur Kodinga !"
+                    "Aucune communauté publique correspondant exactement à ces critères n'est disponible pour le moment sur Kodinga. "
+                    "Vous pouvez toutefois explorer l'annuaire ou créer votre propre communauté !"
                 )
 
             return AssistantChatResult(
@@ -865,7 +1035,7 @@ class OpenAIAdapter(BaseAIProvider):
                     "Propose-moi une idée de premier post",
                 ],
                 suggested_action="explore_communities",
-                data={"recommendations": cards} if cards else None,
+                data={"recommendations": cards} if cards else {"recommendations": []},
                 provider=self.provider_name,
             )
 
@@ -982,47 +1152,77 @@ class OpenAIAdapter(BaseAIProvider):
         context: Optional[dict[str, Any]] = None,
         language: str = "fr",
     ) -> AssistantChatResult:
-        # 1. Instant local / grounded response (<5ms) for common assistant intents
+        from apps.ai.services.platform_knowledge_service import (
+            KODINGA_OFFICIAL_SYSTEM_PROMPT,
+            MISSING_INFORMATION_TEXT,
+        )
+
+        # 1. Instant local / grounded response (<5ms) for dynamic data & common assistant intents
         instant = self._build_instant_assistant_response(
             message=message, context=context, language=language
         )
         if instant is not None:
             return instant
 
-        # 2. Check ultra-fast cache for repeated queries (<5ms)
+        ctx = context or {}
+        has_dynamic_context = any(
+            k in ctx
+            for k in (
+                "dynamic_community_data",
+                "authorized_private_content",
+                "available_public_communities",
+            )
+        )
+
+        # 2. Check short-lived cache only for static documentation queries
         from django.core.cache import cache
 
-        comm_slug = ((context or {}).get("current_community") or {}).get("slug", "")
-        cache_seed = f"asst_openai_v2:{language}:{comm_slug}:{message.strip().lower()}"
+        comm_slug = (ctx.get("current_community") or {}).get("slug", "")
+        docs_ver = ",".join(
+            f"{d.get('slug')}:{d.get('version')}"
+            for d in (ctx.get("official_documentation") or [])
+        )
+        cache_seed = f"asst_openai_v3:{language}:{comm_slug}:{docs_ver}:{message.strip().lower()}"
         cache_key = "ai_chat_" + hashlib.md5(cache_seed.encode("utf-8")).hexdigest()
-        cached_payload = cache.get(cache_key)
-        if cached_payload and isinstance(cached_payload, dict):
-            return AssistantChatResult(
-                reply=cached_payload.get("reply", ""),
-                suggested_follow_ups=cached_payload.get("suggested_follow_ups", []),
-                suggested_action=cached_payload.get("suggested_action"),
-                data=cached_payload.get("data"),
-                provider=self.provider_name,
-            )
+        if not has_dynamic_context:
+            cached_payload = cache.get(cache_key)
+            if cached_payload and isinstance(cached_payload, dict):
+                return AssistantChatResult(
+                    reply=cached_payload.get("reply", ""),
+                    suggested_follow_ups=cached_payload.get("suggested_follow_ups", []),
+                    suggested_action=cached_payload.get("suggested_action"),
+                    data=cached_payload.get("data"),
+                    provider=self.provider_name,
+                )
 
-        # 3. Ultra-fast OpenAI gpt-4o-mini completion with strict token cap & compact prompt
+        # 3. Grounded OpenAI completion with official Kodinga System Prompt & isolated <platform_context>
         lang_instruction = self._get_lang_prompt(language)
         compact_history = (history or [])[-4:]
-        compact_ctx = {
+        grounded_ctx = {
             k: v
-            for k, v in (context or {}).items()
-            if k in ("username", "current_community", "preferred_language")
+            for k, v in ctx.items()
+            if k
+            in (
+                "username",
+                "current_community",
+                "preferred_language",
+                "intent",
+                "official_documentation",
+                "dynamic_community_data",
+                "available_public_communities",
+                "authorized_private_content",
+            )
         }
         system = (
-            f"You are the Kodinga AI Community Assistant. Respond in {lang_instruction}. "
-            f"Keep 'reply' concise (2-4 short sentences max), warm, practical, and directly actionable. "
-            f"Return strictly valid JSON: "
+            f"{KODINGA_OFFICIAL_SYSTEM_PROMPT}\n\n"
+            f"LANGUE DE RÉPONSE : {lang_instruction}.\n"
+            f"FORMAT DE SORTIE : Retourne strictement un objet JSON valide :\n"
             f'{{"reply":"...","suggested_follow_ups":["q1","q2"]}}'
         )
         user_prompt = (
-            f"Context:{json.dumps(compact_ctx, ensure_ascii=False)}\n"
-            f"History:{json.dumps(compact_history, ensure_ascii=False)}\n"
-            f"User:{message}"
+            f"<platform_context>\n{json.dumps(grounded_ctx, ensure_ascii=False)}\n</platform_context>\n"
+            f"<conversation_history>\n{json.dumps(compact_history, ensure_ascii=False)}\n</conversation_history>\n"
+            f"Question de l'utilisateur : {message}"
         )
 
         client = self._get_client()
@@ -1033,10 +1233,10 @@ class OpenAIAdapter(BaseAIProvider):
                     {"role": "system", "content": system},
                     {"role": "user", "content": user_prompt},
                 ],
-                temperature=0.3,
-                max_tokens=180,
+                temperature=0.2,
+                max_tokens=320,
                 response_format={"type": "json_object"},
-                timeout=2.5,
+                timeout=3.5,
             )
             raw = response.choices[0].message.content or "{}"
             data = self._clean_json_response(raw)
@@ -1047,29 +1247,44 @@ class OpenAIAdapter(BaseAIProvider):
                 data=data.get("data"),
                 provider=self.provider_name,
             )
-            cache.set(
-                cache_key,
-                {
-                    "reply": result.reply,
-                    "suggested_follow_ups": result.suggested_follow_ups,
-                    "suggested_action": result.suggested_action,
-                    "data": result.data,
-                },
-                timeout=86400,
-            )
+            if not has_dynamic_context:
+                cache.set(
+                    cache_key,
+                    {
+                        "reply": result.reply,
+                        "suggested_follow_ups": result.suggested_follow_ups,
+                        "suggested_action": result.suggested_action,
+                        "data": result.data,
+                    },
+                    timeout=300,
+                )
             return result
         except Exception as e:
-            logger.warning(f"[OpenAI Assistant] Fast fallback triggered ({e})")
+            logger.warning(f"[OpenAI Assistant] Grounded fallback triggered ({e})")
+            official_docs = ctx.get("official_documentation") or []
+            if official_docs:
+                top_doc = official_docs[0]
+                return AssistantChatResult(
+                    reply=(
+                        f"D'après la documentation officielle de Kodinga (**{top_doc.get('title')}**) :\n\n"
+                        f"{top_doc.get('content', top_doc.get('summary', ''))}"
+                    ),
+                    suggested_follow_ups=[
+                        "Comment créer une communauté sur Kodinga ?",
+                        "Quelles communautés gratuites sont disponibles ?",
+                        "Comment fonctionnent les abonnements PayDunya ?",
+                    ],
+                    suggested_action=None,
+                    data={"documentation": top_doc},
+                    provider=self.provider_name,
+                )
+
             return AssistantChatResult(
-                reply=(
-                    "Voici mon conseil rapide pour votre communauté sur Kodinga : structurez vos échanges autour "
-                    "de 3 canaux clairs (`#bienvenue`, `#entraide`, `#projets`), épinglez un post de présentation "
-                    "et lancez une question ouverte chaque semaine pour stimuler l'engagement."
-                ),
+                reply=MISSING_INFORMATION_TEXT,
                 suggested_follow_ups=[
-                    "Quelles communautés me conseilles-tu ?",
-                    "Je veux lancer une communauté tech en Afrique",
-                    "Idée de premier post pour engager les membres",
+                    "Quelles sont les fonctionnalités de Kodinga ?",
+                    "Comment créer une communauté ?",
+                    "Quelles communautés gratuites sont disponibles ?",
                 ],
                 suggested_action=None,
                 data=None,

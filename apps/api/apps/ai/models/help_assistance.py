@@ -42,4 +42,3 @@ class PostHelpAssistance(BaseModel):
 
     def __str__(self) -> str:
         return f"Help for Post {self.post_id} ({self.status})"
-

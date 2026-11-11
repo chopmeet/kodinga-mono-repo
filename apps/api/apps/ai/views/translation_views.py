@@ -33,7 +33,9 @@ class AILanguageListView(APIView):
     def get(self, request):
         languages = TranslationService.AVAILABLE_LANGUAGES
         african = [lang for lang in languages if lang.get("category") == "african"]
-        international = [lang for lang in languages if lang.get("category") == "international"]
+        international = [
+            lang for lang in languages if lang.get("category") == "international"
+        ]
 
         return success_response(
             data={
@@ -91,7 +93,6 @@ class AITranslateView(APIView):
             "is_fallback_original": result.is_fallback_original,
         }
         return success_response(data=response_data, status_code=status.HTTP_200_OK)
-
 
 
 # Backwards-compatible alias

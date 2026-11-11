@@ -22,7 +22,9 @@ class TranslationResult(BaseModel):
 
 
 class SentimentResult(BaseModel):
-    sentiment: str = Field(..., description="positive, neutral, negative, mixed, uncertain")
+    sentiment: str = Field(
+        ..., description="positive, neutral, negative, mixed, uncertain"
+    )
     score: float = 0.0
     confidence: float = 1.0
     reason: str = ""
@@ -62,6 +64,7 @@ class ProviderHealthStatus(BaseModel):
 # ==============================================================================
 # AI Community Assistant Schemas
 # ==============================================================================
+
 
 class CommunityRecommendationCard(BaseModel):
     id: str
@@ -130,7 +133,9 @@ class CommunityAnalysisResult(BaseModel):
     overview_assessment: str = ""
     strengths: list[str] = Field(default_factory=list)
     improvement_areas: list[str] = Field(default_factory=list)
-    actionable_recommendations: list[ImprovementRecommendation] = Field(default_factory=list)
+    actionable_recommendations: list[ImprovementRecommendation] = Field(
+        default_factory=list
+    )
     event_suggestions: list[str] = Field(default_factory=list)
     engagement_tactics: list[str] = Field(default_factory=list)
     metrics_summary: dict = Field(default_factory=dict)
@@ -143,4 +148,3 @@ class AssistantChatResult(BaseModel):
     suggested_action: Optional[str] = None
     data: Optional[dict] = None
     provider: str = ""
-

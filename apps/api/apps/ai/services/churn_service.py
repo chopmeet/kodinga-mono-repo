@@ -46,9 +46,15 @@ class ChurnPredictionService:
         thirty_days_ago = now - timedelta(days=30)
 
         # 1. Measure activity signals
-        latest_post = Post.objects.filter(community=member.community, author=member.user).order_by("-created_at").first()
+        latest_post = (
+            Post.objects.filter(community=member.community, author=member.user)
+            .order_by("-created_at")
+            .first()
+        )
         latest_comment = (
-            Comment.objects.filter(post__community=member.community, author=member.user).order_by("-created_at").first()
+            Comment.objects.filter(post__community=member.community, author=member.user)
+            .order_by("-created_at")
+            .first()
         )
 
         activity_dates = [member.joined_at]
@@ -63,10 +69,14 @@ class ChurnPredictionService:
         days_inactive = (now - latest_activity).days
 
         recent_posts_count = Post.objects.filter(
-            community=member.community, author=member.user, created_at__gte=fourteen_days_ago
+            community=member.community,
+            author=member.user,
+            created_at__gte=fourteen_days_ago,
         ).count()
         recent_comments_count = Comment.objects.filter(
-            post__community=member.community, author=member.user, created_at__gte=fourteen_days_ago
+            post__community=member.community,
+            author=member.user,
+            created_at__gte=fourteen_days_ago,
         ).count()
         total_recent_interactions = recent_posts_count + recent_comments_count
 
@@ -124,7 +134,9 @@ class ChurnPredictionService:
             "recent_posts_14d": recent_posts_count,
             "recent_comments_14d": recent_comments_count,
             "total_recent_interactions": total_recent_interactions,
-            "activity_trend": "declining" if total_recent_interactions < older_interactions else "stable",
+            "activity_trend": "declining"
+            if total_recent_interactions < older_interactions
+            else "stable",
             "reputation_score": member.reputation_score,
             "membership_status": member.status,
         }
@@ -141,10 +153,11 @@ class ChurnPredictionService:
             )
 
             # Generate smart nudge suggestion if at risk and not yet present
-            if (
-                risk_level in [ChurnRiskLevel.MEDIUM, ChurnRiskLevel.HIGH, ChurnRiskLevel.CRITICAL]
-                and (not churn_risk.suggested_nudge or force_refresh)
-            ):
+            if risk_level in [
+                ChurnRiskLevel.MEDIUM,
+                ChurnRiskLevel.HIGH,
+                ChurnRiskLevel.CRITICAL,
+            ] and (not churn_risk.suggested_nudge or force_refresh):
                 if generate_ai_nudge:
                     nudge = cls.generate_smart_nudge(churn_risk)
                 else:
@@ -200,7 +213,11 @@ class ChurnPredictionService:
                 max_tokens=250,
                 temperature=0.7,
             )
-            nudge = response.strip() if isinstance(response, str) else getattr(response, "content", "").strip()
+            nudge = (
+                response.strip()
+                if isinstance(response, str)
+                else getattr(response, "content", "").strip()
+            )
             if nudge:
                 return nudge
         except Exception as exc:
@@ -223,7 +240,9 @@ class ChurnPredictionService:
         """
         Marks nudge as sent, records the message, and dispatches in-app notification.
         """
-        churn_risk = MemberChurnRisk.objects.select_related("member__user", "member__community").get(id=churn_risk_id)
+        churn_risk = MemberChurnRisk.objects.select_related(
+            "member__user", "member__community"
+        ).get(id=churn_risk_id)
         if custom_message:
             churn_risk.suggested_nudge = custom_message
 
@@ -233,7 +252,11 @@ class ChurnPredictionService:
 
         # Dispatch real notification to the inactive member
         actor = sender or churn_risk.member.community.owner
-        message_body = custom_message or churn_risk.suggested_nudge or "Votre communauté prend de vos nouvelles !"
+        message_body = (
+            custom_message
+            or churn_risk.suggested_nudge
+            or "Votre communauté prend de vos nouvelles !"
+        )
         try:
             from apps.notifications.models.notification import NotificationType
             from apps.notifications.services.notification_service import (
@@ -256,7 +279,9 @@ class ChurnPredictionService:
                 },
             )
         except Exception as exc:
-            logger.warning("Failed to dispatch in-app notification for smart nudge: %s", exc)
+            logger.warning(
+                "Failed to dispatch in-app notification for smart nudge: %s", exc
+            )
 
         logger.info(
             "Smart nudge sent to user %s in community %s",
@@ -270,7 +295,9 @@ class ChurnPredictionService:
         """
         Generates or refreshes a personalized AI nudge on-demand for a specific at-risk member.
         """
-        churn_risk = MemberChurnRisk.objects.select_related("member__user", "member__community").get(id=churn_risk_id)
+        churn_risk = MemberChurnRisk.objects.select_related(
+            "member__user", "member__community"
+        ).get(id=churn_risk_id)
         nudge = cls.generate_smart_nudge(churn_risk.member)
         churn_risk.suggested_nudge = nudge
         churn_risk.save(update_fields=["suggested_nudge", "updated_at"])

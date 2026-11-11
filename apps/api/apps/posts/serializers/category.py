@@ -6,14 +6,14 @@ class PostCategorySerializer(BaseModelSerializer):
     class Meta:
         model = PostCategory
         fields = [
-            'id',
-            'name',
-            'slug',
-            'description',
-            'icon',
-            'is_default',
-            'is_restricted',
-            'order',
-            'created_at',
+            "id",
+            "name",
+            "slug",
+            "description",
+            "icon",
+            "is_default",
+            "is_restricted",
+            "order",
+            "created_at",
         ]
-        read_only_fields = ['id', 'slug', 'created_at']
+        read_only_fields = ["id", "slug", "created_at"]

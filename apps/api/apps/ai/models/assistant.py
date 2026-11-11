@@ -9,6 +9,7 @@ class AssistantConversation(BaseModel):
     """
     Conversational thread for an AI Community Assistant session.
     """
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -52,6 +53,7 @@ class AssistantMessage(BaseModel):
     """
     Individual message in an assistant conversation.
     """
+
     conversation = models.ForeignKey(
         AssistantConversation,
         on_delete=models.CASCADE,
