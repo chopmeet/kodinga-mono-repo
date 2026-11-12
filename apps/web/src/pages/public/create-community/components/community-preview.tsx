@@ -5,6 +5,7 @@ import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
 import { nameInitials } from '@/utils/Utils';
 import type { CommunityValues } from '../form/UseCreateCommunity';
+import { entryPriceLabel } from '@/utils/Utils';
 
 type Props = {
   values: CommunityValues;
@@ -21,7 +22,11 @@ export function CommunityPreview({ values, slug, category, images }: Props) {
   const name = values.name.trim() || t('create.preview.namePlaceholder');
   const access =
     values.pricing_type === 'paid'
-      ? { label: t('create.preview.paid'), className: 'border-border bg-subtle text-body' }
+      ? {
+          // The price set at the access step, once valid
+          label: Number(values.membership_price) > 0 ? (entryPriceLabel([{ price: values.membership_price, billing_interval: values.membership_interval }]) ?? t('create.preview.paid')) : t('create.preview.paid'),
+          className: 'border-border bg-subtle text-body',
+        }
       : isPrivate
         ? { label: t('create.preview.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' }
         : { label: t('create.preview.freeAccess'), className: 'border-brand-muted bg-brand-subtle text-brand-strong' };

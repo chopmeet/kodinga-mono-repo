@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronLeft, ChevronRight, Download, FileText, Film, Play } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Download, FileText, Film, LoaderCircle, Play } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -32,8 +32,10 @@ function PostVideo({ video }: { video: Media }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-  const ready = video.status === 'READY' && !!video.playback_url;
-  useHls(ref, video.playback_url, ready && playing);
+  // The Mux stream, else the file itself (the api marks a video ready from UploadThing when Mux is slow)
+  const source = video.playback_url || video.url;
+  const ready = video.status === 'READY' && !!source;
+  useHls(ref, source, ready && playing);
 
   if (!ready) {
     const failed = video.status === 'FAILED';
@@ -181,7 +183,11 @@ export function PostMediaView({ media }: { media?: Media[] }) {
   const images = ready.filter((m) => m.type === 'IMAGE' && (m.url || m.thumbnail_url));
   const documents = ready.filter((m) => m.type === 'DOCUMENT');
   const videos = (media ?? []).filter((m) => m.type === 'VIDEO' && m.status !== 'DELETED');
-  if (!images.length && !documents.length && !videos.length) return null;
+  // Images and documents not shown yet (videos have their own state): said, not silently left out
+  const others = (media ?? []).filter((m) => m.type !== 'VIDEO');
+  const preparing = others.filter((m) => m.status === 'PENDING_UPLOAD' || m.status === 'UPLOADING' || m.status === 'PROCESSING').length;
+  const failed = others.filter((m) => m.status === 'FAILED').length;
+  if (!images.length && !documents.length && !videos.length && !preparing && !failed) return null;
 
   return (
     <>
@@ -195,6 +201,18 @@ export function PostMediaView({ media }: { media?: Media[] }) {
         </ul>
       )}
       {images.length > 0 && <ImageGrid images={images} onOpen={setViewing} />}
+      {preparing > 0 && (
+        <p role="status" className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircle className="size-4 animate-spin text-primary" aria-hidden />
+          {t('community.media.preparing', { count: preparing })}
+        </p>
+      )}
+      {failed > 0 && (
+        <p className="mt-4 flex items-center gap-2 text-sm text-amber-700">
+          <AlertTriangle className="size-4" aria-hidden />
+          {t('community.media.failedFiles', { count: failed })}
+        </p>
+      )}
       {documents.length > 0 && (
         <ul aria-label={t('community.media.documents')} className="mt-4 flex flex-col gap-2">
           {documents.map((doc) => (

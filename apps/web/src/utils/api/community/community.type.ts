@@ -299,6 +299,9 @@ export type CommunityPostItem = {
   reactions_summary?: ReactionsSummary;
   /** Images, documents and videos, in display order */
   media?: PostMedia[];
+  /** Some attachment is still uploading or encoding (the text of the post shows meanwhile) */
+  is_media_processing?: boolean;
+  media_processing_status?: 'NONE' | 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED';
   /** Saved by the signed-in user */
   is_bookmarked?: boolean;
   poll?: PostPoll | null;

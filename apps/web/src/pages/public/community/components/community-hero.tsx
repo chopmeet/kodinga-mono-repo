@@ -10,13 +10,15 @@ import { useSetCommunityNotificationsMutation } from '@/utils/api/community/comm
 import type { CommunityDetail } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import i18n from '@/utils/i18n';
-import { formatCompact, memberRoleLabel } from '@/utils/Utils';
+import { entryPriceLabel, formatCompact, memberRoleLabel } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 import { LeaveDialog, MembershipActions } from './community-sidebar';
 
-/** "Accès gratuit", "Sur demande", "Payante": the badge next to the name */
+/** "Accès gratuit", "Sur demande", or the entry price of a paid one ("À partir de 5 000 FCFA / mois"): the badge next to the name */
 export function accessBadge(community: CommunityDetail) {
-  if (community.pricing_type === 'paid') return { label: i18n.t('community.hero.paidAccess'), className: 'border-border bg-card/80 text-body' };
+  if (community.pricing_type === 'paid') {
+    return { label: entryPriceLabel(community.subscription_plans) ?? i18n.t('community.hero.paidAccess'), className: 'border-border bg-card/80 text-body' };
+  }
   if (community.settings?.require_approval_to_join) return { label: i18n.t('community.hero.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' };
   return { label: i18n.t('community.hero.freeAccess'), className: 'border-brand-muted bg-brand-subtle text-brand-strong' };
 }

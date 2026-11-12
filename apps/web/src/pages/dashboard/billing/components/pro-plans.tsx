@@ -1,7 +1,9 @@
 import { Check, CircleCheck, CircleX, Clock, Crown, LoaderCircle } from 'lucide-react';
+import { useState } from 'react';
 
 import { Badge, Button, cn } from '@kodinga/ui';
-import { periodSuffix, xof } from '@/utils/Utils';
+import { periodLabel, periodSuffix, proPlansOf, xof } from '@/utils/Utils';
+import type { BillingInterval } from '@/utils/api/billing/billing.type';
 import { parseApiError } from '@/utils/api/errors';
 import { formatLongDate } from '@/utils/format';
 import type { KodingaPro } from '../form/UseKodingaPro';
@@ -21,6 +23,13 @@ const notices = {
 /** /dashboard/billing — Kodinga Pro: the user's status, then the plans with their PayDunya checkout */
 export function ProPlans({ pro }: { pro: KodingaPro }) {
   const notice = pro.payment ? notices[pro.payment] : null;
+  // One plan at a time, chosen with the period switch: the user's current one first, else monthly
+  const plans = proPlansOf(pro.plans);
+  const [chosen, setChosen] = useState<BillingInterval | null>(null);
+  const period = chosen ?? (plans.some((p) => p.billing_interval === pro.subscription?.plan.billing_interval) ? pro.subscription?.plan.billing_interval : plans[0]?.billing_interval);
+  const shown = plans.filter((p) => p.billing_interval === period).slice(0, 1);
+  const monthly = plans.find((p) => p.billing_interval === 'month');
+  const yearlySaving = (price: string) => (monthly ? Number(monthly.price) * 12 - Number(price) : 0);
 
   return (
     <section aria-labelledby="kodinga-pro">
@@ -61,11 +70,36 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
         </p>
       ) : pro.error ? (
         <p className="mt-4 text-sm text-red-700">{parseApiError(pro.error).message}</p>
-      ) : pro.plans.length === 0 ? (
+      ) : plans.length === 0 ? (
         !pro.isPro && <p className="mt-4 text-sm text-muted-foreground">Les formules Pro ne sont pas encore ouvertes.</p>
       ) : (
-        <ul className="mt-4 grid gap-4 sm:grid-cols-2" aria-label="Formules Pro">
-          {pro.plans.map((plan) => {
+        <>
+          {plans.length > 1 && (
+            <div role="radiogroup" aria-label="Périodicité" className="mt-4 inline-flex flex-wrap gap-1 rounded-xl border border-border bg-subtle p-1">
+              {plans.map((p) => {
+                const active = p.billing_interval === period;
+                const off = p.billing_interval === 'year' ? yearlySaving(p.price) : 0;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setChosen(p.billing_interval)}
+                    className={cn(
+                      'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                      active ? 'bg-card text-foreground shadow-xs ring-1 ring-border' : 'text-soft hover:text-foreground'
+                    )}
+                  >
+                    {periodLabel(p.billing_interval, true)}
+                    {off > 0 && <span className="ml-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">−{xof(off)}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        <ul className="mt-4 grid gap-4 sm:max-w-md" aria-label="Formules Pro">
+          {shown.map((plan) => {
             const current = pro.subscription?.plan.id === plan.id;
             return (
               <li key={plan.id} className={cn('flex flex-col rounded-xl border bg-card p-5', current ? 'border-amber-300 ring-1 ring-amber-200' : 'border-border')}>
@@ -77,6 +111,9 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
                   <span className="text-2xl font-bold text-foreground">{xof(Number(plan.price))}</span>{' '}
                   <span className="text-sm text-muted-foreground">{periodSuffix(plan.billing_interval, true)}</span>
                 </p>
+                {plan.billing_interval === 'year' && yearlySaving(plan.price) > 0 && (
+                  <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">Soit {xof(yearlySaving(plan.price))} d’économie sur un an par rapport au mensuel.</p>
+                )}
                 {plan.description && <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>}
                 {plan.features.length > 0 && (
                   <ul className="mt-3 space-y-1.5 text-sm text-body">
@@ -102,6 +139,7 @@ export function ProPlans({ pro }: { pro: KodingaPro }) {
             );
           })}
         </ul>
+        </>
       )}
     </section>
   );

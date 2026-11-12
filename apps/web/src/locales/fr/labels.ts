@@ -68,6 +68,9 @@ export const labels = {
     year: 'Annuel',
     one_time: 'Paiement unique',
   },
+  /** Entry price of a paid community */
+  entryFrom: 'À partir de {{price}}',
+  lifetimeAccess: '{{price}}, accès à vie',
   billingSuffix: {
     month: '/ mois',
     year: '/ an',

@@ -180,6 +180,27 @@ describe('Dashboard: Kodinga Pro', () => {
     }
   });
 
+  it('switches the Pro plan shown between monthly, yearly and lifetime', async () => {
+    signIn();
+    const yearly = { ...proPlan, id: 'pro-y', name: 'Pro annuel', slug: 'pro-year', price: '50000.00', billing_interval: 'year' };
+    const lifetime = { ...proPlan, id: 'pro-l', name: 'Pro à vie', slug: 'pro-life', price: '150000.00', billing_interval: 'one_time' };
+    stubMyCommunities([], { 'billing/plans/': ok([lifetime, yearly, proPlan]), 'billing/subscriptions/me/': ok([]), 'billing/payments/my/': ok([]) });
+    renderAppAt('/dashboard/billing');
+    const periods = await screen.findByRole('radiogroup', { name: 'Périodicité' }, SLOW);
+    // Monthly first; one card at a time
+    expect(within(periods).getByRole('radio', { name: 'Mensuel' }).getAttribute('aria-checked')).toBe('true');
+    const plans = screen.getByRole('list', { name: 'Formules Pro' });
+    expect(within(plans).getAllByRole('button', { name: /Devenir Pro/ })).toHaveLength(1);
+    expect(within(plans).getByRole('button', { name: 'Devenir Pro — Pro mensuel' })).toBeTruthy();
+    // The yearly saving is computed from the prices (12 × 5 000 − 50 000)
+    fireEvent.click(within(periods).getByRole('radio', { name: /^Annuel/ }));
+    expect(within(plans).getByText(/Soit 10\s000 FCFA d’économie sur un an/)).toBeTruthy();
+    expect(within(plans).getByRole('button', { name: 'Devenir Pro — Pro annuel' })).toBeTruthy();
+    fireEvent.click(within(periods).getByRole('radio', { name: 'À vie' }));
+    expect(within(plans).getByText('150 000 FCFA')).toBeTruthy();
+    expect(within(plans).getByRole('button', { name: 'Devenir Pro — Pro à vie' })).toBeTruthy();
+  });
+
   it('shows the Pro plan of a subscribed user', async () => {
     signIn();
     stubMyCommunities([], {

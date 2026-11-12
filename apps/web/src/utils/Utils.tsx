@@ -7,7 +7,7 @@ import { useConfirmUploadMutation, useRequestUploadUrlMutation } from './api/com
 import { parseApiError } from './api/errors';
 import { IMAGE_RULES } from './api/media/media.type';
 import type { MemberRole, MemberStatus, PostType } from '@/data/admin-community-details.data';
-import type { BillingInterval, PaymentStatus, PayoutMethod, PayoutStatus, SubscriptionStatus } from './api/billing/billing.type';
+import type { BillingInterval, CommunityPlan, PaymentStatus, PayoutMethod, PayoutStatus, SubscriptionStatus } from './api/billing/billing.type';
 import type { AvailabilityStatus, EmploymentType, SkillLevel } from './api/profile/profile.type';
 
 /** The api does not expose roles yet (see User.is_staff) */
@@ -337,11 +337,13 @@ export const payoutStatusStyle: Record<PayoutStatus, { label: string; className:
   approved: { label: 'Approuvé', className: 'border-sky-200 bg-sky-50 text-sky-800' },
   processed: { label: 'Versé', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
   rejected: { label: 'Refusé', className: 'border-red-200 bg-red-50 text-red-700' },
+  failed: { label: 'Échoué', className: 'border-red-300 bg-red-100 text-red-800' },
 };
 
 export const payoutMethodLabel: Record<PayoutMethod, string> = {
   wave: 'Wave',
   orange_money: 'Orange Money',
+  paydunya: 'Compte PayDunya',
   bank_transfer: 'Virement bancaire',
 };
 
@@ -377,6 +379,34 @@ export const periodSuffix = (interval: BillingInterval, pro = false) =>
 
 /** "5 000 FCFA / mois" (the price as the api sends it: "5000.00") */
 export const planPrice = (plan: Priced, pro = false) => `${xof(Number(plan.price))} ${periodSuffix(plan.billing_interval, pro)}`;
+
+const INTERVAL_ORDER: BillingInterval[] = ['month', 'year', 'one_time'];
+
+/** Kodinga Pro plans of the api (no community, a price): monthly, yearly, lifetime, in that order */
+export const proPlansOf = (plans: unknown) =>
+  (Array.isArray(plans) ? (plans as CommunityPlan[]) : [])
+    .filter((p) => !p.community_id && Number(p.price) > 0)
+    .sort((a, b) => INTERVAL_ORDER.indexOf(a.billing_interval) - INTERVAL_ORDER.indexOf(b.billing_interval));
+
+/**
+ * Entry price of a paid community, from its active plans: the monthly one when there is one, else
+ * the cheapest. `from`: several plans, the price reads "À partir de …". null: no active plan.
+ */
+export function entryPlan(plans: Priced[] | null | undefined): { plan: Priced; from: boolean } | null {
+  const active = (plans ?? []).filter((p) => Number(p.price) > 0 && (p as { is_active?: boolean }).is_active !== false);
+  if (!active.length) return null;
+  const monthly = active.filter((p) => p.billing_interval === 'month').sort((a, b) => Number(a.price) - Number(b.price))[0];
+  const cheapest = [...active].sort((a, b) => Number(a.price) - Number(b.price))[0];
+  return { plan: monthly ?? cheapest, from: active.length > 1 };
+}
+
+/** "À partir de 5 000 FCFA / mois", "5 000 FCFA / an", "15 000 FCFA, accès à vie"; null without an active plan */
+export function entryPriceLabel(plans: Priced[] | null | undefined) {
+  const entry = entryPlan(plans);
+  if (!entry) return null;
+  const price = entry.plan.billing_interval === 'one_time' ? i18n.t('labels.lifetimeAccess', { price: xof(Number(entry.plan.price)) }) : planPrice(entry.plan);
+  return entry.from ? i18n.t('labels.entryFrom', { price }) : price;
+}
 
 /** FCFA as usual, any other currency with its code (amounts arrive as strings: "15000.00") */
 export const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${numberFormat().format(Number(value))} ${currency}`);

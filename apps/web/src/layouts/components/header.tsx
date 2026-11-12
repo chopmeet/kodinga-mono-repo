@@ -161,7 +161,11 @@ function Header() {
             to="/search"
             aria-label={t('header.searchSite')}
             title={t('header.searchSite')}
-            className={({ isActive }) => cn('flex size-10 items-center justify-center rounded-lg hover:bg-muted', isActive ? 'text-foreground' : 'text-muted-foreground')}
+            // While the directory search sits in the header (home, scrolled), one search is enough: the
+            // icon of the site search hides (phones keep it, the field has no room there)
+            className={({ isActive }) =>
+              cn('flex size-10 items-center justify-center rounded-lg hover:bg-muted', isActive ? 'text-foreground' : 'text-muted-foreground', showSearch && 'md:hidden')
+            }
           >
             <Search className="size-5" aria-hidden />
           </NavLink>
