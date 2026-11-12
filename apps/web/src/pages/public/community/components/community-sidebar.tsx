@@ -21,7 +21,7 @@ import { useGetCommunityLeaderboardQuery, useGetCommunityPlansQuery } from '@/ut
 import type { BillingInterval, CommunityPlan } from '@/utils/api/billing/billing.type';
 import { numberFormat } from '@/utils/format';
 import i18n from '@/utils/i18n';
-import { formatCompact, nameInitials } from '@/utils/Utils';
+import { entryPlan, formatCompact, nameInitials, periodSuffix, xof } from '@/utils/Utils';
 import type { CommunityPage } from '../form/UseCommunityPage';
 
 const intervalKey: Record<BillingInterval, 'perMonth' | 'perYear' | 'lifetime'> = { month: 'perMonth', year: 'perYear', one_time: 'lifetime' };
@@ -289,13 +289,25 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
   const n = community.members_count;
   const isPublic = community.privacy_type === 'public';
   const note = accessNote(page);
+  const entry = community.pricing_type === 'paid' ? entryPlan(community.subscription_plans) : null;
   const stats = [
     { label: n > 1 ? t('community.sidebar.members') : t('community.sidebar.member'), value: <span className="text-lg font-semibold">{formatCompact(n)}</span> },
     { label: isPublic ? t('community.sidebar.public') : t('community.sidebar.private'), value: isPublic ? <Globe className="mx-auto size-5" /> : <Lock className="mx-auto size-5" /> },
-    {
-      label: t('community.sidebar.access'),
-      value: <span className="text-lg font-semibold">{community.pricing_type === 'paid' ? t('community.sidebar.paid') : t('community.sidebar.free')}</span>,
-    },
+    // A paid community: its entry price (monthly plan, else the cheapest), the period under it
+    entry
+      ? {
+          label: entry.from ? t('community.sidebar.accessFrom') : t('community.sidebar.access'),
+          value: (
+            <span className="block leading-tight">
+              <span className="text-lg font-semibold whitespace-nowrap">{xof(Number(entry.plan.price))}</span>
+              <span className="block text-xs text-muted-foreground">{periodSuffix(entry.plan.billing_interval)}</span>
+            </span>
+          ),
+        }
+      : {
+          label: t('community.sidebar.access'),
+          value: <span className="text-lg font-semibold">{community.pricing_type === 'paid' ? t('community.sidebar.paid') : t('community.sidebar.free')}</span>,
+        },
   ];
 
   return (

@@ -100,6 +100,7 @@ export const community: Translations['community'] = {
     public: 'Public',
     private: 'Private',
     access: 'Access',
+    accessFrom: 'Access, from',
     paid: 'Paid',
     free: 'Free',
     connectTitle: 'Connections start here.',
@@ -110,6 +111,10 @@ export const community: Translations['community'] = {
     launch: 'Get started',
   },
   media: {
+    preparing_one: '{{count}} file being prepared: it will show up here once ready.',
+    preparing_other: '{{count}} files being prepared: they will show up here once ready.',
+    failedFiles_one: '{{count}} file could not be prepared.',
+    failedFiles_other: '{{count}} files could not be prepared.',
     videos: 'Videos of the post',
     play: 'Play the video {{name}}',
     videoOf: 'Video {{name}}',

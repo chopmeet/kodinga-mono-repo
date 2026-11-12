@@ -34,16 +34,15 @@ const STATUS_OPTIONS = [
   { value: 'failed', label: 'Échoués' },
 ];
 
+
 export default function AdminPayouts() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebounced(searchInput.trim(), 400);
 
-  // Modals state
   const [selectedPayout, setSelectedPayout] = useState<CommunityPayout | null>(null);
   const [modalType, setModalType] = useState<'approve' | 'reject' | 'disburse' | null>(null);
 
-  // Queries & Mutations
   const { data, isLoading, isFetching, error, refetch } = useGetAdminPayoutsQuery({
     status: statusFilter === 'all' ? undefined : statusFilter,
     search: debouncedSearch || undefined,
@@ -133,7 +132,7 @@ export default function AdminPayouts() {
                 placeholder="Rechercher communauté, créateur, numéro..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                leftIcon={<Search className="size-4 text-muted-foreground" />}
+                icon={<Search className="size-4 text-muted-foreground" />}
               />
             </div>
             <div className="w-full sm:w-56">

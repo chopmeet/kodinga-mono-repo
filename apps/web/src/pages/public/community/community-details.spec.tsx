@@ -261,6 +261,9 @@ describe('Public community page', () => {
     const plans = await screen.findByRole('list', { name: "Formules d'adhésion" }, SLOW);
     expect(within(plans).getByText('5 000 FCFA')).toBeTruthy();
     expect(calls.some((c) => c.url.pathname.endsWith('/billing/plans/'))).toBe(false);
+    // The entry price instead of a plain "Payante": the badge by the name, the "Accès" figure
+    expect(screen.getAllByText('5 000 FCFA / mois').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Accès payant')).toBeNull();
   });
 
   it('shows a member their activity in the community, a tab hidden to visitors', async () => {
@@ -407,6 +410,25 @@ describe('Public community page', () => {
     expect(play.textContent).toContain('1:42');
     fireEvent.click(play);
     expect(await within(videos).findByLabelText('Vidéo demo.mp4', {}, SLOW)).toBeTruthy();
+  });
+
+  it('plays a ready video from its file when Mux has no stream yet, and tells about files being prepared', async () => {
+    signIn();
+    stubCommunityApi({
+      membership: { is_member: true, role: 'member', status: 'active' },
+      media: [
+        { id: 'v1', type: 'VIDEO', provider: 'MUX', url: 'https://utfs.io/f/demo.mp4', playback_url: null, thumbnail_url: null, filename: 'demo.mp4', mime_type: 'video/mp4', size: 1, duration: 12, width: null, height: null, status: 'READY', order: 0 },
+        { id: 'i1', type: 'IMAGE', provider: 'UPLOADTHING', url: null, playback_url: null, thumbnail_url: null, filename: 'scene.png', mime_type: 'image/png', size: 1, duration: null, width: null, height: null, status: 'PROCESSING', order: 1 },
+      ],
+    });
+    renderAppAt('/communities/abidjan-react');
+    const feed = await screen.findByRole('list', { name: 'Publications' }, SLOW);
+    // The text of the post shows meanwhile
+    expect(within(feed).getByText(/Server Components/)).toBeTruthy();
+    expect(within(feed).getByText('1 fichier en préparation : il apparaîtra ici dès qu’il est prêt.')).toBeTruthy();
+    fireEvent.click(within(feed).getByRole('button', { name: 'Lire la vidéo demo.mp4' }));
+    const player = (await within(feed).findByLabelText('Vidéo demo.mp4', {}, SLOW)) as HTMLVideoElement;
+    await waitFor(() => expect(player.getAttribute('src') ?? player.src).toContain('https://utfs.io/f/demo.mp4'), SLOW);
   });
 
   it('comments a post right in the feed, without leaving it', async () => {

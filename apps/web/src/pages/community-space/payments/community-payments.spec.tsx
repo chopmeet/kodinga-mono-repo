@@ -158,6 +158,23 @@ describe('Community space: subscriptions & payments', () => {
     expect(row.textContent).toMatch(/13\s500 FCFA/);
   });
 
+  it('shows the fee and net of each payout, and a failed one as re-credited', async () => {
+    stubPlansApi();
+    payouts = [
+      { id: 'po1', amount: '40000.00', fee_amount: '800.00', net_amount: '39200.00', currency: 'XOF', status: 'failed', payment_method: 'paydunya', account_identifier: 'awa@example.com', account_name: '', reference: '', processed_at: null, rejection_reason: 'Compte PayDunya introuvable', created_at: '2026-11-10T10:00:00Z' },
+    ];
+    renderAppAt('/c/lagos-ai-data/payments/payouts');
+    const table = await screen.findByRole('table', { name: 'Demandes de reversement' }, SLOW);
+    const row = within(table).getAllByRole('row')[1];
+    expect(row.textContent).toMatch(/39\s200 FCFA/);
+    expect(row.textContent).toMatch(/− 800 FCFA/);
+    expect(row.textContent).toMatch(/40\s000 FCFA/);
+    expect(within(row).getByText('Échoué')).toBeTruthy();
+    expect(within(row).getByText('Compte PayDunya introuvable')).toBeTruthy();
+    expect(within(row).getByText('Votre solde disponible a été automatiquement recrédité.')).toBeTruthy();
+    expect(within(row).getByText('Compte PayDunya')).toBeTruthy();
+  });
+
   it('asks a payout within the available balance', async () => {
     const calls = stubPlansApi();
     renderAppAt('/c/lagos-ai-data/payments/payouts');
@@ -171,6 +188,15 @@ describe('Community space: subscriptions & payments', () => {
     expect(await within(dialog).findByText(/Au plus votre solde disponible/, {}, SLOW)).toBeTruthy();
 
     fireEvent.change(within(dialog).getByLabelText(/Montant/), { target: { value: '10000' } });
+    // The 2 % Kodinga fee and the net, as the amount is typed
+    const detail = within(dialog).getByLabelText('Détail du reversement');
+    expect(detail.textContent).toMatch(/− 200 FCFA/);
+    expect(detail.textContent).toMatch(/Montant net que vous recevrez9\s800 FCFA/);
+    // "Tout retirer" fills in the whole balance, then back to 10 000
+    fireEvent.click(within(dialog).getByRole('button', { name: /Tout retirer/ }));
+    expect((within(dialog).getByLabelText(/Montant/) as HTMLInputElement).value).toBe('13500');
+    fireEvent.change(within(dialog).getByLabelText(/Montant/), { target: { value: '10000' } });
+    expect(within(dialog).getByRole('option', { name: 'Compte PayDunya' })).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Demander le reversement' }));
     await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/payouts/'))?.body).toEqual({ amount: 10000, payment_method: 'wave', account_identifier: '+221770000000', account_name: '' }), SLOW);
     const table = await screen.findByRole('table', { name: 'Demandes de reversement' }, SLOW);

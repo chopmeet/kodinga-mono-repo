@@ -18,6 +18,7 @@ import { onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { languages } from '@/utils/i18n';
 import { useUnreadMessages } from '@/pages/public/messages/form/UseMessages';
 import { scrollToResults } from '@/utils/Utils';
+import { LogoMark } from './logo-mark';
 
 
 function LanguageSwitcher() {
@@ -62,9 +63,7 @@ type LogoProps = {
 export function Logo({ compact = false, variant = 'responsive', className, link = true }: LogoProps) {
   const content = (
     <>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-lg font-bold text-white shadow-sm" aria-hidden={!link || undefined}>
-        K
-      </span>
+      <LogoMark className="size-9 drop-shadow-sm" />
       {variant !== 'mark' && (
         <span
           className={cn('text-2xl font-bold tracking-tight text-foreground', variant === 'responsive' && 'hidden sm:inline', compact && 'md:hidden lg:inline')}
@@ -83,7 +82,7 @@ export function Logo({ compact = false, variant = 'responsive', className, link 
     );
   }
   return (
-    <NavLink to="/" title="Kodinga" className={cn('flex items-center gap-2.5', className)}>
+    <NavLink to="/" title="Kodinga" aria-label="Kodinga" className={cn('flex items-center gap-2.5', className)}>
       {content}
     </NavLink>
   );
@@ -161,7 +160,11 @@ function Header() {
             to="/search"
             aria-label={t('header.searchSite')}
             title={t('header.searchSite')}
-            className={({ isActive }) => cn('flex size-10 items-center justify-center rounded-lg hover:bg-muted', isActive ? 'text-foreground' : 'text-muted-foreground')}
+            // While the directory search sits in the header (home, scrolled), one search is enough: the
+            // icon of the site search hides (phones keep it, the field has no room there)
+            className={({ isActive }) =>
+              cn('flex size-10 items-center justify-center rounded-lg hover:bg-muted', isActive ? 'text-foreground' : 'text-muted-foreground', showSearch && 'md:hidden')
+            }
           >
             <Search className="size-5" aria-hidden />
           </NavLink>

@@ -99,6 +99,7 @@ export const community = {
     public: 'Publique',
     private: 'Privée',
     access: 'Accès',
+    accessFrom: 'Accès, à partir de',
     paid: 'Payant',
     free: 'Gratuit',
     connectTitle: 'Les connexions commencent ici.',
@@ -109,6 +110,10 @@ export const community = {
     launch: 'Lancez-vous',
   },
   media: {
+    preparing_one: '{{count}} fichier en préparation : il apparaîtra ici dès qu’il est prêt.',
+    preparing_other: '{{count}} fichiers en préparation : ils apparaîtront ici dès qu’ils sont prêts.',
+    failedFiles_one: '{{count}} fichier n’a pas pu être préparé.',
+    failedFiles_other: '{{count}} fichiers n’ont pas pu être préparés.',
     videos: 'Vidéos de la publication',
     play: 'Lire la vidéo {{name}}',
     videoOf: 'Vidéo {{name}}',

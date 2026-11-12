@@ -79,7 +79,7 @@ export default function RejectPayoutModal({ payout, isOpen, isLoading, onClose, 
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Annuler
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} isLoading={isLoading}>
+          <Button variant="danger" onClick={handleConfirm} isLoading={isLoading}>
             Confirmer le rejet et rembourser
           </Button>
         </DialogFooter>

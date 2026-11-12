@@ -22,6 +22,9 @@ export const MIN_PRICE = 500;
 /** Lowest payout the api accepts (CreateCommunityPayoutRequestSerializer) */
 export const MIN_PAYOUT = 1000;
 
+/** Kodinga fee kept on each payout (PayoutService.PAYOUT_FEE_RATE): 2 % of the amount */
+export const PAYOUT_FEE_RATE = 0.02;
+
 export type PlanInput = PlanWriteData;
 
 /**
@@ -72,7 +75,7 @@ function UseSpaceBilling(community: CommunityListItem) {
   const requestPayout = async (input: PayoutRequest) => {
     try {
       await sendPayout({ slug: community.slug, ...input }).unwrap();
-      customToast.success({ message: 'Demande de reversement enregistrée : elle sera traitée sous 24 à 48 h.' });
+      customToast.success({ message: 'Demande enregistrée. Le montant a été réservé et le virement sera exécuté sous 24 à 48 h.' });
       return true;
     } catch (error) {
       customToast.error({ message: parseApiError(error).message });

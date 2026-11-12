@@ -86,6 +86,8 @@ export type CardType = {
     id: string,
     label: string,
     value?: number|string,
+    /** Detail under the label ("12 demandes", "+3 sur 7 j") */
+    secondaryValue?: string,
     color?: string,
     icon?: React.JSX.Element,
 }
@@ -111,6 +113,11 @@ function OverviewCardItem ({item}: {item: CardType}) {
           <p className="m-0 label">
             {item.label}
           </p>
+          {!!item.secondaryValue && (
+            <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+              {item.secondaryValue}
+            </p>
+          )}
         </div>
       </div>
     </div>

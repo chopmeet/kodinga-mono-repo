@@ -4,19 +4,10 @@ import { useAppDispatch } from '@/redux/hook';
 import UsePaymentReturn, { PRO_SCOPE, rememberPayment } from '@/pages/public/community/form/UsePaymentReturn';
 import { useGetPublicSettingsQuery } from '@/utils/api/admin/admin.api';
 import { COMMUNITY_CREATION_KEY } from '@/utils/api/admin/admin.type';
-import type { CommunityPlan } from '@/utils/api/billing/billing.type';
 import { CommunityApi, useCreateCheckoutMutation, useGetMySubscriptionsQuery, useGetProPlansQuery } from '@/utils/api/community/community.api';
 import type { User } from '@/utils/api/user/user.type';
 import { referralCode } from '@/utils/referral';
-import { isAdmin, useUser } from '@/utils/Utils';
-
-const ORDER: CommunityPlan['billing_interval'][] = ['month', 'year', 'one_time'];
-
-/** Kodinga Pro plans of the api (no community, a price): monthly, yearly, lifetime, in that order */
-export const proPlansOf = (plans: unknown) =>
-  (Array.isArray(plans) ? (plans as CommunityPlan[]) : [])
-    .filter((p) => !p.community_id && Number(p.price) > 0)
-    .sort((a, b) => ORDER.indexOf(a.billing_interval) - ORDER.indexOf(b.billing_interval));
+import { isAdmin, proPlansOf, useUser } from '@/utils/Utils';
 
 /** The setting is a word, or { tier } (CommunityService reads both) */
 const tierOf = (value: unknown) => String(value && typeof value === 'object' ? (value as { tier?: unknown }).tier : value).toLowerCase();

@@ -69,6 +69,9 @@ export const labels: Translations['labels'] = {
     year: 'Yearly',
     one_time: 'One-time payment',
   },
+  /** Entry price of a paid community */
+  entryFrom: 'From {{price}}',
+  lifetimeAccess: '{{price}}, lifetime access',
   billingSuffix: {
     month: '/ month',
     year: '/ year',
