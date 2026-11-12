@@ -12,9 +12,10 @@ export type User = {
   timezone: string;
   date_joined: string;
   last_login: string | null;
-  /** Not exposed by the api yet */
+  is_creator?: boolean;
+  communities_created_count?: number;
+  account_role?: 'creator' | 'member' | 'admin';
   avatar?: string;
-  /** Not exposed by the api yet: admin area stays closed until it is */
   is_staff?: boolean;
   is_superadmin?: boolean;
   is_superuser?: boolean;
@@ -37,10 +38,30 @@ export type UserFormData = Partial<
   >
 >;
 
+export type UserRoleFilter = 'creator' | 'member' | 'admin';
+export type UserPeriodFilter = '7d' | '30d' | '90d';
+
 /** GET users/: `active` = active with a verified email, `inactive` = suspended account */
 export type UsersQuery = {
   search?: string;
   status?: 'active' | 'unverified' | 'inactive';
+  role?: UserRoleFilter;
+  period?: UserPeriodFilter;
+  date_from?: string;
+  date_to?: string;
   page?: number;
   page_size?: number;
+};
+
+export type AdminUsersKPIs = {
+  total_users: number;
+  creators_count: number;
+  members_count: number;
+  admins_count: number;
+  active_users_count: number;
+  unverified_users_count: number;
+  suspended_users_count: number;
+  new_users_7d: number;
+  new_users_30d: number;
+  new_users_90d: number;
 };

@@ -47,6 +47,7 @@ import CommunityPostsTab from '@/pages/admin/communities/tabs/posts';
 import CommunityProjectsTab from '@/pages/admin/communities/tabs/projects';
 import CommunitySettingsTab from '@/pages/admin/communities/tabs/settings';
 import AdminDashboard from '@/pages/admin/dashboard/admin-dashboard';
+import AdminPayouts from '@/pages/admin/payouts/admin-payouts';
 import CommunitySpaceLayout from '@/pages/community-space/community-space-layout';
 import CommunityDashboardPage from '@/pages/community-space/dashboard/community-dashboard';
 import CommunityMembers from '@/pages/community-space/members/community-members';
@@ -330,6 +331,10 @@ export const AppRoutes: RouteObject[] = [
       {
         path: 'communities',
         element: <AdminCommunities />,
+      },
+      {
+        path: 'payouts',
+        element: <AdminPayouts />,
       },
       {
         path: 'users',

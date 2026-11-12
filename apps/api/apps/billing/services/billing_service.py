@@ -272,14 +272,13 @@ class BillingService:
             now = timezone.now()
             plan = payment.plan
 
-            commission_rate = getattr(
-                settings, "KODINGA_COMMISSION_RATE", Decimal("0.10")
-            )
             if plan.community:
-                platform_fee = (
-                    payment.amount * Decimal(str(commission_rate))
-                ).quantize(Decimal("0.01"))
-                net_amount = payment.amount - platform_fee
+                # Community membership subscriptions:
+                # The creator receives 100% of the subscription price as net revenue.
+                # No commission is deducted at incoming payment.
+                # Platform fees (2%) are applied only upon withdrawal/payout disbursement.
+                platform_fee = Decimal("0.00")
+                net_amount = payment.amount
                 payment.platform_fee = platform_fee
                 payment.net_amount = net_amount
 

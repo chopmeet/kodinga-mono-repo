@@ -10,6 +10,9 @@ class UserSerializer(BaseModelSerializer):
     is_pro = serializers.BooleanField(read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     status = serializers.SerializerMethodField(read_only=True)
+    communities_created_count = serializers.SerializerMethodField(read_only=True)
+    account_role = serializers.SerializerMethodField(read_only=True)
+    is_creator = serializers.SerializerMethodField(read_only=True)
 
     def get_status(self, obj) -> str:
         if not obj.is_active:
@@ -17,6 +20,22 @@ class UserSerializer(BaseModelSerializer):
         if not obj.is_email_verified:
             return "unverified"
         return "active"
+
+    def get_communities_created_count(self, obj) -> int:
+        count = getattr(obj, "communities_created_count", None)
+        if count is not None:
+            return count
+        return obj.owned_communities.count()
+
+    def get_account_role(self, obj) -> str:
+        if getattr(obj, "is_superadmin", False) or getattr(obj, "is_superuser", False):
+            return "admin"
+        if self.get_communities_created_count(obj) > 0:
+            return "creator"
+        return "member"
+
+    def get_is_creator(self, obj) -> bool:
+        return self.get_communities_created_count(obj) > 0
 
     class Meta:
         model = User
@@ -28,6 +47,9 @@ class UserSerializer(BaseModelSerializer):
             'last_name',
             'full_name',
             'status',
+            'account_role',
+            'is_creator',
+            'communities_created_count',
             'is_active',
             'is_staff',
             'is_superuser',
@@ -46,6 +68,9 @@ class UserSerializer(BaseModelSerializer):
             'email',
             'username',
             'status',
+            'account_role',
+            'is_creator',
+            'communities_created_count',
             'is_active',
             'is_staff',
             'is_superuser',

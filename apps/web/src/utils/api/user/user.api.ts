@@ -15,7 +15,7 @@ import type {
   SkillWriteData,
   UserSession,
 } from '../profile/profile.type';
-import type { User, UserFormData, UsersQuery } from './user.type';
+import type { AdminUsersKPIs, User, UserFormData, UsersQuery } from './user.type';
 
 export const UserApi = createApi({
   reducerPath: 'userApi',
@@ -34,6 +34,21 @@ export const UserApi = createApi({
         params: Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '')),
       }),
       providesTags: ['users'],
+    }),
+    // User KPIs for superadmin overview (creators, members, admins, 7d/30d/90d growth)
+    getUsersKPIs: builder.query<AdminUsersKPIs, void>({
+      query: () => 'users/kpis/',
+      transformResponse: unwrap<AdminUsersKPIs>,
+      providesTags: ['users'],
+    }),
+    // Manually verify user email by superadmin
+    verifyUserEmail: builder.mutation<User, string>({
+      query: (userId) => ({
+        url: `admin/users/${userId}/verify-email/`,
+        method: 'POST',
+      }),
+      transformResponse: unwrap<User>,
+      invalidatesTags: ['users'],
     }),
     // Platform governance (super-admins only), traced in the audit log by the api
     toggleUserAdmin: builder.mutation<User, { id: string; is_superadmin: boolean }>({
@@ -168,6 +183,8 @@ export const {
   useMeAccountQuery, 
   useUpdateMeMutation,
   useGetUsersQuery,
+  useGetUsersKPIsQuery,
+  useVerifyUserEmailMutation,
   useGetPublicProfileQuery,
   useGetProfileFollowsQuery,
   useToggleFollowMutation,

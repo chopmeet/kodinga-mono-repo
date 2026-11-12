@@ -32,9 +32,12 @@ const columns: ColumnDef<CommunityTransaction>[] = [
   {
     id: 'fee',
     header: right('Commission'),
-    cell: ({ row }) => (
-      <span className="block text-right text-muted-foreground tabular-nums">{row.original.status === 'PAID' ? `− ${xof(Number(row.original.platform_fee))}` : '—'}</span>
-    ),
+    cell: ({ row }) => {
+      const fee = Number(row.original.platform_fee || 0);
+      if (row.original.status !== 'PAID') return <span className="block text-right text-muted-foreground">—</span>;
+      if (fee === 0) return <span className="block text-right text-muted-foreground tabular-nums">0 FCFA</span>;
+      return <span className="block text-right text-muted-foreground tabular-nums">{`− ${xof(fee)}`}</span>;
+    },
   },
 ];
 

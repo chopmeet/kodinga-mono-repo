@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, PauseCircle, PlayCircle, ShieldCheck, ShieldOff } from 'lucide-react';
+import { CheckCircle, Crown, Eye, PauseCircle, PlayCircle, ShieldCheck, ShieldOff } from 'lucide-react';
 
 import { Badge, DataTable } from '@kodinga/ui';
 import { dateFormat, type RowAction, RowActions } from '@/pages/shared/row-actions';
@@ -16,14 +16,21 @@ export function formatLastLogin(iso: string | null) {
 
 /** Account state badges (shared with the profile sheet) */
 export function UserStatusBadges({ user }: { user: User }) {
+  const commCount = user.communities_created_count ?? 0;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-1.5 items-center">
       {user.is_active ? (
         <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800">Actif</Badge>
       ) : (
         <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Suspendu</Badge>
       )}
       {isAdmin(user) && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-800">Super-admin</Badge>}
+      {(user.is_creator || commCount > 0) && (
+        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 gap-1 inline-flex items-center">
+          <Crown className="size-3 text-amber-600" />
+          <span>Créateur ({commCount})</span>
+        </Badge>
+      )}
       {!user.is_email_verified && (
         <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-800">Email non vérifié</Badge>
       )}
@@ -37,23 +44,40 @@ type Props = {
   onView: (user: User) => void;
   onToggleAdmin: (user: User) => void;
   onToggleStatus: (user: User) => void;
+  onVerifyEmail: (user: User) => void;
 };
 
 export type AccountHandlers = {
   onToggleAdmin: (user: User) => void;
   onToggleStatus: (user: User) => void;
+  onVerifyEmail: (user: User) => void;
 };
 
-/** Admin rights and suspension (POST admin/users/<id>/toggle-admin/ and toggle-status/) */
-export function accountActions(user: User, { onToggleAdmin, onToggleStatus }: AccountHandlers): RowAction[] {
-  return [
+/** Admin rights, email verification and suspension */
+export function accountActions(user: User, { onToggleAdmin, onToggleStatus, onVerifyEmail }: AccountHandlers): RowAction[] {
+  const actions: RowAction[] = [];
+
+  if (!user.is_email_verified) {
+    actions.push({
+      label: "Vérifier l'adresse email",
+      icon: <CheckCircle className="text-emerald-600" />,
+      onSelect: () => onVerifyEmail(user),
+    });
+  }
+
+  actions.push(
     isAdmin(user)
       ? { label: 'Retirer les droits admin', icon: <ShieldOff />, onSelect: () => onToggleAdmin(user) }
-      : { label: 'Nommer administrateur', icon: <ShieldCheck />, onSelect: () => onToggleAdmin(user) },
+      : { label: 'Nommer administrateur', icon: <ShieldCheck />, onSelect: () => onToggleAdmin(user) }
+  );
+
+  actions.push(
     user.is_active
       ? { label: 'Suspendre le compte', icon: <PauseCircle />, danger: true, onSelect: () => onToggleStatus(user) }
-      : { label: 'Réactiver le compte', icon: <PlayCircle />, onSelect: () => onToggleStatus(user) },
-  ];
+      : { label: 'Réactiver le compte', icon: <PlayCircle />, onSelect: () => onToggleStatus(user) }
+  );
+
+  return actions;
 }
 
 function UsersTable({ users, isLoading, onView, ...handlers }: Props) {

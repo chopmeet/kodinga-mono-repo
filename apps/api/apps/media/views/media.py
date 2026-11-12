@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.media.models.media_asset import MediaAsset, MediaPurpose
-from apps.media.models.video_asset import VideoAsset
+from apps.media.models.video_asset import VideoAsset, VideoStatus
 from apps.media.serializers.media import (
     BannerUploadRequestSerializer,
     ConfirmUploadRequestSerializer,
@@ -102,6 +102,32 @@ class ConfirmUploadView(APIView):
                         input_url=asset.file_url,
                         title=asset.file_name,
                     )
+                    v_asset_meta = (
+                        video_asset.metadata
+                        if isinstance(video_asset.metadata, dict)
+                        else {}
+                    )
+                    if v_asset_meta.get("mux_fallback"):
+                        video_asset.provider = "uploadthing"
+                        video_asset.status = VideoStatus.READY
+                        v_meta = dict(video_asset.metadata or {})
+                        v_meta.update(
+                            {
+                                "media_asset_id": str(asset.id),
+                                "file_key": asset.file_key,
+                                "file_name": asset.file_name,
+                                "file_size": asset.file_size,
+                                "mime_type": asset.mime_type,
+                                "source_url": asset.file_url,
+                                "file_url": asset.file_url,
+                                "source_provider": "uploadthing",
+                            }
+                        )
+                        video_asset.metadata = v_meta
+                        video_asset.save(
+                            update_fields=["provider", "status", "metadata", "updated_at"]
+                        )
+
                     asset_meta = dict(asset.metadata or {})
                     asset_meta["video_asset_id"] = str(video_asset.id)
                     asset.metadata = asset_meta

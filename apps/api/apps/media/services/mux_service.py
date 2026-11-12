@@ -420,20 +420,30 @@ class MuxVideoService:
     @classmethod
     def _broadcast_video_update(cls, video_asset: VideoAsset) -> None:
         with contextlib.suppress(Exception):
-            from realtime.broadcast import broadcast_to_community, broadcast_to_user
+            from realtime.broadcast import send_group_event
 
             payload = video_asset.to_unified_dict()
             if video_asset.user_id:
-                broadcast_to_user(
-                    str(video_asset.user_id), "video.status.changed", payload
+                send_group_event(
+                    f"user_{video_asset.user_id}",
+                    "video.status.changed",
+                    payload,
                 )
             if hasattr(video_asset, "attached_posts"):
                 for post in video_asset.attached_posts.all():
-                    broadcast_to_community(
-                        str(post.community_id),
+                    send_group_event(
+                        f"community_{post.community_id}",
                         "post.video.updated",
                         {"post_id": str(post.id), "video": payload},
                     )
+                    send_group_event(
+                        f"post_{post.id}",
+                        "post.video.updated",
+                        {"post_id": str(post.id), "video": payload},
+                    )
+                    from realtime.broadcast import broadcast_post_updated
+
+                    broadcast_post_updated(post)
 
     @classmethod
     def get_video_by_id(cls, video_id: str) -> VideoAsset:

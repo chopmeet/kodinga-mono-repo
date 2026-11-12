@@ -6,7 +6,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.media.models.video_asset import VideoAsset
+from apps.media.models.video_asset import VideoAsset, VideoStatus
 from apps.media.serializers.video import (
     MuxUploadRequestSerializer,
     MuxUploadResponseSerializer,
@@ -151,6 +151,15 @@ class VideoAssetListView(APIView):
                 description=description,
             )
             video_asset.is_public = is_public_val
+            asset_meta = (
+                video_asset.metadata
+                if isinstance(video_asset.metadata, dict)
+                else {}
+            )
+            if asset_meta.get("mux_fallback"):
+                video_asset.provider = "uploadthing"
+                video_asset.status = VideoStatus.READY
+
             current_meta = dict(video_asset.metadata or {})
             current_meta.update(
                 {
@@ -160,11 +169,14 @@ class VideoAssetListView(APIView):
                     "file_size": res_ut.get("file_size"),
                     "mime_type": mime_type,
                     "source_url": raw_url,
+                    "file_url": raw_url,
                     "source_provider": "uploadthing",
                 }
             )
             video_asset.metadata = current_meta
-            video_asset.save(update_fields=["is_public", "metadata", "updated_at"])
+            video_asset.save(
+                update_fields=["provider", "status", "is_public", "metadata", "updated_at"]
+            )
 
             return success_response(
                 data=VideoAssetSerializer(video_asset).data,

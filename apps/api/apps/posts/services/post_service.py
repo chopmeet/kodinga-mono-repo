@@ -180,6 +180,15 @@ class PostService:
                     input_url=ut_res["file_url"],
                     title=f_name,
                 )
+                asset_meta = (
+                    video_asset.metadata
+                    if isinstance(video_asset.metadata, dict)
+                    else {}
+                )
+                if asset_meta.get("mux_fallback"):
+                    video_asset.provider = "uploadthing"
+                    video_asset.status = VideoStatus.READY
+
                 v_meta = dict(video_asset.metadata or {})
                 v_meta.update(
                     {
@@ -189,11 +198,14 @@ class PostService:
                         "file_size": ut_res.get("file_size"),
                         "mime_type": f_mime,
                         "source_url": ut_res["file_url"],
+                        "file_url": ut_res["file_url"],
                         "source_provider": "uploadthing",
                     }
                 )
                 video_asset.metadata = v_meta
-                video_asset.save(update_fields=["metadata", "updated_at"])
+                video_asset.save(
+                    update_fields=["provider", "status", "metadata", "updated_at"]
+                )
                 extracted_video_ids.append(str(video_asset.id))
             else:
                 purpose = "post_image" if is_image else "post_document"

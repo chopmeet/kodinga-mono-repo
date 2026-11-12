@@ -1,12 +1,10 @@
 import logging
 
-from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
-from apps.billing.models.wallet import CommunityPayout, CommunityWallet, PayoutStatus
 from apps.billing.selectors.billing_selector import BillingSelector
 from apps.billing.serializers.community_billing import (
     CommunityPayoutSerializer,
@@ -15,6 +13,7 @@ from apps.billing.serializers.community_billing import (
     CommunityTransactionSerializer,
     CreateCommunityPayoutRequestSerializer,
 )
+from apps.billing.services.payout_service import PayoutService
 from common.utils.responses import error_response, success_response
 
 logger = logging.getLogger("kodinga.billing.community")
@@ -150,33 +149,19 @@ class CommunityPayoutsView(APIView):
         account_identifier = serializer.validated_data["account_identifier"]
         account_name = serializer.validated_data.get("account_name", "")
 
-        with transaction.atomic():
-            wallet, _ = CommunityWallet.objects.select_for_update().get_or_create(
-                community=community
-            )
-            if wallet.available_balance < amount:
-                return error_response(
-                    f"Solde disponible insuffisant ({int(wallet.available_balance)} {wallet.currency}) pour ce retrait de {int(amount)} {wallet.currency}.",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Deduct from available balance
-            wallet.available_balance -= amount
-            wallet.save(update_fields=["available_balance", "updated_at"])
-
-            payout = CommunityPayout.objects.create(
+        try:
+            payout = PayoutService.create_payout_request(
                 community=community,
                 requested_by=request.user,
                 amount=amount,
-                currency=wallet.currency,
-                status=PayoutStatus.PENDING,
                 payment_method=payment_method,
                 account_identifier=account_identifier,
                 account_name=account_name,
             )
-
-            logger.info(
-                f"[Billing Payout] Payout {payout.id} created for {community.name} - Amount: {amount} {wallet.currency}"
+        except Exception as exc:
+            return error_response(
+                message=str(exc),
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         out_serializer = CommunityPayoutSerializer(payout, context={"request": request})

@@ -13,6 +13,7 @@ Ce document regroupe **l'ensemble des tâches Frontend (`apps/web`)** à implém
 5. **TÂCHE 5 (FE-DOCUMENTS)** : Upload de documents (UploadThing), validation client, affichage des cartes documents et téléchargement sécurisé.
 6. **TÂCHE 6 (FE-MEDIA-DELETE)** : Suppression d'une pièce jointe sur une publication existante (`DELETE /api/v1/posts/<post_id>/media/<media_id>/`).
 7. **TÂCHE 7 (FE-AI-ASSISTANT)** : Adaptation de l'interface de l'Assistant IA Platform-Aware (badges d'intention, sources RAG/Communautés et gestion des refus hors-périmètre).
+8. **TÂCHE 8 (FE-SYNC-MEDIA-LOADER)** : Expérience de chargement synchrone avec barre de progression 100% prêt et affichage simultané (texte + médias) sans blocage indéfini.
 
 ---
 
@@ -256,7 +257,41 @@ Dans `apps/web/src/utils/api/community/community.type.ts` :
 
 ---
 
-## TÂCHE 7 : INTÉGRATION FRONTEND DE L'ASSISTANT IA PLATFORM-AWARE
+## TÂCHE 8 : EXPÉRIENCE UTILISATEUR DE CHARGEMENT SYNCHRONE & RENDER SYNCHRONISÉ (LOADER 100% PRET)
+
+### 8.1. Problème UX résolu
+Auparavant, lorsqu'un utilisateur publiait un post avec une image, un document ou une vidéo :
+- Le post texte s'affichait immédiatement dans le feed de manière brute.
+- Quelques instants plus tard, la vidéo passait en « processing » ou restait indéfiniment en attente de transcodage, et les images se chargeaient de manière asynchrone et saccadée.
+- Sur les grandes plateformes (Twitter/X, LinkedIn, Discord), une publication multimédia affiche une barre de progression / loader de préparation tant que l'ensemble des médias n'est pas prêt. Dès que le traitement atteint **100%**, le texte, les images et les vidéos s'affichent **tous ensemble d'un coup**.
+
+### 8.2. Nouveaux champs Backend sur chaque Publication
+Chaque objet `Post` (`GET /api/v1/communities/<slug>/feed/` et `GET /api/v1/posts/<post_id>/`) expose désormais :
+```ts
+export interface CommunityPostItem {
+  id: string;
+  // ...
+  is_media_processing: boolean;        // true si au moins une image/vidéo est encore en encodage/upload
+  media_processing_status: 'NONE' | 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED';
+  media: UnifiedPostMediaItem[];
+}
+```
+
+### 8.3. Spécifications du flux Frontend (Modal de création & Feed)
+1. **Modal de création (`post-form-modal.tsx`)** :
+   - Lorsqu'un utilisateur ajoute des images, fichiers ou vidéos et clique sur **« Publier »** :
+     - Si l'upload direct ou la création d'asset est en cours, afficher un modal/overlay de progression moderne :
+       - *"Préparation et optimisation de vos médias en cours... [ ██████████  ] 100%"*
+     - Ne fermer le modal et insérer la carte complète que lorsque la publication est confirmée.
+2. **Carte de Publication dans le Feed (`PostCard` dans `feed-tab.tsx`)** :
+   - Si `post.is_media_processing === true` :
+     - Afficher un squelette / loader de traitement harmonieux :
+       - *"Optimisation multimédia en cours... Vos médias apparaîtront dès que le traitement est prêt."* avec indicateur rotatif ou barre de progression pulsée.
+   - Dès que le WebSocket diffuse l'événement `post.video.updated` ou `post.updated` (ou que `post.is_media_processing` devient `false`) :
+     - Révéler **instantanément et simultanément** le bloc de texte, les images et le lecteur vidéo HLS / UploadThing sans aucun saut d'image.
+3. **Cas de secours automatique Mux (UploadThing Fallback)** :
+   - Le backend gère désormais le fallback Mux de manière instantanée (statut `READY` direct avec lecture fluide sur `source_url` / UploadThing si le transcodage externe prend du temps ou est en attente de webhook), empêchant tout blocage indéfini en mode *PROCESSING*.
+
 
 Suite à la reconfiguration de l'Assistant IA en **Platform-Aware AI Assistant** (`POST /api/v1/ai/assistant/chat/`), la réponse JSON enrichie contient désormais :
 

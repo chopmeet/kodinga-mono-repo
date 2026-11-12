@@ -140,13 +140,20 @@ export type CommunityRevenue = {
   monthly_revenue: MonthlyRevenue[];
 };
 
-export type PayoutStatus = 'pending' | 'approved' | 'processed' | 'rejected';
-export type PayoutMethod = 'wave' | 'orange_money' | 'bank_transfer';
+export type PayoutStatus = 'pending' | 'approved' | 'processed' | 'rejected' | 'failed';
+export type PayoutMethod = 'wave' | 'orange_money' | 'paydunya' | 'bank_transfer';
 
 /** CommunityPayoutSerializer (GET / POST billing/communities/<slug>/payouts/, owner or platform admin) */
 export type CommunityPayout = {
   id: string;
+  community_id?: string;
+  community_name?: string;
+  community_slug?: string;
+  requested_by_username?: string;
+  requested_by_email?: string;
   amount: string;
+  fee_amount?: string;
+  net_amount?: string;
   currency: string;
   status: PayoutStatus;
   payment_method: PayoutMethod;
@@ -154,8 +161,34 @@ export type CommunityPayout = {
   account_name: string;
   reference: string;
   processed_at: string | null;
+  processed_by_username?: string | null;
   rejection_reason: string;
+  admin_note?: string;
   created_at: string;
+  updated_at?: string;
+};
+
+export type AdminPayoutsSummary = {
+  pending_count: number;
+  pending_amount: string;
+  processed_count: number;
+  processed_amount: string;
+  fees_collected: string;
+};
+
+export type AdminPayoutsResponse = {
+  results: CommunityPayout[];
+  summary: AdminPayoutsSummary;
+  pagination?: {
+    count: number;
+    total_pages: number;
+    current_page: number;
+    has_next: boolean;
+    has_previous: boolean;
+    next: string | null;
+    previous: string | null;
+    page_size: number;
+  };
 };
 
 /** CreateCommunityPayoutRequestSerializer: at least 1 000 FCFA, within the available balance */

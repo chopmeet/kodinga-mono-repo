@@ -40,7 +40,7 @@ function CommunityPayments() {
       </section>
 
       <div className="mb-6">
-        <Panel title="Encaissements" description="Ce qui vous revient chaque mois, net de la commission Kodinga">
+        <Panel title="Encaissements" description="Revenus générés chaque mois par vos abonnés">
           <RevenueChart monthly={billing.revenue.data?.monthly_revenue ?? []} />
         </Panel>
       </div>
