@@ -8,8 +8,10 @@ from apps.ai.models.documentation import (
     DocumentationCategory,
     PlatformDocumentation,
 )
+from apps.ai.schemas import AssistantChatResult
 from apps.ai.services.assistant_service import AIAssistantService
 from apps.ai.services.platform_knowledge_service import (
+    MISSING_INFORMATION_TEXT,
     AssistantIntent,
     PlatformDocumentationRAGService,
 )
@@ -424,11 +426,19 @@ class TestPlatformAwareAssistantAcceptanceSuite:
             content="La fonctionnalité de télépathie permet d'envoyer des posts par la pensée.",
         )
 
-        result = AIAssistantService.chat(
-            message="Comment utiliser la télépathie sur Kodinga ?",
-            user=outsider_user,
-        )
+        # The model is simulated (no OpenAI key in CI): what is checked is what the backend gives it
+        with patch(
+            "apps.ai.router.ai_router.assistant_chat",
+            return_value=AssistantChatResult(reply=MISSING_INFORMATION_TEXT, provider="openai"),
+        ) as mock_llm:
+            result = AIAssistantService.chat(
+                message="Comment utiliser la télépathie sur Kodinga ?",
+                user=outsider_user,
+            )
 
+        # The inactive document never reaches the model (nor the reply)
+        for call in mock_llm.call_args_list:
+            assert "télépathie" not in str(call.kwargs.get("context", "")).lower()
         assert "télépathie" not in result["reply"].lower()
         assert (
             "Je ne dispose pas actuellement d'informations suffisamment fiables"

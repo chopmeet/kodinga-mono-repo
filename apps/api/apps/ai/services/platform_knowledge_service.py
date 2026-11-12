@@ -1406,7 +1406,7 @@ class CommunityPrivateContentService:
                 lessons = list(
                     Lesson.objects.filter(module_id=mod["id"])
                     .order_by("order", "created_at")
-                    .values("title", "lesson_type", "duration_minutes")[:10]
+                    .values("title", "lesson_type", "duration_seconds")[:10]
                 )
                 lessons_by_module[str(mod["id"])] = lessons
                 modules_data.append(
