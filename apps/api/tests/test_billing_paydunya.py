@@ -600,18 +600,19 @@ class TestPayDunyaBilling:
         )
 
         # Community plan price is 5000 XOF
-        # 10% platform fee = 500 XOF, 90% net creator = 4500 XOF
+        # The community owner receives 100% of member subscription into available balance
+        # (Platform fee is applied only upon payout withdrawal)
         payment = Payment.objects.get(id=payment_id)
         assert payment.status == PaymentStatus.PAID
-        assert payment.platform_fee == Decimal("500.00")
-        assert payment.net_amount == Decimal("4500.00")
+        assert payment.platform_fee == Decimal("0.00")
+        assert payment.net_amount == Decimal("5000.00")
 
         # Verify CommunityWallet
         wallet = CommunityWallet.objects.get(community=community_plan.community)
         assert wallet.total_gross == Decimal("5000.00")
-        assert wallet.total_platform_fees == Decimal("500.00")
-        assert wallet.total_net == Decimal("4500.00")
-        assert wallet.available_balance == Decimal("4500.00")
+        assert wallet.total_platform_fees == Decimal("0.00")
+        assert wallet.total_net == Decimal("5000.00")
+        assert wallet.available_balance == Decimal("5000.00")
 
     def test_cancel_subscription_endpoint(self, api_client, user_alice, pro_plan):
         now = timezone.now()

@@ -1,3 +1,10 @@
+from apps.billing.views.admin_payouts import (
+    AdminPayoutApproveView,
+    AdminPayoutDetailView,
+    AdminPayoutDisburseView,
+    AdminPayoutRejectView,
+    AdminPayoutsListView,
+)
 from apps.billing.views.affiliate import JoinAffiliateView, MyAffiliateView
 from apps.billing.views.checkout import CreateCheckoutView
 from apps.billing.views.community_billing import (
@@ -30,6 +37,11 @@ __all__ = [
     "CommunityTransactionsView",
     "CommunityRevenueView",
     "CommunityPayoutsView",
+    "AdminPayoutsListView",
+    "AdminPayoutDetailView",
+    "AdminPayoutApproveView",
+    "AdminPayoutRejectView",
+    "AdminPayoutDisburseView",
     "MyAffiliateView",
     "JoinAffiliateView",
 ]

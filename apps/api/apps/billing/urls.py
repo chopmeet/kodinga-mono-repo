@@ -1,6 +1,11 @@
 from django.urls import path
 
 from apps.billing.views import (
+    AdminPayoutApproveView,
+    AdminPayoutDetailView,
+    AdminPayoutDisburseView,
+    AdminPayoutRejectView,
+    AdminPayoutsListView,
     CancelSubscriptionView,
     CommunityPayoutsView,
     CommunityPlanDetailView,
@@ -73,6 +78,32 @@ urlpatterns = [
         "billing/communities/<str:community_slug>/payouts/",
         CommunityPayoutsView.as_view(),
         name="community_payouts",
+    ),
+    # Admin Backoffice Payouts Management
+    path(
+        "billing/admin/payouts/",
+        AdminPayoutsListView.as_view(),
+        name="admin_payouts_list",
+    ),
+    path(
+        "billing/admin/payouts/<uuid:payout_id>/",
+        AdminPayoutDetailView.as_view(),
+        name="admin_payout_detail",
+    ),
+    path(
+        "billing/admin/payouts/<uuid:payout_id>/approve/",
+        AdminPayoutApproveView.as_view(),
+        name="admin_payout_approve",
+    ),
+    path(
+        "billing/admin/payouts/<uuid:payout_id>/reject/",
+        AdminPayoutRejectView.as_view(),
+        name="admin_payout_reject",
+    ),
+    path(
+        "billing/admin/payouts/<uuid:payout_id>/disburse/",
+        AdminPayoutDisburseView.as_view(),
+        name="admin_payout_disburse",
     ),
     # Affiliate Program (50% commission on first paid subscription)
     path("billing/affiliate/me/", MyAffiliateView.as_view(), name="my_affiliate"),

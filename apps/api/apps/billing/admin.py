@@ -64,10 +64,34 @@ class CommunityWalletAdmin(admin.ModelAdmin):
 
 @admin.register(CommunityPayout)
 class CommunityPayoutAdmin(admin.ModelAdmin):
-    list_display = ('id', 'community', 'requested_by', 'amount', 'currency', 'status', 'payment_method', 'account_identifier', 'created_at')
+    list_display = (
+        'id',
+        'community',
+        'requested_by',
+        'amount',
+        'fee_amount',
+        'net_amount',
+        'currency',
+        'status',
+        'payment_method',
+        'account_identifier',
+        'processed_by',
+        'created_at',
+    )
     list_filter = ('status', 'payment_method', 'currency', 'created_at')
-    search_fields = ('community__name', 'requested_by__username', 'account_identifier', 'reference')
-    actions = ['approve_payouts', 'process_payouts', 'reject_payouts']
+    search_fields = (
+        'community__name',
+        'requested_by__username',
+        'account_identifier',
+        'reference',
+        'rejection_reason',
+    )
+    actions = [
+        'approve_payouts',
+        'disburse_via_paydunya',
+        'process_payouts',
+        'reject_payouts',
+    ]
 
     @admin.action(description="Approuver les reversements sélectionnés")
     def approve_payouts(self, request, queryset):
@@ -81,7 +105,19 @@ class CommunityPayoutAdmin(admin.ModelAdmin):
         if success_count:
             self.message_user(request, f"{success_count} reversement(s) approuvé(s).")
 
-    @admin.action(description="Marquer comme effectués (décaissés)")
+    @admin.action(description="Exécuter le virement vers PayDunya (Disburse)")
+    def disburse_via_paydunya(self, request, queryset):
+        success_count = 0
+        for payout in queryset:
+            try:
+                PayoutService.disburse_via_paydunya(payout.id, admin_user=request.user)
+                success_count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur décaissement PayDunya {payout.id}: {e}", level='error')
+        if success_count:
+            self.message_user(request, f"{success_count} reversement(s) décaissé(s) via PayDunya.")
+
+    @admin.action(description="Marquer manuellement comme effectués")
     def process_payouts(self, request, queryset):
         success_count = 0
         for payout in queryset:

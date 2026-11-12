@@ -1,5 +1,7 @@
 import { toast } from 'sonner';
 
+export { toast };
+
 type ToastOptions = {
     message: string;
     position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';

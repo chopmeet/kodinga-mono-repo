@@ -230,3 +230,130 @@ class PayDunyaGateway:
         data = response.json()
         logger.info(f"[PayDunya] Transaction verified. Status={data.get('status')}")
         return data
+
+    @classmethod
+    def disburse_payout(
+        cls,
+        account_identifier: str,
+        amount: float,
+        payment_method: str = "wave",
+        payout_id: Optional[str] = None,
+        account_name: str = "",
+    ) -> dict[str, Any]:
+        """
+        Executes a payout/disbursement to a community creator via PayDunya.
+        Supports:
+        - Mobile Money (Wave, Orange Money) via /disburse/get-invoice & /disburse/submit-invoice
+        - Direct Pay (PayDunya user account) via /direct-pay/credit-account
+        - Fallback gracefully in Sandbox if merchant disburse account is unprovisioned in test mode.
+        """
+        method = (payment_method or "wave").lower()
+        logger.info(
+            f"[PayDunya] Initiating disbursement: Method={method}, Account={account_identifier}, "
+            f"Amount={amount}, PayoutID={payout_id}"
+        )
+
+        # 1. Direct Pay to PayDunya account
+        if method in ["paydunya", "direct_pay"]:
+            url = f"{cls.get_base_url()}/direct-pay/credit-account"
+            payload = {
+                "account_alias": account_identifier,
+                "amount": float(amount),
+            }
+            try:
+                response = requests.post(
+                    url, json=payload, headers=cls.get_headers(), timeout=25
+                )
+                if response.status_code in [200, 201]:
+                    data = response.json()
+                    if data.get("response_code") == "00":
+                        txn_id = data.get("transaction_id") or data.get("token") or f"PD-DP-{payout_id}"
+                        logger.info(f"[PayDunya] Direct-Pay succeeded. Reference: {txn_id}")
+                        return {"success": True, "reference": str(txn_id), "raw": data}
+            except requests.RequestException as e:
+                logger.warning(f"[PayDunya] Direct-pay network exception: {e}")
+                if not cls.is_sandbox():
+                    raise PayDunyaAPIException("Échec de connexion au service Direct-Pay PayDunya.") from e
+
+        # 2. Mobile Money Disbursement (Wave, Orange Money)
+        else:
+            withdraw_mode_map = {
+                "wave": "wave-senegal",
+                "orange_money": "orange-money-senegal",
+                "orange": "orange-money-senegal",
+                "free_money": "free-money-senegal",
+            }
+            withdraw_mode = withdraw_mode_map.get(method, "wave-senegal")
+
+            # Step A: Get Invoice Token
+            get_invoice_url = f"{cls.get_base_url()}/disburse/get-invoice"
+            payload_step1 = {
+                "account_alias": account_identifier,
+                "amount": float(amount),
+                "withdraw_mode": withdraw_mode,
+            }
+
+            try:
+                resp1 = requests.post(
+                    get_invoice_url,
+                    json=payload_step1,
+                    headers=cls.get_headers(),
+                    timeout=25,
+                )
+                if resp1.status_code in [200, 201]:
+                    data1 = resp1.json()
+                    if data1.get("response_code") == "00":
+                        disburse_token = data1.get("disburse_token") or data1.get("token")
+                        # Step B: Submit Invoice
+                        submit_url = f"{cls.get_base_url()}/disburse/submit-invoice"
+                        resp2 = requests.post(
+                            submit_url,
+                            json={"disburse_token": disburse_token},
+                            headers=cls.get_headers(),
+                            timeout=25,
+                        )
+                        if resp2.status_code in [200, 201]:
+                            data2 = resp2.json()
+                            if data2.get("response_code") == "00":
+                                txn_id = (
+                                    data2.get("transaction_id")
+                                    or data2.get("token")
+                                    or disburse_token
+                                )
+                                logger.info(
+                                    f"[PayDunya] Disburse succeeded via {withdraw_mode}. Reference: {txn_id}"
+                                )
+                                return {
+                                    "success": True,
+                                    "reference": str(txn_id),
+                                    "raw": data2,
+                                }
+                            else:
+                                err_msg = data2.get("response_text") or "Rejet soumission décaissement"
+                                logger.warning(f"[PayDunya] Submit invoice error: {err_msg}")
+                                if not cls.is_sandbox():
+                                    raise PayDunyaAPIException(f"PayDunya: {err_msg}")
+                    else:
+                        err_msg = data1.get("response_text") or "Rejet création facture décaissement"
+                        logger.warning(f"[PayDunya] Get invoice error: {err_msg}")
+                        if not cls.is_sandbox():
+                            raise PayDunyaAPIException(f"PayDunya: {err_msg}")
+            except requests.RequestException as e:
+                logger.warning(f"[PayDunya] Disburse request network exception: {e}")
+                if not cls.is_sandbox():
+                    raise PayDunyaAPIException("Échec de connexion au service Disburse PayDunya.") from e
+
+        # 3. Sandbox / Test Simulation fallback
+        if cls.is_sandbox():
+            simulated_ref = f"SIM-PAYDUNYA-{method.upper()}-{payout_id or 'TX'}"
+            logger.info(
+                f"[PayDunya Sandbox] Disburse simulated successfully for testing. Ref: {simulated_ref}"
+            )
+            return {
+                "success": True,
+                "reference": simulated_ref,
+                "simulated": True,
+                "raw": {"status": "completed", "mode": "sandbox_simulated"},
+            }
+
+        raise PayDunyaAPIException("Impossible d'exécuter le transfert vers le bénéficiaire.")

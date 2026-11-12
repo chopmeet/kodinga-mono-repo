@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 import time
 import uuid
@@ -40,14 +41,18 @@ def send_group_event(
         try:
             channel_layer = get_channel_layer()
             if channel_layer:
-                async_to_sync(channel_layer.group_send)(
-                    group_name,
-                    {
-                        "type": "event_broadcast",
-                        "sender_channel": sender_channel,
-                        "payload": envelope,
-                    },
-                )
+                sender = channel_layer.group_send
+                payload = {
+                    "type": "event_broadcast",
+                    "sender_channel": sender_channel,
+                    "payload": envelope,
+                }
+                if inspect.iscoroutinefunction(sender):
+                    async_to_sync(sender)(group_name, payload)
+                else:
+                    res = sender(group_name, payload)
+                    if asyncio.iscoroutine(res):
+                        async_to_sync(lambda: res)()
         except Exception as e:
             logger.warning(
                 f"[REALTIME BROADCAST ERROR] Could not send {event_type} to group {group_name}: {e}"

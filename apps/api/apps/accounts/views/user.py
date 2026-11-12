@@ -218,7 +218,11 @@ class UserListView(APIView):
     @extend_schema(
         tags=['Authentication & Accounts'],
         summary='Lister tous les utilisateurs de la plateforme (Admin)',
-        description='Renvoie la liste paginée des utilisateurs avec possibilité de filtrer par recherche textuelle (email, nom, username). Nécessite des droits administrateur.',
+        description=(
+            'Renvoie la liste paginée des utilisateurs avec possibilité de filtrer par recherche textuelle (email, nom, username), '
+            'par statut (active, unverified, inactive), par rôle fonctionnel (creator, member, admin), et par date d\'inscription '
+            '(périodes: 7d, 30d, 90d ou dates date_from / date_to).'
+        ),
         responses={
             200: UserSerializer(many=True),
             401: OpenApiResponse(description='Authentification requise'),
@@ -226,12 +230,18 @@ class UserListView(APIView):
         }
     )
     def get(self, request):
-        from django.db.models import Q
+        from datetime import timedelta
+
+        from django.db.models import Count, Q
+        from django.utils import timezone as django_timezone
 
         from common.utils.pagination import StandardResultsSetPagination
 
-        queryset = User.objects.all().order_by('-date_joined')
+        queryset = User.objects.annotate(
+            communities_created_count=Count('owned_communities', distinct=True)
+        ).order_by('-date_joined')
         
+        # 1. Text search
         search_query = request.query_params.get('search') or request.query_params.get('q')
         if search_query:
             q = search_query.strip()
@@ -242,6 +252,7 @@ class UserListView(APIView):
                 Q(last_name__icontains=q)
             )
 
+        # 2. Status filter
         status_param = request.query_params.get('status')
         if status_param == 'active':
             queryset = queryset.filter(is_active=True, email_verified_at__isnull=False)
@@ -250,10 +261,169 @@ class UserListView(APIView):
         elif status_param == 'inactive':
             queryset = queryset.filter(is_active=False)
 
+        # 3. Role / Functional type filter: creator, member, admin
+        role_param = request.query_params.get('role') or request.query_params.get('account_type')
+        if role_param:
+            role_param = role_param.lower().strip()
+            if role_param in ['creator', 'creators', 'créateur', 'créateurs']:
+                queryset = queryset.filter(communities_created_count__gt=0)
+            elif role_param in ['member', 'members', 'membre', 'membres']:
+                queryset = queryset.filter(
+                    communities_created_count=0,
+                    is_superadmin=False,
+                    is_superuser=False,
+                )
+            elif role_param in ['admin', 'admins', 'superadmin', 'administrateur', 'administrateurs']:
+                queryset = queryset.filter(
+                    Q(is_superadmin=True) | Q(is_superuser=True)
+                )
+
+        # 4. Registration date filters (period presets: 7d, 30d, 90d or explicit date range)
+        now = django_timezone.now()
+        period_param = request.query_params.get('period')
+        if period_param:
+            period_param = period_param.lower().strip()
+            if period_param in ['7d', '7j', '7']:
+                queryset = queryset.filter(date_joined__gte=now - timedelta(days=7))
+            elif period_param in ['30d', '30j', '30']:
+                queryset = queryset.filter(date_joined__gte=now - timedelta(days=30))
+            elif period_param in ['90d', '90j', '90']:
+                queryset = queryset.filter(date_joined__gte=now - timedelta(days=90))
+
+        date_from = request.query_params.get('date_from') or request.query_params.get('created_from')
+        if date_from:
+            queryset = queryset.filter(date_joined__date__gte=date_from)
+
+        date_to = request.query_params.get('date_to') or request.query_params.get('created_to')
+        if date_to:
+            queryset = queryset.filter(date_joined__date__lte=date_to)
+
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = UserSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
+class AdminUsersKPIsView(APIView):
+    """
+    Returns global aggregate KPIs for the superadmin dashboard regarding platform users:
+    - creators_count: users who have created at least one community
+    - members_count: users who have created zero communities
+    - admins_count: superadmins
+    - new_users_7d, new_users_30d, new_users_90d
+    - total_users, unverified_users, active_users, suspended_users
+    """
+
+    permission_classes = [IsAuthenticated, IsPlatformAdmin]
+
+    @extend_schema(
+        tags=['Authentication & Accounts'],
+        summary='KPIs et indicateurs utilisateurs (Admin)',
+        description='Renvoie les statistiques globales des utilisateurs de la plateforme (créateurs, membres, administrateurs, nouvelles inscriptions sur 7j, 30j, 90j).',
+        responses={200: OpenApiResponse(description='Statistiques globales utilisateurs')},
+    )
+    def get(self, request):
+        from datetime import timedelta
+
+        from django.db.models import Count, Q
+        from django.utils import timezone as django_timezone
+
+        now = django_timezone.now()
+        total_users = User.objects.count()
+
+        # Users who have created at least 1 community
+        creators_count = (
+            User.objects.annotate(comm_count=Count('owned_communities', distinct=True))
+            .filter(comm_count__gt=0)
+            .count()
+        )
+
+        admins_count = User.objects.filter(
+            Q(is_superadmin=True) | Q(is_superuser=True)
+        ).count()
+
+        # Members who created 0 communities and are not admins
+        members_count = (
+            User.objects.annotate(comm_count=Count('owned_communities', distinct=True))
+            .filter(comm_count=0, is_superadmin=False, is_superuser=False)
+            .count()
+        )
+
+        active_users_count = User.objects.filter(
+            is_active=True, email_verified_at__isnull=False
+        ).count()
+
+        unverified_users_count = User.objects.filter(
+            is_active=True, email_verified_at__isnull=True
+        ).count()
+
+        suspended_users_count = User.objects.filter(is_active=False).count()
+
+        new_users_7d = User.objects.filter(date_joined__gte=now - timedelta(days=7)).count()
+        new_users_30d = User.objects.filter(date_joined__gte=now - timedelta(days=30)).count()
+        new_users_90d = User.objects.filter(date_joined__gte=now - timedelta(days=90)).count()
+
+        kpi_data = {
+            "total_users": total_users,
+            "creators_count": creators_count,
+            "members_count": members_count,
+            "admins_count": admins_count,
+            "active_users_count": active_users_count,
+            "unverified_users_count": unverified_users_count,
+            "suspended_users_count": suspended_users_count,
+            "new_users_7d": new_users_7d,
+            "new_users_30d": new_users_30d,
+            "new_users_90d": new_users_90d,
+        }
+
+        return success_response(data=kpi_data)
+
+
+class AdminVerifyUserEmailView(APIView):
+    """
+    Allows a superadmin to manually verify a user's email address without requiring the user
+    to click on an activation link.
+    """
+
+    permission_classes = [IsAuthenticated, IsPlatformAdmin]
+
+    @extend_schema(
+        tags=['Authentication & Accounts'],
+        summary='Valider manuellement l\'email d\'un utilisateur (Admin)',
+        description='Marque immédiatement l\'adresse email de l\'utilisateur ciblé comme vérifiée.',
+        responses={
+            200: UserSerializer,
+            404: OpenApiResponse(description='Utilisateur introuvable'),
+        }
+    )
+    def post(self, request, user_id):
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return error_response(
+                message="Utilisateur introuvable.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        target_user.mark_email_verified()
+
+        # Audit log if available
+        try:
+            from apps.administration.services.admin_service import AdministrationService
+            AdministrationService.log_action(
+                actor=request.user,
+                action="user.verify_email",
+                target_model="User",
+                target_id=str(target_user.id),
+                details=f"Email {target_user.email} vérifié manuellement par le superadmin {request.user.username}.",
+            )
+        except Exception:
+            pass
+
+        return success_response(
+            data=UserSerializer(target_user).data,
+            message=f"L'adresse email de {target_user.get_full_name()} ({target_user.email}) a été marquée comme vérifiée avec succès."
+        )
 
 
 class UserDetailAdminView(APIView):

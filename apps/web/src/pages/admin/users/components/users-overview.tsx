@@ -1,25 +1,57 @@
 import { Crown, MailWarning, UserCheck, UserPlus, Users, UserX } from 'lucide-react';
 
 import { type CardType, OverviewCardItem } from '@kodinga/ui';
-import { useGetUsersQuery } from '@/utils/api/user/user.api';
-import type { UsersQuery } from '@/utils/api/user/user.type';
+import { useGetUsersKPIsQuery } from '@/utils/api/user/user.api';
 import { formatCompact } from '@/utils/Utils';
 
-/** Only the total of each status is needed: one user per page */
-function useCount(status?: UsersQuery['status']) {
-  const { data } = useGetUsersQuery({ status, page_size: 1 });
-  return data ? formatCompact(data.pagination.count) : '…';
-}
-
 function UsersOverview() {
+  const { data: kpis, isLoading } = useGetUsersKPIsQuery();
+
   const cards: CardType[] = [
-    { id: 'total', label: 'Utilisateurs', value: useCount(), icon: <Users size={18} />, color: '#1D4ED8' },
-    // Not plugged yet: the api has no filter on the join date, nor on community owners
-    { id: 'new', label: 'Nouveaux (30 j)', value: '—', icon: <UserPlus size={18} />, color: '#0f766e' },
-    { id: 'creators', label: 'Créateurs de communauté', value: '—', icon: <Crown size={18} />, color: '#b45309' },
-    { id: 'active', label: 'Comptes actifs et vérifiés', value: useCount('active'), icon: <UserCheck size={18} />, color: '#15803d' },
-    { id: 'unverified', label: 'Emails non vérifiés', value: useCount('unverified'), icon: <MailWarning size={18} />, color: '#c2410c' },
-    { id: 'suspended', label: 'Comptes suspendus', value: useCount('inactive'), icon: <UserX size={18} />, color: '#b91c1c' },
+    {
+      id: 'total',
+      label: 'Utilisateurs',
+      value: kpis ? formatCompact(kpis.total_users) : isLoading ? '…' : '0',
+      icon: <Users size={18} />,
+      color: '#1D4ED8',
+    },
+    {
+      id: 'creators',
+      label: 'Créateurs de communauté',
+      value: kpis ? formatCompact(kpis.creators_count) : isLoading ? '…' : '0',
+      secondaryValue: kpis ? `${kpis.members_count} membre(s)` : undefined,
+      icon: <Crown size={18} />,
+      color: '#b45309',
+    },
+    {
+      id: 'new',
+      label: 'Nouveaux (30 j)',
+      value: kpis ? formatCompact(kpis.new_users_30d) : isLoading ? '…' : '0',
+      secondaryValue: kpis ? `+${kpis.new_users_7d} sur 7 j` : undefined,
+      icon: <UserPlus size={18} />,
+      color: '#0f766e',
+    },
+    {
+      id: 'active',
+      label: 'Comptes actifs et vérifiés',
+      value: kpis ? formatCompact(kpis.active_users_count) : isLoading ? '…' : '0',
+      icon: <UserCheck size={18} />,
+      color: '#15803d',
+    },
+    {
+      id: 'unverified',
+      label: 'Emails non vérifiés',
+      value: kpis ? formatCompact(kpis.unverified_users_count) : isLoading ? '…' : '0',
+      icon: <MailWarning size={18} />,
+      color: '#c2410c',
+    },
+    {
+      id: 'suspended',
+      label: 'Comptes suspendus',
+      value: kpis ? formatCompact(kpis.suspended_users_count) : isLoading ? '…' : '0',
+      icon: <UserX size={18} />,
+      color: '#b91c1c',
+    },
   ];
 
   return (

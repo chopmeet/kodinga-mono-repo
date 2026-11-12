@@ -103,26 +103,89 @@ class CommunityRevenueOverviewSerializer(serializers.Serializer):
 
 
 class CommunityPayoutSerializer(BaseModelSerializer):
+    community_id = serializers.UUIDField(source="community.id", read_only=True)
+    community_name = serializers.CharField(source="community.name", read_only=True)
+    community_slug = serializers.CharField(source="community.slug", read_only=True)
+    requested_by_username = serializers.CharField(
+        source="requested_by.username", read_only=True
+    )
+    requested_by_email = serializers.CharField(
+        source="requested_by.email", read_only=True
+    )
+    processed_by_username = serializers.CharField(
+        source="processed_by.username", read_only=True, default=None
+    )
+
     class Meta:
         model = CommunityPayout
         fields = [
-            'id',
-            'amount',
-            'currency',
-            'status',
-            'payment_method',
-            'account_identifier',
-            'account_name',
-            'reference',
-            'processed_at',
-            'rejection_reason',
-            'created_at',
+            "id",
+            "community_id",
+            "community_name",
+            "community_slug",
+            "requested_by_username",
+            "requested_by_email",
+            "amount",
+            "fee_amount",
+            "net_amount",
+            "currency",
+            "status",
+            "payment_method",
+            "account_identifier",
+            "account_name",
+            "reference",
+            "processed_at",
+            "processed_by_username",
+            "rejection_reason",
+            "admin_note",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ['id', 'status', 'reference', 'processed_at', 'rejection_reason', 'created_at']
+        read_only_fields = [
+            "id",
+            "community_id",
+            "community_name",
+            "community_slug",
+            "requested_by_username",
+            "requested_by_email",
+            "fee_amount",
+            "net_amount",
+            "status",
+            "reference",
+            "processed_at",
+            "processed_by_username",
+            "rejection_reason",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class CreateCommunityPayoutRequestSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('1000.00'))
-    payment_method = serializers.ChoiceField(choices=['wave', 'orange_money', 'bank_transfer'], default='wave')
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("1000.00")
+    )
+    payment_method = serializers.ChoiceField(
+        choices=["wave", "orange_money", "paydunya", "bank_transfer"], default="wave"
+    )
     account_identifier = serializers.CharField(max_length=100)
-    account_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
+    account_name = serializers.CharField(
+        max_length=150, required=False, allow_blank=True, default=""
+    )
+
+
+class AdminRejectPayoutSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        max_length=1000,
+        required=True,
+        allow_blank=False,
+        help_text="Motif obligatoire justifiant le rejet de la demande de reversement",
+    )
+    admin_note = serializers.CharField(
+        max_length=1000, required=False, allow_blank=True, default=""
+    )
+
+
+class AdminDisbursePayoutSerializer(serializers.Serializer):
+    admin_note = serializers.CharField(
+        max_length=1000, required=False, allow_blank=True, default=""
+    )

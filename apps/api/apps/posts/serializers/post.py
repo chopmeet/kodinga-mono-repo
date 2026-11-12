@@ -26,6 +26,8 @@ class PostListSerializer(BaseModelSerializer):
     user_reactions = serializers.SerializerMethodField()
     reactions_summary = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField()
+    is_media_processing = serializers.SerializerMethodField()
+    media_processing_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -46,6 +48,8 @@ class PostListSerializer(BaseModelSerializer):
             "is_pinned",
             "is_locked",
             "is_resolved",
+            "is_media_processing",
+            "media_processing_status",
             "views_count",
             "reactions_count",
             "reactions_summary",
@@ -130,6 +134,35 @@ class PostListSerializer(BaseModelSerializer):
         if bookmarked_ids is not None:
             return obj.id in bookmarked_ids
         return obj.bookmarks.filter(user=request.user).exists()
+
+    def get_is_media_processing(self, obj: Post) -> bool:
+        """
+        True if any attached video or image is still uploading or transcoding.
+        Allows the frontend to show a synchronized 100% processing loader before revealing all media simultaneously.
+        """
+        media_list = self.get_media(obj)
+        if not media_list:
+            return False
+        return any(
+            m.get("status") in ("PENDING_UPLOAD", "UPLOADING", "PROCESSING")
+            for m in media_list
+        )
+
+    def get_media_processing_status(self, obj: Post) -> str:
+        """
+        Returns 'READY', 'PROCESSING', 'UPLOADING', 'FAILED', or 'NONE'
+        """
+        media_list = self.get_media(obj)
+        if not media_list:
+            return "NONE"
+        statuses = [m.get("status") for m in media_list]
+        if any(s in ("PENDING_UPLOAD", "UPLOADING") for s in statuses):
+            return "UPLOADING"
+        if any(s == "PROCESSING" for s in statuses):
+            return "PROCESSING"
+        if any(s == "FAILED" for s in statuses):
+            return "FAILED"
+        return "READY"
 
 
 class PostDetailSerializer(PostListSerializer):

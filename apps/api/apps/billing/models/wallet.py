@@ -12,6 +12,7 @@ class PayoutStatus(models.TextChoices):
     APPROVED = 'approved', 'Approuvé'
     PROCESSED = 'processed', 'Effectué'
     REJECTED = 'rejected', 'Refusé'
+    FAILED = 'failed', 'Échoué'
 
 
 class CommunityWallet(BaseModel):
@@ -90,7 +91,19 @@ class CommunityPayout(BaseModel):
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        help_text="Montant demandé au reversement"
+        help_text="Montant brut demandé au reversement"
+    )
+    fee_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Frais de plateforme Kodinga (2%) sur le reversement"
+    )
+    net_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Montant net à décaisser vers le créateur"
     )
     currency = models.CharField(max_length=10, default='XOF')
     status = models.CharField(
@@ -100,13 +113,22 @@ class CommunityPayout(BaseModel):
         db_index=True
     )
 
-    payment_method = models.CharField(max_length=50, default='wave', help_text="wave, orange_money, bank_transfer")
+    payment_method = models.CharField(max_length=50, default='wave', help_text="wave, orange_money, bank_transfer, paydunya")
     account_identifier = models.CharField(max_length=100, help_text="Numéro de mobile money ou IBAN/RIB")
     account_name = models.CharField(max_length=150, blank=True, help_text="Nom du titulaire du compte")
 
     reference = models.CharField(max_length=255, blank=True, help_text="Référence externe de la transaction")
     processed_at = models.DateTimeField(null=True, blank=True)
+    processed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='processed_payouts',
+        help_text="Administrateur ayant traité ou validé le virement"
+    )
     rejection_reason = models.TextField(blank=True)
+    admin_note = models.TextField(blank=True, help_text="Note administrative interne")
 
     class Meta:
         db_table = 'billing_community_payouts'

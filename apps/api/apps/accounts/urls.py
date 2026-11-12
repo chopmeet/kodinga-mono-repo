@@ -15,6 +15,8 @@ from apps.accounts.views.auth import (
 from apps.accounts.views.oauth import OAuthCallbackView, OAuthStartView
 from apps.accounts.views.session import UserSessionDetailView, UserSessionListView
 from apps.accounts.views.user import (
+    AdminUsersKPIsView,
+    AdminVerifyUserEmailView,
     UserConsentView,
     UserDetailAdminView,
     UserListView,
@@ -56,6 +58,7 @@ urlpatterns = [
     
     # Users & Profiles
     path('users/', UserListView.as_view(), name='user_list'),
+    path('users/kpis/', AdminUsersKPIsView.as_view(), name='admin_users_kpis'),
     path('users/me/', UserProfileMeView.as_view(), name='user_me'),
     path('users/me/workspace/', UserWorkspaceAccessView.as_view(), name='user_me_workspace'),
     path('users/me/consents/', UserConsentView.as_view(), name='user_consents'),
@@ -65,4 +68,5 @@ urlpatterns = [
     path('users/me/opportunities/', MemberOpportunitiesView.as_view(), name='user_me_opportunities'),
     path('users/me/courses/', MemberCoursesView.as_view(), name='user_me_courses'),
     path('users/<uuid:user_id>/', UserDetailAdminView.as_view(), name='user_detail_admin'),
+    path('users/<uuid:user_id>/verify-email/', AdminVerifyUserEmailView.as_view(), name='admin_verify_user_email'),
 ]

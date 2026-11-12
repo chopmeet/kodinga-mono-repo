@@ -151,16 +151,38 @@ export function stubUsersAdmin(initial: User[]) {
       );
       return json({ success: true, data: users.find((u) => u.id === id) });
     }
+    if (url.pathname.endsWith('/users/kpis/') || url.pathname.endsWith('/admin/users/kpis/')) {
+      const active = users.filter((u) => u.is_active && u.is_email_verified).length;
+      const unverified = users.filter((u) => u.is_active && !u.is_email_verified).length;
+      const suspended = users.filter((u) => !u.is_active).length;
+      return json({
+        success: true,
+        data: {
+          total_users: users.length,
+          creators_count: 0,
+          members_count: users.length,
+          admins_count: users.filter((u) => u.is_superadmin).length,
+          active_users_count: active,
+          unverified_users_count: unverified,
+          suspended_users_count: suspended,
+          new_users_7d: 0,
+          new_users_30d: 0,
+          new_users_90d: 0,
+        },
+      });
+    }
     if (url.pathname.endsWith('/users/')) {
       const p = url.searchParams;
       const q = (p.get('search') ?? '').toLowerCase();
       const status = p.get('status');
+      const role = p.get('role');
       const found = users.filter(
         (u) =>
           (!q || `${u.email} ${u.username} ${u.first_name} ${u.last_name}`.toLowerCase().includes(q)) &&
           (status !== 'active' || (u.is_active && u.is_email_verified)) &&
           (status !== 'unverified' || (u.is_active && !u.is_email_verified)) &&
-          (status !== 'inactive' || !u.is_active)
+          (status !== 'inactive' || !u.is_active) &&
+          (!role || (role === 'admin' ? u.is_superadmin : true))
       );
       const page = Number(p.get('page') ?? 1);
       const size = Number(p.get('page_size') ?? 20);

@@ -78,6 +78,13 @@ const adminSpace: SidebarSpace = {
       ],
     },
     {
+      id: 'finances',
+      title: 'Finances',
+      items: [
+        { id: 'admin-payouts', label: 'Reversements', path: '/admin/payouts', icon: <LuWallet /> },
+      ],
+    },
+    {
       id: 'steering',
       title: 'Pilotage',
       items: [{ id: 'admin-settings', label: 'Paramètres', path: '/admin/settings', icon: <FiSettings /> }],

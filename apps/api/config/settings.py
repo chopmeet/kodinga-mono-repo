@@ -29,6 +29,7 @@ IS_TESTING = (
     "pytest" in sys.modules
     or "test" in sys.argv
     or any("pytest" in arg for arg in sys.argv)
+    or env.bool("IS_TESTING", default=False)
 )
 
 # Load .env file if present (skip during unit tests for strict CI parity)
@@ -50,7 +51,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 INSTALLED_APPS = [
-    "daphne",
+    *(["daphne"] if not IS_TESTING else []),
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,6 +132,7 @@ IS_TESTING = (
     "pytest" in sys.modules
     or "test" in sys.argv
     or any("pytest" in arg for arg in sys.argv)
+    or env.bool("IS_TESTING", default=False)
 )
 
 # Database configuration (Neon PostgreSQL or local SQLite fallback)
