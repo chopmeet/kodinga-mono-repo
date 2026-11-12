@@ -22,7 +22,7 @@ export const layout = {
     login: 'Se connecter',
     register: 'Créer un compte',
     forgotPassword: 'Mot de passe oublié',
-    madeIn: 'Fait en Afrique, pour les développeurs d’Afrique',
+    madeIn: 'Par les développeurs, pour les développeurs',
     language: 'Langue',
   },
   notifications: {

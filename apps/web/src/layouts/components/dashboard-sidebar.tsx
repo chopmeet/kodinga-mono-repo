@@ -225,8 +225,8 @@ export function DashboardSidebar() {
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       asChild
-                      // Active link in the brand color (overrides the neutral sidebar-accent of the lib), also on hover
-                      className="py-5 text-soft hover:text-foreground data-[active=true]:bg-brand-subtle data-[active=true]:font-semibold data-[active=true]:text-brand-strong data-[active=true]:shadow-[inset_3px_0_0_var(--color-blue-900)] data-[active=true]:hover:bg-brand-subtle data-[active=true]:hover:text-brand-strong"
+                      // Active link: light tint and bar (tokens of the blue sidebar, index.css), also on hover
+                      className="py-5 text-soft hover:text-foreground data-[active=true]:bg-brand-subtle data-[active=true]:font-semibold data-[active=true]:text-brand-strong data-[active=true]:shadow-[inset_3px_0_0_var(--brand-strong)] data-[active=true]:hover:bg-brand-subtle data-[active=true]:hover:text-brand-strong"
                       isActive={pathname.startsWith(item.path)}
                       tooltip={item.label}
                     >

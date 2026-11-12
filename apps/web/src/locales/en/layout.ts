@@ -23,7 +23,7 @@ export const layout: Translations['layout'] = {
     login: 'Log in',
     register: 'Create an account',
     forgotPassword: 'Forgot password',
-    madeIn: 'Made in Africa, for Africa’s developers',
+    madeIn: 'By developers, for developers',
     language: 'Language',
   },
   notifications: {
