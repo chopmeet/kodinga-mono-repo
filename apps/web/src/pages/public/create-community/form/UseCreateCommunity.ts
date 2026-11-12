@@ -210,7 +210,7 @@ function UseCreateCommunity() {
       ...(!token && !proPath ? (['account'] as StepId[]) : []),
     ];
     return ids.map(stepOf);
-  }, [pro.isPro, token, proPath]);
+  }, [token, proPath]);
   const index = Math.max(0, steps.findIndex((s) => s.id === stepId));
   const step = steps[index];
   const isLast = index === steps.length - 1;

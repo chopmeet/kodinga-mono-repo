@@ -18,7 +18,7 @@ import { onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { languages } from '@/utils/i18n';
 import { useUnreadMessages } from '@/pages/public/messages/form/UseMessages';
 import { scrollToResults } from '@/utils/Utils';
-import { AppThemeToggle } from './app-theme-toggle';
+
 
 function LanguageSwitcher() {
   const { t, i18n } = useTranslation();

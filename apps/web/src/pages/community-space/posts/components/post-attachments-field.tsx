@@ -3,7 +3,7 @@ import { type ReactNode, useRef } from 'react';
 
 import { Button, cn } from '@kodinga/ui';
 import { formatFileSize } from '@/utils/format';
-import { ATTACHMENT_RULES, type Attachment, type AttachmentKind, type PostAttachments } from '../form/UsePostAttachments';
+import { ATTACHMENT_RULES, type Attachment, type PostAttachments } from '../form/UsePostAttachments';
 
 function RemoveButton({ item, onRemove, className }: { item: Attachment; onRemove: () => void; className?: string }) {
   return (
