@@ -14,7 +14,11 @@ from apps.billing.services.payout_service import (
     PAYOUT_FEE_RATE,
     PayoutService,
 )
-from apps.communities.models.community import Community, CommunityCategory
+from apps.communities.models.community import (
+    Community,
+    CommunityCategory,
+    CommunityPricing,
+)
 
 
 @pytest.fixture
@@ -58,9 +62,9 @@ def community(db, creator_user, test_category):
     return Community.objects.create(
         name="Kodinga Founders Club",
         slug="kodinga-founders",
-        creator=creator_user,
+        owner=creator_user,
         category=test_category,
-        is_paid=True,
+        pricing_type=CommunityPricing.PAID,
     )
 
 

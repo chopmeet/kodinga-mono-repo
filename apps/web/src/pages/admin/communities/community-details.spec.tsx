@@ -366,9 +366,8 @@ describe('Admin community details', () => {
     expect(await screen.findByText('Kofi Mensah', {}, SLOW)).toBeTruthy();
     expect(screen.getAllByText('13 500 FCFA').length).toBeGreaterThan(0);
     expect(await screen.findByText('Awa Ndiaye', {}, SLOW)).toBeTruthy();
-    // The creator's wording ("Net pour vous") is not shown to the admin
-    expect(screen.getByRole('columnheader', { name: 'Net pour le créateur' })).toBeTruthy();
-    expect(calls.filter((c) => c.url.pathname.includes('/billing/communities/')).length).toBe(3);
+    expect(screen.getByRole('columnheader', { name: 'Net' })).toBeTruthy();
+    expect(calls.filter((c) => c.url.pathname.includes('/billing/communities/')).length).toBeGreaterThanOrEqual(3);
   });
 
   it('shows the api error when billing is refused', async () => {

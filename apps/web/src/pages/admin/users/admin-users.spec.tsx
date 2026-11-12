@@ -81,13 +81,17 @@ describe('AdminUsers', () => {
     expect(within(sheet).getByText(target.timezone)).toBeTruthy();
   });
 
-  it('keeps the role filters disabled: the api does not filter on roles', async () => {
-    stubUsersApi();
+  it('allows filtering users by role: creator, member, admin', async () => {
+    const calls = stubUsersApi();
     renderPage();
     await screen.findByText(users[0].email, {}, SLOW);
     const roles = screen.getByRole('group', { name: 'Filtrer par rôle' });
-    expect((within(roles).getByRole('button', { name: 'Créateurs' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((within(roles).getByRole('button', { name: 'Membres' }) as HTMLButtonElement).disabled).toBe(true);
+    const creatorBtn = within(roles).getByRole('button', { name: 'Créateurs' }) as HTMLButtonElement;
+    expect(creatorBtn.disabled).toBe(false);
+    fireEvent.click(creatorBtn);
+    await waitFor(() => {
+      expect(calls.some((c) => c.url.searchParams.get('role') === 'creator')).toBe(true);
+    }, SLOW);
   });
 
   it('appoints a super admin from the actions menu', async () => {
