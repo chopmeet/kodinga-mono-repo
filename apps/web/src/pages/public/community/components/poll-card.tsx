@@ -42,10 +42,10 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
   };
 
   return (
-    <section aria-label={t('community.poll.label', { question: poll.question })} className="mt-5 rounded-xl border border-slate-200 p-4">
+    <section aria-label={t('community.poll.label', { question: poll.question })} className="mt-5 rounded-xl border border-border p-4">
       {voting ? (
         <fieldset>
-          <legend className="mb-3 text-sm text-slate-600">{poll.is_multiple_choice ? t('community.poll.multiple') : t('community.poll.single')}</legend>
+          <legend className="mb-3 text-sm text-soft">{poll.is_multiple_choice ? t('community.poll.multiple') : t('community.poll.single')}</legend>
           <div className="space-y-2">
             {options.map((o) => {
               const selected = chosen.includes(o.id);
@@ -54,7 +54,7 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
                   key={o.id}
                   className={cn(
                     'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors',
-                    selected ? 'border-blue-900 bg-blue-50 text-blue-950' : 'border-slate-200 text-slate-800 hover:border-slate-300',
+                    selected ? 'border-blue-900 bg-brand-subtle text-brand-strong' : 'border-border text-foreground hover:border-border-strong',
                   )}
                 >
                   <input
@@ -87,13 +87,13 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
             return (
               <li key={o.id}>
                 <div className="flex justify-between gap-3 text-sm">
-                  <span className={cn('flex items-center gap-1.5', mine ? 'font-semibold text-blue-900' : 'text-slate-800')}>
+                  <span className={cn('flex items-center gap-1.5', mine ? 'font-semibold text-brand-strong' : 'text-foreground')}>
                     {mine && <Check className="size-4" aria-label={t('community.poll.yourChoice')} />}
                     {o.text}
                   </span>
-                  <span className="font-semibold text-slate-900 tabular-nums">{Math.round(o.percentage)} %</span>
+                  <span className="font-semibold text-foreground tabular-nums">{Math.round(o.percentage)} %</span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100" aria-hidden>
+                <div className="mt-1 h-2 rounded-full bg-muted" aria-hidden>
                   <div className={cn('h-full rounded-full', mine ? 'bg-blue-900' : 'bg-blue-300')} style={{ width: `${o.percentage}%` }} />
                 </div>
               </li>
@@ -102,7 +102,7 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
         </ul>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span>
           {t('community.poll.votes', { count: poll.total_votes })}
         </span>
@@ -118,7 +118,7 @@ export function PollCard({ postId, poll: cached, canVote }: { postId: string; po
         )}
         {!canVote && !poll.is_expired && <span>{t('community.poll.membersOnly')}</span>}
         {open && voted && !changing && (
-          <button type="button" onClick={() => setChanging(true)} className="ml-auto font-semibold text-blue-900 hover:underline">
+          <button type="button" onClick={() => setChanging(true)} className="ml-auto font-semibold text-brand-strong hover:underline">
             {t('community.poll.change')}
           </button>
         )}

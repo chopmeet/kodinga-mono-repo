@@ -50,7 +50,7 @@ function CommunityCourses() {
         )}
       </div>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <div className="flex gap-2" role="group" aria-label="Filtrer les formations">
           {FILTERS.map((f) => (
             <FilterChip
@@ -68,7 +68,7 @@ function CommunityCourses() {
 
         <div className="mt-4" aria-busy={isFetching}>
           {isLoading ? (
-            <p className="py-10 text-center text-sm text-slate-500">Chargement des formations…</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">Chargement des formations…</p>
           ) : error && !data ? (
             <div className="flex flex-col items-start gap-3">
               <EmptyAlert text={parseApiError(error).message} />
@@ -79,11 +79,11 @@ function CommunityCourses() {
             </div>
           ) : courses.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
+              <span className="flex size-12 items-center justify-center rounded-xl bg-brand-subtle text-primary" aria-hidden>
                 <GraduationCap className="size-6" />
               </span>
-              <p className="mt-4 font-semibold text-slate-900">Aucune formation {filter === 'all' ? 'pour le moment' : 'ici'}</p>
-              <p className="mt-1 text-sm text-slate-500">Structurez votre savoir en modules et leçons.</p>
+              <p className="mt-4 font-semibold text-foreground">Aucune formation {filter === 'all' ? 'pour le moment' : 'ici'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Structurez votre savoir en modules et leçons.</p>
               {canManage && (
                 <Button className="mt-5" onClick={() => setEditing('new')}>
                   <Plus />
@@ -95,11 +95,11 @@ function CommunityCourses() {
             <>
               <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Formations">
                 {courses.map((course) => (
-                  <li key={course.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <li key={course.id} className="overflow-hidden rounded-xl border border-border bg-card">
                     <div className="relative h-32">
                       {course.thumbnail_url ? <img src={course.thumbnail_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
                       <div className="relative flex justify-end p-2">
-                        <span className="rounded-lg bg-white/90">
+                        <span className="rounded-lg bg-card/90">
                           <RowActions label={`Actions pour ${course.title}`} actions={actionsFor(course)} />
                         </span>
                       </div>
@@ -108,18 +108,18 @@ function CommunityCourses() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
                           variant="outline"
-                          className={course.is_published ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-600'}
+                          className={course.is_published ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-border bg-subtle text-soft'}
                         >
                           {course.is_published ? 'Publiée' : 'Brouillon'}
                         </Badge>
-                        <Badge variant="outline" className="text-slate-600">
+                        <Badge variant="outline" className="text-soft">
                           {courseLevelLabel[course.level]}
                         </Badge>
                       </div>
-                      <Link to={`/c/${community.slug}/courses/${course.slug}`} className="mt-2 block font-semibold text-slate-900 hover:text-primary">
+                      <Link to={`/c/${community.slug}/courses/${course.slug}`} className="mt-2 block font-semibold text-foreground hover:text-primary">
                         {course.title}
                       </Link>
-                      <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+                      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                         <BookOpen className="size-3.5" aria-hidden />
                         {course.modules_count} module{course.modules_count > 1 ? 's' : ''} · {course.lessons_count} leçon{course.lessons_count > 1 ? 's' : ''}
                         {course.duration_seconds ? ` · ${formatDuration(course.duration_seconds)}` : ''}

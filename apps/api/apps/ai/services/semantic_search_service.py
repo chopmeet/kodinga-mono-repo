@@ -101,15 +101,20 @@ class SemanticSearchService:
             sim = compute_cosine_similarity(query_vec, cand.embedding)
             if sim >= threshold:
                 meta = cand.metadata if isinstance(cand.metadata, dict) else {}
-                url = meta.get("url") or f"/communities/{community.slug}/posts/{cand.object_id}"
-                matches.append({
-                    "id": cand.object_id,
-                    "title": cand.title,
-                    "similarity_score": round(sim, 3),
-                    "url": url,
-                    "snippet": meta.get("snippet", ""),
-                    "is_solved": bool(meta.get("is_solved", False)),
-                })
+                url = (
+                    meta.get("url")
+                    or f"/communities/{community.slug}/posts/{cand.object_id}"
+                )
+                matches.append(
+                    {
+                        "id": cand.object_id,
+                        "title": cand.title,
+                        "similarity_score": round(sim, 3),
+                        "url": url,
+                        "snippet": meta.get("snippet", ""),
+                        "is_solved": bool(meta.get("is_solved", False)),
+                    }
+                )
 
         matches.sort(key=lambda x: x["similarity_score"], reverse=True)
         top_matches = matches[:limit]
@@ -145,9 +150,12 @@ class SemanticSearchService:
 
         # A4: Identify unpublished courses to exclude their lesson embeddings from search results
         from apps.classroom.models.course import Course
+
         unpublished_course_ids = set(
             str(cid)
-            for cid in Course.objects.filter(community=community, is_published=False).values_list("id", flat=True)
+            for cid in Course.objects.filter(
+                community=community, is_published=False
+            ).values_list("id", flat=True)
         )
 
         results = []
@@ -155,7 +163,10 @@ class SemanticSearchService:
             meta = item.metadata if isinstance(item.metadata, dict) else {}
 
             # Filter out lessons belonging to unpublished courses
-            if item.content_type == "lesson" and meta.get("course_id") in unpublished_course_ids:
+            if (
+                item.content_type == "lesson"
+                and meta.get("course_id") in unpublished_course_ids
+            ):
                 continue
 
             sim = compute_cosine_similarity(query_vec, item.embedding)
@@ -165,15 +176,16 @@ class SemanticSearchService:
                     if item.content_type == "post"
                     else f"/communities/{community.slug}/courses"
                 )
-                results.append({
-                    "id": item.object_id,
-                    "content_type": item.content_type,
-                    "title": item.title,
-                    "similarity_score": round(sim, 3),
-                    "url": meta.get("url") or default_url,
-                    "snippet": meta.get("snippet", ""),
-                })
+                results.append(
+                    {
+                        "id": item.object_id,
+                        "content_type": item.content_type,
+                        "title": item.title,
+                        "similarity_score": round(sim, 3),
+                        "url": meta.get("url") or default_url,
+                        "snippet": meta.get("snippet", ""),
+                    }
+                )
 
         results.sort(key=lambda x: x["similarity_score"], reverse=True)
         return results[:limit]
-

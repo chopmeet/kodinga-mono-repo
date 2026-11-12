@@ -20,13 +20,21 @@ class BaseCommunitySearchView(APIView):
     def check_community_access(self, request, community: Community):
         is_owner = community.owner_id == request.user.id
         is_super = is_superadmin_user(request.user)
-        is_member = is_owner or is_super or CommunityMember.objects.filter(
-            community=community,
-            user=request.user,
-            status=MembershipStatus.ACTIVE,
-        ).exists()
+        is_member = (
+            is_owner
+            or is_super
+            or CommunityMember.objects.filter(
+                community=community,
+                user=request.user,
+                status=MembershipStatus.ACTIVE,
+            ).exists()
+        )
 
-        if community.privacy_type in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET] and not is_member:
+        if (
+            community.privacy_type
+            in [CommunityPrivacy.PRIVATE, CommunityPrivacy.SECRET]
+            and not is_member
+        ):
             raise PermissionDenied(
                 "Cette communauté est privée. Vous devez être membre actif pour effectuer cette recherche."
             )

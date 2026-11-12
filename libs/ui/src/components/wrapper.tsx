@@ -9,7 +9,7 @@ function ColgateWrapper({
   return (
     <div
       className={cn(
-        "wrapper p-3 bg-white rounded-xl dark:bg-neutral-900",
+        "wrapper p-3 bg-card rounded-xl",
         className
       )}
       {...props}

@@ -5,7 +5,7 @@ import { cn, Input, InputPassword, SelectInput } from '@kodinga/ui';
 import { PasswordCheck } from '@/pages/auth/components/password-check';
 import type { CommunityCategory } from '@/utils/api/community/community.type';
 import { useGetProPlansQuery } from '@/utils/api/community/community.api';
-import { intervalLabel, xof } from '@/utils/Utils';
+import { intervalLabel, planPrice, xof } from '@/utils/Utils';
 import { BRAND_COLORS, type CreateCommunityFlow, MIN_MEMBERSHIP_PRICE } from '../form/UseCreateCommunity';
 import { ImageField } from './image-field';
 import { OptionCard } from './option-card';
@@ -26,26 +26,26 @@ export function NameStep({ flow }: { flow: CreateCommunityFlow }) {
         required
         maxLength={150}
         customClassInput="py-3"
-        customClassLabel="normal-case! tracking-normal! text-[15px]! font-semibold! text-slate-900!"
+        customClassLabel="normal-case! tracking-normal! text-[15px]! font-semibold! text-foreground!"
         error={formState.errors.name?.message}
         {...register('name')}
       />
       <div className="mt-2">
-        <p className="mb-2 block text-[15px] font-semibold text-slate-900" id="community-address-label">
+        <p className="mb-2 block text-[15px] font-semibold text-foreground" id="community-address-label">
           {t('create.name.address')}
         </p>
-        <div className="rounded-lg border border-slate-200 bg-slate-100/80 px-4 py-3.5" aria-labelledby="community-address-label">
+        <div className="rounded-lg border border-border bg-muted/80 px-4 py-3.5" aria-labelledby="community-address-label">
           {flow.slugEdited ? (
             <div className="flex items-center gap-1">
-              <label htmlFor="community-slug" className="shrink-0 text-slate-600">
+              <label htmlFor="community-slug" className="shrink-0 text-soft">
                 kodinga.com/communities/
               </label>
-              <input id="community-slug" className="custom-form-control min-w-0 flex-1 bg-white px-2 py-1" {...register('slug')} />
+              <input id="community-slug" className="custom-form-control min-w-0 flex-1 bg-card px-2 py-1" {...register('slug')} />
             </div>
           ) : (
-            <p className="flex flex-wrap items-center gap-x-4 text-slate-600">
+            <p className="flex flex-wrap items-center gap-x-4 text-soft">
               <span className="break-all">kodinga.com/communities/{flow.slug || '…'}</span>
-              <button type="button" onClick={flow.editSlug} className="text-sm font-semibold text-blue-800 hover:underline">
+              <button type="button" onClick={flow.editSlug} className="text-sm font-semibold text-brand-strong hover:underline">
                 {t('create.name.edit')}
               </button>
             </p>
@@ -66,9 +66,9 @@ export function TopicStep({ flow, categories, isLoading }: { flow: CreateCommuni
       <fieldset>
         <legend className="custom-form-label mb-2 block">{t('create.topic.category')}</legend>
         {isLoading ? (
-          <p className="text-sm text-slate-500">{t('create.topic.loading')}</p>
+          <p className="text-sm text-muted-foreground">{t('create.topic.loading')}</p>
         ) : categories.length === 0 ? (
-          <p className="text-sm text-slate-500">{t('create.topic.none')}</p>
+          <p className="text-sm text-muted-foreground">{t('create.topic.none')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => {
@@ -81,7 +81,7 @@ export function TopicStep({ flow, categories, isLoading }: { flow: CreateCommuni
                   onClick={() => setValue('category_id', active ? '' : c.id, { shouldDirty: true })}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors',
-                    active ? 'border-brand bg-brand text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    active ? 'border-brand bg-brand text-white' : 'border-border bg-card text-body hover:border-border-strong'
                   )}
                 >
                   {active && <Check className="size-3.5" />}
@@ -113,7 +113,7 @@ function useProPrice() {
   const { data } = useGetProPlansQuery();
   // Not a list (api error page, older api): no price shown, the page still works
   const monthly = (Array.isArray(data) ? data : []).find((p) => p.billing_interval === 'month' && Number(p.price) > 0);
-  return monthly ? `${xof(Number(monthly.price))} ${intervalLabel.month.suffix}` : null;
+  return monthly ? planPrice(monthly) : null;
 }
 
 export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
@@ -146,15 +146,33 @@ export function AccessStep({ flow }: { flow: CreateCommunityFlow }) {
           <OptionCard
             icon={Wallet}
             title={t('create.access.paid')}
-            description={proPrice ? t('create.access.paidPro', { price: proPrice }) : t('create.access.paidProNoPrice')}
+            description={
+              flow.pro.isPro
+                ? t('create.access.paidReady')
+                : flow.canChoosePaid
+                  ? t('create.access.paidChosen')
+                  : proPrice
+                    ? t('create.access.paidPro', { price: proPrice })
+                    : t('create.access.paidProNoPrice')
+            }
             value="paid"
+            disabled={!flow.canChoosePaid}
+            className={!flow.canChoosePaid ? 'cursor-not-allowed opacity-60' : undefined}
             {...register('pricing_type')}
           />
         </div>
+        {!flow.canChoosePaid && (
+          <p className="mt-3 text-sm text-soft">
+            {t('create.access.paidLocked')}{' '}
+            <button type="button" onClick={flow.switchToPro} className="font-semibold text-brand hover:underline">
+              {t('create.access.goPro')}
+            </button>
+          </p>
+        )}
         {paid && (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">{t('create.access.priceTitle')}</p>
-            <p className="mb-3 text-sm text-slate-500">
+          <div className="mt-4 rounded-xl border border-border bg-subtle p-4">
+            <p className="text-sm font-semibold text-foreground">{t('create.access.priceTitle')}</p>
+            <p className="mb-3 text-sm text-muted-foreground">
               {t('create.access.priceText')}
             </p>
             <div className="grid gap-x-3 sm:grid-cols-2">
@@ -218,15 +236,15 @@ export function LookStep({ flow }: { flow: CreateCommunityFlow }) {
             </button>
           );
         })}
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input type="color" className="size-10 cursor-pointer rounded-full border border-slate-200 bg-white p-1" {...register('brand_color')} />
+        <label className="flex items-center gap-2 text-sm text-soft">
+          <input type="color" className="size-10 cursor-pointer rounded-full border border-border bg-card p-1" {...register('brand_color')} />
           {t('create.look.other')}
         </label>
       </div>
-      <p className="mt-3 text-sm text-slate-500">{t('create.look.colorHelp')}</p>
+      <p className="mt-3 text-sm text-muted-foreground">{t('create.look.colorHelp')}</p>
       {fieldError(formState.errors.brand_color?.message)}
 
-      <div className="mt-6 grid gap-x-6 border-t border-slate-100 pt-5 sm:grid-cols-[auto_1fr]">
+      <div className="mt-6 grid gap-x-6 border-t border-border-soft pt-5 sm:grid-cols-[auto_1fr]">
         <ImageField
           label={t('create.look.logo')}
           help={t('create.look.logoHelp')}
@@ -287,12 +305,12 @@ export function AccountStep({ flow }: { flow: CreateCommunityFlow }) {
               <PasswordCheck password={password} />
             </div>
           )}
-          <label htmlFor="account-terms" className="flex items-start gap-3 text-sm leading-relaxed text-slate-600">
+          <label htmlFor="account-terms" className="flex items-start gap-3 text-sm leading-relaxed text-soft">
             <input id="account-terms" type="checkbox" className="mt-0.5 size-4 shrink-0 accent-(--primary)" {...register('terms_accepted')} />
             <span>{t('auth.register.terms')}</span>
           </label>
           {fieldError(errors.terms_accepted?.message)}
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-muted-foreground">
             {t('create.account.hasAccount')}{' '}
             <button type="button" onClick={() => switchTo('login')} className="font-semibold text-brand hover:underline">
               {t('create.account.login')}
@@ -303,7 +321,7 @@ export function AccountStep({ flow }: { flow: CreateCommunityFlow }) {
         <>
           <Input id="account-email" label={t('auth.common.email')} type="email" icon={<Mail className="size-4" />} autoComplete="email" required error={errors.email?.message} {...register('email')} />
           <InputPassword id="account-password" label={t('auth.common.password')} autoComplete="current-password" required error={errors.password?.message} {...register('password')} />
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-muted-foreground">
             {t('create.account.noAccount')}{' '}
             <button type="button" onClick={() => switchTo('register')} className="font-semibold text-brand hover:underline">
               {t('create.account.register')}

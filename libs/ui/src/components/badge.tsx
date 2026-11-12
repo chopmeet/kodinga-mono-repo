@@ -76,8 +76,8 @@ const CLASS_CONFIG: Record<BusClass, ClassConfig> = {
   standard: {
     label: "Standard",
     icon: LuArmchair,
-    classes: "bg-slate-100 text-slate-600 shadow-[0_0_0_1px_rgba(100,116,139,0.25)]",
-    ring: "ring-1 ring-slate-200",
+    classes: "bg-muted text-soft shadow-[0_0_0_1px_rgba(100,116,139,0.25)]",
+    ring: "ring-1 ring-border",
     iconBg: "bg-slate-500/10",
   },
 };
@@ -98,7 +98,7 @@ function ClassBadge({ variant }: ClassBadgeProps): React.JSX.Element {
         className={`flex items-center justify-center w-4 h-4 rounded-full ${config.iconBg}`}
       >
         <Icon
-          className={`w-3 h-3 ${isPremium ? "" : "text-slate-500"}`}
+          className={`w-3 h-3 ${isPremium ? "" : "text-muted-foreground"}`}
           strokeWidth={2.5}
           fill={variant === "vip" ? "currentColor" : "none"}
         />

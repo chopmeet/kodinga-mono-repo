@@ -92,7 +92,7 @@ export type CardType = {
 
 function OverviewCardItem ({item}: {item: CardType}) {
   return (
-    <div className="overview__card moovi-shadow bg-white dark:bg-zinc-800 p-5 rounded-lg">
+    <div className="overview__card moovi-shadow bg-card p-5 rounded-lg">
       <div className="flex items-center gap-4">
         {!!item?.icon &&
         <div 

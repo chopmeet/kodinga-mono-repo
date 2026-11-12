@@ -1,4 +1,5 @@
 export const header = {
+  theme: { toggle: 'Changer de thème', light: 'Clair', dark: 'Sombre', system: 'Système' },
   login: 'Se connecter',
   home: 'Accueil',
   explore: 'Explorer les communautés',

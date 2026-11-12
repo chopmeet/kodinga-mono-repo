@@ -78,15 +78,15 @@ function CommunityMembersTab() {
       header: 'Membre',
       cell: ({ row }) => (
         <div className="min-w-44">
-          <p className="font-medium text-slate-900">{row.original.name}</p>
-          <p className="text-xs text-slate-500">@{row.original.user.username}</p>
+          <p className="font-medium text-foreground">{row.original.name}</p>
+          <p className="text-xs text-muted-foreground">@{row.original.user.username}</p>
         </div>
       ),
     },
     {
       id: 'role',
       header: 'Rôle',
-      cell: ({ row }) => <span className="text-slate-700">{row.original.custom_title || roleLabel[row.original.role]}</span>,
+      cell: ({ row }) => <span className="text-body">{row.original.custom_title || roleLabel[row.original.role]}</span>,
     },
     {
       id: 'status',
@@ -99,12 +99,12 @@ function CommunityMembersTab() {
     {
       id: 'reputation',
       header: () => <span className="block text-right">Réputation</span>,
-      cell: ({ row }) => <span className="block text-right text-slate-700 tabular-nums">{row.original.reputation_score}</span>,
+      cell: ({ row }) => <span className="block text-right text-body tabular-nums">{row.original.reputation_score}</span>,
     },
     {
       id: 'joined',
       header: 'Membre depuis',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.original.joined_at))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat.format(new Date(row.original.joined_at))}</span>,
     },
     {
       id: 'actions',

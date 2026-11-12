@@ -1,4 +1,4 @@
-import { BarChart3, Code2, FolderGit2, HelpCircle, Megaphone, MessagesSquare, Paperclip, Plus, Trash2, X } from 'lucide-react';
+import { BarChart3, Code2, FolderGit2, HelpCircle, Megaphone, MessagesSquare, Plus, Smile, Trash2, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Controller } from 'react-hook-form';
 
@@ -15,10 +15,11 @@ import {
   SelectInput,
   TextareaInput,
 } from '@kodinga/ui';
-import { postTypeLabel } from '@/utils/Utils';
-import { SoonBadge } from '@/pages/shared/row-actions';
+import { insertAtCursor, postTypeLabel } from '@/utils/Utils';
+import { EmojiPickerButton } from '@/pages/shared/emoji-picker-button';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import type { PostType } from '@/utils/api/community/community.type';
+import { PostAttachmentsField } from '../components/post-attachments-field';
 import UseDuplicateCheck from '../form/UseDuplicateCheck';
 import UsePostForm, { MAX_POLL_OPTIONS } from '../form/UsePostForm';
 import type { SpacePost } from '../form/UseSpacePosts';
@@ -51,7 +52,12 @@ type Props = {
 };
 
 function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
-  const { form, options, type, withCode, titleOptional, onSubmit } = UsePostForm({ slug, post, open, onDone: onClose, defaultType });
+  const { form, options, attachments, type, withCode, titleOptional, onSubmit } = UsePostForm({ slug, post, open, onDone: onClose, defaultType });
+  // Closed without publishing: the files uploaded for it are deleted
+  const close = () => {
+    attachments.discard();
+    onClose();
+  };
   const codePreview = form.watch('code_snippet');
   const codeLanguagePreview = form.watch('code_language');
   // A new question: the ones already asked, close to it
@@ -66,8 +72,19 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
   const types = post ? TYPES.filter((t) => t.value !== 'poll' || post.post_type === 'poll') : TYPES;
   const typeLocked = post?.post_type === 'poll';
 
+  // An emoji at the caret of the content (its field registered with react-hook-form)
+  const insertEmoji = (emoji: string) => {
+    const el = document.getElementById('post-content') as HTMLTextAreaElement | null;
+    const next = insertAtCursor(el, form.getValues('content') ?? '', emoji);
+    setValue('content', next.value, { shouldDirty: true, shouldValidate: !!errors.content });
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(next.caret, next.caret);
+    });
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && !isSubmitting && onClose()}>
+    <Dialog open={open} onOpenChange={(next) => !next && !isSubmitting && close()}>
       <DialogContent position="top" className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{post ? 'Modifier la publication' : 'Nouvelle publication'}</DialogTitle>
@@ -87,7 +104,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
                 onClick={() => setValue('post_type', t.value, { shouldValidate: false })}
                 className={cn(
                   'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-semibold transition-colors [&_svg]:size-5',
-                  type === t.value ? 'border-blue-900 bg-blue-50 text-blue-900' : 'border-slate-200 text-slate-600 hover:border-slate-300',
+                  type === t.value ? 'border-blue-900 bg-brand-subtle text-brand-strong' : 'border-border text-soft hover:border-border-strong',
                   'disabled:cursor-not-allowed disabled:opacity-40',
                 )}
               >
@@ -123,7 +140,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
               <ul className="mt-2 flex flex-col gap-1.5" aria-label="Questions proches">
                 {duplicates.map((d) => (
                   <li key={d.id} className="text-sm">
-                    <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-blue-900 hover:underline">
+                    <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-brand-strong hover:underline">
                       {d.title || 'Question sans titre'}
                     </a>
                     {d.is_solved && <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Résolue</span>}
@@ -134,8 +151,8 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
           )}
 
           {type === 'poll' && !post && (
-            <fieldset className="mb-4 rounded-xl border border-slate-200 p-4">
-              <legend className="px-1 text-sm font-semibold text-slate-900">Options du sondage</legend>
+            <fieldset className="mb-4 rounded-xl border border-border p-4">
+              <legend className="px-1 text-sm font-semibold text-foreground">Options du sondage</legend>
               <ol className="space-y-2">
                 {options.fields.map((field, i) => (
                   <li key={field.id} className="flex items-start gap-2">
@@ -178,9 +195,9 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
           )}
 
           {withCode ? (
-            <fieldset className="mb-4 rounded-xl border border-slate-200 p-4" aria-labelledby="post-code-title">
+            <fieldset className="mb-4 rounded-xl border border-border p-4" aria-labelledby="post-code-title">
               <div className="flex items-center justify-between">
-                <p id="post-code-title" className="text-sm font-semibold text-slate-900">Extrait de code</p>
+                <p id="post-code-title" className="text-sm font-semibold text-foreground">Extrait de code</p>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setValue('with_code', false)}>
                   <Trash2 />
                   Retirer
@@ -198,33 +215,43 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
               {/* What the members will read: colored, numbered */}
               {codePreview.trim() && (
                 <div aria-label="Aperçu du code" role="group">
-                  <p className="text-xs font-medium text-slate-500">Aperçu</p>
+                  <p className="text-xs font-medium text-muted-foreground">Aperçu</p>
                   <CodeBlock code={codePreview} language={codeLanguagePreview} className="mt-1" />
                 </div>
               )}
             </fieldset>
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
+          <PostAttachmentsField attachments={attachments}>
+            <EmojiPickerButton
+              onSelect={insertEmoji}
+              label="Insérer un emoji dans le contenu"
+              align="start"
+              className="h-8 gap-1.5 border border-border bg-card px-3 text-sm font-medium text-body"
+            >
+              <Smile className="size-4" />
+              Emoji
+            </EmojiPickerButton>
             {!withCode && (
               <Button type="button" variant="outline" size="sm" onClick={() => setValue('with_code', true)}>
                 <Code2 />
                 Ajouter du code
               </Button>
             )}
-            <Button type="button" variant="outline" size="sm" disabled title="Bientôt disponible">
-              <Paperclip />
-              Joindre une image
-              <SoonBadge />
-            </Button>
-          </div>
+          </PostAttachmentsField>
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="outline" onClick={close} disabled={isSubmitting}>
             Annuler
           </Button>
-          <Button type="submit" form="post-form" isLoading={isSubmitting}>
+          <Button
+            type="submit"
+            form="post-form"
+            isLoading={isSubmitting}
+            disabled={attachments.isUploading || attachments.hasErrors}
+            title={attachments.isUploading ? 'Envoi des fichiers en cours…' : attachments.hasErrors ? 'Retirez les fichiers en échec' : undefined}
+          >
             {post ? 'Enregistrer' : 'Publier'}
           </Button>
         </DialogFooter>

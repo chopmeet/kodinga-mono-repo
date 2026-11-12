@@ -30,7 +30,7 @@ function CommentForm({ page, parentId, onDone, placeholder }: { page: ProjectPag
   const [text, setText] = useState('');
   if (!page.signedIn) {
     return (
-      <Link to={page.loginUrl} className="text-sm font-semibold text-blue-900 hover:underline">
+      <Link to={page.loginUrl} className="text-sm font-semibold text-brand-strong hover:underline">
         {t('discover.project.loginToReview')}
       </Link>
     );
@@ -62,15 +62,15 @@ function Comments({ page }: { page: ProjectPage }) {
   const { t } = useTranslation();
   const [replyTo, setReplyTo] = useState<string | null>(null);
   return (
-    <section id="commentaires" aria-labelledby="comments-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
-      <h2 id="comments-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-        <MessageCircle className="size-5 text-blue-900" /> {t('discover.project.reviews', { count: page.comments.length })}
+    <section id="commentaires" aria-labelledby="comments-title" className="rounded-xl border border-border bg-card p-6 sm:p-8">
+      <h2 id="comments-title" className="flex items-center gap-2 text-lg font-semibold text-foreground">
+        <MessageCircle className="size-5 text-brand-strong" /> {t('discover.project.reviews', { count: page.comments.length })}
       </h2>
       <div className="mt-4">
         <CommentForm page={page} placeholder={t('discover.project.reviewPlaceholder')} />
       </div>
       {page.comments.length === 0 ? (
-        <p className="mt-6 text-sm text-slate-500">{t('discover.project.noReview')}</p>
+        <p className="mt-6 text-sm text-muted-foreground">{t('discover.project.noReview')}</p>
       ) : (
         <ul className="mt-6 flex flex-col gap-5" aria-label={t('discover.project.comments')}>
           {page.comments.map((c) => (
@@ -78,24 +78,24 @@ function Comments({ page }: { page: ProjectPage }) {
               <Person person={c.author} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm">
-                  <span className="font-semibold text-slate-900">{getName(c.author)}</span> <span className="text-slate-400">· {ago(c.created_at)}</span>
+                  <span className="font-semibold text-foreground">{getName(c.author)}</span> <span className="text-faint">· {ago(c.created_at)}</span>
                 </p>
-                <p className="mt-1 text-sm whitespace-pre-line text-slate-700">{c.content}</p>
+                <p className="mt-1 text-sm whitespace-pre-line text-body">{c.content}</p>
                 {page.signedIn && (
-                  <button type="button" onClick={() => setReplyTo(replyTo === c.id ? null : c.id)} className="mt-1 text-xs font-semibold text-slate-500 hover:text-blue-900">
+                  <button type="button" onClick={() => setReplyTo(replyTo === c.id ? null : c.id)} className="mt-1 text-xs font-semibold text-muted-foreground hover:text-brand-strong">
                     {t('discover.project.reply')}
                   </button>
                 )}
                 {c.replies.length > 0 && (
-                  <ul className="mt-3 flex flex-col gap-3 border-l border-slate-200 pl-4" aria-label={t('discover.project.repliesTo', { name: getName(c.author) })}>
+                  <ul className="mt-3 flex flex-col gap-3 border-l border-border pl-4" aria-label={t('discover.project.repliesTo', { name: getName(c.author) })}>
                     {c.replies.map((r) => (
                       <li key={r.id} className="flex gap-2.5">
                         <Person person={r.author} size="size-7" />
                         <div className="min-w-0">
                           <p className="text-sm">
-                            <span className="font-semibold text-slate-900">{getName(r.author)}</span> <span className="text-slate-400">· {ago(r.created_at)}</span>
+                            <span className="font-semibold text-foreground">{getName(r.author)}</span> <span className="text-faint">· {ago(r.created_at)}</span>
                           </p>
-                          <p className="mt-0.5 text-sm whitespace-pre-line text-slate-700">{r.content}</p>
+                          <p className="mt-0.5 text-sm whitespace-pre-line text-body">{r.content}</p>
                         </div>
                       </li>
                     ))}
@@ -126,7 +126,7 @@ function ProjectPageView() {
   if (!p) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('discover.project.notFound') : t('discover.project.loadFailed')}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{page.notFound ? t('discover.project.notFound') : t('discover.project.loadFailed')}</h1>
         <Button asChild variant="outline">
           <Link to={page.back.to}>{t('common.actions.back')}</Link>
         </Button>
@@ -135,18 +135,18 @@ function ProjectPageView() {
   }
 
   return (
-    <div className="min-h-full bg-slate-50/60">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-full bg-subtle/60">
+      <header className="border-b border-border bg-card">
         <div className="relative h-44 sm:h-60">{p.cover_image_url ? <img src={p.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}</div>
         <div className="mx-auto max-w-285 px-4 py-6 sm:px-6 lg:px-8">
-          <Link to={page.back.to} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+          <Link to={page.back.to} className="inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
             <ArrowLeft className="size-4" /> {page.back.label}
           </Link>
           <div className="mt-4 flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{p.title}</h1>
-              {p.tagline && <p className="mt-1 text-lg text-slate-600">{p.tagline}</p>}
-              <Link to={`/profiles/${p.owner.username}`} className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700 hover:text-blue-900">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{p.title}</h1>
+              {p.tagline && <p className="mt-1 text-lg text-soft">{p.tagline}</p>}
+              <Link to={`/profiles/${p.owner.username}`} className="mt-3 inline-flex items-center gap-2 text-sm text-body hover:text-brand-strong">
                 <Person person={p.owner} size="size-7" />
                 {getName(p.owner)}
               </Link>
@@ -178,12 +178,12 @@ function ProjectPageView() {
       </header>
 
       <div className="mx-auto flex max-w-285 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-        <article className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
-          {p.description ? <Markdown source={p.description} /> : <p className="text-slate-500">{t('discover.project.noDescription')}</p>}
+        <article className="rounded-xl border border-border bg-card p-6 sm:p-8">
+          {p.description ? <Markdown source={p.description} /> : <p className="text-muted-foreground">{t('discover.project.noDescription')}</p>}
           {p.technologies.length > 0 && (
-            <ul className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-5" aria-label={t('discover.project.technologies')}>
+            <ul className="mt-6 flex flex-wrap gap-2 border-t border-border-soft pt-5" aria-label={t('discover.project.technologies')}>
               {p.technologies.map((tech) => (
-                <li key={tech.id} className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900">
+                <li key={tech.id} className="rounded-full bg-brand-subtle px-3 py-1 text-sm font-medium text-brand-strong">
                   {tech.name}
                 </li>
               ))}
@@ -191,9 +191,9 @@ function ProjectPageView() {
           )}
         </article>
         {(p.demo_images?.length ?? 0) > 0 && (
-          <section aria-labelledby="demo-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
-            <h2 id="demo-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-              <Images className="size-5 text-blue-900" /> {t('discover.project.screenshots', { count: p.demo_images?.length ?? 0 })}
+          <section aria-labelledby="demo-title" className="rounded-xl border border-border bg-card p-6 sm:p-8">
+            <h2 id="demo-title" className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Images className="size-5 text-brand-strong" /> {t('discover.project.screenshots', { count: p.demo_images?.length ?? 0 })}
             </h2>
             <ImageGallery images={p.demo_images ?? []} title={p.title} className="mt-4" />
           </section>

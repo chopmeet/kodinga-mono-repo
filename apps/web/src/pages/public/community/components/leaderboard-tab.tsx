@@ -33,46 +33,46 @@ export function LeaderboardTab({ slug }: { slug: string }) {
       </div>
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">{t('community.leaderboard.loading')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{t('community.leaderboard.loading')}</p>
       ) : data.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <Medal className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">
+          <p className="mt-3 font-semibold text-foreground">
             {period === 'all_time' ? t('community.leaderboard.nobody') : t('community.leaderboard.noneOver', { period: PERIOD_LABEL[period].toLowerCase() })}
           </p>
-          <p className="mt-1 text-sm text-slate-500">{t('community.leaderboard.howTo')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('community.leaderboard.howTo')}</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="flex justify-between border-b border-slate-200 bg-blue-50/70 px-4 py-4 sm:px-6 text-[11px] font-medium tracking-wide text-slate-600 uppercase">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="flex justify-between border-b border-border bg-brand-subtle/70 px-4 py-4 sm:px-6 text-[11px] font-medium tracking-wide text-soft uppercase">
             <span>{t('community.leaderboard.rankMember')}</span>
             <span>{t('community.leaderboard.points')}</span>
           </div>
-          <ol aria-label={t('community.leaderboard.title')} className="divide-y divide-slate-100">
+          <ol aria-label={t('community.leaderboard.title')} className="divide-y divide-border-soft">
             {data.map((e) => (
-              <li key={e.user.id} className={cn('flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5', e.user.id === userId && 'bg-blue-50/50')}>
+              <li key={e.user.id} className={cn('flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5', e.user.id === userId && 'bg-brand-subtle/50')}>
                 <span
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                    e.rank === 1 ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-slate-600',
+                    e.rank === 1 ? 'bg-amber-50 text-amber-600' : 'bg-brand-subtle text-soft',
                   )}
                 >
                   {e.rank === 1 ? <Trophy className="size-3.5" aria-label={t('community.leaderboard.first')} /> : e.rank}
                 </span>
                 <Avatar className="size-10 sm:size-12">
                   {e.user.avatar_url && <AvatarImage src={e.user.avatar_url} alt="" />}
-                  <AvatarFallback className="bg-blue-50 font-semibold text-blue-900">{nameInitials(e.user.name || e.user.username)}</AvatarFallback>
+                  <AvatarFallback className="bg-brand-subtle font-semibold text-brand-strong">{nameInitials(e.user.name || e.user.username)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-slate-900">
+                  <p className="truncate font-semibold text-foreground">
                     {e.user.name}
                     {e.user.id === userId && <span className="ml-2 text-xs font-semibold text-brand">{t('community.leaderboard.you')}</span>}
                   </p>
-                  <p className="truncate text-sm text-slate-500">
+                  <p className="truncate text-sm text-muted-foreground">
                     {t('community.leaderboard.levelTitle', { level: e.level, title: e.rank_title })}
                   </p>
                 </div>
-                <span className="flex shrink-0 items-center gap-2 font-semibold text-blue-900 tabular-nums sm:text-lg">
+                <span className="flex shrink-0 items-center gap-2 font-semibold text-brand-strong tabular-nums sm:text-lg">
                   {t('community.leaderboard.pts', { points: pointsFormat.format(e.points) })}
                   <TrendingUp className="hidden size-4 sm:block" aria-hidden />
                 </span>

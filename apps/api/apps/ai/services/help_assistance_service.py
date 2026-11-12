@@ -36,11 +36,37 @@ class HelpAssistanceService:
             extracted_skills = []
 
             tech_keywords = [
-                "python", "django", "drf", "react", "typescript", "javascript",
-                "nextjs", "docker", "postgres", "redis", "celery", "graphql",
-                "tailwind", "git", "linux", "rest", "api", "jwt", "auth",
-                "vue", "angular", "node", "express", "fastapi", "spring",
-                "kubernetes", "aws", "gcp", "azure", "mongodb", "sqlite",
+                "python",
+                "django",
+                "drf",
+                "react",
+                "typescript",
+                "javascript",
+                "nextjs",
+                "docker",
+                "postgres",
+                "redis",
+                "celery",
+                "graphql",
+                "tailwind",
+                "git",
+                "linux",
+                "rest",
+                "api",
+                "jwt",
+                "auth",
+                "vue",
+                "angular",
+                "node",
+                "express",
+                "fastapi",
+                "spring",
+                "kubernetes",
+                "aws",
+                "gcp",
+                "azure",
+                "mongodb",
+                "sqlite",
             ]
             for kw in tech_keywords:
                 if kw in text_to_analyze.lower():
@@ -58,7 +84,9 @@ class HelpAssistanceService:
                 "d'une question pour lui demander avec bienveillance les précisions techniques manquantes indispensables "
                 "(logs d'erreur précis, code minimal reproductible, versions des frameworks, ou environnement d'exécution)."
             )
-            user_prompt = f"Question posée :\nTitre : {post.title}\nDétails : {post.content}"
+            user_prompt = (
+                f"Question posée :\nTitre : {post.title}\nDétails : {post.content}"
+            )
             try:
                 ai_draft = ai_router.generate_text(
                     prompt=user_prompt,
@@ -68,7 +96,9 @@ class HelpAssistanceService:
                     temperature=0.3,
                 ).strip()
             except Exception as exc:
-                logger.warning(f"[HelpAssistanceService] AI draft generation failed: {exc}")
+                logger.warning(
+                    f"[HelpAssistanceService] AI draft generation failed: {exc}"
+                )
                 ai_draft = (
                     f"Pour aider la communauté à vous débloquer rapidement : pouvez-vous préciser "
                     f"le message d'erreur exact ou la version de {extracted_skills[0]} utilisée ?"
@@ -103,12 +133,14 @@ class HelpAssistanceService:
                     continue
                 rep = getattr(m, "reputation_score", 0) or 0
                 score = len(matched) * 10 + rep / 100.0
-                scored_mentors.append({
-                    "user": u,
-                    "matched_skills": matched,
-                    "all_skills": user_skills,
-                    "score": score,
-                })
+                scored_mentors.append(
+                    {
+                        "user": u,
+                        "matched_skills": matched,
+                        "all_skills": user_skills,
+                        "score": score,
+                    }
+                )
 
             scored_mentors.sort(key=lambda x: x["score"], reverse=True)
             selected_experts = [item["user"] for item in scored_mentors[:4]]
@@ -125,7 +157,9 @@ class HelpAssistanceService:
             ).values_list("user_id", "reputation_score")
         )
 
-        for expert in assistance.suggested_experts.all().prefetch_related("profile__skills__technology"):
+        for expert in assistance.suggested_experts.all().prefetch_related(
+            "profile__skills__technology"
+        ):
             avatar_url = None
             expert_skills = []
             if hasattr(expert, "profile") and expert.profile:
@@ -137,15 +171,17 @@ class HelpAssistanceService:
             # Display only the mentor's actual matching skills
             matching = [s for s in expert_skills if s.lower() in lower_extracted]
 
-            mentors_data.append({
-                "user_id": str(expert.id),
-                "username": expert.username,
-                "first_name": expert.first_name,
-                "last_name": expert.last_name,
-                "avatar_url": avatar_url,
-                "matching_skills": matching,
-                "reputation_score": member_rep_map.get(expert.id, 0),
-            })
+            mentors_data.append(
+                {
+                    "user_id": str(expert.id),
+                    "username": expert.username,
+                    "first_name": expert.first_name,
+                    "last_name": expert.last_name,
+                    "avatar_url": avatar_url,
+                    "matching_skills": matching,
+                    "reputation_score": member_rep_map.get(expert.id, 0),
+                }
+            )
 
         return {
             "post_id": str(post.id),

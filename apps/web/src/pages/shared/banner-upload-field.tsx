@@ -87,7 +87,7 @@ export function BannerUploadField({
         <span id={`${id}-label`} className="custom-form-label mb-0! block">
           {label}
         </span>
-        <div role="radiogroup" aria-label={`${label} : mode`} className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
+        <div role="radiogroup" aria-label={`${label} : mode`} className="flex rounded-lg border border-border bg-subtle p-0.5 text-xs font-semibold">
           {(
             [
               ['file', 'Fichier', <Upload key="f" className="size-3.5" aria-hidden />],
@@ -102,7 +102,7 @@ export function BannerUploadField({
               onClick={() => setMode(m)}
               className={cn(
                 'flex items-center gap-1 rounded-md px-2.5 py-1 transition-colors',
-                mode === m ? 'bg-white text-blue-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800',
+                mode === m ? 'bg-card text-brand-strong shadow-2xs' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {icon}
@@ -113,7 +113,7 @@ export function BannerUploadField({
       </div>
 
       {hasImage && !isUploading ? (
-        <div className="group relative aspect-21/9 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900/5 shadow-2xs">
+        <div className="group relative aspect-21/9 w-full overflow-hidden rounded-xl border border-border bg-slate-900/5 shadow-2xs">
           <img src={cleanUrl} alt={`Aperçu : ${label}`} className="size-full object-cover" onError={() => setBrokenUrl(cleanUrl)} />
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 bg-gradient-to-t from-slate-950/70 to-transparent p-3">
             <label
@@ -135,15 +135,15 @@ export function BannerUploadField({
           </div>
         </div>
       ) : isUploading ? (
-        <div className="flex aspect-21/9 w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/50 p-6 text-center">
-          <p className="text-sm font-semibold text-blue-900">Envoi de l'image… {progress} %</p>
+        <div className="flex aspect-21/9 w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-blue-400 bg-brand-subtle/50 p-6 text-center">
+          <p className="text-sm font-semibold text-brand-strong">Envoi de l'image… {progress} %</p>
           <span
             role="progressbar"
             aria-label={`Envoi : ${label}`}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}
-            className="block h-2 w-full max-w-xs overflow-hidden rounded-full bg-blue-100"
+            className="block h-2 w-full max-w-xs overflow-hidden rounded-full bg-brand-muted"
           >
             <span className="block h-full rounded-full bg-blue-700 transition-[width]" style={{ width: `${progress}%` }} />
           </span>
@@ -159,17 +159,17 @@ export function BannerUploadField({
           onDrop={handleDrop}
           className={cn(
             'flex aspect-21/9 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition',
-            dragging ? 'border-blue-500 bg-blue-50/60' : 'border-slate-300 bg-slate-50/70 hover:border-blue-500 hover:bg-blue-50/30',
+            dragging ? 'border-blue-500 bg-brand-subtle/60' : 'border-border-strong bg-subtle/70 hover:border-blue-500 hover:bg-brand-subtle/30',
           )}
         >
-          <span className="flex size-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 shadow-2xs">
+          <span className="flex size-10 items-center justify-center rounded-full bg-brand-muted text-blue-700 shadow-2xs">
             <ImagePlus className="size-5" aria-hidden />
           </span>
           <span className="text-xs">
             <span className="font-semibold text-blue-700">Choisir une image</span>
-            <span className="text-slate-500"> ou la glisser ici</span>
+            <span className="text-muted-foreground"> ou la glisser ici</span>
           </span>
-          <span className="text-[11px] font-medium text-slate-400">{help}</span>
+          <span className="text-[11px] font-medium text-faint">{help}</span>
         </label>
       ) : null}
 

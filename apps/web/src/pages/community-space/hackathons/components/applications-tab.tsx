@@ -88,8 +88,8 @@ export function ApplicationsTab({ slug, hackathonSlug, canManage }: { slug: stri
       header: 'Candidat',
       cell: ({ row }) => (
         <div className="min-w-44">
-          <p className="font-medium text-slate-900">{nameOf(row.original)}</p>
-          <p className="text-xs text-slate-500">{row.original.applicant.email}</p>
+          <p className="font-medium text-foreground">{nameOf(row.original)}</p>
+          <p className="text-xs text-muted-foreground">{row.original.applicant.email}</p>
         </div>
       ),
     },
@@ -97,7 +97,7 @@ export function ApplicationsTab({ slug, hackathonSlug, canManage }: { slug: stri
       id: 'mode',
       header: 'Participation',
       cell: ({ row }) => (
-        <span className="text-slate-700">
+        <span className="text-body">
           {row.original.participation_mode === 'team' ? `Équipe${row.original.team_name ? ` « ${row.original.team_name} »` : ''}` : 'Individuelle'}
         </span>
       ),
@@ -117,7 +117,7 @@ export function ApplicationsTab({ slug, hackathonSlug, canManage }: { slug: stri
     {
       id: 'date',
       header: 'Reçue le',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.original.created_at))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat.format(new Date(row.original.created_at))}</span>,
     },
     {
       id: 'actions',

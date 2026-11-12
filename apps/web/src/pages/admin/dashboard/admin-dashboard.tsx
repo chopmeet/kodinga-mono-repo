@@ -21,11 +21,11 @@ type PanelProps = {
 
 function Panel({ title, description, mock, children }: PanelProps) {
   return (
-    <ColgateWrapper className="h-full min-w-0 border border-neutral-200 p-4">
+    <ColgateWrapper className="h-full min-w-0 border border-border p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-medium text-zinc-700">{title}</h2>
-          {description && <p className="text-sm text-slate-500">{description}</p>}
+          <h2 className="text-lg font-medium text-body">{title}</h2>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
         {mock && (
           <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">

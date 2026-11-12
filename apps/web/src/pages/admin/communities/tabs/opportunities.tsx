@@ -59,8 +59,8 @@ function CommunityOpportunitiesTab() {
       header: 'Offre',
       cell: ({ row }) => (
         <div className="max-w-md min-w-64">
-          <p className="truncate font-medium text-slate-900">{row.original.title}</p>
-          <p className="text-xs text-slate-500">
+          <p className="truncate font-medium text-foreground">{row.original.title}</p>
+          <p className="text-xs text-muted-foreground">
             {row.original.company_name} · publiée par {getName(row.original.poster) || 'Membre'}
           </p>
         </div>
@@ -69,28 +69,28 @@ function CommunityOpportunitiesTab() {
     {
       id: 'type',
       header: 'Type',
-      cell: ({ row }) => <Badge variant="outline" className="whitespace-nowrap text-slate-700">{opportunityTypeLabel[row.original.opportunity_type]}</Badge>,
+      cell: ({ row }) => <Badge variant="outline" className="whitespace-nowrap text-body">{opportunityTypeLabel[row.original.opportunity_type]}</Badge>,
     },
     {
       id: 'where',
       header: 'Lieu',
       cell: ({ row }) => (
-        <div className="text-slate-600">
+        <div className="text-soft">
           <span className="block whitespace-nowrap">{workplaceLabel[row.original.workplace_type]}</span>
-          {row.original.location && <span className="text-xs text-slate-500">{row.original.location}</span>}
+          {row.original.location && <span className="text-xs text-muted-foreground">{row.original.location}</span>}
         </div>
       ),
     },
     {
       id: 'salary',
       header: 'Rémunération',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{formatSalary(row.original) || '—'}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{formatSalary(row.original) || '—'}</span>,
     },
     {
       id: 'applications',
       header: 'Candidatures',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1 text-slate-600 tabular-nums" title={`${row.original.views_count} vues`}>
+        <span className="flex items-center gap-1 text-soft tabular-nums" title={`${row.original.views_count} vues`}>
           <FileText className="size-3.5" />
           {row.original.applications_count}
         </span>
@@ -100,10 +100,10 @@ function CommunityOpportunitiesTab() {
       id: 'date',
       header: 'Publiée le',
       cell: ({ row }) => (
-        <div className="whitespace-nowrap text-slate-600">
+        <div className="whitespace-nowrap text-soft">
           {dateFormat.format(new Date(row.original.created_at))}
           {row.original.expires_at && (
-            <span className={`block text-xs ${isExpired(row.original) ? 'text-red-600' : 'text-slate-500'}`}>
+            <span className={`block text-xs ${isExpired(row.original) ? 'text-red-600' : 'text-muted-foreground'}`}>
               {isExpired(row.original) ? 'Expirée le' : "Jusqu'au"} {dateFormat.format(new Date(row.original.expires_at))}
             </span>
           )}
@@ -132,7 +132,7 @@ function CommunityOpportunitiesTab() {
 
   return (
     <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : undefined} aria-busy={isFetching}>
-      <p className="mb-3 text-sm text-slate-500">Offres ouvertes uniquement : les brouillons et les offres clôturées ne sont pas listés.</p>
+      <p className="mb-3 text-sm text-muted-foreground">Offres ouvertes uniquement : les brouillons et les offres clôturées ne sont pas listés.</p>
       <DataTable columns={columns} data={opportunities} isLoading={isLoading} />
       <ConfirmActionModal action={confirm} isLoading={isClosing} onCancel={() => setConfirm(null)} />
     </div>

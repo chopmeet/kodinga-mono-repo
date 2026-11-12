@@ -44,7 +44,7 @@ export function ResultsTab({ slug, hackathon, canManage }: { slug: string; hacka
   };
 
   if (error) return <EmptyAlert text={parseApiError(error).message} />;
-  if (isLoading) return <p className="py-8 text-center text-sm text-slate-500">Chargement du classement…</p>;
+  if (isLoading) return <p className="py-8 text-center text-sm text-muted-foreground">Chargement du classement…</p>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -54,19 +54,19 @@ export function ResultsTab({ slug, hackathon, canManage }: { slug: string; hacka
           Résultats publiés{hackathon.results_published_at ? ` le ${formatDateTime(hackathon.results_published_at)}` : ''}.
         </p>
       ) : (
-        <p className="text-sm text-slate-500">Classement provisoire, visible par les organisateurs tant que les résultats ne sont pas publiés.</p>
+        <p className="text-sm text-muted-foreground">Classement provisoire, visible par les organisateurs tant que les résultats ne sont pas publiés.</p>
       )}
 
       {results.length === 0 ? (
         <EmptyAlert text="Aucun projet classé pour le moment : il faut des projets soumis et évalués." />
       ) : (
-        <ol className="divide-y divide-slate-100 rounded-xl border border-slate-200" aria-label="Classement">
+        <ol className="divide-y divide-border-soft rounded-xl border border-border" aria-label="Classement">
           {results.map((r, i) => (
             <li key={r.id} className="flex items-center gap-4 px-4 py-3">
-              <span className={`w-8 text-center text-lg font-bold ${i < 3 ? 'text-amber-600' : 'text-slate-400'}`}>{r.rank ?? i + 1}</span>
+              <span className={`w-8 text-center text-lg font-bold ${i < 3 ? 'text-amber-600' : 'text-faint'}`}>{r.rank ?? i + 1}</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-slate-900">{r.title}</p>
-                <p className="truncate text-sm text-slate-500">{r.team_name ? `Équipe ${r.team_name}` : `@${r.applicant_username}`}</p>
+                <p className="truncate font-medium text-foreground">{r.title}</p>
+                <p className="truncate text-sm text-muted-foreground">{r.team_name ? `Équipe ${r.team_name}` : `@${r.applicant_username}`}</p>
               </div>
               {r.won_prizes.map((p) => (
                 <Badge key={p.id} variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-800">
@@ -74,8 +74,8 @@ export function ResultsTab({ slug, hackathon, canManage }: { slug: string; hacka
                   {p.title}
                 </Badge>
               ))}
-              <span className="text-right text-sm text-slate-600 tabular-nums">
-                <span className="block font-semibold text-slate-900">{r.total_score ? Number(r.total_score).toFixed(2) : '—'}</span>
+              <span className="text-right text-sm text-soft tabular-nums">
+                <span className="block font-semibold text-foreground">{r.total_score ? Number(r.total_score).toFixed(2) : '—'}</span>
                 <span className="text-xs">{r.evaluations_count} éval.</span>
               </span>
             </li>
@@ -84,13 +84,13 @@ export function ResultsTab({ slug, hackathon, canManage }: { slug: string; hacka
       )}
 
       {editable && results.length > 0 && (
-        <section className="rounded-xl border border-slate-200 p-4">
-          <h2 className="font-semibold text-slate-900">Attribuer les prix</h2>
-          <p className="mt-1 text-sm text-slate-500">Proposé d'après le classement : vous pouvez changer.</p>
+        <section className="rounded-xl border border-border p-4">
+          <h2 className="font-semibold text-foreground">Attribuer les prix</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Proposé d'après le classement : vous pouvez changer.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {prizes.map((p) => (
               <label key={p.id} className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-body">
                   #{p.rank} {p.title}
                 </span>
                 <select

@@ -43,8 +43,8 @@ function GeneralTab() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <h2 className="text-lg font-semibold text-slate-900">Informations</h2>
-      <p className="mb-5 text-sm text-slate-500">Ce que voient les visiteurs sur la page publique de la communauté.</p>
+      <h2 className="text-lg font-semibold text-foreground">Informations</h2>
+      <p className="mb-5 text-sm text-muted-foreground">Ce que voient les visiteurs sur la page publique de la communauté.</p>
 
       <div className="grid gap-x-4 md:grid-cols-2">
         <Input id="community-name" label="Nom" required error={errors.name?.message} {...register('name')} />
@@ -79,19 +79,19 @@ function GeneralTab() {
             <input
               id="community-brand-color"
               type="color"
-              className="h-10 w-14 cursor-pointer rounded-md border border-slate-200 bg-white p-1"
+              className="h-10 w-14 cursor-pointer rounded-md border border-border bg-card p-1"
               {...register('brand_color')}
             />
-            <span className="font-mono text-sm text-slate-600 uppercase">{watch('brand_color')}</span>
+            <span className="font-mono text-sm text-soft uppercase">{watch('brand_color')}</span>
           </div>
         </div>
         <div className="mb-3">
           <p className="custom-form-label mb-1 block">Adresse de la communauté</p>
-          <p className="truncate rounded-md bg-slate-50 px-3 py-2.5 font-mono text-sm text-slate-600">kodinga.com/communities/{community.slug}</p>
+          <p className="truncate rounded-md bg-subtle px-3 py-2.5 font-mono text-sm text-soft">kodinga.com/communities/{community.slug}</p>
         </div>
       </div>
 
-      <h3 className="mt-4 mb-3 text-sm font-semibold text-slate-900">Liens</h3>
+      <h3 className="mt-4 mb-3 text-sm font-semibold text-foreground">Liens</h3>
       <div className="grid gap-x-4 md:grid-cols-2">
         <Input id="community-website" label="Site web" placeholder="https://" error={errors.website_url?.message} {...register('website_url')} />
         <Input id="community-github" label="GitHub" placeholder="https://github.com/…" error={errors.github_url?.message} {...register('github_url')} />

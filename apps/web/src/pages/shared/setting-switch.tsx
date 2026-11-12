@@ -15,8 +15,8 @@ function SettingSwitch({ label, description, checked, onCheckedChange }: Props) 
   return (
     <div className="flex items-start justify-between gap-6 py-3">
       <div>
-        <p id={`${id}-label`} className="text-sm font-medium text-slate-900">{label}</p>
-        {description && <p id={`${id}-desc`} className="mt-0.5 text-sm text-slate-500">{description}</p>}
+        <p id={`${id}-label`} className="text-sm font-medium text-foreground">{label}</p>
+        {description && <p id={`${id}-desc`} className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
       <InputSwitch
         checked={checked}

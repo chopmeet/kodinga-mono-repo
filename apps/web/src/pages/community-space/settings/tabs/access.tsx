@@ -48,8 +48,8 @@ function AccessTab() {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <h2 className="text-lg font-semibold text-slate-900">Accès & publication</h2>
-        <p className="mb-5 text-sm text-slate-500">Qui peut voir, rejoindre et publier dans la communauté.</p>
+        <h2 className="text-lg font-semibold text-foreground">Accès & publication</h2>
+        <p className="mb-5 text-sm text-muted-foreground">Qui peut voir, rejoindre et publier dans la communauté.</p>
 
         <div className="grid gap-x-4 md:grid-cols-2">
           <SelectInput
@@ -75,7 +75,7 @@ function AccessTab() {
           />
         </div>
 
-        <div className="mt-2 divide-y divide-slate-100 border-y border-slate-100">
+        <div className="mt-2 divide-y divide-border-soft border-y border-border-soft">
           <Controller
             control={control}
             name="is_read_only"

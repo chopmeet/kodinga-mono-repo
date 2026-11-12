@@ -47,7 +47,7 @@ function ConfirmByNameModal({ open, title, description, confirmText, actionLabel
         </DialogHeader>
         <div>
           <label htmlFor="confirm-by-name" className="custom-form-label mb-1 block">
-            Tapez <span className="font-semibold text-slate-900">{confirmText}</span> pour confirmer
+            Tapez <span className="font-semibold text-foreground">{confirmText}</span> pour confirmer
           </label>
           <input
             id="confirm-by-name"

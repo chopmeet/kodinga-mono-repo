@@ -2,12 +2,12 @@ import { TrendingUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { ChartTooltip, formatCompact, formatXof, GRID_COLOR, SERIES, TICK } from '@/pages/shared/chart-theme';
+import { ChartTooltip, formatCompact, formatXof, GRID_COLOR, SERIES, TICK, CURSOR_FILL } from '@/pages/shared/chart-theme';
 import type { MonthlyRevenue } from '@/utils/api/billing/billing.type';
+import { dateFormat } from '@/utils/format';
+import { monthKey } from '@/utils/Utils';
 
 const MONTHS = 12;
-const monthFormat = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: '2-digit' });
-
 type Point = { month: string; label: string; gross: number; fees: number; net: number; count: number };
 
 /** The last 12 months up to the latest payment, empty months at 0 (the time axis has no gaps) */
@@ -17,9 +17,9 @@ function toPoints(monthly: MonthlyRevenue[]): Point[] {
   const [year, month] = monthly[monthly.length - 1].month.split('-').map(Number);
   return Array.from({ length: MONTHS }, (_, i) => {
     const date = new Date(year, month - 1 - (MONTHS - 1 - i), 1);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const key = monthKey(date);
     const m = byMonth.get(key);
-    return { month: key, label: monthFormat.format(date), gross: Number(m?.gross ?? 0), fees: Number(m?.fees ?? 0), net: Number(m?.net ?? 0), count: m?.payments_count ?? 0 };
+    return { month: key, label: dateFormat({ month: 'short', year: '2-digit' }).format(date), gross: Number(m?.gross ?? 0), fees: Number(m?.fees ?? 0), net: Number(m?.net ?? 0), count: m?.payments_count ?? 0 };
   });
 }
 
@@ -60,9 +60,9 @@ function RevenueChart({
 
   if (points.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-300 px-6 py-10 text-center">
-        <TrendingUp className="size-6 text-slate-400" aria-hidden />
-        <p className="mt-2 text-sm text-slate-500">{emptyText}</p>
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-border-strong px-6 py-10 text-center">
+        <TrendingUp className="size-6 text-faint" aria-hidden />
+        <p className="mt-2 text-sm text-muted-foreground">{emptyText}</p>
       </div>
     );
   }
@@ -75,34 +75,37 @@ function RevenueChart({
             <CartesianGrid stroke={GRID_COLOR} vertical={false} />
             <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" />
             <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={formatCompact} width={48} />
-            <Tooltip content={<RevenueTooltip netLabel={netLabel} />} cursor={{ fill: '#f1f5f9' }} />
+            <Tooltip content={<RevenueTooltip netLabel={netLabel} />} cursor={{ fill: CURSOR_FILL }} />
             <Bar isAnimationActive={false} dataKey="net" name={netLabel} fill={SERIES[0]} maxBarSize={32} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <table className="sr-only">
-        <caption>Revenus par mois</caption>
-        <thead>
-          <tr>
-            <th>Mois</th>
-            <th>Payé par les membres</th>
-            <th>Commission Kodinga</th>
-            <th>{netLabel}</th>
-            <th>Paiements</th>
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((p) => (
-            <tr key={p.month}>
-              <td>{p.label}</td>
-              <td>{formatXof(p.gross)}</td>
-              <td>{formatXof(p.fees)}</td>
-              <td>{formatXof(p.net)}</td>
-              <td>{p.count}</td>
+      {/* Text alternative of the chart for screen readers, never shown: a plain <table>, not DataTable (rule of CLAUDE.md). sr-only on the wrapper: a table does not shrink to 1px, it would widen the page on mobile */}
+      <div className="sr-only">
+        <table>
+          <caption>Revenus par mois</caption>
+          <thead>
+            <tr>
+              <th>Mois</th>
+              <th>Payé par les membres</th>
+              <th>Commission Kodinga</th>
+              <th>{netLabel}</th>
+              <th>Paiements</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {points.map((p) => (
+              <tr key={p.month}>
+                <td>{p.label}</td>
+                <td>{formatXof(p.gross)}</td>
+                <td>{formatXof(p.fees)}</td>
+                <td>{formatXof(p.net)}</td>
+                <td>{p.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

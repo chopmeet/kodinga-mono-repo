@@ -64,7 +64,7 @@ function StackChip({
         'flex h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-medium whitespace-nowrap shadow-2xs transition-colors sm:h-12 sm:px-5 sm:text-[15px]',
         active
           ? 'border-blue-900 bg-blue-900 text-white'
-          : 'border-white/80 bg-white/85 text-slate-700 backdrop-blur hover:border-slate-200 hover:text-slate-900'
+          : 'border-white/80 bg-card/85 text-body backdrop-blur hover:border-border hover:text-foreground dark:border-border'
       )}
     >
       <Icon className="size-4.5" />
@@ -101,11 +101,11 @@ export function HeroSection({ stack, onStackChange }: Props) {
     <section className="relative isolate overflow-hidden px-4 pt-16 pb-14 sm:px-6 sm:pt-20 sm:pb-16 lg:px-8">
       <GlassBackdrop className="-z-10" />
       <div className="mx-auto flex max-w-[1440px] flex-col items-center text-center">
-        <p className="md:flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase hidden">
+        <p className="md:flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-soft uppercase hidden">
           <span className="size-1.5 rounded-full bg-primary" aria-hidden />
           {t('home.hero.eyebrow')}
         </p>
-        <h1 className="mt-6 max-w-6xl text-4xl leading-[1.05] font-bold tracking-tight text-balance text-slate-900 sm:text-5xl lg:text-6xl 2xl:text-7xl">
+        <h1 className="mt-6 max-w-6xl text-4xl leading-[1.05] font-bold tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl 2xl:text-7xl">
           {t('home.hero.titleStart')} <span className="text-primary">{t('home.hero.titleHighlight')}</span>
         </h1>
 
@@ -115,9 +115,9 @@ export function HeroSection({ stack, onStackChange }: Props) {
               e.preventDefault();
               scrollToResults();
             }}
-            className="flex items-center gap-3 rounded-xl border border-white/80 bg-white/95 p-2 pl-5 shadow-lg shadow-blue-900/5"
+            className="flex items-center gap-3 rounded-xl border border-white/80 bg-card/95 p-2 pl-5 shadow-lg shadow-blue-900/5 dark:border-border"
           >
-            <Search className="size-5 shrink-0 text-slate-500" aria-hidden />
+            <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
             <input
               id="community-search"
               type="search"
@@ -125,7 +125,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
               placeholder={t('home.hero.searchPlaceholder')}
               value={query}
               onChange={(e) => dispatch(onSetSearchQuery(e.target.value))}
-              className="h-12 min-w-0 flex-1 bg-transparent text-base text-slate-900 outline-none placeholder:text-slate-500"
+              className="h-12 min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
             />
             <button
               type="submit"
@@ -157,7 +157,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
                   'flex h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-medium whitespace-nowrap shadow-2xs transition-colors sm:h-12 sm:px-5 sm:text-[15px]',
                   stacks.slice(VISIBLE_STACKS).some((s) => s.id === stack)
                     ? 'border-blue-900 bg-blue-900 text-white'
-                    : 'border-white/80 bg-white/85 text-slate-700 backdrop-blur hover:border-slate-200 hover:text-slate-900'
+                    : 'border-white/80 bg-card/85 text-body backdrop-blur hover:border-border hover:text-foreground dark:border-border'
                 )}
               >
                 {stack && stacks.slice(VISIBLE_STACKS).some((s) => s.id === stack) ? label(stack) : t('home.hero.more')}
@@ -178,7 +178,7 @@ export function HeroSection({ stack, onStackChange }: Props) {
           )}
         </div>
 
-        <p className="mt-10 flex items-center gap-2 text-sm text-slate-500">
+        <p className="mt-10 flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="size-4" aria-hidden />
           {t('home.hero.tagline')}
         </p>

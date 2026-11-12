@@ -1,6 +1,24 @@
 import type { Translations } from '../types';
 
 export const common: Translations['common'] = {
+  emoji: {
+    open: 'Insert an emoji',
+    react: 'Add a reaction',
+    loading: 'Loading emojis…',
+    search: 'Search an emoji',
+    noResults: 'No emoji found',
+    categories: {
+      suggested: 'Recent',
+      smileys_people: 'Smileys and people',
+      animals_nature: 'Animals and nature',
+      food_drink: 'Food and drink',
+      travel_places: 'Travel and places',
+      activities: 'Activities',
+      objects: 'Objects',
+      symbols: 'Symbols',
+      flags: 'Flags',
+    },
+  },
   time: {
     now: 'Just now',
     minutesAgo: '{{count}} min ago',

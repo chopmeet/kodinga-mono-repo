@@ -73,6 +73,11 @@ export const labels = {
     year: '/ an',
     one_time: 'une fois',
   },
+  /** Kodinga Pro bought once: "À vie" rather than "Paiement unique" */
+  proLifetime: {
+    label: 'À vie',
+    suffix: 'à vie',
+  },
   memberRole: {
     owner: 'Propriétaire',
     admin: 'Administrateur',

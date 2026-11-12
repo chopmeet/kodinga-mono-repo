@@ -24,7 +24,9 @@ class CommunityChurnDashboardView(APIView):
 
         force_refresh = request.query_params.get("refresh", "false").lower() == "true"
         if force_refresh:
-            risks = ChurnPredictionService.evaluate_community_churn(community=community, limit=50)
+            risks = ChurnPredictionService.evaluate_community_churn(
+                community=community, limit=50
+            )
         else:
             risks = list(
                 MemberChurnRisk.objects.filter(member__community=community)
@@ -32,7 +34,9 @@ class CommunityChurnDashboardView(APIView):
                 .order_by("-risk_score")[:50]
             )
             if not risks:
-                risks = ChurnPredictionService.evaluate_community_churn(community=community, limit=50)
+                risks = ChurnPredictionService.evaluate_community_churn(
+                    community=community, limit=50
+                )
 
         serializer = MemberChurnRiskSerializer(risks, many=True)
         resp_data = {
@@ -95,7 +99,9 @@ class GenerateSmartNudgeView(APIView):
         )
         self.check_object_permissions(request, churn_risk.member.community)
 
-        nudge = ChurnPredictionService.generate_or_refresh_nudge(churn_risk_id=str(target_id))
+        nudge = ChurnPredictionService.generate_or_refresh_nudge(
+            churn_risk_id=str(target_id)
+        )
         resp_data = {
             "suggested_nudge": nudge,
             "churn_risk_id": str(target_id),

@@ -47,8 +47,12 @@ class GeminiAdapter(BaseAIProvider):
     ):
         self._explicit_key = api_key is not None
         self.api_key = api_key or getattr(settings, "GEMINI_API_KEY", "")
-        self.model_name = model_name or getattr(settings, "GEMINI_TEXT_MODEL", "gemini-2.5-flash")
-        self.timeout_ms = timeout_ms or getattr(settings, "AI_PROVIDER_TIMEOUT_MS", 15000)
+        self.model_name = model_name or getattr(
+            settings, "GEMINI_TEXT_MODEL", "gemini-2.5-flash"
+        )
+        self.timeout_ms = timeout_ms or getattr(
+            settings, "AI_PROVIDER_TIMEOUT_MS", 15000
+        )
         self._client = None
 
     @property
@@ -57,13 +61,18 @@ class GeminiAdapter(BaseAIProvider):
 
     def _get_client(self):
         if not self._client:
-            effective_key = self.api_key if self._explicit_key else getattr(settings, "GEMINI_API_KEY", "")
+            effective_key = (
+                self.api_key
+                if self._explicit_key
+                else getattr(settings, "GEMINI_API_KEY", "")
+            )
             if not effective_key:
                 raise ConfigurationError(
                     "GEMINI_API_KEY is not configured.", provider=self.provider_name
                 )
             try:
                 from google import genai
+
                 self._client = genai.Client(api_key=effective_key)
             except Exception as e:
                 logger.error(f"[Gemini] Failed to initialize genai.Client: {e}")
@@ -104,7 +113,8 @@ class GeminiAdapter(BaseAIProvider):
             "resource_exhausted" in err_msg
             or "quota" in err_msg
             or "insufficient_quota" in err_msg
-            or "429" in err_msg and ("exhausted" in err_msg or "quota" in err_msg)
+            or "429" in err_msg
+            and ("exhausted" in err_msg or "quota" in err_msg)
         ):
             logger.warning(f"[Gemini] Quota exhausted: {e}")
             raise QuotaExhaustedError(
@@ -112,7 +122,11 @@ class GeminiAdapter(BaseAIProvider):
             )
 
         # Check for short-term rate limits
-        if "429" in err_msg or "rate limit" in err_msg or "too many requests" in err_msg:
+        if (
+            "429" in err_msg
+            or "rate limit" in err_msg
+            or "too many requests" in err_msg
+        ):
             logger.warning(f"[Gemini] Rate limited: {e}")
             raise RateLimitError(
                 f"Gemini rate limit exceeded: {e}", provider=self.provider_name
@@ -211,7 +225,7 @@ class GeminiAdapter(BaseAIProvider):
             "Supported languages include French ('fr'), English ('en'), Wolof ('wo'), Bambara ('bm'), "
             "or standard ISO 639-1 code. Return strictly valid JSON with keys: language_code, confidence, name."
         )
-        prompt = f"Text to classify:\n\"\"\"{text[:2000]}\"\"\"\n\nReturn JSON:"
+        prompt = f'Text to classify:\n"""{text[:2000]}"""\n\nReturn JSON:'
         raw = self._generate(prompt, system_instruction=system)
         data = self._clean_json_response(raw)
 
@@ -244,9 +258,9 @@ class GeminiAdapter(BaseAIProvider):
             f"1. Preserve all URLs, code blocks, @mentions, #tags, numbers, and emojis verbatim.\n"
             f"2. For Wolof (wo) and Bambara (bm), use natural and authentic standard orthography. "
             f"Do NOT hallucinate or invent non-existent words. If technical terms have no direct translation, preserve them.\n"
-            f"3. Return strictly valid JSON: {{\"translated_text\": \"...\", \"source_language\": \"...\", \"target_language\": \"{target_lang}\", \"confidence\": 0.95}}"
+            f'3. Return strictly valid JSON: {{"translated_text": "...", "source_language": "...", "target_language": "{target_lang}", "confidence": 0.95}}'
         )
-        prompt = f"Source language: {source_lang or 'auto'}\nTarget language: {target_lang}\n\nContent:\n\"\"\"{text}\"\"\"\n\nJSON:"
+        prompt = f'Source language: {source_lang or "auto"}\nTarget language: {target_lang}\n\nContent:\n"""{text}"""\n\nJSON:'
         raw = self._generate(prompt, system_instruction=system)
         data = self._clean_json_response(raw)
 
@@ -267,14 +281,20 @@ class GeminiAdapter(BaseAIProvider):
             "You are an objective sentiment analysis engine. Classify the sentiment of the text into "
             "exactly one of: 'positive', 'neutral', 'negative', 'mixed', 'uncertain'. "
             "Distinguish constructive technical criticism or complaints from hate/abuse. "
-            "Return strictly valid JSON: {\"sentiment\": \"...\", \"score\": 0.0, \"confidence\": 0.95, \"reason\": \"...\"}"
+            'Return strictly valid JSON: {"sentiment": "...", "score": 0.0, "confidence": 0.95, "reason": "..."}'
         )
-        prompt = f"Text to analyze:\n\"\"\"{text[:3000]}\"\"\"\n\nJSON:"
+        prompt = f'Text to analyze:\n"""{text[:3000]}"""\n\nJSON:'
         raw = self._generate(prompt, system_instruction=system)
         data = self._clean_json_response(raw)
 
         sentiment_val = str(data.get("sentiment", "neutral")).lower()
-        if sentiment_val not in ["positive", "neutral", "negative", "mixed", "uncertain"]:
+        if sentiment_val not in [
+            "positive",
+            "neutral",
+            "negative",
+            "mixed",
+            "uncertain",
+        ]:
             sentiment_val = "neutral"
 
         return SentimentResult(
@@ -302,9 +322,9 @@ class GeminiAdapter(BaseAIProvider):
                 "CRITICAL INSTRUCTIONS:\n"
                 "1. Legitimate debates, disagreements, technical critiques, and complaints are ALLOWED.\n"
                 "2. Decision must be 'allow', 'reject' (clear mandatory violation), or 'review' (ambiguous/low confidence).\n"
-                "3. Return strictly valid JSON: {\"decision\": \"allow\"|\"reject\"|\"review\", \"flagged\": boolean, \"categories\": [...], \"confidence\": 0.98, \"reason\": \"...\"}"
+                '3. Return strictly valid JSON: {"decision": "allow"|"reject"|"review", "flagged": boolean, "categories": [...], "confidence": 0.98, "reason": "..."}'
             )
-            prompt = f"Content to moderate:\n\"\"\"{text[:4000]}\"\"\"\n\nJSON:"
+            prompt = f'Content to moderate:\n"""{text[:4000]}"""\n\nJSON:'
             raw = self._generate(prompt, system_instruction=system)
             data = self._clean_json_response(raw)
 
@@ -349,13 +369,23 @@ class GeminiAdapter(BaseAIProvider):
             "hate_speech_and_humiliation",
             "severe_safety_violation",
         ]
-        mandatory_violations = [c for c in mod_result.categories if c in mandatory_categories]
-        community_violations = [c for c in mod_result.categories if c not in mandatory_categories]
+        mandatory_violations = [
+            c for c in mod_result.categories if c in mandatory_categories
+        ]
+        community_violations = [
+            c for c in mod_result.categories if c not in mandatory_categories
+        ]
 
-        violates_mandatory = len(mandatory_violations) > 0 or mod_result.decision == "reject"
+        violates_mandatory = (
+            len(mandatory_violations) > 0 or mod_result.decision == "reject"
+        )
         violates_community = len(community_violations) > 0
 
-        final_decision = "reject" if violates_mandatory else ("review" if violates_community else "allow")
+        final_decision = (
+            "reject"
+            if violates_mandatory
+            else ("review" if violates_community else "allow")
+        )
 
         return PolicyViolationResult(
             violates_mandatory_rules=violates_mandatory,
@@ -384,7 +414,7 @@ class GeminiAdapter(BaseAIProvider):
         candidates_json = json.dumps(candidate_communities, ensure_ascii=False)
         prompt = (
             f"You are the Kodinga AI Community Guide.\n"
-            f"Analyze user interests and goals: \"{interests}\".\n"
+            f'Analyze user interests and goals: "{interests}".\n'
             f"Select the most relevant communities strictly from this list of candidates:\n"
             f"{candidates_json}\n\n"
             f"CRITICAL RULES:\n"
@@ -392,9 +422,9 @@ class GeminiAdapter(BaseAIProvider):
             f"2. For each recommendation, provide an insightful 'relevance_reason' explaining why it matches the user.\n"
             f"3. Respond in {lang_instruction}.\n\n"
             f"Respond ONLY in valid JSON matching this schema:\n"
-            f'{{\n'
+            f"{{\n"
             f'  "recommendations": [\n'
-            f'    {{\n'
+            f"    {{\n"
             f'      "id": "str",\n'
             f'      "name": "str",\n'
             f'      "slug": "str",\n'
@@ -407,11 +437,11 @@ class GeminiAdapter(BaseAIProvider):
             f'      "language": "str",\n'
             f'      "relevance_reason": "str",\n'
             f'      "match_score": 0.95\n'
-            f'    }}\n'
-            f'  ],\n'
+            f"    }}\n"
+            f"  ],\n"
             f'  "reasoning": "Overview explanation of why these were chosen",\n'
             f'  "suggested_alternatives": ["alternative topic 1", "alternative topic 2"]\n'
-            f'}}'
+            f"}}"
         )
         try:
             client = self._get_client()
@@ -432,7 +462,9 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
+            raise RecoverableProviderError(
+                f"Gemini error: {e}", provider=self.provider_name
+            ) from e
 
     def plan_community(
         self,
@@ -443,7 +475,7 @@ class GeminiAdapter(BaseAIProvider):
         lang_instruction = self._get_lang_prompt(language)
         prompt = (
             f"You are the Kodinga Community Builder Assistant.\n"
-            f"A user wants to create a community with this concept:\n\"{idea}\"\n\n"
+            f'A user wants to create a community with this concept:\n"{idea}"\n\n'
             f"Context: {json.dumps(context or {}, ensure_ascii=False)}\n\n"
             f"Transform this idea into a structured, highly actionable community proposal.\n"
             f"Provide 3-5 name suggestions, a compelling description and purpose, target audience, "
@@ -453,7 +485,7 @@ class GeminiAdapter(BaseAIProvider):
             f"If essential details are missing, include 1-2 follow_up_questions.\n"
             f"Respond in {lang_instruction}.\n\n"
             f"Respond ONLY in valid JSON matching this schema:\n"
-            f'{{\n'
+            f"{{\n"
             f'  "name_suggestions": ["name1", "name2", "name3"],\n'
             f'  "description": "Full description",\n'
             f'  "purpose": "Core mission",\n'
@@ -467,9 +499,9 @@ class GeminiAdapter(BaseAIProvider):
             f'  "initial_event_ideas": ["Event 1", "Event 2"],\n'
             f'  "first_week_launch_plan": [\n'
             f'    {{"day": "Jour 1", "focus": "Bienvenue", "action_items": ["Action 1", "Action 2"]}}\n'
-            f'  ],\n'
+            f"  ],\n"
             f'  "follow_up_questions": []\n'
-            f'}}'
+            f"}}"
         )
         try:
             client = self._get_client()
@@ -500,7 +532,9 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
+            raise RecoverableProviderError(
+                f"Gemini error: {e}", provider=self.provider_name
+            ) from e
 
     def suggest_content(
         self,
@@ -517,14 +551,14 @@ class GeminiAdapter(BaseAIProvider):
             f"Goal: {goal or 'Encourager la participation et les échanges'}\n"
             f"Respond in {lang_instruction}.\n\n"
             f"Respond ONLY in valid JSON matching this schema:\n"
-            f'{{\n'
+            f"{{\n"
             f'  "discussion_categories": ["#general", "#showcase", "#aide", "#opportunites"],\n'
             f'  "first_post": {{"title": "Titre", "content": "Corps du message", "type": "discussion"}},\n'
             f'  "weekly_activities": [{{"title": "Activité", "description": "Détail"}}],\n'
             f'  "monthly_events": [{{"title": "Événement", "format": "online", "description": "Détail"}}],\n'
             f'  "onboarding_prompt": "Texte d\'accueil",\n'
             f'  "weekly_content_calendar": [{{"day": "Lundi", "topic": "Partage de code", "type": "post"}}]\n'
-            f'}}'
+            f"}}"
         )
         try:
             client = self._get_client()
@@ -544,7 +578,9 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
+            raise RecoverableProviderError(
+                f"Gemini error: {e}", provider=self.provider_name
+            ) from e
 
     def analyze_community(
         self,
@@ -563,18 +599,18 @@ class GeminiAdapter(BaseAIProvider):
             f"- Clearly distinguish recommendations from completed actions.\n"
             f"- Respond in {lang_instruction}.\n\n"
             f"Respond ONLY in valid JSON matching this schema:\n"
-            f'{{\n'
+            f"{{\n"
             f'  "community_name": "{community_info.get("name", "")}",\n'
             f'  "overview_assessment": "Global diagnostic",\n'
             f'  "strengths": ["Strength 1", "Strength 2"],\n'
             f'  "improvement_areas": ["Area 1", "Area 2"],\n'
             f'  "actionable_recommendations": [\n'
             f'    {{"category": "engagement", "title": "Titre", "action_draft": "Draft", "rationale": "Why"}}\n'
-            f'  ],\n'
+            f"  ],\n"
             f'  "event_suggestions": ["Event suggestion 1"],\n'
             f'  "engagement_tactics": ["Tactic 1", "Tactic 2"],\n'
             f'  "metrics_summary": {json.dumps(metrics, ensure_ascii=False)}\n'
-            f'}}'
+            f"}}"
         )
         try:
             client = self._get_client()
@@ -588,7 +624,9 @@ class GeminiAdapter(BaseAIProvider):
                 for item in data.get("actionable_recommendations", [])
             ]
             return CommunityAnalysisResult(
-                community_name=data.get("community_name", community_info.get("name", "")),
+                community_name=data.get(
+                    "community_name", community_info.get("name", "")
+                ),
                 overview_assessment=data.get("overview_assessment", ""),
                 strengths=data.get("strengths", []),
                 improvement_areas=data.get("improvement_areas", []),
@@ -600,7 +638,9 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
+            raise RecoverableProviderError(
+                f"Gemini error: {e}", provider=self.provider_name
+            ) from e
 
     def assistant_chat(
         self,
@@ -614,18 +654,18 @@ class GeminiAdapter(BaseAIProvider):
             f"You are the Kodinga AI Community Assistant, an intelligent and warm community guide and builder.\n"
             f"Context: {json.dumps(context or {}, ensure_ascii=False)}\n"
             f"Conversation history: {json.dumps(history, ensure_ascii=False)}\n\n"
-            f"User message: \"{message}\"\n\n"
+            f'User message: "{message}"\n\n'
             f"Provide a helpful, concise, and structured reply in {lang_instruction}.\n"
             f"If the user wants to discover communities, plan a community, suggest content, or improve a community, "
             f"indicate the suggested_action ('recommend_communities', 'plan_community', 'suggest_content', 'analyze_community', or null).\n"
             f"Suggest 2-3 relevant follow-up prompts.\n\n"
             f"Respond ONLY in valid JSON matching this schema:\n"
-            f'{{\n'
+            f"{{\n"
             f'  "reply": "Assistant response text",\n'
             f'  "suggested_follow_ups": ["Follow up 1", "Follow up 2"],\n'
             f'  "suggested_action": null,\n'
             f'  "data": null\n'
-            f'}}'
+            f"}}"
         )
         try:
             client = self._get_client()
@@ -643,7 +683,9 @@ class GeminiAdapter(BaseAIProvider):
             )
         except Exception as e:
             self._handle_gemini_error(e)
-            raise RecoverableProviderError(f"Gemini error: {e}", provider=self.provider_name) from e
+            raise RecoverableProviderError(
+                f"Gemini error: {e}", provider=self.provider_name
+            ) from e
 
     def generate_embedding(self, text: str) -> list[float]:
         if getattr(settings, "IS_TESTING", False):
@@ -659,8 +701,10 @@ class GeminiAdapter(BaseAIProvider):
             if hasattr(resp, "embeddings") and resp.embeddings:
                 return [float(x) for x in resp.embeddings[0].values]
         except Exception as e:
-            logger.warning(f"Gemini embedding API call failed: {e}. Falling back to deterministic embedding.")
-        
+            logger.warning(
+                f"Gemini embedding API call failed: {e}. Falling back to deterministic embedding."
+            )
+
         # Deterministic normalized embedding fallback for hermetic testing and offline mode
         return self._deterministic_embedding(text)
 

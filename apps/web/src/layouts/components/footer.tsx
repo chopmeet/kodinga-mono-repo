@@ -40,7 +40,7 @@ function FooterLogo() {
   const { t } = useTranslation();
   return (
     <Link to="/" className="inline-flex items-center gap-2.5" aria-label={t('layout.footer.homeLabel')}>
-      <span className="flex size-10 items-center justify-center rounded-lg bg-white text-lg font-bold text-blue-900">K</span>
+      <span className="flex size-10 items-center justify-center rounded-lg bg-card text-lg font-bold text-brand-strong">K</span>
       <span className="text-2xl font-bold tracking-tight text-white">
         kodinga<span className="text-blue-300">.</span>
       </span>
@@ -102,7 +102,7 @@ function Footer() {
           </div>
           <Link
             to="/create-community"
-            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-lg bg-white px-6 font-semibold text-blue-950 shadow-sm transition-colors hover:bg-blue-50"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-lg bg-card px-6 font-semibold text-brand-strong shadow-sm transition-colors hover:bg-brand-subtle"
           >
             {t('layout.footer.ctaButton')} <ArrowUpRight className="size-4" />
           </Link>

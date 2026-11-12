@@ -21,8 +21,8 @@ function RulesTab() {
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Règles</h2>
-          <p className="text-sm text-slate-500">La charte de la communauté, dans l'ordre où les membres la lisent. Une nouvelle règle s’ajoute à la fin.</p>
+          <h2 className="text-lg font-semibold text-foreground">Règles</h2>
+          <p className="text-sm text-muted-foreground">La charte de la communauté, dans l'ordre où les membres la lisent. Une nouvelle règle s’ajoute à la fin.</p>
         </div>
         <Button onClick={() => setModal({ open: true, rule: null })}>
           <Plus />
@@ -33,15 +33,15 @@ function RulesTab() {
       {rules.length === 0 ? (
         <EmptyAlert text="Aucune règle pour l'instant." />
       ) : (
-        <ol aria-label="Règles de la communauté" className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+        <ol aria-label="Règles de la communauté" className="divide-y divide-border-soft rounded-xl border border-border">
           {rules.map((rule, i) => (
             <li key={rule.id} className="flex items-start gap-3 p-4">
               <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-slate-900">{rule.title}</p>
-                {rule.description && <p className="text-sm text-slate-500">{rule.description}</p>}
+                <p className="font-medium text-foreground">{rule.title}</p>
+                {rule.description && <p className="text-sm text-muted-foreground">{rule.description}</p>}
               </div>
               <div className="flex shrink-0 gap-0.5">
                 <Button variant="ghost" size="icon-sm" aria-label={`Modifier « ${rule.title} »`} onClick={() => setModal({ open: true, rule })}>

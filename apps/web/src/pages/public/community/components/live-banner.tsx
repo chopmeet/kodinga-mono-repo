@@ -39,7 +39,7 @@ export function LiveBanner({ slug }: { slug: string }) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold tracking-wider text-white uppercase">
-                <span className="size-1.5 animate-pulse rounded-full bg-white" /> {t('community.liveBanner.live')}
+                <span className="size-1.5 animate-pulse rounded-full bg-card" /> {t('community.liveBanner.live')}
               </span>
               {liveEvent.is_public ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
@@ -51,7 +51,7 @@ export function LiveBanner({ slug }: { slug: string }) {
                 </span>
               )}
               <span className="flex items-center gap-1 text-xs text-slate-300">
-                <Users className="size-3.5 text-slate-400" />
+                <Users className="size-3.5 text-faint" />
                 {t('community.events.participants', { count: liveEvent.attendees_count })}
               </span>
             </div>

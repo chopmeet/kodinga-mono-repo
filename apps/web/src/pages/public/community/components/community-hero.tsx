@@ -16,9 +16,9 @@ import { LeaveDialog, MembershipActions } from './community-sidebar';
 
 /** "Accès gratuit", "Sur demande", "Payante": the badge next to the name */
 export function accessBadge(community: CommunityDetail) {
-  if (community.pricing_type === 'paid') return { label: i18n.t('community.hero.paidAccess'), className: 'border-slate-200 bg-white/80 text-slate-700' };
+  if (community.pricing_type === 'paid') return { label: i18n.t('community.hero.paidAccess'), className: 'border-border bg-card/80 text-body' };
   if (community.settings?.require_approval_to_join) return { label: i18n.t('community.hero.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' };
-  return { label: i18n.t('community.hero.freeAccess'), className: 'border-blue-100 bg-blue-50 text-blue-800' };
+  return { label: i18n.t('community.hero.freeAccess'), className: 'border-brand-muted bg-brand-subtle text-brand-strong' };
 }
 
 async function copyPageLink() {
@@ -57,7 +57,7 @@ function NotificationsBell({ page }: { page: CommunityPage }) {
       aria-pressed={enabled}
       aria-label={label}
       title={label}
-      className={`flex size-11 items-center justify-center rounded-lg border border-slate-200 bg-white/90 shadow-2xs transition-colors hover:bg-white disabled:opacity-60 ${enabled ? 'text-blue-900' : 'text-slate-500'}`}
+      className={`flex size-11 items-center justify-center rounded-lg border border-border bg-card/90 shadow-2xs transition-colors hover:bg-card disabled:opacity-60 ${enabled ? 'text-brand-strong' : 'text-muted-foreground'}`}
     >
       <Icon className="size-5" />
     </button>
@@ -78,7 +78,7 @@ function MemberMenu({ page }: { page: CommunityPage }) {
           <button
             type="button"
             aria-label={t('community.hero.yourRole', { role: memberRoleLabel[role] })}
-            className="flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-4 text-sm font-medium text-slate-800 shadow-2xs hover:text-slate-950"
+            className="flex h-11 items-center gap-2 rounded-lg border border-border bg-card/90 px-4 text-sm font-medium text-foreground shadow-2xs hover:text-foreground"
           >
             <ShieldCheck className="size-4" />
             {memberRoleLabel[role]}
@@ -129,19 +129,19 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
   };
 
   return (
-    <section aria-labelledby="community-name" className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
+    <section aria-labelledby="community-name" className="relative overflow-hidden border-b border-border bg-subtle">
       {community.banner_url ? (
         <>
           <img src={community.banner_url} alt="" className="absolute inset-0 size-full object-cover" />
           {/* Keeps the text readable on any photo */}
-          <div className="absolute inset-0 bg-linear-to-r from-white via-white/90 to-white/40" />
+          <div className="absolute inset-0 bg-linear-to-r from-white via-white/90 to-white/40 dark:from-background dark:via-background/90 dark:to-background/40" />
         </>
       ) : (
         <GlassBackdrop />
       )}
 
       <div className="relative mx-auto max-w-285 px-4 pt-6 pb-10 sm:px-6 lg:px-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
           <ArrowLeft className="size-4" />
           {t('community.hero.back')}
         </Link>
@@ -149,9 +149,9 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
         <div className="mt-8 flex flex-wrap items-start gap-5 sm:gap-6">
           <CommunityAvatar community={community} className="size-16 rounded-xl text-xl shadow-sm sm:size-20 sm:text-2xl" />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-600 uppercase">{isMember ? t('community.hero.yourSpace') : t('community.hero.kodingaCommunities')}</p>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-soft uppercase">{isMember ? t('community.hero.yourSpace') : t('community.hero.kodingaCommunities')}</p>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <h1 id="community-name" className="text-3xl font-bold tracking-tight break-words text-slate-900 sm:text-4xl">
+              <h1 id="community-name" className="text-3xl font-bold tracking-tight break-words text-foreground sm:text-4xl">
                 {community.name}
               </h1>
               {community.is_verified && <BadgeCheck className="size-6 shrink-0 text-brand" aria-label={t('community.hero.verified')} />}
@@ -167,11 +167,11 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
               {!isMember && <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${badge.className}`}>{badge.label}</span>}
             </div>
             {isMember ? (
-              <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+              <p className="mt-3 flex items-center gap-2 text-sm text-soft">
                 <Users className="size-4" /> {t('community.hero.members', { count: n, formatted: formatCompact(n) })}
               </p>
             ) : (
-              community.tagline && <p className="mt-3 text-slate-600">{community.tagline}</p>
+              community.tagline && <p className="mt-3 text-soft">{community.tagline}</p>
             )}
             {!isMember && (
               <div className="mt-5 lg:hidden">
@@ -198,7 +198,7 @@ export function CommunityHero({ page }: { page: CommunityPage }) {
               onClick={copy}
               aria-label={t('community.hero.copyCommunityLink')}
               title={t('community.hero.copyLink')}
-              className="hidden size-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-2xs hover:text-slate-900 sm:flex"
+              className="hidden size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-body shadow-2xs hover:text-foreground sm:flex"
             >
               {copied ? <Check className="size-5 text-emerald-600" /> : <Copy className="size-5" />}
             </button>

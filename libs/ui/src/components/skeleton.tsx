@@ -38,7 +38,7 @@ function TableSkeleton<TData, TValue>({
   return (
     <Table>
       <TableHeader>
-        <TableRow className="bg-slate-50 border-b border-slate-200">
+        <TableRow className="bg-subtle border-b border-border">
           {columns.map((column) => {
             const id = getColumnId(column);
             return (

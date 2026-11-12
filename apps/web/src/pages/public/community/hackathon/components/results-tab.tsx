@@ -4,22 +4,22 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@kodinga/ui';
 import type { HackathonResult } from '@/utils/api/hackathon/hackathon.type';
 
-const medal = ['bg-amber-400 text-amber-950', 'bg-slate-300 text-slate-800', 'bg-orange-300 text-orange-950'];
+const medal = ['bg-amber-400 text-amber-950', 'bg-slate-300 text-foreground', 'bg-orange-300 text-orange-950'];
 
 /** Published ranking: projects by score, with the prizes they won */
 function ResultsTab({ results }: { results: HackathonResult[] }) {
   const { t } = useTranslation();
-  if (results.length === 0) return <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">{t('hackathon.results.none')}</p>;
+  if (results.length === 0) return <p className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">{t('hackathon.results.none')}</p>;
   return (
     <ol className="flex flex-col gap-3" aria-label={t('hackathon.results.label')}>
       {results.map((r, i) => {
         const rank = r.rank ?? i + 1;
         return (
-          <li key={r.id} className={cn('flex items-start gap-4 rounded-xl border bg-white p-5', rank <= 3 ? 'border-amber-200' : 'border-slate-200')}>
-            <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold', medal[rank - 1] ?? 'bg-slate-100 text-slate-600')}>{rank}</span>
+          <li key={r.id} className={cn('flex items-start gap-4 rounded-xl border bg-card p-5', rank <= 3 ? 'border-amber-200' : 'border-border')}>
+            <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold', medal[rank - 1] ?? 'bg-muted text-soft')}>{rank}</span>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-slate-900">{r.title}</h3>
-              <p className="text-sm text-slate-500">
+              <h3 className="font-semibold text-foreground">{r.title}</h3>
+              <p className="text-sm text-muted-foreground">
                 {r.team_name ? t('hackathon.results.team', { name: r.team_name }) : r.applicant_username}
                 {r.tagline && ` · ${r.tagline}`}
               </p>
@@ -34,12 +34,12 @@ function ResultsTab({ results }: { results: HackathonResult[] }) {
               )}
               <p className="mt-2 flex flex-wrap gap-4 text-sm">
                 {r.demo_url && (
-                  <a href={r.demo_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-blue-900 hover:underline">
+                  <a href={r.demo_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-brand-strong hover:underline">
                     <ExternalLink className="size-3.5" /> {t('hackathon.results.demo')}
                   </a>
                 )}
                 {r.repository_url && (
-                  <a href={r.repository_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-blue-900 hover:underline">
+                  <a href={r.repository_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-brand-strong hover:underline">
                     <Code2 className="size-3.5" /> {t('hackathon.results.code')}
                   </a>
                 )}
@@ -47,8 +47,8 @@ function ResultsTab({ results }: { results: HackathonResult[] }) {
             </div>
             {r.total_score !== null && (
               <span className="shrink-0 text-right">
-                <span className="block text-lg font-semibold text-slate-900 tabular-nums">{Number(r.total_score).toFixed(1)}</span>
-                <span className="text-xs text-slate-500">{t('hackathon.results.points')}</span>
+                <span className="block text-lg font-semibold text-foreground tabular-nums">{Number(r.total_score).toFixed(1)}</span>
+                <span className="text-xs text-muted-foreground">{t('hackathon.results.points')}</span>
               </span>
             )}
           </li>

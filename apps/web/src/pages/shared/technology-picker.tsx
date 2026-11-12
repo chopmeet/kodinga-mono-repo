@@ -48,7 +48,7 @@ export function TechnologyPicker({
             <li key={tech.id}>
               <button
                 type="button"
-                className="flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700 hover:border-primary hover:text-primary"
+                className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-sm text-body hover:border-primary hover:text-primary"
                 onClick={() => {
                   onAdd(tech);
                   setText('');
@@ -62,14 +62,14 @@ export function TechnologyPicker({
         </ul>
       )}
       {search.length >= 2 && !isFetching && suggestions.length === 0 && (
-        <p className="-mt-1 mb-3 text-sm text-slate-500">Aucune technologie trouvée pour « {search} ».</p>
+        <p className="-mt-1 mb-3 text-sm text-muted-foreground">Aucune technologie trouvée pour « {search} ».</p>
       )}
       {value.length > 0 && (
         <ul className="mb-3 flex flex-wrap gap-2" aria-label="Technologies choisies">
           {value.map((tech) => (
-            <li key={tech.id} className="flex items-center gap-1 rounded-full bg-blue-50 py-1 pr-1.5 pl-3 text-sm font-medium text-blue-800">
+            <li key={tech.id} className="flex items-center gap-1 rounded-full bg-brand-subtle py-1 pr-1.5 pl-3 text-sm font-medium text-brand-strong">
               {tech.name}
-              <button type="button" className="rounded-full p-0.5 hover:bg-blue-100" aria-label={`Retirer ${tech.name}`} onClick={() => onRemove(tech.id)}>
+              <button type="button" className="rounded-full p-0.5 hover:bg-brand-muted" aria-label={`Retirer ${tech.name}`} onClick={() => onRemove(tech.id)}>
                 <X className="size-3.5" />
               </button>
             </li>

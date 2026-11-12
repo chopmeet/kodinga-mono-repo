@@ -66,12 +66,12 @@ function ProjectDetails() {
 
   return (
     <div className="community__project">
-      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
         <ArrowLeft className="size-4" />
         Projets
       </Link>
 
-      <ColgateWrapper className="overflow-hidden border border-neutral-200 p-0">
+      <ColgateWrapper className="overflow-hidden border border-border p-0">
         <div className="relative h-44">
           {p.cover_image_url ? <img src={p.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
@@ -83,8 +83,8 @@ function ProjectDetails() {
                 Mis en avant
               </span>
             )}
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{p.title}</h1>
-            {p.tagline && <p className="mt-1 text-slate-600">{p.tagline}</p>}
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{p.title}</h1>
+            {p.tagline && <p className="mt-1 text-soft">{p.tagline}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant={p.is_upvoted ? 'default' : 'outline'} size="sm" onClick={vote} isLoading={isVoting} aria-pressed={p.is_upvoted}>
@@ -104,9 +104,9 @@ function ProjectDetails() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <ColgateWrapper className="border border-neutral-200 p-5">
-            <h2 className="font-semibold text-slate-900">Présentation</h2>
-            <p className="mt-3 whitespace-pre-line text-slate-700">{p.description || 'Pas encore de description.'}</p>
+          <ColgateWrapper className="border border-border p-5">
+            <h2 className="font-semibold text-foreground">Présentation</h2>
+            <p className="mt-3 whitespace-pre-line text-body">{p.description || 'Pas encore de description.'}</p>
             {(p.repository_url || p.demo_url) && (
               <div className="mt-5 flex flex-wrap gap-4 text-sm">
                 {p.repository_url && (
@@ -127,12 +127,12 @@ function ProjectDetails() {
 
           {/* Galerie des captures d'écran de démo */}
           {p.demo_images && p.demo_images.length > 0 && (
-            <ColgateWrapper className="border border-neutral-200 p-5">
+            <ColgateWrapper className="border border-border p-5">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="font-semibold text-foreground">
                   Captures d'écran & Démo ({p.demo_images.length})
                 </h2>
-                <span className="text-xs text-slate-500">Cliquez pour agrandir</span>
+                <span className="text-xs text-muted-foreground">Cliquez pour agrandir</span>
               </div>
               <ImageGallery images={p.demo_images} title={p.title} className="mt-4" />
             </ColgateWrapper>
@@ -141,24 +141,24 @@ function ProjectDetails() {
           <ProjectComments projectSlug={p.slug} />
         </div>
 
-        <ColgateWrapper className="h-fit border border-neutral-200 p-5">
+        <ColgateWrapper className="h-fit border border-border p-5">
           <dl className="space-y-4">
             {facts.map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex gap-3">
-                <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
+                <Icon className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
                 <div>
-                  <dt className="text-xs text-slate-500">{label}</dt>
-                  <dd className="text-sm font-medium text-slate-900">{value}</dd>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd className="text-sm font-medium text-foreground">{value}</dd>
                 </div>
               </div>
             ))}
           </dl>
           {p.technologies.length > 0 && (
             <>
-              <h2 className="mt-5 text-xs text-slate-500">Technologies</h2>
+              <h2 className="mt-5 text-xs text-muted-foreground">Technologies</h2>
               <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Technologies">
                 {p.technologies.map((t) => (
-                  <li key={t.id} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                  <li key={t.id} className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-soft">
                     {t.name}
                   </li>
                 ))}

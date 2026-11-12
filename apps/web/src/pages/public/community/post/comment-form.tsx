@@ -3,6 +3,8 @@ import { type FormEvent, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@kodinga/ui';
+import { EmojiPickerButton } from '@/pages/shared/emoji-picker-button';
+import { useEmojiInsert } from '@/pages/shared/use-emoji-insert';
 
 type Props = {
   label: string;
@@ -22,6 +24,7 @@ export function CommentForm({ label, placeholder, submitLabel, isSending = false
   const { t } = useTranslation();
   const id = useId();
   const [content, setContent] = useState('');
+  const emoji = useEmojiInsert(content, setContent);
   const text = content.trim();
 
   const submit = (e: FormEvent) => {
@@ -34,20 +37,24 @@ export function CommentForm({ label, placeholder, submitLabel, isSending = false
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-medium text-slate-800">
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </label>
       <textarea
+        ref={emoji.ref}
         id={id}
         rows={rows}
         value={content}
         autoFocus={autoFocus}
         onChange={(e) => setContent(e.target.value)}
         placeholder={placeholder}
-        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/10 focus:outline-none"
+        className="w-full resize-y rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-faint focus:border-blue-900 focus:ring-2 focus:ring-blue-900/10 focus:outline-none"
       />
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">{t('community.comment.markdown')}</p>
+        <div className="flex items-center gap-2">
+          <EmojiPickerButton onSelect={emoji.insert} align="start" />
+          <p className="text-xs text-muted-foreground">{t('community.comment.markdown')}</p>
+        </div>
         <div className="flex gap-2">
           {onCancel && (
             <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={isSending}>

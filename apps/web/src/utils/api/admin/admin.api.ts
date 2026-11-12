@@ -39,6 +39,12 @@ export const AdminApi = createApi({
       transformResponse: unwrap<SystemSetting[]>,
       providesTags: ['settings'],
     }),
+    // The is_public settings, for everyone (no admin rights): e.g. who may create a community
+    getPublicSettings: builder.query<SystemSetting[], void>({
+      query: () => 'system/settings/public/',
+      transformResponse: unwrap<SystemSetting[]>,
+      providesTags: ['settings'],
+    }),
     // Creates or updates one key (traced in the audit log by the api)
     updateSystemSetting: builder.mutation<SystemSetting, SystemSettingWrite>({
       query: (body) => ({ url: 'admin/settings/', method: 'PATCH', body }),
@@ -54,5 +60,6 @@ export const {
   useGetEngagementAnalyticsQuery,
   useGetMonthlyGrowthAnalyticsQuery,
   useGetSystemSettingsQuery,
+  useGetPublicSettingsQuery,
   useUpdateSystemSettingMutation,
 } = AdminApi;

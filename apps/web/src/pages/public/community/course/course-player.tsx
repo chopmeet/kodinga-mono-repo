@@ -24,7 +24,7 @@ function Outline({ player }: { player: CoursePlayer }) {
     <nav aria-label={t('course.outline')} className="space-y-5">
       {modules.map((m, mi) => (
         <section key={m.id}>
-          <h2 className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+          <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {t('course.module', { n: mi + 1, title: m.title })}
           </h2>
           <ol className="mt-2 space-y-1">
@@ -42,8 +42,8 @@ function Outline({ player }: { player: CoursePlayer }) {
                       title={l.is_locked ? t('course.lockedHint') : undefined}
                       className={cn(
                         'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed',
-                        current ? 'bg-blue-50 font-semibold text-blue-950' : 'text-slate-700 hover:bg-slate-50',
-                        l.is_locked && 'text-slate-400',
+                        current ? 'bg-brand-subtle font-semibold text-brand-strong' : 'text-body hover:bg-subtle',
+                        l.is_locked && 'text-faint',
                       )}
                     >
                       {l.is_completed ? (
@@ -51,10 +51,10 @@ function Outline({ player }: { player: CoursePlayer }) {
                       ) : l.is_locked ? (
                         <Lock className="size-4 shrink-0" aria-label={t('course.locked')} />
                       ) : (
-                        <PlayCircle className={cn('size-4 shrink-0', current ? 'text-blue-900' : 'text-slate-400')} aria-hidden />
+                        <PlayCircle className={cn('size-4 shrink-0', current ? 'text-brand-strong' : 'text-faint')} aria-hidden />
                       )}
                       <span className="min-w-0 flex-1 truncate">{l.title}</span>
-                      {l.duration_seconds > 0 && <span className="shrink-0 text-xs text-slate-400">{formatDuration(l.duration_seconds)}</span>}
+                      {l.duration_seconds > 0 && <span className="shrink-0 text-xs text-faint">{formatDuration(l.duration_seconds)}</span>}
                     </button>
                   </li>
                 );
@@ -88,7 +88,7 @@ function LessonVideo({ lesson }: { lesson: CourseLesson }) {
   const src = lesson.video_source_url || lesson.video_hls_url;
   if (!src) {
     return (
-      <p role="status" className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 px-6 text-center text-sm text-slate-500">
+      <p role="status" className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl bg-muted px-6 text-center text-sm text-muted-foreground">
         {lesson.video_status === 'errored' ? (
           t('course.videoErrored')
         ) : (
@@ -113,10 +113,10 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   if (!outline) return null;
   if (outline.is_locked) {
     return (
-      <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-16 text-center">
-        <Lock className="size-8 text-slate-400" />
-        <p className="mt-3 font-semibold text-slate-900">{t('course.lockedTitle')}</p>
-        <p className="mt-1 text-sm text-slate-500">{t('course.lockedText')}</p>
+      <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-16 text-center">
+        <Lock className="size-8 text-faint" />
+        <p className="mt-3 font-semibold text-foreground">{t('course.lockedTitle')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('course.lockedText')}</p>
         {nextToDo && (
           <Button className="mt-5" onClick={() => player.open(nextToDo.id)}>
             {t('course.resume')} <ArrowRight />
@@ -139,15 +139,15 @@ function LessonContent({ player }: { player: CoursePlayer }) {
   const attachments = (lesson.attachments ?? []).map((a) => ({ name: a.name || a.file_name || t('course.file'), url: a.url || a.file_url })).filter((a) => a.url);
 
   return (
-    <article aria-labelledby="lesson-title" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
-      <p className="text-xs font-semibold tracking-wide text-blue-900 uppercase">
+    <article aria-labelledby="lesson-title" className="rounded-xl border border-border bg-card p-6 sm:p-8">
+      <p className="text-xs font-semibold tracking-wide text-brand-strong uppercase">
         {t('course.lessonOf', { position: player.position, total: player.lessons.length, type: lessonTypeLabel[lesson.lesson_type] })}
       </p>
-      <h1 id="lesson-title" className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+      <h1 id="lesson-title" className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {lesson.title}
       </h1>
       {lesson.estimated_duration_display && (
-        <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
           <Clock className="size-4" /> {lesson.estimated_duration_display}
         </p>
       )}
@@ -161,11 +161,11 @@ function LessonContent({ player }: { player: CoursePlayer }) {
 
       <div className="mt-6">
         {!content && !exercise ? (
-          <p className="text-slate-500">{lesson.has_video || hasQuiz ? '' : t('course.noContent')}</p>
+          <p className="text-muted-foreground">{lesson.has_video || hasQuiz ? '' : t('course.noContent')}</p>
         ) : lesson.content_format === 'html' ? (
           <Markdown source={htmlToText(content)} />
         ) : lesson.content_format === 'json' ? (
-          <p className="text-slate-500">{t('course.notReadable')}</p>
+          <p className="text-muted-foreground">{t('course.notReadable')}</p>
         ) : exercise ? (
           <CodeExerciseView exercise={exercise} />
         ) : (
@@ -183,20 +183,20 @@ function LessonContent({ player }: { player: CoursePlayer }) {
         <div className="mt-6 space-y-4">
           {images.map((img) => (
             <figure key={img.url}>
-              <img src={img.url} alt={img.alt ?? ''} className="w-full rounded-xl border border-slate-200" />
-              {img.caption && <figcaption className="mt-1.5 text-center text-xs text-slate-500">{img.caption}</figcaption>}
+              <img src={img.url} alt={img.alt ?? ''} className="w-full rounded-xl border border-border" />
+              {img.caption && <figcaption className="mt-1.5 text-center text-xs text-muted-foreground">{img.caption}</figcaption>}
             </figure>
           ))}
         </div>
       )}
 
       {attachments.length > 0 && (
-        <section aria-label={t('course.resources')} className="mt-8 rounded-xl border border-slate-200 p-4">
-          <h2 className="text-sm font-semibold text-slate-900">{t('course.resources')}</h2>
+        <section aria-label={t('course.resources')} className="mt-8 rounded-xl border border-border p-4">
+          <h2 className="text-sm font-semibold text-foreground">{t('course.resources')}</h2>
           <ul className="mt-2 space-y-1.5">
             {attachments.map((a) => (
               <li key={a.url}>
-                <a href={a.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:underline">
+                <a href={a.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-brand-strong hover:underline">
                   <Download className="size-4" /> {a.name}
                 </a>
               </li>
@@ -205,7 +205,7 @@ function LessonContent({ player }: { player: CoursePlayer }) {
         </section>
       )}
 
-      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
+      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
         <Button variant="outline" onClick={() => player.previous && player.open(player.previous.id)} disabled={!player.previous}>
           <ArrowLeft /> {t('course.previous')}
         </Button>
@@ -217,7 +217,7 @@ function LessonContent({ player }: { player: CoursePlayer }) {
                 <Check className="size-4" aria-hidden /> {t('course.done')}
               </span>
             ) : (
-              <span className="text-sm text-slate-500">{t('course.passQuiz')}</span>
+              <span className="text-sm text-muted-foreground">{t('course.passQuiz')}</span>
             )
           ) : (
             <Button
@@ -267,9 +267,9 @@ function CoursePlayerPage() {
   if (player.membership !== 'member') {
     return (
       <Centered>
-        <Lock className="size-8 text-slate-400" />
-        <h1 className="text-2xl font-bold text-slate-900">{t('course.membersOnly')}</h1>
-        <p className="text-slate-500">{t('course.joinToFollow', { name: community?.name ?? t('course.theCommunity') })}</p>
+        <Lock className="size-8 text-faint" />
+        <h1 className="text-2xl font-bold text-foreground">{t('course.membersOnly')}</h1>
+        <p className="text-muted-foreground">{t('course.joinToFollow', { name: community?.name ?? t('course.theCommunity') })}</p>
         <Button asChild>
           {player.membership === 'visitor' ? (
             <Link to={player.loginUrl}>{t('course.login')}</Link>
@@ -283,7 +283,7 @@ function CoursePlayerPage() {
   if (!course) {
     return (
       <Centered>
-        <h1 className="text-2xl font-bold text-slate-900">{player.notFound ? t('course.notFound') : t('course.loadFailed')}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{player.notFound ? t('course.notFound') : t('course.loadFailed')}</h1>
         <Button asChild variant="outline">
           <Link to={back}>{t('course.back')}</Link>
         </Button>
@@ -292,17 +292,17 @@ function CoursePlayerPage() {
   }
 
   return (
-    <div className="min-h-full bg-slate-50/60">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-full bg-subtle/60">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-285 px-4 py-6 sm:px-6 lg:px-8">
-          <Link to={back} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+          <Link to={back} className="inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
             <ArrowLeft className="size-4" /> {community?.name} · {t('course.courses')}
           </Link>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase">{courseLevelLabel[course.level]}</p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{course.title}</h1>
-              <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+              <p className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">{courseLevelLabel[course.level]}</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{course.title}</h1>
+              <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="size-4" /> {t('course.lessons', { count: course.lessons_count })}
                 </span>
@@ -321,10 +321,10 @@ function CoursePlayerPage() {
           </div>
           <div className="mt-5">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-600">{t('course.progress')}</span>
-              <span className="font-semibold text-blue-900 tabular-nums">{player.progress} %</span>
+              <span className="text-soft">{t('course.progress')}</span>
+              <span className="font-semibold text-brand-strong tabular-nums">{player.progress} %</span>
             </div>
-            <div className="mt-2 h-2 rounded-full bg-blue-50" role="progressbar" aria-label={t('course.progressLabel')} aria-valuenow={player.progress} aria-valuemin={0} aria-valuemax={100}>
+            <div className="mt-2 h-2 rounded-full bg-brand-subtle" role="progressbar" aria-label={t('course.progressLabel')} aria-valuenow={player.progress} aria-valuemin={0} aria-valuemax={100}>
               <div className="h-full rounded-full bg-blue-900 transition-[width]" style={{ width: `${player.progress}%` }} />
             </div>
           </div>
@@ -333,7 +333,7 @@ function CoursePlayerPage() {
 
       <div className="mx-auto grid max-w-285 items-start gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[300px_1fr] lg:px-8">
         {/* Phones: the lesson first, the plan after it (no scrolling through the plan at each lesson) */}
-        <aside className="order-last rounded-xl border border-slate-200 bg-white p-4 lg:sticky lg:top-24 lg:order-0">
+        <aside className="order-last rounded-xl border border-border bg-card p-4 lg:sticky lg:top-24 lg:order-0">
           <Outline player={player} />
         </aside>
 
@@ -347,7 +347,7 @@ function CoursePlayerPage() {
             </div>
           )}
           {player.lessons.length === 0 ? (
-            <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">{t('course.preparing')}</p>
+            <p className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">{t('course.preparing')}</p>
           ) : (
             <LessonContent player={player} />
           )}

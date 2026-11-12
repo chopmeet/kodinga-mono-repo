@@ -38,22 +38,22 @@ export function AboutTab({ community, isTeam }: { community: CommunityDetail; is
         ) : (
           <GlassBackdrop fade={false} />
         )}
-        <figcaption className="absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-white/60 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs backdrop-blur">
+        <figcaption className="absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-white/60 bg-card/90 px-3 py-1.5 text-xs font-medium text-body shadow-2xs backdrop-blur">
           <Image className="size-3.5" aria-hidden />
           {t('community.about.illustration')}
         </figcaption>
       </figure>
 
-      <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-600">
+      <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-soft">
         {meta.map(({ icon: Icon, label }) => (
           <span key={label} className="flex items-center gap-2">
-            <Icon className="size-4 text-slate-500" />
+            <Icon className="size-4 text-muted-foreground" />
             {label}
           </span>
         ))}
       </div>
 
-      <div role="tablist" aria-label={t('community.about.tabsLabel')} className="mt-6 flex gap-6 border-y border-slate-200">
+      <div role="tablist" aria-label={t('community.about.tabsLabel')} className="mt-6 flex gap-6 border-y border-border">
         {(
           [
             { id: 'about', label: t('community.about.about') },
@@ -68,11 +68,11 @@ export function AboutTab({ community, isTeam }: { community: CommunityDetail; is
             onClick={() => setSub(tab.id)}
             className={cn(
               '-mb-px flex items-center gap-2 border-b-2 px-1 py-4 text-[15px] transition-colors',
-              sub === tab.id ? 'border-blue-900 font-semibold text-blue-900' : 'border-transparent text-slate-700 hover:text-slate-900',
+              sub === tab.id ? 'border-blue-900 font-semibold text-brand-strong' : 'border-transparent text-body hover:text-foreground',
             )}
           >
             {tab.label}
-            {'count' in tab && <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-xs font-medium text-slate-600 tabular-nums">{formatCompact(tab.count)}</span>}
+            {'count' in tab && <span className="rounded border border-border bg-subtle px-1.5 text-xs font-medium text-soft tabular-nums">{formatCompact(tab.count)}</span>}
           </button>
         ))}
       </div>
@@ -82,16 +82,16 @@ export function AboutTab({ community, isTeam }: { community: CommunityDetail; is
           <MembersPanel community={community} isTeam={isTeam} />
         ) : (
           <>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">{t('community.about.startingPoint')}</h2>
-            {community.tagline && <p className="mt-5 text-[17px] text-slate-900">{community.tagline}</p>}
-            <p className="mt-4 leading-relaxed whitespace-pre-line text-slate-500">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[28px]">{t('community.about.startingPoint')}</h2>
+            {community.tagline && <p className="mt-5 text-[17px] text-foreground">{community.tagline}</p>}
+            <p className="mt-4 leading-relaxed whitespace-pre-line text-muted-foreground">
               {community.description || t('community.about.defaultDescription', { name: community.name })}
             </p>
 
             {chips.length > 0 && (
               <ul className="mt-6 flex flex-wrap gap-2" aria-label={t('community.about.themes')}>
                 {chips.map(({ icon: Icon, label }) => (
-                  <li key={label} className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-100/70 px-3 py-2 text-sm text-slate-700">
+                  <li key={label} className="flex items-center gap-2 rounded-md border border-border bg-muted/70 px-3 py-2 text-sm text-body">
                     <Icon className="size-4" aria-hidden />
                     {label}
                   </li>
@@ -101,27 +101,27 @@ export function AboutTab({ community, isTeam }: { community: CommunityDetail; is
 
             {rules.length > 0 && (
               <section aria-labelledby="community-rules" className="mt-10">
-                <h3 id="community-rules" className="font-semibold text-slate-900">
+                <h3 id="community-rules" className="font-semibold text-foreground">
                   {t('community.about.rules')}
                 </h3>
-                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-slate-600 marker:font-mono marker:text-slate-400">
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-soft marker:font-mono marker:text-faint">
                   {rules.map((rule) => (
                     <li key={rule.id}>
-                      <span className="font-medium text-slate-800">{rule.title}</span>
-                      {rule.description && <span className="block text-slate-500">{rule.description}</span>}
+                      <span className="font-medium text-foreground">{rule.title}</span>
+                      {rule.description && <span className="block text-muted-foreground">{rule.description}</span>}
                     </li>
                   ))}
                 </ol>
               </section>
             )}
 
-            <Link to="?tab=feed" replace className="group mt-10 flex items-start gap-4 border-t border-slate-200 pt-8">
-              <BookOpen className="mt-0.5 size-6 shrink-0 text-blue-900" aria-hidden />
+            <Link to="?tab=feed" replace className="group mt-10 flex items-start gap-4 border-t border-border pt-8">
+              <BookOpen className="mt-0.5 size-6 shrink-0 text-brand-strong" aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block text-lg font-medium text-slate-900">{t('community.about.curious')}</span>
-                <span className="mt-1 block text-sm text-slate-500">{t('community.about.discover')}</span>
+                <span className="block text-lg font-medium text-foreground">{t('community.about.curious')}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">{t('community.about.discover')}</span>
               </span>
-              <ArrowUpRight className="mt-1 size-5 shrink-0 text-slate-700 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+              <ArrowUpRight className="mt-1 size-5 shrink-0 text-body transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
             </Link>
           </>
         )}

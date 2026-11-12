@@ -20,24 +20,24 @@ export function MembersPanel({ community, isTeam }: { community: CommunityDetail
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+        <p className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <Users className="size-5 text-brand" />
           {t('community.hero.members', { count: n, formatted: formatCompact(n) })}
         </p>
         {isTeam && (
-          <Link to={`/c/${community.slug}/members`} className="inline-flex items-center gap-1 text-sm font-semibold text-blue-900 hover:underline">
+          <Link to={`/c/${community.slug}/members`} className="inline-flex items-center gap-1 text-sm font-semibold text-brand-strong hover:underline">
             {t('community.membersPanel.manage')} <ArrowRight className="size-4" />
           </Link>
         )}
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
         <Avatar className="size-11">
           <AvatarFallback>{nameInitials(owner)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-slate-900">{owner}</p>
-          <p className="text-sm text-slate-500">@{community.owner.username}</p>
+          <p className="truncate font-semibold text-foreground">{owner}</p>
+          <p className="text-sm text-muted-foreground">@{community.owner.username}</p>
         </div>
         <span className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
           <Crown className="size-3.5" /> {t('community.membersPanel.creator')}
@@ -45,30 +45,30 @@ export function MembersPanel({ community, isTeam }: { community: CommunityDetail
       </div>
 
       <section aria-labelledby="active-members">
-        <h3 id="active-members" className="text-sm font-semibold text-slate-900">
+        <h3 id="active-members" className="text-sm font-semibold text-foreground">
           {t('community.membersPanel.mostActive')}
         </h3>
         {isLoading ? (
-          <p className="py-6 text-sm text-slate-500">{t('common.actions.loading')}</p>
+          <p className="py-6 text-sm text-muted-foreground">{t('common.actions.loading')}</p>
         ) : data.length === 0 ? (
-          <p className="py-6 text-sm text-slate-500">{t('community.membersPanel.empty')}</p>
+          <p className="py-6 text-sm text-muted-foreground">{t('community.membersPanel.empty')}</p>
         ) : (
           <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label={t('community.membersPanel.mostActive')}>
             {data.map((e) => (
-              <li key={e.user.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+              <li key={e.user.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <Avatar className="size-9">
                   {e.user.avatar_url && <AvatarImage src={e.user.avatar_url} alt="" />}
                   <AvatarFallback className="text-xs">{nameInitials(e.user.name || e.user.username)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">{e.user.name}</p>
-                  <p className="truncate text-xs text-slate-500">{e.rank_title}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{e.user.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{e.rank_title}</p>
                 </div>
               </li>
             ))}
           </ul>
         )}
-        {!isTeam && <p className="mt-4 text-xs text-slate-500">{t('community.membersPanel.teamOnly')}</p>}
+        {!isTeam && <p className="mt-4 text-xs text-muted-foreground">{t('community.membersPanel.teamOnly')}</p>}
       </section>
     </div>
   );

@@ -9,7 +9,7 @@ import { getName } from '@/utils/Utils';
 import UseChurnRisks from '../form/UseChurnRisks';
 
 const LEVELS: Record<ChurnRiskLevel, { label: string; className: string }> = {
-  low: { label: 'Faible', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  low: { label: 'Faible', className: 'border-border bg-subtle text-soft' },
   medium: { label: 'Moyen', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   high: { label: 'Élevé', className: 'border-orange-200 bg-orange-50 text-orange-800' },
   critical: { label: 'Critique', className: 'border-red-200 bg-red-50 text-red-700' },
@@ -29,11 +29,11 @@ export function ChurnPanel({ slug }: { slug: string }) {
   const churn = UseChurnRisks(slug);
 
   return (
-    <ColgateWrapper className="mb-4 border border-neutral-200 p-4">
+    <ColgateWrapper className="mb-4 border border-border p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-medium text-zinc-700">Membres à relancer</h2>
-          <p className="text-sm text-slate-500">Celles et ceux qui risquent de décrocher, d’après leur activité récente.</p>
+          <h2 className="text-lg font-medium text-body">Membres à relancer</h2>
+          <p className="text-sm text-muted-foreground">Celles et ceux qui risquent de décrocher, d’après leur activité récente.</p>
         </div>
         {churn.isLoaded ? (
           <Button type="button" variant="outline" size="sm" onClick={churn.refresh} isLoading={churn.isFetching}>
@@ -45,24 +45,24 @@ export function ChurnPanel({ slug }: { slug: string }) {
           </Button>
         )}
       </div>
-      {churn.isFetching && !churn.isLoaded && <p role="status" className="text-sm text-slate-500">L’analyse peut prendre un moment…</p>}
+      {churn.isFetching && !churn.isLoaded && <p role="status" className="text-sm text-muted-foreground">L’analyse peut prendre un moment…</p>}
       {churn.loadError && <p className="text-sm text-red-700">{churn.loadError}</p>}
-      {churn.isLoaded && churn.risks.length === 0 && <p className="text-sm text-slate-500">Aucun membre à relancer pour le moment.</p>}
+      {churn.isLoaded && churn.risks.length === 0 && <p className="text-sm text-muted-foreground">Aucun membre à relancer pour le moment.</p>}
       {churn.risks.length > 0 && (
         <ul className="flex flex-col gap-3" aria-label="Membres à relancer">
           {churn.risks.map((r) => {
             const level = LEVELS[r.risk_level] ?? LEVELS.medium;
             const name = getName(r) || r.username;
             return (
-              <li key={r.id} className="rounded-lg border border-slate-200 p-3">
+              <li key={r.id} className="rounded-lg border border-border p-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link to={`/profiles/${r.username}`} className="font-medium text-slate-900 hover:underline">
+                  <Link to={`/profiles/${r.username}`} className="font-medium text-foreground hover:underline">
                     {name}
                   </Link>
                   <span className={cn('rounded-full border px-2 py-0.5 text-xs font-semibold', level.className)}>Risque {level.label.toLowerCase()}</span>
-                  <span className="text-xs text-slate-500">{signalsOf(r)}</span>
+                  <span className="text-xs text-muted-foreground">{signalsOf(r)}</span>
                 </div>
-                {r.suggested_nudge && <blockquote className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-sm whitespace-pre-line text-slate-700">{r.suggested_nudge}</blockquote>}
+                {r.suggested_nudge && <blockquote className="mt-2 rounded-md bg-subtle px-3 py-2 text-sm whitespace-pre-line text-body">{r.suggested_nudge}</blockquote>}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {r.suggested_nudge && (
                     <Button type="button" variant="outline" size="sm" onClick={() => churn.copy(r)} aria-label={`Copier le message pour ${name}`}>
@@ -96,7 +96,7 @@ export function ChurnPanel({ slug }: { slug: string }) {
                   )}
                 </div>
                 {!r.nudge_sent_at && churn.confirmingId === r.id && (
-                  <div role="group" aria-label={`Confirmer la relance à ${name}`} className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-950">
+                  <div role="group" aria-label={`Confirmer la relance à ${name}`} className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-brand-subtle px-3 py-2 text-sm text-brand-strong">
                     <span className="min-w-0 flex-[1_1_14rem]">{name} recevra ce message en notification.</span>
                     <Button type="button" size="sm" isLoading={churn.isSending} onClick={() => churn.send(r, name)}>
                       Confirmer l’envoi

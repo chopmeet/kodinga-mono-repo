@@ -27,6 +27,11 @@ export type PaymentChannel = {
 export type MonetizationSettings = {
   /** Stored by the api (system setting pro_monthly_price) */
   pro_monthly_price: number;
+  /** Stored by the api: price of the Pro plans billed yearly and once (billing/plans/<id>/) */
+  pro_yearly_price: number;
+  pro_lifetime_price: number;
+  /** Shown with the yearly Pro plan (its description in billing/plans/) */
+  pro_yearly_description: string;
   commission_rate: number;
   min_monthly_price: number;
   currency: 'XOF';
@@ -52,6 +57,9 @@ export const settingsCategories: AdminCategory[] = adminCategories.map((c) => ({
 
 export const monetizationSettings: MonetizationSettings = {
   pro_monthly_price: 5_000,
+  pro_yearly_price: 50_000,
+  pro_lifetime_price: 150_000,
+  pro_yearly_description: '',
   commission_rate: 10,
   min_monthly_price: 2_000,
   currency: 'XOF',

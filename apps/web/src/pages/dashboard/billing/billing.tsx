@@ -10,10 +10,10 @@ function Billing() {
   return (
     <div className="dashboard__billing">
       <TopTitle title="Facturation" paragraph="Vos abonnements, vos paiements et votre formule Kodinga." />
-      <ColgateWrapper className="border border-neutral-200 p-4 md:p-6">
+      <ColgateWrapper className="border border-border p-4 md:p-6">
         <BillingHistory />
       </ColgateWrapper>
-      <ColgateWrapper className="mt-6 border border-neutral-200 p-4 md:p-6">
+      <ColgateWrapper className="mt-6 border border-border p-4 md:p-6">
         <ProPlans pro={pro} />
       </ColgateWrapper>
     </div>

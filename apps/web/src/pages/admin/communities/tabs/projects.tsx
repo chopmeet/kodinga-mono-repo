@@ -76,11 +76,11 @@ function CommunityProjectsTab() {
       header: 'Projet',
       cell: ({ row }) => (
         <div className="max-w-md min-w-64">
-          <p className="flex items-center gap-1.5 font-medium text-slate-900">
+          <p className="flex items-center gap-1.5 font-medium text-foreground">
             {row.original.is_featured && <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-500" aria-label="À la une" />}
             <span className="truncate">{row.original.title}</span>
           </p>
-          <p className="truncate text-xs text-slate-500">
+          <p className="truncate text-xs text-muted-foreground">
             par {getName(row.original.owner) || 'Membre'}
             {row.original.tagline && ` · ${row.original.tagline}`}
           </p>
@@ -92,13 +92,13 @@ function CommunityProjectsTab() {
       header: 'Technologies',
       cell: ({ row }) => {
         const techs = row.original.technologies;
-        if (techs.length === 0) return <span className="text-slate-400">—</span>;
+        if (techs.length === 0) return <span className="text-faint">—</span>;
         return (
           <div className="flex flex-wrap gap-1">
             {techs.slice(0, MAX_TECHS).map((t) => (
-              <Badge key={t.id} variant="outline" className="text-slate-700">{t.name}</Badge>
+              <Badge key={t.id} variant="outline" className="text-body">{t.name}</Badge>
             ))}
-            {techs.length > MAX_TECHS && <span className="text-xs text-slate-500">+{techs.length - MAX_TECHS}</span>}
+            {techs.length > MAX_TECHS && <span className="text-xs text-muted-foreground">+{techs.length - MAX_TECHS}</span>}
           </div>
         );
       },
@@ -107,7 +107,7 @@ function CommunityProjectsTab() {
       id: 'engagement',
       header: 'Engagement',
       cell: ({ row }) => (
-        <span className="flex items-center gap-3 text-slate-600 tabular-nums">
+        <span className="flex items-center gap-3 text-soft tabular-nums">
           <span className="flex items-center gap-1" title="Votes"><ArrowBigUp className="size-4" />{row.original.upvotes_count}</span>
           <span className="flex items-center gap-1" title="Vues"><Eye className="size-3.5" />{row.original.views_count}</span>
         </span>
@@ -116,7 +116,7 @@ function CommunityProjectsTab() {
     {
       id: 'date',
       header: 'Publié le',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.original.created_at))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat.format(new Date(row.original.created_at))}</span>,
     },
     {
       id: 'actions',
@@ -140,7 +140,7 @@ function CommunityProjectsTab() {
 
   return (
     <div className={isFetching && !isLoading ? 'opacity-60 transition-opacity' : undefined} aria-busy={isFetching}>
-      <p className="mb-3 text-sm text-slate-500">Projets publiés uniquement : les brouillons et les projets archivés ne sont pas listés.</p>
+      <p className="mb-3 text-sm text-muted-foreground">Projets publiés uniquement : les brouillons et les projets archivés ne sont pas listés.</p>
       <DataTable columns={columns} data={projects} isLoading={isLoading} />
       <ConfirmActionModal action={confirm} isLoading={isDeleting} onCancel={() => setConfirm(null)} />
     </div>

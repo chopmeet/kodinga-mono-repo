@@ -21,17 +21,17 @@ export function CodeExerciseView({ exercise }: { exercise: CodeExercise }) {
 
       {exercise.starter && (
         <section aria-labelledby="exercise-starter">
-          <h2 id="exercise-starter" className="text-base font-semibold text-slate-900">
+          <h2 id="exercise-starter" className="text-base font-semibold text-foreground">
             {t('course.exercise.yourTurn')}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">{t('course.exercise.starterHelp')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('course.exercise.starterHelp')}</p>
           <CodeBlock code={exercise.starter} language={exercise.language} className="mt-3" />
         </section>
       )}
 
       {exercise.extras.map((b) => (
         <section key={b.id} aria-label={b.title || t('course.exercise.code')}>
-          {b.title && <h2 className="text-base font-semibold text-slate-900">{b.title}</h2>}
+          {b.title && <h2 className="text-base font-semibold text-foreground">{b.title}</h2>}
           <CodeBlock code={b.code} language={b.language} className="mt-3" />
         </section>
       ))}

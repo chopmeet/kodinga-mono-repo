@@ -41,7 +41,7 @@ function AdminSettings() {
     <div className="admin__settings">
       <TopTitle title="Paramètres" paragraph="Configuration de la plateforme" />
       <NavTabs tabs={tabs} />
-      <ColgateWrapper className="border border-neutral-200 p-5">
+      <ColgateWrapper className="border border-border p-5">
         <Outlet context={context} />
       </ColgateWrapper>
     </div>

@@ -63,7 +63,7 @@ export function OAuthButtons() {
           type="button"
           onClick={() => start(id)}
           disabled={pending !== null}
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-[15px] font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-brand/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+          className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card text-[15px] font-semibold text-foreground shadow-sm transition-colors hover:bg-subtle focus-visible:ring-4 focus-visible:ring-brand/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending === id ? <LoaderCircle className="size-5 animate-spin" /> : <Logo />}
           {t(`auth.oauth.${id}`)}
@@ -77,10 +77,10 @@ export function OAuthButtons() {
 export function EmailSeparator() {
   const { t } = useTranslation();
   return (
-    <div className="my-6 flex items-center gap-3 text-sm text-slate-400" role="separator">
-      <span className="h-px flex-1 bg-slate-200" />
+    <div className="my-6 flex items-center gap-3 text-sm text-faint" role="separator">
+      <span className="h-px flex-1 bg-border" />
       {t('auth.oauth.withEmail')}
-      <span className="h-px flex-1 bg-slate-200" />
+      <span className="h-px flex-1 bg-border" />
     </div>
   );
 }

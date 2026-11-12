@@ -56,4 +56,3 @@ class MemberChurnRisk(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.member.user.username} - Risque {self.risk_level} ({self.risk_score:.1f})"
-

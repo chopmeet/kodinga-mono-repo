@@ -39,14 +39,14 @@ export const Loader: React.FC<LoaderProps> = ({
                     ? "fixed inset-0 z-9999 bg-slate-900/15 backdrop-blur"
                     : inline
                       ? "w-full py-16"
-                      : "absolute inset-0 z-9999 bg-white/65 backdrop-blur-sm rounded-xl",
+                      : "absolute inset-0 z-9999 bg-card/65 backdrop-blur-sm rounded-xl",
                 className
             )}
         >
             {/* Container du spinner combinant la taille globale choisie */}
             <div className={cn("relative flex items-center justify-center", box)} aria-hidden>
                 {/* Cercle de piste en arrière-plan */}
-                <div className={cn("absolute inset-0 rounded-full box-border border-slate-100", border)} />
+                <div className={cn("absolute inset-0 rounded-full box-border border-border-soft", border)} />
                 {/* Cercle bleu animé en rotation */}
                 <div
                     className={cn(
@@ -58,7 +58,7 @@ export const Loader: React.FC<LoaderProps> = ({
 
             {/* Message de chargement optionnel */}
             {message ? (
-                <p className="mt-4 text-sm font-medium text-slate-500 tracking-wide animate-pulse">
+                <p className="mt-4 text-sm font-medium text-muted-foreground tracking-wide animate-pulse">
                     {message}
                 </p>
             ) : (

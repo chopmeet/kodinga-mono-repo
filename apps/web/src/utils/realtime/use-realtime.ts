@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import store from '@/redux/store';
-import { CommunityApi } from '@/utils/api/community/community.api';
-import type { CommunityPostItem, PostComment } from '@/utils/api/community/community.type';
+import { CommunityApi, reactionsOf } from '@/utils/api/community/community.api';
+import type { CommunityPostItem, PostComment, PostMedia } from '@/utils/api/community/community.type';
 import type { ChatMessage } from '@/utils/api/messaging/messaging.type';
 import { realtimeClient } from './realtime-client';
 
@@ -263,6 +263,24 @@ export function useRealtimeConversation(conversationId: string | undefined) {
   };
 }
 
+type ReactionEvent = { reactions_count: number; reaction_type?: string; user_id?: string; action?: 'added' | 'removed' };
+
+/**
+ * Someone's reaction on a post or a comment: the total of the api, and the count of that reaction.
+ * The signed-in user's own reactions are already in the cache (their mutation): total only.
+ */
+function applyRemoteReaction(target: { reactions_count: number; reactions_summary?: Record<string, number> }, data: ReactionEvent) {
+  const me = (store.getState() as { user?: { user?: { id?: string } | null } }).user?.user?.id;
+  if (data.reaction_type && data.action && data.user_id !== me) {
+    const summary = { ...reactionsOf(target) };
+    const count = Math.max(0, (summary[data.reaction_type] ?? 0) + (data.action === 'added' ? 1 : -1));
+    if (count) summary[data.reaction_type] = count;
+    else delete summary[data.reaction_type];
+    target.reactions_summary = summary;
+  }
+  target.reactions_count = data.reactions_count;
+}
+
 /**
  * Subscribes to community feed events in real-time.
  */
@@ -351,15 +369,33 @@ export function useRealtimeCommunityFeed(communityId: string | undefined) {
     });
 
     // 5. Reaction update
-    const unsubReaction = realtimeClient.on<{ post_id: string; reactions_count: number }>('post.reaction', (data) => {
+    const unsubReaction = realtimeClient.on<ReactionEvent & { post_id: string }>('post.reaction', (data) => {
       if (!data?.post_id || data.reactions_count === undefined) return;
-      dispatch(CommunityApi.util.updateQueryData('getPost', data.post_id, (post) => { post.reactions_count = data.reactions_count; }));
+      dispatch(CommunityApi.util.updateQueryData('getPost', data.post_id, (post) => applyRemoteReaction(post, data)));
       const cachedArgs = CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed');
       for (const args of cachedArgs) {
         dispatch(
           CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
             const p = feed.results.find((item) => item.id === data.post_id);
-            if (p) p.reactions_count = data.reactions_count;
+            if (p) applyRemoteReaction(p, data);
+          }),
+        );
+      }
+    });
+
+    // 5b. A video of a post encoded (or failed) by Mux: it replaces the "en cours de traitement" one
+    const unsubVideo = realtimeClient.on<{ post_id: string; video: PostMedia }>('post.video.updated', (data) => {
+      if (!data?.post_id || !data.video?.id) return;
+      const patch = (post: { media?: PostMedia[] }) => {
+        const media = post.media ?? [];
+        post.media = media.some((m) => m.id === data.video.id) ? media.map((m) => (m.id === data.video.id ? data.video : m)) : [...media, data.video];
+      };
+      dispatch(CommunityApi.util.updateQueryData('getPost', data.post_id, patch));
+      for (const args of CommunityApi.util.selectCachedArgsForQuery(store.getState() as never, 'getCommunityFeed')) {
+        dispatch(
+          CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
+            const p = feed.results.find((item) => item.id === data.post_id);
+            if (p) patch(p);
           }),
         );
       }
@@ -387,6 +423,7 @@ export function useRealtimeCommunityFeed(communityId: string | undefined) {
       unsubDeleted();
       unsubPinned();
       unsubReaction();
+      unsubVideo();
       unsubCommentCount();
     };
   }, [communityId, dispatch]);
@@ -505,19 +542,19 @@ export function useRealtimePostComments(postId: string | undefined) {
       );
     });
 
-    const unsubCommentReaction = realtimeClient.on<{ comment_id: string; reactions_count: number }>('comment.reaction', (data) => {
+    const unsubCommentReaction = realtimeClient.on<ReactionEvent & { comment_id: string }>('comment.reaction', (data) => {
       if (!data?.comment_id || data.reactions_count === undefined) return;
       dispatch(
         CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
           const target = comments.find((c) => c.id === data.comment_id);
           if (target) {
-            target.reactions_count = data.reactions_count;
+            applyRemoteReaction(target, data);
             return;
           }
           for (const parent of comments) {
             const rep = (parent.replies ?? []).find((r) => r.id === data.comment_id);
             if (rep) {
-              rep.reactions_count = data.reactions_count;
+              applyRemoteReaction(rep, data);
               return;
             }
           }

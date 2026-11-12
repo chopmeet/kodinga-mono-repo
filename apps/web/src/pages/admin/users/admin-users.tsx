@@ -99,7 +99,7 @@ function AdminUsers() {
         <UsersOverview />
       </section>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SearchInput
             id="admin-users-search"
@@ -125,7 +125,7 @@ function AdminUsers() {
               </FilterChip>
             ))}
           </div>
-          <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" aria-hidden />
+          <span className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden />
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par statut">
             {statusFilters.map((f) => (
               <FilterChip key={f.value} active={status === f.value} onClick={() => setStatus(f.value)}>
@@ -137,7 +137,7 @@ function AdminUsers() {
 
         <div className="mt-5" aria-busy={list.isFetching}>
           {list.error && !list.hasData ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
               <p>{parseApiError(list.error).message}</p>
               <button
                 type="button"

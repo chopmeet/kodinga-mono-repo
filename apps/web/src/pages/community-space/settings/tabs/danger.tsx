@@ -14,8 +14,8 @@ function DangerBlock({ title, description, children }: { title: string; descript
   return (
     <section className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
       <div className="max-w-xl">
-        <h3 className="font-semibold text-slate-900">{title}</h3>
-        <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+        <h3 className="font-semibold text-foreground">{title}</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>
     </section>
@@ -68,8 +68,8 @@ function DangerTab() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-slate-900">Zone sensible</h2>
-      <p className="mb-5 text-sm text-slate-500">Actions réservées au propriétaire, à manier avec précaution.</p>
+      <h2 className="text-lg font-semibold text-foreground">Zone sensible</h2>
+      <p className="mb-5 text-sm text-muted-foreground">Actions réservées au propriétaire, à manier avec précaution.</p>
 
       <div className="divide-y divide-red-100 rounded-xl border border-red-200">
         <DangerBlock

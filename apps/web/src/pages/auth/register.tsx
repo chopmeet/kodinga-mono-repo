@@ -47,13 +47,13 @@ function Register() {
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
             <MailCheck className="size-6" />
           </div>
-          <p className="text-[15px] leading-relaxed text-slate-600">
-            {t('auth.register.sentBefore')} <strong className="font-semibold text-slate-900">{sentTo}</strong>{' '}
+          <p className="text-[15px] leading-relaxed text-soft">
+            {t('auth.register.sentBefore')} <strong className="font-semibold text-foreground">{sentTo}</strong>{' '}
             {t('auth.register.sentAfter')}
           </p>
           {formError && <FormAlert>{formError}</FormAlert>}
           {resent && <FormAlert variant="success">{t('auth.register.resent')}</FormAlert>}
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             {t('auth.common.nothingReceived')}{' '}
             <button
               type="button"
@@ -138,7 +138,7 @@ function Register() {
         )}
 
         <div className="mt-1">
-          <label htmlFor="register-terms" className="flex items-start gap-3 text-sm leading-relaxed text-slate-600">
+          <label htmlFor="register-terms" className="flex items-start gap-3 text-sm leading-relaxed text-soft">
             <input
               id="register-terms"
               type="checkbox"

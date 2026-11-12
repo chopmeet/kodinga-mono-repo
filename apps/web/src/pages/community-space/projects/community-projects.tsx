@@ -64,7 +64,7 @@ function CommunityProjects() {
         </Button>
       </div>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <SearchInput
           id="space-projects-search"
           size="md"
@@ -93,7 +93,7 @@ function CommunityProjects() {
               </FilterChip>
             ))}
           </div>
-          <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" aria-hidden />
+          <span className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden />
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer les projets">
             {(
               [
@@ -120,7 +120,7 @@ function CommunityProjects() {
           {isLoading ? (
             <ul aria-label="Chargement des projets" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {[0, 1, 2].map((i) => (
-                <li key={i} className="h-64 animate-pulse rounded-xl bg-slate-100" />
+                <li key={i} className="h-64 animate-pulse rounded-xl bg-muted" />
               ))}
             </ul>
           ) : error && !data ? (
@@ -133,8 +133,8 @@ function CommunityProjects() {
             </div>
           ) : list.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
-              <p className="font-semibold text-slate-900">{data?.length ? 'Aucun projet ne correspond' : 'Aucun projet partagé pour le moment'}</p>
-              <p className="mt-1 text-sm text-slate-500">Les projets des membres montrent ce que la communauté sait faire.</p>
+              <p className="font-semibold text-foreground">{data?.length ? 'Aucun projet ne correspond' : 'Aucun projet partagé pour le moment'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Les projets des membres montrent ce que la communauté sait faire.</p>
               {!data?.length && (
                 <Button className="mt-5" onClick={() => setCreating(true)}>
                   <FolderPlus />

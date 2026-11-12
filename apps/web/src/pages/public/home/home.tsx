@@ -64,7 +64,7 @@ function Home() {
   const stack = (Object.keys(STACK_KEYWORDS) as StackId[]).find((id) => STACK_KEYWORDS[id] === query.trim().toLowerCase()) ?? null;
 
   return (
-    <div className="bg-slate-50 text-slate-900">
+    <div className="bg-subtle text-foreground">
       <HeroSection stack={stack} onStackChange={(id) => dispatch(onSetSearchQuery(id ? STACK_KEYWORDS[id] : ''))} />
 
       <DiscoverFilters
@@ -81,15 +81,15 @@ function Home() {
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           <div className="flex flex-col gap-6 lg:col-span-9">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-900">
+              <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground">
                 <span>{t('home.list.title')}</span>
                 {data && (
-                  <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium tracking-wide text-slate-500">
+                  <span className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground">
                     {t('home.list.results', { count: total })}
                   </span>
                 )}
               </h2>
-              {isFetching && !loadingMore && <LoaderCircle className="size-4 animate-spin text-slate-400" aria-label={t('home.list.updating')} />}
+              {isFetching && !loadingMore && <LoaderCircle className="size-4 animate-spin text-faint" aria-label={t('home.list.updating')} />}
             </div>
 
             {isLoading ? (
@@ -97,7 +97,7 @@ function Home() {
                 <CommunityCardSkeleton />
               </div>
             ) : error && !data ? (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
                 <p>{parseApiError(error).message}</p>
                 <button
                   type="button"
@@ -115,7 +115,7 @@ function Home() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
                 {search ? t('home.list.noMatch', { search }) : t('home.list.noMatchFilters')}
               </div>
             )}
@@ -126,7 +126,7 @@ function Home() {
                   type="button"
                   onClick={() => setPaging({ key: searchKey, page: page + 1 })}
                   disabled={loadingMore}
-                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:text-slate-900 disabled:opacity-70"
+                  className="flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-2.5 text-sm font-semibold text-body shadow-2xs transition-all hover:border-border-strong hover:text-foreground disabled:opacity-70"
                 >
                   <span>{t('home.list.showMore')}</span>
                   {loadingMore ? <LoaderCircle className="size-4.5 animate-spin" /> : <ChevronDown className="size-4.5" />}
@@ -134,7 +134,7 @@ function Home() {
               </div>
             )}
 
-            <p className="flex items-center gap-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="size-4.5" aria-hidden />
               {t('home.list.footnote')}
             </p>

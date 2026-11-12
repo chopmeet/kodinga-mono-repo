@@ -25,25 +25,25 @@ export function PeerMatches({ slug }: { slug: string }) {
   };
 
   return (
-    <section aria-labelledby="peer-matches-title" className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-      <h3 id="peer-matches-title" className="font-semibold text-slate-900">
+    <section aria-labelledby="peer-matches-title" className="mb-6 rounded-xl border border-border bg-card p-5">
+      <h3 id="peer-matches-title" className="font-semibold text-foreground">
         {t('community.peers.title')}
       </h3>
       <ul className="mt-3 grid gap-3 md:grid-cols-2" aria-label={t('community.peers.title')}>
         {matches.map((m) => {
           const name = getName(m) || m.username;
           return (
-            <li key={m.id} className="flex items-start gap-3 rounded-lg border border-slate-100 p-3">
+            <li key={m.id} className="flex items-start gap-3 rounded-lg border border-border-soft p-3">
               <Avatar className="size-10">
                 {m.avatar_url && <AvatarImage src={m.avatar_url} alt="" />}
-                <AvatarFallback className="bg-blue-50 text-sm font-semibold text-blue-900">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="bg-brand-subtle text-sm font-semibold text-brand-strong">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <Link to={`/profiles/${m.username}`} className="font-medium text-slate-900 hover:underline">
+                <Link to={`/profiles/${m.username}`} className="font-medium text-foreground hover:underline">
                   {name}
                 </Link>
                 {m.match_reasons.map((reason) => (
-                  <p key={reason} className="text-xs text-slate-500">
+                  <p key={reason} className="text-xs text-muted-foreground">
                     {reason}
                   </p>
                 ))}
@@ -54,7 +54,7 @@ export function PeerMatches({ slug }: { slug: string }) {
                 disabled={isLoading}
                 onClick={() => ignore(m.id)}
                 aria-label={t('community.peers.ignore', { name })}
-                className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-md p-1.5 text-faint hover:bg-muted hover:text-body"
               >
                 <X className="size-4" aria-hidden />
               </button>

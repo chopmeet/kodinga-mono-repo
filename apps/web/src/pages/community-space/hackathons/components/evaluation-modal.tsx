@@ -76,15 +76,15 @@ export function EvaluationModal({ slug, hackathon, submission, onClose }: Props)
         </DialogHeader>
 
         {isFetching ? (
-          <p className="text-sm text-slate-500">Chargement de votre évaluation…</p>
+          <p className="text-sm text-muted-foreground">Chargement de votre évaluation…</p>
         ) : (
           <div className="flex flex-col gap-4">
-            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+            <ul className="divide-y divide-border-soft rounded-xl border border-border">
               {hackathon.criteria.map((c) => (
                 <li key={c.id} className="flex items-center justify-between gap-4 px-4 py-3">
                   <label htmlFor={`score-${c.id}`} className="min-w-0">
-                    <span className="block text-sm font-medium text-slate-900">{c.name}</span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-sm font-medium text-foreground">{c.name}</span>
+                    <span className="block text-xs text-muted-foreground">
                       sur {Number(c.max_score)} · poids {Number(c.weight)}
                     </span>
                   </label>

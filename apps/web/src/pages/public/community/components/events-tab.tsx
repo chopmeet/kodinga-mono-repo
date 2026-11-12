@@ -34,8 +34,8 @@ function timeRange(event: CommunityEvent) {
 function PastEventReplay({ event, page }: { event: CommunityEvent; page: CommunityPage }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  if (!event.replay_video_asset) return <p className="text-sm text-slate-500">{t('community.events.noReplay')}</p>;
-  if (!page.canSee) return <p className="text-sm text-slate-500">{t('community.events.replayMembersOnly')}</p>;
+  if (!event.replay_video_asset) return <p className="text-sm text-muted-foreground">{t('community.events.noReplay')}</p>;
+  if (!page.canSee) return <p className="text-sm text-muted-foreground">{t('community.events.replayMembersOnly')}</p>;
   if (!open) {
     return (
       <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="flex items-center gap-1.5 border-emerald-600/40 text-emerald-800 bg-emerald-50 hover:bg-emerald-100">
@@ -54,7 +54,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
   const start = new Date(event.start_time);
 
   return (
-    <li className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs hover:shadow-md transition-shadow">
+    <li className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xs hover:shadow-md transition-shadow">
       <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
         {playing && event.replay_video_asset ? (
           <ReplayPlayer video={event.replay_video_asset} title={event.title} className="size-full rounded-none" />
@@ -90,27 +90,27 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-          <CalendarDays className="size-3.5 text-slate-400" />
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <CalendarDays className="size-3.5 text-faint" />
           <span>{day.format(start)} {month.format(start)}</span>
           <span>•</span>
           <span>{timeRange(event)}</span>
         </div>
 
-        <h3 className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-blue-900 transition-colors line-clamp-1">
+        <h3 className="mt-2 text-lg font-semibold text-foreground group-hover:text-brand-strong transition-colors line-clamp-1">
           {event.title}
         </h3>
 
         {event.description && (
-          <p className="mt-1.5 text-sm text-slate-600 line-clamp-2">
+          <p className="mt-1.5 text-sm text-soft line-clamp-2">
             {event.description}
           </p>
         )}
 
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="mt-4 pt-4 border-t border-border-soft flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {event.host && (
-              <span className="truncate">{t('community.events.hostedBy')} <strong className="text-slate-800">{event.host.full_name || event.host.username}</strong></span>
+              <span className="truncate">{t('community.events.hostedBy')} <strong className="text-foreground">{event.host.full_name || event.host.username}</strong></span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -128,7 +128,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
                 size="sm"
                 variant="outline"
                 onClick={() => setPlaying(true)}
-                className="text-xs font-semibold text-slate-800 hover:text-black border-slate-300"
+                className="text-xs font-semibold text-foreground hover:text-black border-border-strong"
               >
                 <PlayCircle className="size-3.5 text-red-600" /> {t('community.events.watch')}
               </Button>
@@ -137,7 +137,7 @@ function ReplayCard({ event, page }: { event: CommunityEvent; page: CommunityPag
         </div>
 
         {openHub && (
-          <div className="mt-4 border-t border-slate-100 pt-3">
+          <div className="mt-4 border-t border-border-soft pt-3">
             <EventAIReplayHub slug={page.slug} event={event} canManage={page.canManage} />
           </div>
         )}
@@ -231,14 +231,14 @@ export function EventsTab({ page }: { page: CommunityPage }) {
       </div>
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">{t('community.events.loading')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{t('community.events.loading')}</p>
       ) : events.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           {isReplays ? <Film className="size-8 text-slate-300" /> : <CalendarX2 className="size-8 text-slate-300" />}
-          <p className="mt-3 font-semibold text-slate-900">
+          <p className="mt-3 font-semibold text-foreground">
             {isReplays ? t('community.events.noReplays') : past ? t('community.events.noPast') : t('community.events.noUpcoming')}
           </p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             {isReplays ? t('community.events.noReplaysText') : past ? t('community.events.noPastText') : t('community.events.noUpcomingText')}
           </p>
         </div>
@@ -261,7 +261,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
             {events.map((event) => {
               const start = new Date(event.start_time);
               return (
-                <li key={event.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <li key={event.id} className="overflow-hidden rounded-xl border border-border bg-card">
                   <div className="relative h-36">
                     {event.cover_image_url ? (
                       <img src={event.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" />
@@ -270,7 +270,7 @@ export function EventsTab({ page }: { page: CommunityPage }) {
                     )}
                     {event.status === 'live' && (
                       <span className="absolute top-3 left-3 flex items-center gap-1.5 rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
-                        <span className="size-1.5 animate-pulse rounded-full bg-white" /> {t('community.events.live')}
+                        <span className="size-1.5 animate-pulse rounded-full bg-card" /> {t('community.events.live')}
                       </span>
                     )}
                   </div>
@@ -280,21 +280,21 @@ export function EventsTab({ page }: { page: CommunityPage }) {
                       <span className="mt-2 text-xs tracking-wide uppercase">{month.format(start).replace('.', '')}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold tracking-wide text-blue-900 uppercase">{eventTypeLabel[event.event_type]}</p>
-                      <h3 className="mt-1 text-xl text-slate-900">{event.title}</h3>
-                      <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
+                      <p className="text-xs font-semibold tracking-wide text-brand-strong uppercase">{eventTypeLabel[event.event_type]}</p>
+                      <h3 className="mt-1 text-xl text-foreground">{event.title}</h3>
+                      <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-soft">
                         <span className="flex items-center gap-1.5">
-                          <Clock className="size-4 text-slate-400" /> {timeRange(event)}
+                          <Clock className="size-4 text-faint" /> {timeRange(event)}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <MapPin className="size-4 text-slate-400" /> {formatEventPlace(event)}
+                          <MapPin className="size-4 text-faint" /> {formatEventPlace(event)}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <Users className="size-4 text-slate-400" /> {t('community.events.participants', { count: event.attendees_count })}
+                          <Users className="size-4 text-faint" /> {t('community.events.participants', { count: event.attendees_count })}
                           {event.max_attendees ? ` / ${event.max_attendees}` : ''}
                         </span>
                       </p>
-                      {event.description && <p className="mt-3 line-clamp-3 text-sm text-slate-600">{event.description}</p>}
+                      {event.description && <p className="mt-3 line-clamp-3 text-sm text-soft">{event.description}</p>}
                       <div className="mt-4">
                         {past ? <PastEventReplay event={event} page={page} /> : <EventRsvpActions event={event} page={page} rsvp={rsvp} />}
                       </div>

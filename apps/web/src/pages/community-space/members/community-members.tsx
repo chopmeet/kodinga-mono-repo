@@ -76,7 +76,7 @@ function CommunityMembers() {
         </div>
       )}
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <SearchInput
           id="space-members-search"
           size="md"
@@ -99,7 +99,7 @@ function CommunityMembers() {
               </FilterChip>
             ))}
           </div>
-          <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" aria-hidden />
+          <span className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden />
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par rôle">
             {roleFilters.map((f) => (
               <FilterChip

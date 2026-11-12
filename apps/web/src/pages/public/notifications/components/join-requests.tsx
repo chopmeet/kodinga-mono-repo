@@ -13,7 +13,7 @@ import type { JoinRequests } from '../form/UseJoinRequests';
 export function JoinRequestActions({ request, decision, busyId, accept, refuse }: { request?: JoinRequest; decision?: 'accepted' | 'refused'; busyId?: string; accept: JoinRequests['accept']; refuse: JoinRequests['refuse'] }) {
   const { t } = useTranslation();
   if (decision) {
-    return <p className="text-sm font-semibold text-slate-600">{decision === 'accepted' ? t('inbox.joinRequests.accepted') : t('inbox.joinRequests.refused')}</p>;
+    return <p className="text-sm font-semibold text-soft">{decision === 'accepted' ? t('inbox.joinRequests.accepted') : t('inbox.joinRequests.refused')}</p>;
   }
   if (!request) return null;
   const name = getName(request.member.user);
@@ -35,24 +35,24 @@ export function JoinRequestsSection({ requests, busyId, accept, refuse }: Pick<J
   if (requests.length === 0) return null;
 
   return (
-    <section aria-labelledby="join-requests-title" className="mt-6 overflow-hidden rounded-xl border border-amber-200 bg-white">
+    <section aria-labelledby="join-requests-title" className="mt-6 overflow-hidden rounded-xl border border-amber-200 bg-card">
       <h2 id="join-requests-title" className="flex items-center gap-2 border-b border-amber-100 bg-amber-50/60 px-4 py-3 text-sm font-semibold text-amber-900">
         <UserPlus className="size-4" aria-hidden />
         {t('inbox.joinRequests.title', { count: requests.length })}
       </h2>
-      <ul className="divide-y divide-slate-100" aria-label={t('inbox.joinRequests.label')}>
+      <ul className="divide-y divide-border-soft" aria-label={t('inbox.joinRequests.label')}>
         {requests.map((r) => {
           const name = getName(r.member.user);
           return (
             <li key={r.member.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1 text-sm">
-                <p className="text-slate-900">
+                <p className="text-foreground">
                   <strong>{name}</strong> {t('inbox.joinRequests.wantsToJoin')}{' '}
-                  <Link to={`/c/${r.community.slug}/members?status=pending`} className="font-semibold text-blue-900 hover:underline">
+                  <Link to={`/c/${r.community.slug}/members?status=pending`} className="font-semibold text-brand-strong hover:underline">
                     {r.community.name}
                   </Link>
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   @{r.member.user.username} ·{' '}
                   {dateFormat({ day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(r.member.created_at))}
                 </p>

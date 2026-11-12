@@ -29,16 +29,16 @@ function CategoriesTable({ categories, onEdit, onToggle, onDelete, isLoading = f
       header: 'Catégorie',
       cell: ({ row }) => (
         <div className="min-w-48">
-          <p className="font-medium text-slate-900">{row.original.name}</p>
-          <p className="text-xs text-slate-500">/{row.original.slug}</p>
+          <p className="font-medium text-foreground">{row.original.name}</p>
+          <p className="text-xs text-muted-foreground">/{row.original.slug}</p>
         </div>
       ),
     },
-    { id: 'description', header: 'Description', cell: ({ row }) => <span className="line-clamp-1 max-w-sm text-slate-600">{row.original.description || '—'}</span> },
+    { id: 'description', header: 'Description', cell: ({ row }) => <span className="line-clamp-1 max-w-sm text-soft">{row.original.description || '—'}</span> },
     {
       id: 'communities',
       header: () => <span className="block text-right">Communautés</span>,
-      cell: ({ row }) => <span className="block text-right text-slate-700 tabular-nums">{row.original.communities_count}</span>,
+      cell: ({ row }) => <span className="block text-right text-body tabular-nums">{row.original.communities_count}</span>,
     },
     {
       id: 'status',
@@ -47,7 +47,7 @@ function CategoriesTable({ categories, onEdit, onToggle, onDelete, isLoading = f
         row.original.is_active ? (
           <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800">Active</Badge>
         ) : (
-          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600">Désactivée</Badge>
+          <Badge variant="outline" className="border-border bg-subtle text-soft">Désactivée</Badge>
         ),
     },
     {

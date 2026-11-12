@@ -9,9 +9,9 @@ import type { SkillLevel } from '@/utils/api/profile/profile.type';
 import UseProfileEntries from '../form/UseProfileEntries';
 
 const levelStyle: Record<SkillLevel, string> = {
-  beginner: 'bg-slate-100 text-slate-600',
+  beginner: 'bg-muted text-soft',
   intermediate: 'bg-sky-50 text-sky-800',
-  advanced: 'bg-blue-50 text-blue-900',
+  advanced: 'bg-brand-subtle text-brand-strong',
   expert: 'bg-amber-50 text-amber-800',
 };
 
@@ -38,8 +38,8 @@ function SkillsTab() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section aria-labelledby="add-skill" className="rounded-xl border border-slate-200 p-5">
-        <h2 id="add-skill" className="font-semibold text-slate-900">
+      <section aria-labelledby="add-skill" className="rounded-xl border border-border p-5">
+        <h2 id="add-skill" className="font-semibold text-foreground">
           Ajouter une compétence
         </h2>
         <div className="mt-4 grid gap-x-4 sm:grid-cols-2">
@@ -64,7 +64,7 @@ function SkillsTab() {
             <span className="custom-form-label">Années de pratique</span>
             <input value={years} inputMode="numeric" onChange={(e) => setYears(e.target.value.replace(/\D/g, '').slice(0, 2))} className="custom-form-control bg-background px-3 py-2" />
           </label>
-          <label className="mb-3 flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
+          <label className="mb-3 flex items-center gap-2 self-end pb-2 text-sm text-body">
             <input type="checkbox" checked={highlighted} onChange={(e) => setHighlighted(e.target.checked)} className="size-4 accent-(--primary)" />
             Mettre en avant sur mon profil
           </label>
@@ -75,26 +75,26 @@ function SkillsTab() {
       </section>
 
       <section aria-labelledby="my-skills">
-        <h2 id="my-skills" className="font-semibold text-slate-900">
+        <h2 id="my-skills" className="font-semibold text-foreground">
           Mes compétences ({skills.length})
         </h2>
         {skills.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Aucune compétence pour le moment : ajoutez votre stack pour être trouvé par les recruteurs et les équipes.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Aucune compétence pour le moment : ajoutez votre stack pour être trouvé par les recruteurs et les équipes.</p>
         ) : (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="Mes compétences">
             {skills.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
+              <li key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
                 <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 font-medium text-slate-900">
+                  <p className="flex items-center gap-1.5 font-medium text-foreground">
                     {s.is_highlighted && <Star className="size-4 fill-amber-400 text-amber-400" aria-label="Mise en avant" />}
                     {s.technology.name}
                   </p>
                   <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                     <span className={cn('rounded-full px-2 py-0.5 font-semibold', levelStyle[s.level] ?? levelStyle.intermediate)}>{skillLevelLabel[s.level] ?? s.level}</span>
-                    {s.years_of_experience ? <span className="text-slate-500">{s.years_of_experience} an{s.years_of_experience > 1 ? 's' : ''}</span> : null}
+                    {s.years_of_experience ? <span className="text-muted-foreground">{s.years_of_experience} an{s.years_of_experience > 1 ? 's' : ''}</span> : null}
                   </p>
                 </div>
-                <button type="button" aria-label={`Retirer ${s.technology.name}`} onClick={() => entries.deleteSkill(s.id)} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600">
+                <button type="button" aria-label={`Retirer ${s.technology.name}`} onClick={() => entries.deleteSkill(s.id)} className="rounded-md p-1.5 text-faint hover:bg-muted hover:text-red-600">
                   <Trash2 className="size-4" />
                 </button>
               </li>

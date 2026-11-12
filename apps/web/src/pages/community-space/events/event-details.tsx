@@ -23,7 +23,7 @@ import { useRealtimeRegistrations } from '@/utils/realtime/use-realtime';
 const rsvpLabel: Record<RsvpStatus, { label: string; className: string }> = {
   attending: { label: 'Inscrit', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
   maybe: { label: 'Peut-être', className: 'border-amber-200 bg-amber-50 text-amber-800' },
-  declined: { label: 'Ne vient pas', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  declined: { label: 'Ne vient pas', className: 'border-border bg-subtle text-soft' },
 };
 
 /** Presence: confirmed once the event has started (not when cancelled), by the host or a manager */
@@ -69,8 +69,8 @@ function Attendees({ slug, eventId, canCheckIn }: { slug: string; eventId: strin
                 header: 'Membre',
                 cell: ({ row }) => (
                   <div className="min-w-40">
-                    <p className="font-medium text-slate-900">{row.original.user.full_name || row.original.user.username}</p>
-                    <p className="text-xs text-slate-500">@{row.original.user.username}</p>
+                    <p className="font-medium text-foreground">{row.original.user.full_name || row.original.user.username}</p>
+                    <p className="text-xs text-muted-foreground">@{row.original.user.username}</p>
                   </div>
                 ),
               },
@@ -85,7 +85,7 @@ function Attendees({ slug, eventId, canCheckIn }: { slug: string; eventId: strin
               {
                 id: 'date',
                 header: 'Inscrit le',
-                cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.original.created_at))}</span>,
+                cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat.format(new Date(row.original.created_at))}</span>,
               },
               {
                 id: 'checkin',
@@ -93,7 +93,7 @@ function Attendees({ slug, eventId, canCheckIn }: { slug: string; eventId: strin
                 cell: ({ row }) => {
                   const a = row.original;
                   if (a.checked_in_at) return <span className="font-medium text-emerald-700">Présent</span>;
-                  if (!canCheckIn) return <span className="text-slate-600">—</span>;
+                  if (!canCheckIn) return <span className="text-soft">—</span>;
                   const name = a.user.full_name || a.user.username;
                   return (
                     <Button size="sm" variant="outline" isLoading={list.checkingIn === a.user.id} disabled={!!list.checkingIn} onClick={() => list.checkIn(a.user.id, name)} aria-label={`Marquer ${name} présent`}>
@@ -156,12 +156,12 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
   return (
     <section aria-labelledby="replay-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="replay-title" className="flex items-center gap-2 font-semibold text-slate-900">
+        <h2 id="replay-title" className="flex items-center gap-2 font-semibold text-foreground">
           <PlayCircle className="size-5 text-primary" /> Replay
         </h2>
         {canManage && !replay.isUploading && (
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-semibold text-body shadow-2xs hover:bg-subtle">
               <Upload className="size-4" />
               {video ? 'Remplacer la vidéo' : 'Ajouter la vidéo du replay'}
               <input
@@ -185,8 +185,8 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
       {byLink && !replay.isUploading && <ReplayLinkForm onAttach={replay.attachLink} onClose={() => setByLink(false)} />}
       {replay.isUploading && (
         <div className="mt-4" role="status">
-          <p className="text-sm text-slate-600">Envoi de la vidéo… {replay.progress} %</p>
-          <div className="mt-2 h-2 rounded-full bg-slate-100" role="progressbar" aria-label="Envoi du replay" aria-valuenow={replay.progress ?? 0} aria-valuemin={0} aria-valuemax={100}>
+          <p className="text-sm text-soft">Envoi de la vidéo… {replay.progress} %</p>
+          <div className="mt-2 h-2 rounded-full bg-muted" role="progressbar" aria-label="Envoi du replay" aria-valuenow={replay.progress ?? 0} aria-valuemin={0} aria-valuemax={100}>
             <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${replay.progress ?? 0}%` }} />
           </div>
         </div>
@@ -200,7 +200,7 @@ function ReplayPanel({ slug, event, canManage }: { slug: string; event: Communit
         {video ? (
           <EventAIReplayHub slug={slug} event={event} canManage={canManage} />
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             {canManage ? `Ajoutez l’enregistrement du live (MP4, WebM ou MOV, ${REPLAY_MAX_GB} Go au maximum) : les membres pourront le revoir.` : 'Pas encore de replay pour cet événement.'}
           </p>
         )}
@@ -254,12 +254,12 @@ function EventDetails() {
 
   return (
     <div className="community__event">
-      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
         <ArrowLeft className="size-4" />
         Événements
       </Link>
 
-      <ColgateWrapper className="overflow-hidden border border-neutral-200 p-0">
+      <ColgateWrapper className="overflow-hidden border border-border p-0">
         <div className="relative h-40">
           {event.cover_image_url ? <img src={event.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
@@ -270,11 +270,11 @@ function EventDetails() {
                 {event.status === 'live' && <span className="size-1.5 animate-pulse rounded-full bg-red-600" />}
                 {status.label}
               </Badge>
-              <Badge variant="outline" className="text-slate-600">
+              <Badge variant="outline" className="text-soft">
                 {eventTypeLabel[event.event_type]}
               </Badge>
             </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{event.title}</h1>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{event.title}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
@@ -295,9 +295,9 @@ function EventDetails() {
       </ColgateWrapper>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <ColgateWrapper className="border border-neutral-200 p-5 lg:col-span-2">
-          <h2 className="font-semibold text-slate-900">Présentation</h2>
-          <p className="mt-3 whitespace-pre-line text-slate-700">{event.description || 'Pas encore de description.'}</p>
+        <ColgateWrapper className="border border-border p-5 lg:col-span-2">
+          <h2 className="font-semibold text-foreground">Présentation</h2>
+          <p className="mt-3 whitespace-pre-line text-body">{event.description || 'Pas encore de description.'}</p>
           {event.location_url && (
             <a href={event.location_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
               <Link2 className="size-4" />
@@ -305,14 +305,14 @@ function EventDetails() {
             </a>
           )}
         </ColgateWrapper>
-        <ColgateWrapper className="border border-neutral-200 p-5">
+        <ColgateWrapper className="border border-border p-5">
           <dl className="space-y-4">
             {facts.map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex gap-3">
-                <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
+                <Icon className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
                 <div>
-                  <dt className="text-xs text-slate-500">{label}</dt>
-                  <dd className="text-sm font-medium text-slate-900">{value}</dd>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd className="text-sm font-medium text-foreground">{value}</dd>
                 </div>
               </div>
             ))}
@@ -321,13 +321,13 @@ function EventDetails() {
       </div>
 
       {(event.status === 'completed' || event.replay_video_asset) && (
-        <ColgateWrapper className="mt-6 border border-neutral-200 p-5">
+        <ColgateWrapper className="mt-6 border border-border p-5">
           <ReplayPanel slug={community.slug} event={event} canManage={canManage} />
         </ColgateWrapper>
       )}
 
-      <ColgateWrapper className="mt-6 border border-neutral-200 p-5">
-        <h2 className="mb-4 font-semibold text-slate-900">Participants</h2>
+      <ColgateWrapper className="mt-6 border border-border p-5">
+        <h2 className="mb-4 font-semibold text-foreground">Participants</h2>
         <Attendees
           slug={community.slug}
           eventId={event.id}

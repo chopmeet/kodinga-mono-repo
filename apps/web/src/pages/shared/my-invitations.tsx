@@ -18,22 +18,22 @@ export function MyInvitations({ className }: { className?: string }) {
   if (count === 0) return null;
 
   return (
-    <section aria-labelledby="my-invitations-title" className={`overflow-hidden rounded-xl border border-blue-200 bg-white ${className ?? ''}`}>
-      <h2 id="my-invitations-title" className="flex items-center gap-2 border-b border-blue-100 bg-blue-50/60 px-4 py-3 text-sm font-semibold text-blue-900">
+    <section aria-labelledby="my-invitations-title" className={`overflow-hidden rounded-xl border border-brand-muted bg-card ${className ?? ''}`}>
+      <h2 id="my-invitations-title" className="flex items-center gap-2 border-b border-brand-muted bg-brand-subtle/60 px-4 py-3 text-sm font-semibold text-brand-strong">
         <MailOpen className="size-4" aria-hidden />
         {tr('inbox.invitations.title', { count })}
       </h2>
-      <ul className="divide-y divide-slate-100" aria-label={tr('inbox.invitations.label')}>
+      <ul className="divide-y divide-border-soft" aria-label={tr('inbox.invitations.label')}>
         {invitations.map((i) => (
           <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1 text-sm">
-              <p className="text-slate-900">
+              <p className="text-foreground">
                 {tr('inbox.invitations.join')}{' '}
-                <Link to={`/invite/${i.id}`} className="font-semibold text-blue-900 hover:underline">
+                <Link to={`/invite/${i.id}`} className="font-semibold text-brand-strong hover:underline">
                   {i.community_name}
                 </Link>
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {memberRoleLabel[i.role] ?? i.role}
                 {i.invited_by ? tr('inbox.invitations.invitedBy', { name: getName(i.invited_by) || i.invited_by.username }) : ''}
                 {i.expires_at ? tr('inbox.invitations.expires', { date: dateFormat.format(new Date(i.expires_at)) }) : ''}
@@ -52,12 +52,12 @@ export function MyInvitations({ className }: { className?: string }) {
         {teams.map((t) => (
           <li key={t.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1 text-sm">
-              <p className="text-slate-900">
+              <p className="text-foreground">
                 {tr('inbox.invitations.joinTeam')} <strong>{t.team_name}</strong>
                 {t.hackathon_title && <> · {t.hackathon_title}</>}
               </p>
-              {t.leader && <p className="text-xs text-slate-500">{tr('inbox.invitations.from', { name: getName(t.leader) || t.leader.username })}</p>}
-              <Link to={`/communities/${t.community_slug}/hackathons/${t.hackathon_slug}`} className="text-xs font-semibold text-blue-900 hover:underline">
+              {t.leader && <p className="text-xs text-muted-foreground">{tr('inbox.invitations.from', { name: getName(t.leader) || t.leader.username })}</p>}
+              <Link to={`/communities/${t.community_slug}/hackathons/${t.hackathon_slug}`} className="text-xs font-semibold text-brand-strong hover:underline">
                 {tr('inbox.invitations.seeHackathon')}
               </Link>
             </div>

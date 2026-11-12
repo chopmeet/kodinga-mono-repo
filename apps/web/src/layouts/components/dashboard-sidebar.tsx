@@ -172,18 +172,18 @@ function SidebarUserCard({ roleLabel }: { roleLabel: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-slate-100 p-2.5">
+    <div className="flex items-center gap-2.5 rounded-xl bg-muted p-2.5">
       {avatar}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
-        <p className="text-xs leading-snug text-slate-500">{roleLabel}</p>
+        <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+        <p className="text-xs leading-snug text-muted-foreground">{roleLabel}</p>
       </div>
       <button
         type="button"
         onClick={() => logout()}
         aria-label="Se déconnecter"
         title="Se déconnecter"
-        className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+        className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
       >
         <LuLogOut className="size-4" />
       </button>
@@ -216,7 +216,7 @@ export function DashboardSidebar() {
       <SidebarContent className="px-2">
         {space?.sections.map((section) => (
           <SidebarGroup key={section.id}>
-            <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+            <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               {section.title}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -226,7 +226,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                       asChild
                       // Active link in the brand color (overrides the neutral sidebar-accent of the lib), also on hover
-                      className="py-5 text-slate-600 hover:text-slate-900 data-[active=true]:bg-blue-50 data-[active=true]:font-semibold data-[active=true]:text-blue-900 data-[active=true]:shadow-[inset_3px_0_0_var(--color-blue-900)] data-[active=true]:hover:bg-blue-50 data-[active=true]:hover:text-blue-900"
+                      className="py-5 text-soft hover:text-foreground data-[active=true]:bg-brand-subtle data-[active=true]:font-semibold data-[active=true]:text-brand-strong data-[active=true]:shadow-[inset_3px_0_0_var(--color-blue-900)] data-[active=true]:hover:bg-brand-subtle data-[active=true]:hover:text-brand-strong"
                       isActive={pathname.startsWith(item.path)}
                       tooltip={item.label}
                     >
@@ -244,7 +244,7 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       {space && (
-        <SidebarFooter className={cn('border-t border-slate-200 p-3', !open && 'px-2')}>
+        <SidebarFooter className={cn('border-t border-border p-3', !open && 'px-2')}>
           <SidebarUserCard roleLabel={space.roleLabel} />
         </SidebarFooter>
       )}

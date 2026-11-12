@@ -19,7 +19,7 @@ function inline(text: string, key: string): ReactNode[] {
     const k = `${key}-${i++}`;
     if (token.startsWith('`')) {
       nodes.push(
-        <code key={k} className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.9em] text-slate-800">
+        <code key={k} className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em] text-foreground">
           {token.slice(1, -1)}
         </code>,
       );
@@ -32,7 +32,7 @@ function inline(text: string, key: string): ReactNode[] {
       const url = href ? safeHref(href) : null;
       nodes.push(
         url ? (
-          <a key={k} href={url} target={url.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className="font-medium text-blue-900 underline underline-offset-2">
+          <a key={k} href={url} target={url.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className="font-medium text-brand-strong underline underline-offset-2">
             {label}
           </a>
         ) : (
@@ -111,7 +111,7 @@ function parse(source: string): Block[] {
 export function Markdown({ source, className }: { source: string; className?: string }) {
   const blocks = parse(source);
   return (
-    <div className={cn('space-y-4 leading-relaxed text-slate-700', className)}>
+    <div className={cn('space-y-4 leading-relaxed text-body', className)}>
       {blocks.map((b, n) => {
         const key = `b${n}`;
         switch (b.type) {
@@ -119,7 +119,7 @@ export function Markdown({ source, className }: { source: string; className?: st
             const Tag = (['h2', 'h3', 'h4'] as const)[b.level - 1];
             const size = ['text-2xl', 'text-xl', 'text-lg'][b.level - 1];
             return (
-              <Tag key={key} className={cn('pt-2 font-semibold tracking-tight text-slate-900', size)}>
+              <Tag key={key} className={cn('pt-2 font-semibold tracking-tight text-foreground', size)}>
                 {inline(b.text, key)}
               </Tag>
             );
@@ -140,12 +140,12 @@ export function Markdown({ source, className }: { source: string; className?: st
             );
           case 'quote':
             return (
-              <blockquote key={key} className="border-l-4 border-blue-200 pl-4 text-slate-600 italic">
+              <blockquote key={key} className="border-l-4 border-brand-muted pl-4 text-soft italic">
                 {inline(b.text, key)}
               </blockquote>
             );
           case 'rule':
-            return <hr key={key} className="border-slate-200" />;
+            return <hr key={key} className="border-border" />;
           default:
             return <p key={key}>{inline(b.text, key).map((node, j) => <Fragment key={j}>{node}</Fragment>)}</p>;
         }

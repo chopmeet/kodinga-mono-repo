@@ -17,15 +17,15 @@ from apps.posts.serializers.post import (
 from apps.posts.serializers.reaction import ToggleReactionRequestSerializer
 
 __all__ = [
-    'PostCategorySerializer',
-    'ToggleReactionRequestSerializer',
-    'PollOptionSerializer',
-    'PollSerializer',
-    'PollInputSerializer',
-    'VotePollRequestSerializer',
-    'CommentSerializer',
-    'CreateCommentRequestSerializer',
-    'PostListSerializer',
-    'PostDetailSerializer',
-    'PostCreateUpdateSerializer',
+    "PostCategorySerializer",
+    "ToggleReactionRequestSerializer",
+    "PollOptionSerializer",
+    "PollSerializer",
+    "PollInputSerializer",
+    "VotePollRequestSerializer",
+    "CommentSerializer",
+    "CreateCommentRequestSerializer",
+    "PostListSerializer",
+    "PostDetailSerializer",
+    "PostCreateUpdateSerializer",
 ]

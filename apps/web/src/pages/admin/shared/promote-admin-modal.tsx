@@ -65,7 +65,7 @@ function PromoteAdminModal({ open, onOpenChange }: Props) {
           Rechercher un compte
         </label>
         <div className="relative">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" aria-hidden />
           <input
             id="promote-admin-search"
             type="search"
@@ -80,11 +80,11 @@ function PromoteAdminModal({ open, onOpenChange }: Props) {
 
         <div className="min-h-24" aria-live="polite" aria-busy={isFetching}>
           {query.length < 2 ? (
-            <p className="py-6 text-center text-sm text-slate-500">Saisissez au moins 2 caractères.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">Saisissez au moins 2 caractères.</p>
           ) : !isFetching && results.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-500">Aucun compte ne correspond à « {query} ».</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">Aucun compte ne correspond à « {query} ».</p>
           ) : (
-            <ul className="divide-y divide-slate-100" aria-label="Comptes trouvés">
+            <ul className="divide-y divide-border-soft" aria-label="Comptes trouvés">
               {results.map((u) => {
                 const name = getName(u) || u.email;
                 const already = isAdmin(u);
@@ -94,8 +94,8 @@ function PromoteAdminModal({ open, onOpenChange }: Props) {
                       {nameInitials(name)}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-slate-900">{name}</span>
-                      <span className="block truncate text-xs text-slate-500">{u.email}</span>
+                      <span className="block truncate text-sm font-medium text-foreground">{name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{u.email}</span>
                     </span>
                     {already ? (
                       <span className="text-xs font-medium text-violet-700">Déjà super-admin</span>

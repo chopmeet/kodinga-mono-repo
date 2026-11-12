@@ -478,6 +478,38 @@ MUX_TOKEN_ID = env("MUX_TOKEN_ID", default="")
 MUX_TOKEN_SECRET = env("MUX_TOKEN_SECRET", default="")
 MUX_WEBHOOK_SECRET = env("MUX_WEBHOOK_SECRET", default="")
 
+# ==============================================================================
+# Multimedia & Post Attachments Quotas (UploadThing & Mux)
+# ==============================================================================
+POST_MAX_TOTAL_ATTACHMENTS = env.int("POST_MAX_TOTAL_ATTACHMENTS", default=10)
+POST_MAX_IMAGES = env.int("POST_MAX_IMAGES", default=10)
+POST_MAX_VIDEOS = env.int("POST_MAX_VIDEOS", default=3)
+POST_MAX_DOCUMENTS = env.int("POST_MAX_DOCUMENTS", default=10)
+
+POST_IMAGE_MAX_SIZE_BYTES = env.int(
+    "POST_IMAGE_MAX_SIZE_BYTES", default=10 * 1024 * 1024
+)  # 10 MB
+POST_VIDEO_MAX_SIZE_BYTES = env.int(
+    "POST_VIDEO_MAX_SIZE_BYTES", default=100 * 1024 * 1024
+)  # 100 MB
+POST_DOCUMENT_MAX_SIZE_BYTES = env.int(
+    "POST_DOCUMENT_MAX_SIZE_BYTES", default=25 * 1024 * 1024
+)  # 25 MB
+
+POST_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+POST_ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm"}
+POST_ALLOWED_DOCUMENT_EXTENSIONS = {
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".csv",
+}
+
 # PayDunya Gateway Configuration (Sandbox / Production)
 PAYDUNYA_MODE = env("PAYDUNYA_MODE", default="test")
 PAYDUNYA_MASTER_KEY = env("PAYDUNYA_MASTER_KEY", default="")

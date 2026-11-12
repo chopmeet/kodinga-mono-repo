@@ -78,4 +78,3 @@ class UserDigestDelivery(BaseModel):
     class Meta:
         db_table = "ai_user_digest_deliveries"
         unique_together = ("user", "digest")
-

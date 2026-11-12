@@ -20,6 +20,8 @@ export * from './components/label';
 export * from './components/loader';
 export * from './components/nav-tabs';
 export * from './components/pagination';
+export * from './components/popover';
+export * from './components/theme-toggle';
 export * from './components/progress';
 // input.tsx (moovi) also exports a SearchInput: the explicit export below wins over `export *`.
 // Kodinga's SearchInput (hero/header) keeps the name, moovi's plain one is BasicSearchInput.

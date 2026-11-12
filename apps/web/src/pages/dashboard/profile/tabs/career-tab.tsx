@@ -12,16 +12,16 @@ function Entry({ title, subtitle, meta, children, onEdit, onDelete, label }: { t
   return (
     <li className="flex items-start justify-between gap-3 py-4">
       <div className="min-w-0">
-        <p className="font-semibold text-slate-900">{title}</p>
-        <p className="text-sm text-slate-700">{subtitle}</p>
-        <p className="text-sm text-slate-500">{meta}</p>
+        <p className="font-semibold text-foreground">{title}</p>
+        <p className="text-sm text-body">{subtitle}</p>
+        <p className="text-sm text-muted-foreground">{meta}</p>
         {children}
       </div>
       <div className="flex shrink-0 gap-1">
-        <button type="button" aria-label={`Modifier ${label}`} onClick={onEdit} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800">
+        <button type="button" aria-label={`Modifier ${label}`} onClick={onEdit} className="rounded-md p-1.5 text-faint hover:bg-muted hover:text-foreground">
           <Pencil className="size-4" />
         </button>
-        <button type="button" aria-label={`Supprimer ${label}`} onClick={onDelete} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600">
+        <button type="button" aria-label={`Supprimer ${label}`} onClick={onDelete} className="rounded-md p-1.5 text-faint hover:bg-muted hover:text-red-600">
           <Trash2 className="size-4" />
         </button>
       </div>
@@ -44,17 +44,17 @@ function CareerTab() {
     <div className="flex flex-col gap-10">
       <section aria-labelledby="experiences">
         <div className="flex items-center justify-between gap-3">
-          <h2 id="experiences" className="flex items-center gap-2 font-semibold text-slate-900">
-            <Briefcase className="size-5 text-blue-900" /> Expériences
+          <h2 id="experiences" className="flex items-center gap-2 font-semibold text-foreground">
+            <Briefcase className="size-5 text-brand-strong" /> Expériences
           </h2>
           <Button size="sm" variant="outline" onClick={() => setExperience({ experience: null })}>
             <Plus /> Ajouter une expérience
           </Button>
         </div>
         {experiences.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Aucune expérience renseignée.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Aucune expérience renseignée.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-slate-100" aria-label="Expériences">
+          <ul className="mt-2 divide-y divide-border-soft" aria-label="Expériences">
             {experiences.map((x) => (
               <Entry
                 key={x.id}
@@ -65,7 +65,7 @@ function CareerTab() {
                 onEdit={() => setExperience({ experience: x })}
                 onDelete={() => entries.deleteExperience(x.id)}
               >
-                {x.technologies.length > 0 && <p className="mt-1 text-xs text-slate-500">{x.technologies.map((t) => t.name).join(' · ')}</p>}
+                {x.technologies.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{x.technologies.map((t) => t.name).join(' · ')}</p>}
               </Entry>
             ))}
           </ul>
@@ -74,17 +74,17 @@ function CareerTab() {
 
       <section aria-labelledby="educations">
         <div className="flex items-center justify-between gap-3">
-          <h2 id="educations" className="flex items-center gap-2 font-semibold text-slate-900">
-            <GraduationCap className="size-5 text-blue-900" /> Formations
+          <h2 id="educations" className="flex items-center gap-2 font-semibold text-foreground">
+            <GraduationCap className="size-5 text-brand-strong" /> Formations
           </h2>
           <Button size="sm" variant="outline" onClick={() => setEducation({ education: null })}>
             <Plus /> Ajouter une formation
           </Button>
         </div>
         {educations.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Aucune formation renseignée.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Aucune formation renseignée.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-slate-100" aria-label="Formations">
+          <ul className="mt-2 divide-y divide-border-soft" aria-label="Formations">
             {educations.map((x) => (
               <Entry
                 key={x.id}

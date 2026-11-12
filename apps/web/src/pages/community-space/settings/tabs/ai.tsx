@@ -52,15 +52,15 @@ export function SpaceAITab() {
   };
 
   if (loading) {
-    return <div className="p-4 text-sm text-slate-500">Chargement des paramètres d’intelligence artificielle...</div>;
+    return <div className="p-4 text-sm text-muted-foreground">Chargement des paramètres d’intelligence artificielle...</div>;
   }
 
   return (
     <form onSubmit={handleSave} noValidate>
-      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-4 border-b border-border-soft">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Intelligence Artificielle & Modération</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-lg font-semibold text-foreground">Intelligence Artificielle & Modération</h2>
+          <p className="text-sm text-muted-foreground">
             Configurez la traduction multilingue, l'analyse de sentiment et les règles optionnelles.
           </p>
         </div>
@@ -72,7 +72,7 @@ export function SpaceAITab() {
 
       {/* 1. Traduction multilingue */}
       <div className="mt-6 space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-600">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-soft">
           Traduction Automatique Multilingue
         </h3>
 
@@ -113,7 +113,7 @@ export function SpaceAITab() {
 
       {/* 2. Analyse de sentiment */}
       <div className="mt-8 space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-600">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-soft">
           Analytique & Sentiment
         </h3>
 
@@ -127,7 +127,7 @@ export function SpaceAITab() {
 
       {/* 3. Modération optionnelle */}
       <div className="mt-8 space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-600">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-soft">
           Modération Personnalisée (Règles optionnelles)
         </h3>
 
@@ -157,16 +157,16 @@ export function SpaceAITab() {
       </div>
 
       {/* 4. Protections Plateforme Verrouillées (Invariants non modifiables) */}
-      <div className="mt-8 p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-3">
-        <div className="flex items-center gap-2 text-blue-900 font-semibold text-sm">
+      <div className="mt-8 p-4 rounded-xl border border-brand-muted bg-brand-subtle/50 space-y-3">
+        <div className="flex items-center gap-2 text-brand-strong font-semibold text-sm">
           <span role="img" aria-label="Verrouillé">🔒</span>
           <span>Règles de Sécurité Verrouillées (Non désactivables)</span>
         </div>
-        <p className="text-xs text-blue-800 leading-relaxed">
+        <p className="text-xs text-brand-strong leading-relaxed">
           Pour préserver la sécurité de tous les membres et la légalité des échanges, les protections suivantes sont
           strictement appliquées en continu par Kodinga avant chaque publication :
         </p>
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-950 font-medium">
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-brand-strong font-medium">
           <li className="flex items-center gap-1.5">
             <span className="text-emerald-600 font-bold">✓</span> Interdiction du harcèlement sexuel & abus
           </li>
@@ -213,14 +213,14 @@ function CommunityImprovementSection({ slug }: { slug?: string }) {
   };
 
   return (
-    <div className="mt-12 pt-8 border-t border-slate-200">
+    <div className="mt-12 pt-8 border-t border-border">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
             <span role="img" aria-label="Diagnostic">🚀</span>
             <span>Assistant d'Amélioration & Diagnostic Communautaire</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Analyse vos métriques réelles (membres, publications récentes, questions en attente) et suggère des actions concrètes.
           </p>
         </div>
@@ -235,51 +235,51 @@ function CommunityImprovementSection({ slug }: { slug?: string }) {
       </div>
 
       {analysis && (
-        <div className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="mt-6 space-y-4 rounded-2xl border border-border bg-subtle p-5">
           {/* Real Metrics Badges */}
           {analysis.metrics_summary && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-xl bg-white border border-slate-200 p-3 text-center">
-                <span className="text-[11px] text-slate-500 block">Membres</span>
-                <span className="text-lg font-bold text-slate-900">{analysis.metrics_summary.members_count ?? 0}</span>
+              <div className="rounded-xl bg-card border border-border p-3 text-center">
+                <span className="text-[11px] text-muted-foreground block">Membres</span>
+                <span className="text-lg font-bold text-foreground">{analysis.metrics_summary.members_count ?? 0}</span>
               </div>
-              <div className="rounded-xl bg-white border border-slate-200 p-3 text-center">
-                <span className="text-[11px] text-slate-500 block">Posts (30j)</span>
-                <span className="text-lg font-bold text-slate-900">{analysis.metrics_summary.recent_posts_30d ?? 0}</span>
+              <div className="rounded-xl bg-card border border-border p-3 text-center">
+                <span className="text-[11px] text-muted-foreground block">Posts (30j)</span>
+                <span className="text-lg font-bold text-foreground">{analysis.metrics_summary.recent_posts_30d ?? 0}</span>
               </div>
-              <div className="rounded-xl bg-white border border-slate-200 p-3 text-center">
-                <span className="text-[11px] text-slate-500 block">Questions sans réponse</span>
+              <div className="rounded-xl bg-card border border-border p-3 text-center">
+                <span className="text-[11px] text-muted-foreground block">Questions sans réponse</span>
                 <span className="text-lg font-bold text-amber-600">{analysis.metrics_summary.unanswered_questions_count ?? 0}</span>
               </div>
-              <div className="rounded-xl bg-white border border-slate-200 p-3 text-center">
-                <span className="text-[11px] text-slate-500 block">Événements à venir</span>
+              <div className="rounded-xl bg-card border border-border p-3 text-center">
+                <span className="text-[11px] text-muted-foreground block">Événements à venir</span>
                 <span className="text-lg font-bold text-brand">{analysis.metrics_summary.upcoming_events_count ?? 0}</span>
               </div>
             </div>
           )}
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Diagnostic Global :</h4>
-            <p className="mt-1 text-xs text-slate-800 leading-relaxed bg-white rounded-xl p-3 border border-slate-200">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-soft">Diagnostic Global :</h4>
+            <p className="mt-1 text-xs text-foreground leading-relaxed bg-card rounded-xl p-3 border border-border">
               {analysis.overview_assessment}
             </p>
           </div>
 
           {analysis.actionable_recommendations && analysis.actionable_recommendations.length > 0 && (
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Recommandations d'Actions :</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-soft mb-2">Recommandations d'Actions :</h4>
               <div className="space-y-2">
                 {analysis.actionable_recommendations.map((rec, idx) => (
-                  <div key={idx} className="rounded-xl bg-white border border-slate-200 p-3.5 space-y-1">
+                  <div key={idx} className="rounded-xl bg-card border border-border p-3.5 space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">{rec.title}</span>
-                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 uppercase">
+                      <span className="text-xs font-bold text-foreground">{rec.title}</span>
+                      <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold text-soft uppercase">
                         {rec.category}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600">{rec.rationale}</p>
+                    <p className="text-xs text-soft">{rec.rationale}</p>
                     {rec.action_draft && (
-                      <div className="mt-2 rounded-lg bg-slate-50 p-2.5 text-xs font-mono text-slate-700 border border-slate-100">
+                      <div className="mt-2 rounded-lg bg-subtle p-2.5 text-xs font-mono text-body border border-border-soft">
                         {rec.action_draft}
                       </div>
                     )}

@@ -32,7 +32,7 @@ export function NotificationsMenu() {
       <DropdownMenuTrigger
         aria-label={label}
         title={label}
-        className="relative flex size-10 items-center justify-center rounded-lg text-slate-700 transition-colors outline-none hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-900/30"
+        className="relative flex size-10 items-center justify-center rounded-lg text-body transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-blue-900/30"
       >
         <Bell className="size-5" />
         {unread > 0 && (
@@ -42,10 +42,10 @@ export function NotificationsMenu() {
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[min(24rem,calc(100vw-2rem))] p-0">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-          <p className="font-semibold text-slate-900">{t('layout.notifications.title')}</p>
+        <div className="flex items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
+          <p className="font-semibold text-foreground">{t('layout.notifications.title')}</p>
           {unread > 0 && (
-            <button type="button" onClick={actions.markAll} disabled={actions.isMarkingAll} className="text-xs font-semibold text-blue-900 hover:underline disabled:opacity-50">
+            <button type="button" onClick={actions.markAll} disabled={actions.isMarkingAll} className="text-xs font-semibold text-brand-strong hover:underline disabled:opacity-50">
               {t('layout.notifications.markAll')}
             </button>
           )}
@@ -59,18 +59,18 @@ export function NotificationsMenu() {
         )}
         <div className="max-h-[min(28rem,70dvh)] overflow-y-auto">
           {isLoading ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">{t('common.actions.loading')}</p>
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t('common.actions.loading')}</p>
           ) : notifications.length === 0 ? (
-            <p className="px-4 py-10 text-center text-sm text-slate-500">{t('layout.notifications.empty')}</p>
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t('layout.notifications.empty')}</p>
           ) : (
             notifications.map((n) => (
-              <DropdownMenuItem key={n.id} onSelect={() => actions.open(n)} className={!n.is_read ? 'bg-blue-50/40 rounded-none px-4 py-3' : 'rounded-none px-4 py-3'}>
+              <DropdownMenuItem key={n.id} onSelect={() => actions.open(n)} className={!n.is_read ? 'bg-brand-subtle/40 rounded-none px-4 py-3' : 'rounded-none px-4 py-3'}>
                 <NotificationContent notification={n} compact />
               </DropdownMenuItem>
             ))
           )}
         </div>
-        <DropdownMenuItem asChild className="justify-center rounded-none border-t border-slate-100 py-3 text-sm font-semibold text-blue-900">
+        <DropdownMenuItem asChild className="justify-center rounded-none border-t border-border-soft py-3 text-sm font-semibold text-brand-strong">
           <Link to="/notifications">{t('layout.notifications.seeAll')}</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

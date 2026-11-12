@@ -29,7 +29,7 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
   const rest = list.length - shown;
 
   return (
-    <section aria-label={isQuestion ? t('community.comments.sectionAnswers') : t('community.comments.sectionComments')} className="mt-4 flex flex-col gap-4 border-t border-slate-100 pt-4">
+    <section aria-label={isQuestion ? t('community.comments.sectionAnswers') : t('community.comments.sectionComments')} className="mt-4 flex flex-col gap-4 border-t border-border-soft pt-4">
       {comments.canComment ? (
         <CommentForm
           label={isQuestion ? t('community.comments.yourAnswer') : t('community.comments.yourComment')}
@@ -39,14 +39,14 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
           onSend={(content) => comments.send(content)}
         />
       ) : post.is_locked ? (
-        <p className="flex items-center gap-2 text-sm text-slate-600">
+        <p className="flex items-center gap-2 text-sm text-soft">
           <Lock className="size-4" aria-hidden /> {t('community.comments.closed')}
         </p>
       ) : (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-soft">
           {page.membership === 'visitor' ? (
             <>
-              <Link to={page.loginUrl} className="font-semibold text-blue-900 hover:underline">
+              <Link to={page.loginUrl} className="font-semibold text-brand-strong hover:underline">
                 {t('community.comments.login')}
               </Link>{' '}
               {t('community.comments.loginThenJoin')}
@@ -58,7 +58,7 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
       )}
 
       {comments.isCommentsLoading ? (
-        <p className="text-sm text-slate-500" role="status">
+        <p className="text-sm text-muted-foreground" role="status">
           {isQuestion ? t('community.comments.loadingAnswers') : t('community.comments.loadingComments')}
         </p>
       ) : comments.commentsError ? (
@@ -71,7 +71,7 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
           </Button>
         </div>
       ) : list.length === 0 ? (
-        <p className="text-sm text-slate-500">{isQuestion ? t('community.comments.noAnswer') : t('community.comments.noComment')}</p>
+        <p className="text-sm text-muted-foreground">{isQuestion ? t('community.comments.noAnswer') : t('community.comments.noComment')}</p>
       ) : (
         <>
           <ul className="flex flex-col gap-3" aria-label={isQuestion ? t('community.comments.answers') : t('community.comments.comments')}>
@@ -82,7 +82,7 @@ export function PostComments({ post, page }: { post: CommunityPostItem; page: Co
             ))}
           </ul>
           {rest > 0 && (
-            <button type="button" onClick={() => setShown((n) => n + MORE)} className="self-start text-sm font-semibold text-blue-900 hover:underline">
+            <button type="button" onClick={() => setShown((n) => n + MORE)} className="self-start text-sm font-semibold text-brand-strong hover:underline">
               {t(isQuestion ? 'community.comments.moreAnswers' : 'community.comments.moreComments', { count: Math.min(rest, MORE), rest })}
             </button>
           )}

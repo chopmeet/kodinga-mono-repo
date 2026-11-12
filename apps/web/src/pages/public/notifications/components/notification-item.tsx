@@ -60,14 +60,14 @@ export function NotificationContent({ notification: n, compact = false }: { noti
   const Icon = kind ? kinds[kind].icon : (icons[n.notification_type] ?? Bell);
   return (
     <span className="flex min-w-0 flex-1 items-start gap-3 text-left">
-      <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', n.is_read ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-900')}>
+      <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', n.is_read ? 'bg-muted text-muted-foreground' : 'bg-brand-subtle text-brand-strong')}>
         <Icon className="size-4" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
         {kind && <span className={cn('mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase', kinds[kind].className)}>{t(`inbox.notifications.kinds.${kind}`)}</span>}
-        <span className={cn('block text-sm', n.is_read ? 'text-slate-700' : 'font-semibold text-slate-900')}>{n.title}</span>
-        {n.body && <span className={cn('mt-0.5 block text-sm text-slate-500', compact && 'line-clamp-2')}>{n.body}</span>}
-        <span className="mt-1 block text-xs text-slate-400">{ago(n.created_at)}</span>
+        <span className={cn('block text-sm', n.is_read ? 'text-body' : 'font-semibold text-foreground')}>{n.title}</span>
+        {n.body && <span className={cn('mt-0.5 block text-sm text-muted-foreground', compact && 'line-clamp-2')}>{n.body}</span>}
+        <span className="mt-1 block text-xs text-faint">{ago(n.created_at)}</span>
       </span>
       {!n.is_read && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-900" aria-label={t('inbox.notifications.unreadDot')} />}
     </span>

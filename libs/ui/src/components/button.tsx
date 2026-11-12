@@ -18,11 +18,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Same look as the buttons of the home page (header, hero, creator callout)
-        default: "bg-blue-900 text-white shadow-sm hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800",
+        default: "bg-blue-900 text-white shadow-sm hover:bg-blue-950",
         danger:
-          "bg-destructive/10 text-destructive border hover:border-destructive/60 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 dark:hover:bg-destructive/30 dark:text-white",
+          "bg-destructive/10 text-destructive border hover:border-destructive/60 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 dark:hover:bg-destructive/30",
         outline:
-          "border border-slate-200 bg-white text-slate-700 shadow-2xs hover:border-slate-300 hover:text-slate-900 dark:bg-input/30 dark:border-input dark:text-slate-100 dark:hover:bg-input/50",
+          "border border-border bg-card text-body shadow-2xs hover:border-border-strong hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:

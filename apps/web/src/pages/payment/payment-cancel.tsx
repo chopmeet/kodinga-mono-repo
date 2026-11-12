@@ -31,23 +31,23 @@ export function PaymentCancelPage() {
 
   return (
     <main className="flex min-h-[75vh] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-lg border-slate-200 bg-white shadow-xl shadow-slate-500/5">
+      <Card className="w-full max-w-lg border-border bg-card shadow-xl shadow-slate-500/5">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-slate-100 text-slate-500 ring-8 ring-slate-50">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground ring-8 ring-slate-50">
             <Ban className="size-9" />
           </div>
-          <Badge variant="outline" className="mx-auto mb-2 text-slate-600">
+          <Badge variant="outline" className="mx-auto mb-2 text-soft">
             Paiement non finalisé
           </Badge>
-          <CardTitle className="text-2xl font-bold text-slate-900">
+          <CardTitle className="text-2xl font-bold text-foreground">
             Paiement annulé
           </CardTitle>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-soft">
             Vous avez interrompu la procédure de paiement PayDunya.
           </p>
         </CardHeader>
 
-        <CardContent className="pt-2 text-center text-sm text-slate-500">
+        <CardContent className="pt-2 text-center text-sm text-muted-foreground">
           <p>
             Aucun prélèvement n'a été effectué sur votre compte bancaire ou mobile money.
             Vous pouvez reprendre votre adhésion à tout moment.

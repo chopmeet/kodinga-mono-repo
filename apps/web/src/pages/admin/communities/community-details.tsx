@@ -12,6 +12,7 @@ import {
   type Tab,
 } from '@kodinga/ui';
 import type { CommunityPrivacy } from '@/utils/api/community/community.type';
+import { formatLongDate } from '@/utils/format';
 import CommunityOverview from './components/community-overview';
 import UseArchiveCommunity from './form/UseArchiveCommunity';
 import { UseCommunityFromParams } from './form/UseCommunityFromParams';
@@ -35,8 +36,6 @@ const privacyLabel: Record<CommunityPrivacy, { label: string; icon: typeof Globe
   private: { label: 'Privée', icon: Lock },
   secret: { label: 'Secrète', icon: EyeOff },
 };
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
 
 function CommunityDetails() {
@@ -83,7 +82,7 @@ function CommunityDetails() {
         ]}
       />
 
-      <ColgateWrapper className="my-6 border border-neutral-200 p-4">
+      <ColgateWrapper className="my-6 border border-border p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 gap-4">
             {community.avatar_url ? (
@@ -98,14 +97,14 @@ function CommunityDetails() {
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-slate-900 lg:text-2xl">
+              <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-foreground lg:text-2xl">
                 {community.name}
                 {community.is_verified && <BadgeCheck className="size-5 text-primary" aria-label="Vérifiée" />}
                 {community.is_featured && <Star className="size-5 fill-amber-400 text-amber-500" aria-label="À la une" />}
               </h1>
-              <p className="mt-1 line-clamp-2 max-w-2xl text-sm text-slate-500">{community.tagline}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
-                <Badge variant="outline" className="gap-1 text-slate-700">
+              <p className="mt-1 line-clamp-2 max-w-2xl text-sm text-muted-foreground">{community.tagline}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-soft">
+                <Badge variant="outline" className="gap-1 text-body">
                   <PrivacyIcon />
                   {privacy.label}
                 </Badge>
@@ -115,18 +114,18 @@ function CommunityDetails() {
                   <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800">Gratuite</Badge>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <UserRound className="size-4 text-slate-400" />
+                  <UserRound className="size-4 text-faint" />
                   {community.owner.full_name}
                 </span>
                 {community.category && (
                   <span className="flex items-center gap-1.5">
-                    <Tag className="size-4 text-slate-400" />
+                    <Tag className="size-4 text-faint" />
                     {community.category.name}
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <CalendarDays className="size-4 text-slate-400" />
-                  Créée le {dateFormat.format(new Date(community.created_at))}
+                  <CalendarDays className="size-4 text-faint" />
+                  Créée le {formatLongDate(community.created_at)}
                 </span>
               </div>
             </div>

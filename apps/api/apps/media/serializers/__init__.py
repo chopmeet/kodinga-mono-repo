@@ -12,12 +12,12 @@ from apps.media.serializers.video import (
 )
 
 __all__ = [
-    'MediaAssetSerializer',
-    'PresignedUploadRequestSerializer',
-    'ConfirmUploadRequestSerializer',
-    'VideoAssetSerializer',
-    'VideoUploadRequestSerializer',
-    'VideoIngestRequestSerializer',
-    'MuxUploadRequestSerializer',
-    'MuxUploadResponseSerializer',
+    "MediaAssetSerializer",
+    "PresignedUploadRequestSerializer",
+    "ConfirmUploadRequestSerializer",
+    "VideoAssetSerializer",
+    "VideoUploadRequestSerializer",
+    "VideoIngestRequestSerializer",
+    "MuxUploadRequestSerializer",
+    "MuxUploadResponseSerializer",
 ]

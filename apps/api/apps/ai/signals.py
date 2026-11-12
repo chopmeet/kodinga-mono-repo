@@ -4,9 +4,13 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from apps.ai.models.embedding import ContentEmbedding
+from apps.ai.services.platform_knowledge_service import (
+    PlatformDocumentationRAGService,
+)
 from apps.ai.tasks import index_content_embedding_task
 from apps.classroom.models.course import Course
 from apps.classroom.models.lesson import Lesson
+from apps.communities.models.community import Community
 from apps.posts.models.post import Post
 
 logger = logging.getLogger(__name__)
@@ -21,7 +25,11 @@ def on_post_saved(sender, instance: Post, created: bool, **kwargs):
         return
 
     try:
-        url = f"/communities/{instance.community.slug}/posts/{instance.id}" if instance.community else ""
+        url = (
+            f"/communities/{instance.community.slug}/posts/{instance.id}"
+            if instance.community
+            else ""
+        )
         index_content_embedding_task.delay(
             content_type="post",
             object_id=str(instance.id),
@@ -35,7 +43,9 @@ def on_post_saved(sender, instance: Post, created: bool, **kwargs):
             },
         )
     except Exception as exc:
-        logger.warning(f"[on_post_saved] Could not trigger indexing task for post {instance.id}: {exc}")
+        logger.warning(
+            f"[on_post_saved] Could not trigger indexing task for post {instance.id}: {exc}"
+        )
 
 
 @receiver(post_delete, sender=Post)
@@ -44,9 +54,13 @@ def on_post_deleted(sender, instance: Post, **kwargs):
     Removes post embeddings when a post is deleted.
     """
     try:
-        ContentEmbedding.objects.filter(content_type="post", object_id=str(instance.id)).delete()
+        ContentEmbedding.objects.filter(
+            content_type="post", object_id=str(instance.id)
+        ).delete()
     except Exception as exc:
-        logger.warning(f"[on_post_deleted] Error cleaning embedding for post {instance.id}: {exc}")
+        logger.warning(
+            f"[on_post_deleted] Error cleaning embedding for post {instance.id}: {exc}"
+        )
 
 
 @receiver(post_save, sender=Lesson)
@@ -62,7 +76,9 @@ def on_lesson_saved(sender, instance: Lesson, created: bool, **kwargs):
 
     if not course.is_published:
         # Unpublished course lessons must not be indexed
-        ContentEmbedding.objects.filter(content_type="lesson", object_id=str(instance.id)).delete()
+        ContentEmbedding.objects.filter(
+            content_type="lesson", object_id=str(instance.id)
+        ).delete()
         return
 
     try:
@@ -80,7 +96,9 @@ def on_lesson_saved(sender, instance: Lesson, created: bool, **kwargs):
             },
         )
     except Exception as exc:
-        logger.warning(f"[on_lesson_saved] Could not trigger indexing task for lesson {instance.id}: {exc}")
+        logger.warning(
+            f"[on_lesson_saved] Could not trigger indexing task for lesson {instance.id}: {exc}"
+        )
 
 
 @receiver(post_delete, sender=Lesson)
@@ -89,9 +107,13 @@ def on_lesson_deleted(sender, instance: Lesson, **kwargs):
     Removes lesson embeddings when a lesson is deleted.
     """
     try:
-        ContentEmbedding.objects.filter(content_type="lesson", object_id=str(instance.id)).delete()
+        ContentEmbedding.objects.filter(
+            content_type="lesson", object_id=str(instance.id)
+        ).delete()
     except Exception as exc:
-        logger.warning(f"[on_lesson_deleted] Error cleaning embedding for lesson {instance.id}: {exc}")
+        logger.warning(
+            f"[on_lesson_deleted] Error cleaning embedding for lesson {instance.id}: {exc}"
+        )
 
 
 @receiver(post_save, sender=Course)
@@ -103,14 +125,47 @@ def on_course_saved(sender, instance: Course, created: bool, **kwargs):
         return
 
     try:
-        lessons = Lesson.objects.filter(module__course=instance).select_related("module__course__community")
+        lessons = Lesson.objects.filter(module__course=instance).select_related(
+            "module__course__community"
+        )
         if not instance.is_published:
             # Course was unpublished: delete all its lesson embeddings
             lesson_ids = [str(les.id) for les in lessons]
-            ContentEmbedding.objects.filter(content_type="lesson", object_id__in=lesson_ids).delete()
+            ContentEmbedding.objects.filter(
+                content_type="lesson", object_id__in=lesson_ids
+            ).delete()
         else:
             # Course is published: trigger indexing for all lessons
             for lesson in lessons:
                 on_lesson_saved(Lesson, lesson, created=False)
     except Exception as exc:
-        logger.warning(f"[on_course_saved] Error syncing lesson embeddings for course {instance.id}: {exc}")
+        logger.warning(
+            f"[on_course_saved] Error syncing lesson embeddings for course {instance.id}: {exc}"
+        )
+
+
+@receiver(post_save, sender=Community)
+def on_community_saved(sender, instance: Community, created: bool, **kwargs):
+    """
+    Automatically updates the AI assistant's knowledge base whenever a Community
+    is created or modified (name, tagline, description, category, privacy, pricing, active state).
+    """
+    try:
+        PlatformDocumentationRAGService.sync_community_knowledge(instance)
+    except Exception as exc:
+        logger.warning(
+            f"[on_community_saved] Error syncing AI knowledge for community {instance.slug}: {exc}"
+        )
+
+
+@receiver(post_delete, sender=Community)
+def on_community_deleted(sender, instance: Community, **kwargs):
+    """
+    Removes the community from the AI assistant's knowledge base when deleted.
+    """
+    try:
+        PlatformDocumentationRAGService.remove_community_knowledge(instance.slug)
+    except Exception as exc:
+        logger.warning(
+            f"[on_community_deleted] Error cleaning AI knowledge for community {instance.slug}: {exc}"
+        )

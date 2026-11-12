@@ -156,3 +156,165 @@ L'application `apps/analytics` fournit une vue synthétique des réalisations de
    - Intégrer les suggestions d'idées de contenu pour les créateurs.
    - Brancher le salon visio LiveKit (`join-live/`) et l'accès au résumé/transcription IA des événements.
    - Brancher l'espace d'affiliation et le tracking des parrainages (`track-click/`).
+
+
+---
+
+# 9. LOT 6 — EMOJIS UNICODE & MULTIMÉDIA FEED (IMAGES UPLOADTHING, VIDÉOS MUX, DOCUMENTS)
+
+Le Backend Django expose désormais une architecture multimédia unifiée et sécurisée (UploadThing v7 + Mux HLS + UTF-8/Unicode). Voici la liste exacte des tâches à implémenter côté Frontend React (`apps/web`).
+
+---
+
+## FE-21 : Sélecteur d'Emojis Universel (`emoji-picker-react`)
+
+- **Installation** :
+  ```bash
+  pnpm --filter web add emoji-picker-react
+  ```
+- **Composant réutilisable à créer** (`apps/web/src/components/shared/emoji-picker-button.tsx`) :
+  - Utiliser `EmojiPicker` de `emoji-picker-react` dans un `Popover` (`@kodinga/ui`).
+  - Activer les **9 catégories standards** (Récents, Smileys & émotions, Personnes & corps, Animaux & nature, Nourriture & boissons, Voyages & lieux, Activités, Objets, Symboles, Drapeaux), la barre de recherche, les emojis récents et le sélecteur de tons de peau (`👋🏻 👋🏼 👋🏽 👋🏾 👋🏿`).
+  - Insérer l'emoji sélectionné à la position exacte du curseur (`selectionStart` / `selectionEnd`) dans le `<textarea>` ou `<input>` cible, sans fermer brutalement le champ ni perdre le focus.
+- **Emplacements où intégrer `<EmojiPickerButton />`** :
+  1. **Discussions privées & de groupe** : `apps/web/src/pages/public/messages/components/thread.tsx` (à côté du bouton d'envoi et dans l'édition d'un message).
+  2. **Création / Édition de publication dans le Feed** : `apps/web/src/pages/community-space/posts/modals/post-form-modal.tsx` (pour le champ `title` et le champ `content`).
+  3. **Commentaires et réponses aux commentaires** : `apps/web/src/pages/public/community/post/comment-form.tsx`.
+- **Règle d'architecture** : Ne faire aucun appel API pour récupérer la liste des emojis (tout le catalogue est géré localement par `emoji-picker-react` et transmis en UTF-8 natif dans `content` / `title`).
+
+---
+
+## FE-22 : Upload d'Images multiples dans les Publications (UploadThing)
+
+- **Limites & Formats appliqués par le Backend** :
+  - Formats acceptés : `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` (`image/jpeg`, `image/png`, `image/webp`, `image/gif`).
+  - Taille maximale : **10 Mo par image**.
+  - Nombre maximal : **10 images par publication** (dans la limite globale de **10 pièces jointes max par publication**).
+- **Endpoints Backend disponibles** :
+  1. **Upload direct multipart (1 ou plusieurs fichiers)** :
+     - `POST /api/v1/media/upload/` (`multipart/form-data`)
+     - Champs : `files` (liste de fichiers, jusqu'à 10) ou `file` (fichier unique), `purpose: "post_image"`.
+     - Réponse (multi-fichiers) :
+       ```json
+       {
+         "success": true,
+         "data": {
+           "items": [
+             {
+               "asset_id": "uuid",
+               "file_url": "https://utfs.io/f/...",
+               "file_key": "...",
+               "file_size": 204800,
+               "mime_type": "image/png",
+               "provider": "uploadthing"
+             }
+           ],
+           "count": 1,
+           "asset_ids": ["uuid"]
+         }
+       }
+       ```
+  2. **Alternative Presigned Upload (UploadThing direct client)** :
+     - `POST /api/v1/media/upload-url/` avec `{ "file_name": "photo.png", "file_size": 204800, "mime_type": "image/png", "purpose": "post_image" }`
+     - Puis `POST /api/v1/media/confirm-upload/` avec `{ "file_key": "...", "file_url": "..." }`.
+- **Tâches UI (`post-form-modal.tsx` & `feed-tab.tsx`)** :
+  - Activer le bouton *"Joindre des médias"* dans `post-form-modal.tsx` (retirer le `SoonBadge`).
+  - Afficher une grille de prévisualisation des images sélectionnées avant publication avec :
+    - Barre de progression d'upload.
+    - Bouton de suppression (`X`) sur chaque miniature avant publication (et appel `DELETE /api/v1/media/assets/<asset_id>/` si déjà uploadée).
+  - Envoyer les UUIDs dans `media_ids: ["uuid1", "uuid2"]` lors du `POST /api/v1/communities/<slug>/feed/` ou `PATCH /api/v1/posts/<post_id>/`.
+  - Dans `PostCard` (`feed-tab.tsx`) et la page détail du post : afficher une grille responsive d'images (`lazy loading`, `object-fit: cover`) avec ouverture en **Lightbox** au clic.
+
+---
+
+## FE-23 : Upload & Lecture de Vidéos dans les Publications (Mux HLS)
+
+- **Limites & Formats appliqués par le Backend** :
+  - Formats acceptés : `.mp4`, `.mov`, `.webm` (`video/mp4`, `video/quicktime`, `video/webm`).
+  - Taille maximale : **100 Mo par vidéo**.
+  - Nombre maximal : **3 vidéos par publication**.
+- **Endpoints Backend disponibles** :
+  1. **Flux A — Direct Upload vers Mux (Recommandé)** :
+     - `POST /api/v1/media/videos/upload-url/`
+     - Payload :
+       ```json
+       {
+         "title": "Démo projet",
+         "file_name": "demo.mp4",
+         "file_size": 26214400,
+         "mime_type": "video/mp4",
+         "purpose": "post_video"
+       }
+       ```
+     - Réponse :
+       ```json
+       {
+         "success": true,
+         "data": {
+           "video_asset_id": "uuid",
+           "upload_id": "mux_upload_id",
+           "upload_url": "https://storage.googleapis.com/video-storage-...",
+           "status": "waiting",
+           "normalized_status": "PENDING_UPLOAD"
+         }
+       }
+       ```
+     - Le client envoie le binaire vidéo en `PUT` sur `upload_url`, puis joint `video_ids: ["<video_asset_id>"]` lors de la création de la publication.
+  2. **Flux B — Upload via UploadThing + Ingestion Mux automatique** :
+     - `POST /api/v1/media/videos/` (`multipart/form-data` avec `file` et `purpose="post_video"`).
+- **Publication non bloquante & Temps réel** :
+  - Le Backend autorise la publication immédiate du post même si la vidéo est en statut `PENDING_UPLOAD` ou `PROCESSING`.
+  - Lorsque Mux termine le transcodage, le webhook met à jour la vidéo en `READY` et diffuse l'événement WebSocket :
+    - Canal utilisateur : `video.status.changed`
+    - Canal communauté : `post.video.updated` avec `{ "post_id": "uuid", "video": { ... } }`
+- **Tâches UI (`feed-tab.tsx`)** :
+  - Si `mediaItem.status` est `PENDING_UPLOAD`, `UPLOADING` ou `PROCESSING` : afficher une carte d'état *"Vidéo en cours de traitement…"* avec spinner.
+  - Si `mediaItem.status === "FAILED"` : afficher un badge d'erreur *"Le traitement de la vidéo a échoué"*.
+  - Si `mediaItem.status === "READY"` : afficher le lecteur vidéo HLS (`mediaItem.playback_url`, poster `mediaItem.thumbnail_url`, contrôles lecture/pause, volume, plein écran, **sans lecture automatique avec son**).
+
+---
+
+## FE-24 : Upload & Téléchargement de Documents dans les Publications (UploadThing)
+
+- **Limites & Formats appliqués par le Backend** :
+  - Formats acceptés : `.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`, `.txt`, `.csv`.
+  - Taille maximale : **25 Mo par document**.
+  - Nombre maximal : **10 documents par publication**.
+  - Tout fichier exécutable ou script (`.exe`, `.sh`, `.bat`, `.php`, `.js`, `.html`, `.svg`, signature binaire `MZ`/`ELF`) est strictement rejeté en `400 Bad Request`.
+- **Endpoints Backend** :
+  - Upload : `POST /api/v1/media/upload/` avec `purpose: "post_document"` (ou `POST /api/v1/media/upload-url/` + `confirm-upload/`).
+  - Téléchargement sécurisé : `GET /api/v1/media/assets/<asset_id>/download/` (vérifie automatiquement que l'utilisateur a accès à la communauté du post).
+- **Tâches UI (`post-form-modal.tsx` & `feed-tab.tsx`)** :
+  - Prévisualiser les documents joints avant publication (icône selon l'extension PDF/Word/Excel/CSV, nom du fichier, taille formatée en Ko/Mo, bouton retirer).
+  - Dans le Feed (`PostCard`), afficher une carte document téléchargeable pour chaque élément `media` où `type === "DOCUMENT"`.
+
+---
+
+## FE-25 : Structure Unifiée `post.media` & Suppression d'un Média sur un Post
+
+- **Réponse JSON unifiée retournée par `GET /api/v1/communities/<slug>/feed/` et `GET /api/v1/posts/<post_id>/`** :
+  Chaque publication contient désormais un tableau `media` ordonné :
+  ```json
+  "media": [
+    {
+      "id": "uuid",
+      "type": "IMAGE | VIDEO | DOCUMENT",
+      "provider": "UPLOADTHING | MUX",
+      "url": "https://utfs.io/f/...",
+      "playback_url": "https://stream.mux.com/...m3u8",
+      "thumbnail_url": "https://image.mux.com/.../thumbnail.webp",
+      "filename": "document.pdf",
+      "mime_type": "application/pdf",
+      "size": 102400,
+      "duration": 42.5,
+      "width": 1920,
+      "height": 1080,
+      "status": "PENDING_UPLOAD | UPLOADING | PROCESSING | READY | FAILED",
+      "order": 0
+    }
+  ]
+  ```
+- **Suppression d'une pièce jointe d'une publication existante** :
+  - Endpoint : `DELETE /api/v1/posts/<post_id>/media/<media_id>/`
+  - Autorisé pour l'auteur du post, les modérateurs/propriétaires de la communauté et les superadmins.
+  - Détache le média du post et le supprime automatiquement sur UploadThing ou Mux.

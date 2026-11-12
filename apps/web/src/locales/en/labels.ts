@@ -74,6 +74,11 @@ export const labels: Translations['labels'] = {
     year: '/ year',
     one_time: 'once',
   },
+  /** Kodinga Pro bought once: "Lifetime" rather than "One-time payment" */
+  proLifetime: {
+    label: 'Lifetime',
+    suffix: 'for life',
+  },
   memberRole: {
     owner: 'Owner',
     admin: 'Administrator',

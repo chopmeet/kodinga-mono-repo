@@ -83,7 +83,7 @@ function CommunityOpportunities() {
         )}
       </div>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <SearchInput
           id="space-opportunities-search"
           size="md"
@@ -115,13 +115,13 @@ function CommunityOpportunities() {
 
         <div className="mt-4" aria-busy={isFetching}>
           {isLoading ? (
-            <ul aria-label="Chargement des offres" className="divide-y divide-slate-100">
+            <ul aria-label="Chargement des offres" className="divide-y divide-border-soft">
               {[0, 1, 2].map((i) => (
                 <li key={i} className="flex gap-4 py-4">
-                  <span className="h-12 w-12 animate-pulse rounded-xl bg-slate-100" />
+                  <span className="h-12 w-12 animate-pulse rounded-xl bg-muted" />
                   <span className="flex-1 space-y-2">
-                    <span className="block h-4 w-1/2 animate-pulse rounded bg-slate-100" />
-                    <span className="block h-3 w-2/3 animate-pulse rounded bg-slate-100" />
+                    <span className="block h-4 w-1/2 animate-pulse rounded bg-muted" />
+                    <span className="block h-3 w-2/3 animate-pulse rounded bg-muted" />
                   </span>
                 </li>
               ))}
@@ -136,8 +136,8 @@ function CommunityOpportunities() {
             </div>
           ) : matches.list.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
-              <p className="font-semibold text-slate-900">{data?.length ? 'Aucune offre ne correspond' : 'Aucune offre pour le moment'}</p>
-              <p className="mt-1 text-sm text-slate-500">Emplois, stages et bounties aident les membres à passer à l'étape suivante.</p>
+              <p className="font-semibold text-foreground">{data?.length ? 'Aucune offre ne correspond' : 'Aucune offre pour le moment'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Emplois, stages et bounties aident les membres à passer à l'étape suivante.</p>
               {canPublish && !data?.length && (
                 <Button className="mt-5" onClick={() => setCreating(true)}>
                   <BriefcasePlus />
@@ -147,7 +147,7 @@ function CommunityOpportunities() {
             </div>
           ) : (
             <>
-              <ul className={`divide-y divide-slate-100 ${isFetching ? 'opacity-60 transition-opacity' : ''}`} aria-label="Offres">
+              <ul className={`divide-y divide-border-soft ${isFetching ? 'opacity-60 transition-opacity' : ''}`} aria-label="Offres">
                 {rows.map((o) => (
                   <OpportunityRow key={o.id} opportunity={o} href={`${base}/${o.slug}`} actions={actionsFor(o)} mine={isPoster(o)} />
                 ))}

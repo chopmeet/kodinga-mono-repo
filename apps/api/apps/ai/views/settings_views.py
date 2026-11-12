@@ -44,7 +44,9 @@ class CommunityAISettingsView(APIView):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
-            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
 
         if not self._check_manager_permission(request.user, community):
             return error_response(
@@ -55,12 +57,24 @@ class CommunityAISettingsView(APIView):
         settings_obj, _ = CommunitySettings.objects.get_or_create(community=community)
 
         data = {
-            "ai_translation_enabled": getattr(settings_obj, "ai_translation_enabled", True),
-            "default_community_language": getattr(settings_obj, "default_community_language", "fr"),
-            "supported_languages": getattr(settings_obj, "supported_languages", ["fr", "en", "wo", "bm"]),
-            "sentiment_analytics_enabled": getattr(settings_obj, "sentiment_analytics_enabled", True),
-            "non_mandatory_moderation": getattr(settings_obj, "non_mandatory_moderation", {}),
-            "moderation_strictness": getattr(settings_obj, "moderation_strictness", "standard"),
+            "ai_translation_enabled": getattr(
+                settings_obj, "ai_translation_enabled", True
+            ),
+            "default_community_language": getattr(
+                settings_obj, "default_community_language", "fr"
+            ),
+            "supported_languages": getattr(
+                settings_obj, "supported_languages", ["fr", "en", "wo", "bm"]
+            ),
+            "sentiment_analytics_enabled": getattr(
+                settings_obj, "sentiment_analytics_enabled", True
+            ),
+            "non_mandatory_moderation": getattr(
+                settings_obj, "non_mandatory_moderation", {}
+            ),
+            "moderation_strictness": getattr(
+                settings_obj, "moderation_strictness", "standard"
+            ),
             "ai_provider_override": getattr(settings_obj, "ai_provider_override", ""),
         }
         serializer = CommunityAISettingsSerializer(data)
@@ -76,7 +90,9 @@ class CommunityAISettingsView(APIView):
         try:
             community = CommunitySelector.get_community_by_slug(slug, user=request.user)
         except Exception:
-            return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+            return error_response(
+                "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+            )
 
         if not self._check_manager_permission(request.user, community):
             return error_response(
@@ -112,12 +128,24 @@ class CommunityAISettingsView(APIView):
 
         # Re-fetch data including locked platform invariants
         response_data = {
-            "ai_translation_enabled": getattr(settings_obj, "ai_translation_enabled", True),
-            "default_community_language": getattr(settings_obj, "default_community_language", "fr"),
-            "supported_languages": getattr(settings_obj, "supported_languages", ["fr", "en", "wo", "bm"]),
-            "sentiment_analytics_enabled": getattr(settings_obj, "sentiment_analytics_enabled", True),
-            "non_mandatory_moderation": getattr(settings_obj, "non_mandatory_moderation", {}),
-            "moderation_strictness": getattr(settings_obj, "moderation_strictness", "standard"),
+            "ai_translation_enabled": getattr(
+                settings_obj, "ai_translation_enabled", True
+            ),
+            "default_community_language": getattr(
+                settings_obj, "default_community_language", "fr"
+            ),
+            "supported_languages": getattr(
+                settings_obj, "supported_languages", ["fr", "en", "wo", "bm"]
+            ),
+            "sentiment_analytics_enabled": getattr(
+                settings_obj, "sentiment_analytics_enabled", True
+            ),
+            "non_mandatory_moderation": getattr(
+                settings_obj, "non_mandatory_moderation", {}
+            ),
+            "moderation_strictness": getattr(
+                settings_obj, "moderation_strictness", "standard"
+            ),
             "ai_provider_override": getattr(settings_obj, "ai_provider_override", ""),
         }
         return success_response(
@@ -198,7 +226,9 @@ class GlobalAIProviderSettingsView(APIView):
         new_strategy = serializer.validated_data.get("strategy")
         if new_strategy:
             try:
-                ProviderRouter.set_global_strategy(new_strategy, updated_by=request.user)
+                ProviderRouter.set_global_strategy(
+                    new_strategy, updated_by=request.user
+                )
             except ValueError as e:
                 return error_response(str(e), status_code=status.HTTP_400_BAD_REQUEST)
 

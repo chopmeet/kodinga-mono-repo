@@ -20,9 +20,9 @@ function MiniLine({ metric, data }: { metric: Metric; data: MonthlyGrowthPoint[]
   return (
     <figure className="min-w-0">
       <figcaption className="mb-2 flex items-baseline justify-between gap-2">
-        <span className="text-sm text-slate-600">{metric.label} par mois</span>
-        <span className="text-sm font-semibold text-slate-900 tabular-nums">
-          {formatNumber(last)} <span className="font-normal text-slate-500">{monthLabel}</span>
+        <span className="text-sm text-soft">{metric.label} par mois</span>
+        <span className="text-sm font-semibold text-foreground tabular-nums">
+          {formatNumber(last)} <span className="font-normal text-muted-foreground">{monthLabel}</span>
         </span>
       </figcaption>
       <div className="h-56 w-full" role="img" aria-label={`${metric.label} par mois sur 12 mois`}>
@@ -51,7 +51,7 @@ function MiniLine({ metric, data }: { metric: Metric; data: MonthlyGrowthPoint[]
 
 /** analytics/growth/: the 12 last months (the api fills the months without activity with 0) */
 export default function PlatformGrowthCharts({ data }: { data: MonthlyGrowthPoint[] }) {
-  if (data.length === 0) return <p className="py-10 text-center text-sm text-slate-500">Pas encore d’activité à afficher.</p>;
+  if (data.length === 0) return <p className="py-10 text-center text-sm text-muted-foreground">Pas encore d’activité à afficher.</p>;
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {METRICS.map((metric) => (

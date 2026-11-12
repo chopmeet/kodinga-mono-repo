@@ -24,8 +24,18 @@ class AIModerationAuditListView(APIView):
         tags=["AI & Assistant"],
         summary="Journaux d'audit de modération IA",
         parameters=[
-            OpenApiParameter(name="community", type=str, description="Slug de la communauté", required=False),
-            OpenApiParameter(name="decision", type=str, description="Filtrer par décision (allow, reject, review)", required=False),
+            OpenApiParameter(
+                name="community",
+                type=str,
+                description="Slug de la communauté",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="decision",
+                type=str,
+                description="Filtrer par décision (allow, reject, review)",
+                required=False,
+            ),
         ],
         responses={200: ModerationAuditLogSerializer(many=True)},
     )
@@ -35,9 +45,13 @@ class AIModerationAuditListView(APIView):
         community_slug = request.query_params.get("community")
         if community_slug:
             try:
-                community = CommunitySelector.get_community_by_slug(community_slug, user=request.user)
+                community = CommunitySelector.get_community_by_slug(
+                    community_slug, user=request.user
+                )
             except Exception:
-                return error_response("Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND)
+                return error_response(
+                    "Communauté introuvable.", status_code=status.HTTP_404_NOT_FOUND
+                )
 
             # Check permissions: user must be admin, or community owner/moderator
             is_staff = is_superadmin_user(request.user) or request.user.is_staff

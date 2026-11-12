@@ -17,6 +17,7 @@ import {
 } from '@kodinga/ui';
 import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { getInitials, getName, useUser } from '@/utils/Utils';
+import { AppThemeToggle } from './app-theme-toggle';
 
 function DashboardHeader() {
   const user = useUser();
@@ -27,7 +28,8 @@ function DashboardHeader() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
+        <AppThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">

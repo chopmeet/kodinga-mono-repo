@@ -154,7 +154,7 @@ export function PaymentSuccessPage() {
   if (isPaid) {
     return (
       <main className="flex min-h-[80vh] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-lg border-emerald-200 bg-white/90 shadow-xl shadow-emerald-500/5 backdrop-blur-sm">
+        <Card className="w-full max-w-lg border-emerald-200 bg-card/90 shadow-xl shadow-emerald-500/5 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 ring-8 ring-emerald-50">
               <CheckCircle2 className="size-10" />
@@ -162,10 +162,10 @@ export function PaymentSuccessPage() {
             <Badge className="mx-auto mb-2 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
               Paiement Confirmé
             </Badge>
-            <CardTitle className="text-2xl font-bold text-slate-900">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Paiement validé avec succès !
             </CardTitle>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-soft">
               {isProPlan
                 ? 'Félicitations ! Votre forfait Kodinga Pro est désormais actif.'
                 : `Félicitations ! Votre accès à la communauté est désormais débloqué.`}
@@ -173,33 +173,33 @@ export function PaymentSuccessPage() {
           </CardHeader>
 
           <CardContent className="space-y-4 pt-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-2.5 text-sm">
+            <div className="rounded-xl border border-border bg-subtle/60 p-4 space-y-2.5 text-sm">
               {paymentData?.community_name && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Communauté</span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="text-muted-foreground">Communauté</span>
+                  <span className="font-semibold text-foreground">
                     {paymentData.community_name}
                   </span>
                 </div>
               )}
               {paymentData?.plan_name && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Formule souscrite</span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="text-muted-foreground">Formule souscrite</span>
+                  <span className="font-semibold text-foreground">
                     {paymentData.plan_name}
                   </span>
                 </div>
               )}
               {paymentData?.amount && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Montant réglé</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="text-muted-foreground">Montant réglé</span>
+                  <span className="font-bold text-foreground">
                     {xof(Number(paymentData.amount))}
                   </span>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">Statut de l'accès</span>
+                <span className="text-muted-foreground">Statut de l'accès</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
                   <Sparkles className="size-3.5" /> Actif & Illimité
                 </span>
@@ -228,7 +228,7 @@ export function PaymentSuccessPage() {
                 href={paymentData.receipt_url}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 hover:underline"
+                className="mt-1 inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-body hover:underline"
               >
                 <ExternalLink className="size-3" /> Télécharger mon reçu PayDunya
               </a>
@@ -243,7 +243,7 @@ export function PaymentSuccessPage() {
   if (isFailed) {
     return (
       <main className="flex min-h-[80vh] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-lg border-red-200 bg-white/95 shadow-xl shadow-red-500/5">
+        <Card className="w-full max-w-lg border-red-200 bg-card/95 shadow-xl shadow-red-500/5">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-red-100 text-red-600 ring-8 ring-red-50">
               <ShieldAlert className="size-10" />
@@ -251,10 +251,10 @@ export function PaymentSuccessPage() {
             <Badge className="mx-auto mb-2 bg-red-100 text-red-800 hover:bg-red-100">
               Non abouti
             </Badge>
-            <CardTitle className="text-2xl font-bold text-slate-900">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Le paiement n'a pas pu aboutir
             </CardTitle>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-soft">
               La transaction a été annulée ou refusée par l'opérateur. Aucun
               montant n'a été débité.
             </p>
@@ -283,9 +283,9 @@ export function PaymentSuccessPage() {
   // 4. Checking / In-Progress View (while backend queries PayDunya API)
   return (
     <main className="flex min-h-[80vh] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-lg border-blue-100 bg-white shadow-xl shadow-blue-500/5">
+      <Card className="w-full max-w-lg border-brand-muted bg-card shadow-xl shadow-blue-500/5">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-50 text-blue-900 ring-8 ring-blue-50/50">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-brand-subtle text-brand-strong ring-8 ring-blue-50/50">
             {hasTimedOut ? (
               <Clock className="size-9 text-amber-600" />
             ) : (
@@ -296,19 +296,19 @@ export function PaymentSuccessPage() {
             className={`mx-auto mb-2 ${
               hasTimedOut
                 ? 'bg-amber-100 text-amber-800'
-                : 'bg-blue-100 text-blue-900'
+                : 'bg-brand-muted text-brand-strong'
             }`}
           >
             {hasTimedOut
               ? 'Traitement en cours'
               : 'Vérification PayDunya en cours'}
           </Badge>
-          <CardTitle className="text-2xl font-bold text-slate-900">
+          <CardTitle className="text-2xl font-bold text-foreground">
             {hasTimedOut
               ? 'Votre paiement est en cours de traitement'
               : 'Validation de votre paiement…'}
           </CardTitle>
-          <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
+          <p className="mt-1.5 text-sm text-soft leading-relaxed">
             {hasTimedOut
               ? 'PayDunya finalise la validation avec votre opérateur mobile (Wave, Orange Money, MoMo). Dès confirmation, votre accès sera activé automatiquement.'
               : 'Nous vérifions la confirmation de la transaction avec PayDunya. Cela ne prend que quelques secondes…'}
@@ -316,7 +316,7 @@ export function PaymentSuccessPage() {
         </CardHeader>
 
         <CardContent className="pt-4 text-center">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-faint">
             Temps écoulé : {elapsedSeconds}s · Connexion sécurisée PayDunya
           </p>
         </CardContent>
@@ -345,7 +345,7 @@ export function PaymentSuccessPage() {
             <Button
               size="lg"
               variant="ghost"
-              className="w-full text-slate-600 hover:text-slate-900"
+              className="w-full text-soft hover:text-foreground"
               onClick={handleOkay}
             >
               {targetSlug

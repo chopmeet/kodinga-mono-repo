@@ -201,26 +201,26 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
   }, [transcriptionData?.segments, searchQuery]);
 
   return (
-    <div className={`flex flex-col rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden ${className}`}>
+    <div className={`flex flex-col rounded-2xl border border-border bg-card shadow-xs overflow-hidden ${className}`}>
       {/* Top Header & Tabs Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 p-3 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-subtle/70 p-3 sm:px-5">
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-600">
             <Sparkles className="size-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Espace Replay & Assistant IA</h3>
-            <p className="text-xs text-slate-500">Vidéo, transcription automatique, résumé exécutif et chat interactif</p>
+            <h3 className="text-sm font-semibold text-foreground">Espace Replay & Assistant IA</h3>
+            <p className="text-xs text-muted-foreground">Vidéo, transcription automatique, résumé exécutif et chat interactif</p>
           </div>
         </div>
 
         {/* Tab switch buttons */}
-        <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-slate-200/60 p-1">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-border/60 p-1">
           <button
             type="button"
             onClick={() => setActiveTab('video')}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              activeTab === 'video' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'video' ? 'bg-card text-foreground shadow-xs' : 'text-soft hover:text-foreground'
             }`}
           >
             <Video className="size-3.5 text-indigo-500" />
@@ -231,7 +231,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
             type="button"
             onClick={() => setActiveTab('transcript')}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              activeTab === 'transcript' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'transcript' ? 'bg-card text-foreground shadow-xs' : 'text-soft hover:text-foreground'
             }`}
           >
             <FileText className="size-3.5 text-emerald-600" />
@@ -243,7 +243,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
             type="button"
             onClick={() => setActiveTab('summary')}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              activeTab === 'summary' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'summary' ? 'bg-card text-foreground shadow-xs' : 'text-soft hover:text-foreground'
             }`}
           >
             <Lightbulb className="size-3.5 text-amber-500" />
@@ -255,7 +255,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
             type="button"
             onClick={() => setActiveTab('chat')}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              activeTab === 'chat' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'chat' ? 'bg-card text-foreground shadow-xs' : 'text-soft hover:text-foreground'
             }`}
           >
             <MessageSquare className="size-3.5 text-sky-500" />
@@ -288,7 +288,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
               <ReplayPlayer video={event.replay_video_asset} title={event.title} className="w-full max-w-4xl mx-auto rounded-xl shadow-md" />
               {/* Quick AI action bar under video */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <PlayCircle className="size-4 text-emerald-600" />
                   <span>Enregistrement officiel du meet · {event.duration_minutes} min</span>
                 </div>
@@ -325,10 +325,10 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500">
+            <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
               <Video className="size-10 text-slate-300 mb-2" />
-              <p className="text-sm font-medium text-slate-700">Aucun replay vidéo n'est encore associé à cet événement.</p>
-              <p className="text-xs text-slate-400 mt-1">L'enregistrement sera disponible dès qu'il aura été téléversé par l'hôte.</p>
+              <p className="text-sm font-medium text-body">Aucun replay vidéo n'est encore associé à cet événement.</p>
+              <p className="text-xs text-faint mt-1">L'enregistrement sera disponible dès qu'il aura été téléversé par l'hôte.</p>
             </div>
           )}
         </div>
@@ -338,10 +338,10 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
       {activeTab === 'transcript' && (
         <div className="p-4 sm:p-5 space-y-4">
           {/* Transcript Control Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft pb-3">
             <div className="flex items-center gap-2">
               <div className="relative w-64 sm:w-80">
-                <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" />
+                <Search className="absolute left-2.5 top-2.5 size-4 text-faint" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -353,7 +353,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="text-xs text-faint hover:text-soft cursor-pointer"
                 >
                   Effacer
                 </button>
@@ -401,17 +401,17 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
 
           {/* Transcript Content List */}
           {isLoadingTranscription && (
-            <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+            <div className="flex flex-col items-center justify-center p-12 text-faint">
               <Loader2 className="size-8 animate-spin text-emerald-600 mb-2" />
               <p className="text-sm">Chargement de la transcription…</p>
             </div>
           )}
 
           {!isLoadingTranscription && !hasTranscription && !isProcessing && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-subtle/50 p-10 text-center">
               <FileText className="size-10 text-slate-300 mb-3" />
-              <h4 className="text-sm font-semibold text-slate-800">Transcription non encore générée</h4>
-              <p className="mt-1 max-w-md text-xs text-slate-500">
+              <h4 className="text-sm font-semibold text-foreground">Transcription non encore générée</h4>
+              <p className="mt-1 max-w-md text-xs text-muted-foreground">
                 La transcription automatique permet d'extraire l'intégralité des propos avec horodatages, d'activer le résumé
                 exécutif et d'interroger le direct avec le Chat IA.
               </p>
@@ -427,24 +427,24 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
           )}
 
           {!isLoadingTranscription && hasTranscription && (
-            <div className="max-h-[460px] overflow-y-auto pr-2 space-y-3 divide-y divide-slate-100">
+            <div className="max-h-[460px] overflow-y-auto pr-2 space-y-3 divide-y divide-border-soft">
               {filteredSegments.length > 0 ? (
                 filteredSegments.map((seg, idx) => (
-                  <div key={idx} className="pt-3 first:pt-0 group hover:bg-slate-50/80 p-2.5 rounded-lg transition-colors">
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+                  <div key={idx} className="pt-3 first:pt-0 group hover:bg-subtle/80 p-2.5 rounded-lg transition-colors">
+                    <div className="flex items-center justify-between text-xs text-faint mb-1">
                       <div className="flex items-center gap-2">
-                        <UserRound className="size-3 text-slate-400" />
-                        <span className="font-medium text-slate-700">{seg.speaker}</span>
+                        <UserRound className="size-3 text-faint" />
+                        <span className="font-medium text-body">{seg.speaker}</span>
                       </div>
-                      <span className="font-mono text-[11px] rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 group-hover:bg-emerald-100 group-hover:text-emerald-800 transition-colors">
+                      <span className="font-mono text-[11px] rounded bg-muted px-1.5 py-0.5 text-soft group-hover:bg-emerald-100 group-hover:text-emerald-800 transition-colors">
                         {seg.start} - {seg.end}
                       </span>
                     </div>
-                    <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{seg.text}</p>
+                    <p className="text-sm leading-relaxed text-body whitespace-pre-wrap">{seg.text}</p>
                   </div>
                 ))
               ) : (
-                <p className="py-6 text-center text-xs text-slate-400">Aucun passage ne correspond à votre recherche « {searchQuery} ».</p>
+                <p className="py-6 text-center text-xs text-faint">Aucun passage ne correspond à votre recherche « {searchQuery} ».</p>
               )}
             </div>
           )}
@@ -454,13 +454,13 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
       {/* TAB 3: EXECUTIVE SUMMARY */}
       {activeTab === 'summary' && (
         <div className="p-4 sm:p-6 space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft pb-3">
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Lightbulb className="size-4 text-amber-500" />
                 Résumé Exécutif du Live
               </h4>
-              <p className="text-xs text-slate-500">Synthèse automatique générée par l'intelligence artificielle Kodinga</p>
+              <p className="text-xs text-muted-foreground">Synthèse automatique générée par l'intelligence artificielle Kodinga</p>
             </div>
             {summary && (
               <Button
@@ -477,10 +477,10 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
           </div>
 
           {!summary && !isGeneratingSummary && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-subtle/50 p-10 text-center">
               <Lightbulb className="size-10 text-amber-300 mb-3" />
-              <h4 className="text-sm font-semibold text-slate-800">Résumé non disponible</h4>
-              <p className="mt-1 max-w-md text-xs text-slate-500">
+              <h4 className="text-sm font-semibold text-foreground">Résumé non disponible</h4>
+              <p className="mt-1 max-w-md text-xs text-muted-foreground">
                 Générez le résumé exécutif pour obtenir les points clés, décisions et actions à mener sans devoir revoir toute la vidéo.
               </p>
               <Button
@@ -495,7 +495,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
           )}
 
           {isGeneratingSummary && (
-            <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+            <div className="flex flex-col items-center justify-center p-12 text-faint">
               <Loader2 className="size-8 animate-spin text-amber-600 mb-2" />
               <p className="text-sm">Génération du résumé IA en cours…</p>
             </div>
@@ -509,18 +509,18 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                   <Pin className="size-3.5" aria-hidden />
                   Synthèse Globale
                 </span>
-                <p className="mt-2 text-sm leading-relaxed text-slate-800 font-medium">{summary.overview}</p>
+                <p className="mt-2 text-sm leading-relaxed text-foreground font-medium">{summary.overview}</p>
               </div>
 
               {/* Grid: Key Points & Action items */}
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* Key Points */}
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-                  <div className="flex items-center gap-2 mb-3 text-slate-900 font-semibold text-sm">
+                <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+                  <div className="flex items-center gap-2 mb-3 text-foreground font-semibold text-sm">
                     <CheckCircle2 className="size-4 text-emerald-600" />
                     <span>Points Clés Abordés</span>
                   </div>
-                  <ul className="space-y-2 text-xs text-slate-700">
+                  <ul className="space-y-2 text-xs text-body">
                     {summary.key_points?.map((pt, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="mt-1 size-1.5 shrink-0 rounded-full bg-emerald-500" />
@@ -531,12 +531,12 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                 </div>
 
                 {/* Action Items */}
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-                  <div className="flex items-center gap-2 mb-3 text-slate-900 font-semibold text-sm">
+                <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+                  <div className="flex items-center gap-2 mb-3 text-foreground font-semibold text-sm">
                     <ListTodo className="size-4 text-sky-600" />
                     <span>Actions & Prochaines Étapes</span>
                   </div>
-                  <ul className="space-y-2 text-xs text-slate-700">
+                  <ul className="space-y-2 text-xs text-body">
                     {summary.action_items?.map((item, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="mt-1 size-1.5 shrink-0 rounded-full bg-sky-500" />
@@ -549,12 +549,12 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
 
               {/* Decisions Card */}
               {summary.decisions && summary.decisions.length > 0 && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="flex items-center gap-2 mb-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
+                <div className="rounded-xl border border-border bg-subtle/70 p-4">
+                  <div className="flex items-center gap-2 mb-2 text-foreground font-semibold text-xs uppercase tracking-wider">
                     <Scale className="size-4" aria-hidden />
                     <span>Décisions & Recommandations de l'équipe</span>
                   </div>
-                  <ul className="space-y-1.5 text-xs text-slate-700">
+                  <ul className="space-y-1.5 text-xs text-body">
                     {summary.decisions.map((dec, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="mt-0.5 text-indigo-600 font-bold">›</span>
@@ -586,12 +586,12 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                     className={`rounded-2xl p-3.5 text-sm shadow-xs ${
                       msg.role === 'user'
                         ? 'bg-primary text-white rounded-tr-none'
-                        : 'border border-slate-200 bg-slate-50 text-slate-800 rounded-tl-none'
+                        : 'border border-border bg-subtle text-foreground rounded-tl-none'
                     }`}
                   >
                     <p className="whitespace-pre-line leading-relaxed">{msg.content}</p>
                     {msg.time && (
-                      <span className={`block text-[10px] mt-1.5 text-right ${msg.role === 'user' ? 'text-primary-foreground/75' : 'text-slate-400'}`}>
+                      <span className={`block text-[10px] mt-1.5 text-right ${msg.role === 'user' ? 'text-primary-foreground/75' : 'text-faint'}`}>
                         {msg.time}
                       </span>
                     )}
@@ -600,7 +600,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                   {/* Referenced segments timestamp pills */}
                   {msg.referenced_segments && msg.referenced_segments.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <span className="text-[11px] font-medium text-slate-500">Passage cité :</span>
+                      <span className="text-[11px] font-medium text-muted-foreground">Passage cité :</span>
                       {msg.referenced_segments.map((ref, i) => (
                         <button
                           key={i}
@@ -627,10 +627,10 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                           type="button"
                           onClick={() => handleSendMessage(followUp)}
                           disabled={isSendingChat}
-                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:border-primary hover:text-primary transition-all cursor-pointer shadow-2xs"
+                          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-soft hover:border-primary hover:text-primary transition-all cursor-pointer shadow-2xs"
                         >
                           <span>{followUp}</span>
-                          <ChevronRight className="size-3 text-slate-400" />
+                          <ChevronRight className="size-3 text-faint" />
                         </button>
                       ))}
                     </div>
@@ -639,11 +639,11 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
               </div>
             ))}
             {isSendingChat && (
-              <div className="flex gap-3 justify-start items-center text-slate-400 text-xs">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+              <div className="flex gap-3 justify-start items-center text-faint text-xs">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <Bot className="size-4 animate-pulse" />
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-600">
+                <div className="flex items-center gap-2 rounded-2xl border border-border bg-subtle px-4 py-2.5 text-soft">
                   <Loader2 className="size-3.5 animate-spin text-sky-600" />
                   <span>L'IA analyse la transcription du meet…</span>
                 </div>
@@ -653,7 +653,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
           </div>
 
           {/* Chat Input Bar */}
-          <div className="border-t border-slate-200 bg-white p-3 sm:px-4">
+          <div className="border-t border-border bg-card p-3 sm:px-4">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -666,7 +666,7 @@ export function EventAIReplayHub({ slug, event, canManage = false, className = '
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Posez une question sur ce qui s'est dit durant le live…"
                 disabled={isSendingChat}
-                className="flex-1 text-sm bg-slate-50 border-slate-200 focus:bg-white"
+                className="flex-1 text-sm bg-subtle border-border focus:bg-card"
               />
               <Button
                 type="submit"

@@ -28,30 +28,30 @@ export function SemanticSearch({ slug, query }: { slug: string; query: string })
         </p>
       )}
       {search.result && (
-        <section aria-labelledby="semantic-title" className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+        <section aria-labelledby="semantic-title" className="rounded-xl border border-brand-muted bg-brand-subtle/40 p-4">
           <div className="flex items-start justify-between gap-3">
-            <h3 id="semantic-title" className="flex items-center gap-2 text-sm font-semibold text-blue-950">
+            <h3 id="semantic-title" className="flex items-center gap-2 text-sm font-semibold text-brand-strong">
               <Sparkles className="size-4" aria-hidden />
               {t('community.semantic.close', { query: search.result.query })}
             </h3>
-            <button type="button" onClick={search.clear} aria-label={t('community.semantic.closeResults')} className="rounded-md p-1 text-slate-500 hover:bg-white hover:text-slate-800">
+            <button type="button" onClick={search.clear} aria-label={t('community.semantic.closeResults')} className="rounded-md p-1 text-muted-foreground hover:bg-card hover:text-foreground">
               <X className="size-4" aria-hidden />
             </button>
           </div>
           {results.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-600">{t('community.semantic.nothing')}</p>
+            <p className="mt-2 text-sm text-soft">{t('community.semantic.nothing')}</p>
           ) : (
             <ul className="mt-3 flex flex-col gap-3" aria-label={t('community.semantic.results')}>
               {results.map((r) => (
                 <li key={`${r.content_type}-${r.id}`} className="min-w-0 text-sm">
-                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     {r.content_type === 'lesson' ? <BookOpen className="size-3.5" aria-hidden /> : <MessageSquare className="size-3.5" aria-hidden />}
                     {isKind(r.content_type) ? t(`community.semantic.${r.content_type}`) : t('community.semantic.content')}
                   </span>
-                  <Link to={r.url} className="block truncate font-medium text-blue-900 hover:underline">
+                  <Link to={r.url} className="block truncate font-medium text-brand-strong hover:underline">
                     {r.title || t('community.semantic.untitled')}
                   </Link>
-                  {r.snippet && <span className="line-clamp-2 text-slate-600">{r.snippet}</span>}
+                  {r.snippet && <span className="line-clamp-2 text-soft">{r.snippet}</span>}
                 </li>
               ))}
             </ul>

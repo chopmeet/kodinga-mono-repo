@@ -16,10 +16,10 @@ const tabs: Tab[] = [
 
 function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <ColgateWrapper className="min-w-0 border border-neutral-200 p-4">
+    <ColgateWrapper className="min-w-0 border border-border p-4">
       <div className="mb-4">
-        <h2 className="text-lg font-medium text-zinc-700">{title}</h2>
-        {description && <p className="text-sm text-slate-500">{description}</p>}
+        <h2 className="text-lg font-medium text-body">{title}</h2>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {children}
     </ColgateWrapper>
@@ -46,7 +46,7 @@ function CommunityPayments() {
       </div>
 
       <NavTabs tabs={tabs} />
-      <ColgateWrapper className="mt-4 border border-neutral-200 p-4">
+      <ColgateWrapper className="mt-4 border border-border p-4">
         <Outlet context={billing} />
       </ColgateWrapper>
     </div>

@@ -28,10 +28,10 @@ function SecurityTab() {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="password-title" className="max-w-lg">
-        <h2 id="password-title" className="font-semibold text-slate-900">
+        <h2 id="password-title" className="font-semibold text-foreground">
           Mot de passe
         </h2>
-        <p className="mt-1 text-sm text-slate-500">Au moins 8 caractères, évitez les mots de passe trop courants.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Au moins 8 caractères, évitez les mots de passe trop courants.</p>
         <form noValidate onSubmit={security.submitPassword} className="mt-4">
           <InputPassword 
             id="__current_password" 
@@ -67,26 +67,26 @@ function SecurityTab() {
       </section>
 
       <section aria-labelledby="sessions-title">
-        <h2 id="sessions-title" className="font-semibold text-slate-900">
+        <h2 id="sessions-title" className="font-semibold text-foreground">
           Appareils connectés
         </h2>
-        <p className="mt-1 text-sm text-slate-500">Vous ne reconnaissez pas un appareil ? Déconnectez-le, puis changez votre mot de passe.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Vous ne reconnaissez pas un appareil ? Déconnectez-le, puis changez votre mot de passe.</p>
         {security.isLoadingSessions ? (
-          <p className="mt-4 text-sm text-slate-500">Chargement…</p>
+          <p className="mt-4 text-sm text-muted-foreground">Chargement…</p>
         ) : security.sessions.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">Aucune session active.</p>
+          <p className="mt-4 text-sm text-muted-foreground">Aucune session active.</p>
         ) : (
-          <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200" aria-label="Appareils connectés">
+          <ul className="mt-4 divide-y divide-border-soft rounded-xl border border-border" aria-label="Appareils connectés">
             {security.sessions.map((s) => {
               const mobile = /Android|iPhone|iPad|Mobile/.test(s.user_agent || '');
               const Icon = mobile ? Smartphone : Monitor;
               return (
                 <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <Icon className="size-5 shrink-0 text-slate-400" />
+                    <Icon className="size-5 shrink-0 text-faint" />
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-900">{deviceOf(s)}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="truncate font-medium text-foreground">{deviceOf(s)}</p>
+                      <p className="text-xs text-muted-foreground">
                         {[s.ip_address, `Connecté ${ago(s.created_at).toLowerCase()}`, s.last_seen_at ? `vu ${ago(s.last_seen_at).toLowerCase()}` : ''].filter(Boolean).join(' · ')}
                       </p>
                     </div>

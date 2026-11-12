@@ -179,7 +179,7 @@ export function AIAssistantWidget() {
         <div
           className={cn(
             // Phones: the width of the screen less a margin on each side; larger: a panel at the bottom right
-            'fixed inset-x-3 bottom-3 z-50 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl transition-all duration-300 sm:inset-x-auto sm:right-4 sm:bottom-4',
+            'fixed inset-x-3 bottom-3 z-50 flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/95 shadow-2xl backdrop-blur-xl transition-all duration-300 sm:inset-x-auto sm:right-4 sm:bottom-4',
             // Never taller than the screen (minus the margins): the header (close, expand, language) stays visible
             isExpanded
               ? 'h-[min(85dvh,calc(100dvh-1.5rem))] sm:w-[650px]'
@@ -188,7 +188,7 @@ export function AIAssistantWidget() {
         >
           {/* Header */}
           {/* One line on a phone: the title and the subtitle are cut rather than wrapped, the actions keep their room */}
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-900 px-3 py-3 text-white sm:px-4">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border-soft bg-slate-900 px-3 py-3 text-white sm:px-4">
             <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand ring-1 ring-brand/30 max-[339px]:hidden sm:size-9">
                 <Bot className="size-5" />
@@ -201,14 +201,14 @@ export function AIAssistantWidget() {
                     <span className="max-[399px]:sr-only">{t('assistant.online')}</span>
                   </span>
                 </div>
-                <p className="truncate text-[11px] text-slate-400">{t('assistant.subtitle')}</p>
+                <p className="truncate text-[11px] text-faint">{t('assistant.subtitle')}</p>
               </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
               {/* Language Selector */}
               <div className="relative flex items-center">
-                <Globe className="mr-1 hidden size-3.5 text-slate-400 sm:block" aria-hidden />
+                <Globe className="mr-1 hidden size-3.5 text-faint sm:block" aria-hidden />
                 <select
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
@@ -227,7 +227,7 @@ export function AIAssistantWidget() {
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 aria-label={isExpanded ? t('assistant.reduce') : t('assistant.expand')}
-                className="hidden rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white sm:inline-flex"
+                className="hidden rounded-lg p-1.5 text-faint hover:bg-slate-800 hover:text-white sm:inline-flex"
                 title={isExpanded ? t('assistant.reduce') : t('assistant.expand')}
               >
                 {isExpanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
@@ -237,7 +237,7 @@ export function AIAssistantWidget() {
               <button
                 onClick={() => setIsOpen(false)}
                 aria-label={t('assistant.close')}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-1.5 text-faint hover:bg-slate-800 hover:text-white"
                 title={t('assistant.closeShort')}
               >
                 <X className="size-4" />
@@ -257,7 +257,7 @@ export function AIAssistantWidget() {
                     'max-w-[85%] rounded-2xl px-4 py-3 leading-relaxed shadow-sm',
                     m.role === 'user'
                       ? 'bg-slate-900 text-white'
-                      : 'border border-slate-200/80 bg-slate-50/90 text-slate-800'
+                      : 'border border-border/80 bg-subtle/90 text-foreground'
                   )}
                 >
                   <p className="whitespace-pre-wrap">{m.content}</p>
@@ -272,16 +272,16 @@ export function AIAssistantWidget() {
                         {m.recommendations.map((rec) => (
                           <div
                             key={rec.id}
-                            className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition hover:border-brand/50 hover:shadow-sm"
+                            className="rounded-xl border border-border bg-card p-3 shadow-xs transition hover:border-brand/50 hover:shadow-sm"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <h4 className="font-semibold text-slate-900">{rec.name}</h4>
-                                <p className="text-xs text-slate-500 line-clamp-1">
+                                <h4 className="font-semibold text-foreground">{rec.name}</h4>
+                                <p className="text-xs text-muted-foreground line-clamp-1">
                                   {rec.tagline || rec.description}
                                 </p>
                               </div>
-                              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                              <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-soft">
                                 {rec.category}
                               </span>
                             </div>
@@ -290,7 +290,7 @@ export function AIAssistantWidget() {
                               <span role="img" aria-label={t('assistant.why')}>💡</span> {rec.relevance_reason}
                             </p>
 
-                            <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500">
+                            <div className="mt-2.5 flex items-center justify-between text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Users className="size-3.5" />
                                 {t('assistant.members', { count: rec.members_count })}
@@ -317,18 +317,18 @@ export function AIAssistantWidget() {
                         <span className="text-xs font-bold uppercase tracking-wider text-brand">
                           {t('assistant.proposal')}
                         </span>
-                        <span className="text-[10px] font-semibold text-slate-500">
+                        <span className="text-[10px] font-semibold text-muted-foreground">
                           {m.proposal.recommended_visibility === 'public' ? t('assistant.public') : t('assistant.private')}
                         </span>
                       </div>
 
                       <div className="mt-1">
-                        <p className="text-xs font-bold text-slate-700">{t('assistant.nameIdeas')}</p>
+                        <p className="text-xs font-bold text-body">{t('assistant.nameIdeas')}</p>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {m.proposal.name_suggestions.map((name, i) => (
                             <span
                               key={i}
-                              className="rounded-md bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 border border-slate-200"
+                              className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-foreground border border-border"
                             >
                               {name}
                             </span>
@@ -337,13 +337,13 @@ export function AIAssistantWidget() {
                       </div>
 
                       <div className="mt-2">
-                        <p className="text-xs font-bold text-slate-700">{t('assistant.mission')}</p>
-                        <p className="text-xs text-slate-600">{m.proposal.purpose || m.proposal.description}</p>
+                        <p className="text-xs font-bold text-body">{t('assistant.mission')}</p>
+                        <p className="text-xs text-soft">{m.proposal.purpose || m.proposal.description}</p>
                       </div>
 
                       <div className="mt-2">
-                        <p className="text-xs font-bold text-slate-700">{t('assistant.categories')}</p>
-                        <p className="text-xs text-slate-600">
+                        <p className="text-xs font-bold text-body">{t('assistant.categories')}</p>
+                        <p className="text-xs text-soft">
                           {m.proposal.suggested_categories.join(', ')}
                         </p>
                       </div>
@@ -364,7 +364,7 @@ export function AIAssistantWidget() {
                               `prop-${m.id}`
                             )
                           }
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-body hover:bg-subtle"
                         >
                           {copiedId === `prop-${m.id}` ? (
                             <Check className="size-3.5 text-emerald-600" />
@@ -379,7 +379,7 @@ export function AIAssistantWidget() {
 
                   {/* Provider Info */}
                   {m.provider && (
-                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-slate-400">
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-faint">
                       <span>{m.provider === 'fallback' ? t('assistant.automatic') : t('assistant.generated')}</span>
                     </div>
                   )}
@@ -392,7 +392,7 @@ export function AIAssistantWidget() {
                       <button
                         key={i}
                         onClick={() => handleSend(prompt)}
-                        className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 transition hover:border-brand hover:bg-slate-50 hover:text-brand"
+                        className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-soft transition hover:border-brand hover:bg-subtle hover:text-brand"
                       >
                         {prompt}
                       </button>
@@ -405,7 +405,7 @@ export function AIAssistantWidget() {
             {/* Loading Indicator */}
             {isBusy && (
               <div className="flex items-start">
-                <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/90 px-4 py-3 text-xs text-slate-600 shadow-xs">
+                <div className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-subtle/90 px-4 py-3 text-xs text-soft shadow-xs">
                   <span className="flex items-center gap-1">
                     <span className="size-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.3s]" />
                     <span className="size-1.5 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
@@ -421,8 +421,8 @@ export function AIAssistantWidget() {
 
           {/* Quick Starters (shown if only initial message) */}
           {messages.length === 1 && (
-            <div className="max-h-[30dvh] shrink-0 overflow-y-auto border-t border-slate-100 bg-slate-50/50 p-3">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="max-h-[30dvh] shrink-0 overflow-y-auto border-t border-border-soft bg-subtle/50 p-3">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-faint">
                 {t('assistant.quickActions')}
               </p>
               <div className="grid grid-cols-2 gap-1.5">
@@ -432,7 +432,7 @@ export function AIAssistantWidget() {
                     <button
                       key={s.id}
                       onClick={() => handleSend(t(`assistant.starters.${s.id}Prompt`))}
-                      className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-left text-xs text-slate-700 transition hover:border-brand hover:text-brand"
+                      className="flex items-start gap-2 rounded-lg border border-border bg-card p-2 text-left text-xs text-body transition hover:border-brand hover:text-brand"
                     >
                       <Icon className="mt-0.5 size-3.5 shrink-0 text-brand" />
                       {/* Two lines: one cut the labels on a phone */}
@@ -450,7 +450,7 @@ export function AIAssistantWidget() {
               e.preventDefault();
               handleSend();
             }}
-            className="shrink-0 border-t border-slate-100 bg-white p-3"
+            className="shrink-0 border-t border-border-soft bg-card p-3"
           >
             <div className="flex items-center gap-2">
               <input
@@ -461,7 +461,7 @@ export function AIAssistantWidget() {
                 placeholder={t('assistant.placeholder')}
                 aria-label={t('assistant.placeholder')}
                 disabled={isBusy}
-                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:opacity-50"
+                className="flex-1 rounded-xl border border-border bg-subtle px-3.5 py-2.5 text-xs text-foreground placeholder-slate-400 focus:border-brand focus:bg-card focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:opacity-50"
               />
               <button
                 type="submit"

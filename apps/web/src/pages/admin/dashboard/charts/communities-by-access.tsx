@@ -31,8 +31,8 @@ export default function CommunitiesByAccessDonut() {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold text-slate-900">{formatNumber(total)}</span>
-          <span className="text-xs text-slate-500">communautés</span>
+          <span className="text-xl font-bold text-foreground">{formatNumber(total)}</span>
+          <span className="text-xs text-muted-foreground">communautés</span>
         </div>
       </div>
 
@@ -40,9 +40,9 @@ export default function CommunitiesByAccessDonut() {
         {communitiesByAccess.map((d, i) => (
           <li key={d.id} className="flex items-center gap-2">
             <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: SERIES[i] }} />
-            <span className="text-slate-600">{d.label}</span>
-            <span className="ml-auto font-semibold text-slate-900 tabular-nums">{formatNumber(d.communities)}</span>
-            <span className="w-12 text-right text-xs text-slate-500 tabular-nums">
+            <span className="text-soft">{d.label}</span>
+            <span className="ml-auto font-semibold text-foreground tabular-nums">{formatNumber(d.communities)}</span>
+            <span className="w-12 text-right text-xs text-muted-foreground tabular-nums">
               {Math.round((d.communities / total) * 100)} %
             </span>
           </li>

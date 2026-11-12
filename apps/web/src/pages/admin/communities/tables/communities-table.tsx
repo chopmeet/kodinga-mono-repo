@@ -13,14 +13,13 @@ import {
 } from '@kodinga/ui';
 import type { CommunityListItem, CommunityPrivacy } from '@/utils/api/community/community.type';
 import { formatCompact, getName, nameInitials } from '@/utils/Utils';
+import { formatDate } from '@/utils/format';
 
 const privacyBadge: Record<CommunityPrivacy, { label: string; icon: typeof Globe }> = {
   public: { label: 'Publique', icon: Globe },
   private: { label: 'Privée', icon: Lock },
   secret: { label: 'Secrète', icon: EyeOff },
 };
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
 
 function CommunityCell({ community }: { community: CommunityListItem }) {
@@ -38,14 +37,14 @@ function CommunityCell({ community }: { community: CommunityListItem }) {
         </div>
       )}
       <div className="min-w-0">
-        <p className="flex items-center gap-1 font-medium text-slate-900">
+        <p className="flex items-center gap-1 font-medium text-foreground">
           <Link to={`/admin/communities/${community.slug}`} className="truncate hover:text-primary hover:underline">
             {community.name}
           </Link>
           {community.is_verified && <BadgeCheck className="size-4 shrink-0 text-primary" aria-label="Vérifiée" />}
           {community.is_featured && <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-500" aria-label="À la une" />}
         </p>
-        <p className="truncate text-xs text-slate-500">/{community.slug}</p>
+        <p className="truncate text-xs text-muted-foreground">/{community.slug}</p>
       </div>
     </div>
   );
@@ -68,12 +67,12 @@ function CommunitiesTable({ communities, isLoading, onArchive }: Props) {
     {
       id: 'owner',
       header: 'Propriétaire',
-      cell: ({ row }) => <span className="text-slate-700">{getName(row.original.owner) || '—'}</span>,
+      cell: ({ row }) => <span className="text-body">{getName(row.original.owner) || '—'}</span>,
     },
     {
       id: 'category',
       header: 'Catégorie',
-      cell: ({ row }) => <span className="text-slate-700">{row.original.category?.name ?? '—'}</span>,
+      cell: ({ row }) => <span className="text-body">{row.original.category?.name ?? '—'}</span>,
     },
     {
       id: 'access',
@@ -83,7 +82,7 @@ function CommunitiesTable({ communities, isLoading, onArchive }: Props) {
         const Icon = privacy.icon;
         return (
           <div className="flex flex-wrap gap-1.5">
-            <Badge variant="outline" className="gap-1 text-slate-700">
+            <Badge variant="outline" className="gap-1 text-body">
               <Icon />
               {privacy.label}
             </Badge>
@@ -100,7 +99,7 @@ function CommunitiesTable({ communities, isLoading, onArchive }: Props) {
       id: 'members',
       header: () => <span className="block text-right">Membres</span>,
       cell: ({ row }) => (
-        <span className="block text-right font-medium text-slate-900 tabular-nums">
+        <span className="block text-right font-medium text-foreground tabular-nums">
           {formatCompact(row.original.members_count)}
         </span>
       ),
@@ -109,15 +108,15 @@ function CommunitiesTable({ communities, isLoading, onArchive }: Props) {
       id: 'posts',
       header: () => <span className="block text-right">Publications</span>,
       cell: ({ row }) => (
-        <span className="block text-right text-slate-700 tabular-nums">{formatCompact(row.original.posts_count)}</span>
+        <span className="block text-right text-body tabular-nums">{formatCompact(row.original.posts_count)}</span>
       ),
     },
     {
       id: 'created',
       header: 'Créée le',
       cell: ({ row }) => (
-        <time dateTime={row.original.created_at} className="whitespace-nowrap text-slate-600">
-          {dateFormat.format(new Date(row.original.created_at))}
+        <time dateTime={row.original.created_at} className="whitespace-nowrap text-soft">
+          {formatDate(row.original.created_at)}
         </time>
       ),
     },

@@ -17,8 +17,8 @@ export function PasswordCheck({ password }: { password: string }) {
       {passwordRules.map((rule) => {
         const ok = rule.test(password);
         return (
-          <li key={rule.id} className={cn('flex items-center gap-2', ok ? 'text-emerald-700' : 'text-slate-500')}>
-            {ok ? <Check className="size-4" /> : <X className="size-4 text-slate-400" />}
+          <li key={rule.id} className={cn('flex items-center gap-2', ok ? 'text-emerald-700' : 'text-muted-foreground')}>
+            {ok ? <Check className="size-4" /> : <X className="size-4 text-faint" />}
             {t(`auth.password.${rule.id}`)}
           </li>
         );

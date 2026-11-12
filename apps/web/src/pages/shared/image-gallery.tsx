@@ -29,7 +29,7 @@ export function ImageGallery({ images, title, className }: Props) {
               type="button"
               onClick={() => setOpen(i)}
               aria-label={`Agrandir la capture ${i + 1} sur ${count}`}
-              className="group relative block aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 transition hover:border-blue-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-900/40 focus-visible:outline-none"
+              className="group relative block aspect-video w-full overflow-hidden rounded-lg border border-border bg-muted transition hover:border-blue-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-900/40 focus-visible:outline-none"
             >
               <img src={url} alt="" loading="lazy" className="size-full object-cover transition duration-200 group-hover:scale-105" />
             </button>

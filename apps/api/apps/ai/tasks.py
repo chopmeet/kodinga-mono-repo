@@ -10,7 +10,11 @@ logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=5)
 def analyze_content_sentiment_task(
-    self, text: str, community_id: str = None, entity_type: str = "", entity_id: str = ""
+    self,
+    text: str,
+    community_id: str = None,
+    entity_type: str = "",
+    entity_id: str = "",
 ):
     """
     Asynchronous Celery background task for sentiment analysis
@@ -74,7 +78,9 @@ def index_content_embedding_task(
                 metadata=metadata,
             )
     except Exception as exc:
-        logger.warning(f"[index_content_embedding_task] Failed for {content_type} {object_id}: {exc}")
+        logger.warning(
+            f"[index_content_embedding_task] Failed for {content_type} {object_id}: {exc}"
+        )
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=10)
@@ -99,7 +105,9 @@ def generate_community_weekly_digest_task(
                 force_refresh=force_refresh,
             )
     except Exception as exc:
-        logger.warning(f"[generate_community_weekly_digest_task] Failed for community {community_id}: {exc}")
+        logger.warning(
+            f"[generate_community_weekly_digest_task] Failed for community {community_id}: {exc}"
+        )
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=10)
@@ -115,7 +123,9 @@ def evaluate_community_churn_task(self, community_id: str):
         if community:
             ChurnPredictionService.evaluate_community_churn(community=community)
     except Exception as exc:
-        logger.warning(f"[evaluate_community_churn_task] Failed for community {community_id}: {exc}")
+        logger.warning(
+            f"[evaluate_community_churn_task] Failed for community {community_id}: {exc}"
+        )
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=10)
@@ -131,7 +141,9 @@ def send_smart_nudge_task(self, churn_risk_id: str, custom_message: str = None):
             custom_message=custom_message,
         )
     except Exception as exc:
-        logger.warning(f"[send_smart_nudge_task] Failed for churn risk {churn_risk_id}: {exc}")
+        logger.warning(
+            f"[send_smart_nudge_task] Failed for churn risk {churn_risk_id}: {exc}"
+        )
 
 
 @shared_task(bind=True, max_retries=1)
@@ -149,7 +161,9 @@ def generate_all_communities_weekly_digest_periodic_task(self):
         try:
             generate_community_weekly_digest_task.delay(str(cid))
         except Exception as exc:
-            logger.warning(f"[generate_all_communities_weekly_digest_periodic_task] Error dispatching for {cid}: {exc}")
+            logger.warning(
+                f"[generate_all_communities_weekly_digest_periodic_task] Error dispatching for {cid}: {exc}"
+            )
 
 
 @shared_task(bind=True, max_retries=1)
@@ -167,5 +181,6 @@ def evaluate_all_communities_churn_periodic_task(self):
         try:
             evaluate_community_churn_task.delay(str(cid))
         except Exception as exc:
-            logger.warning(f"[evaluate_all_communities_churn_periodic_task] Error dispatching for {cid}: {exc}")
-
+            logger.warning(
+                f"[evaluate_all_communities_churn_periodic_task] Error dispatching for {cid}: {exc}"
+            )

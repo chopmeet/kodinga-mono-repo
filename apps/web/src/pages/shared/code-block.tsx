@@ -109,13 +109,13 @@ export function CodeBlock({ code, language, className }: Props) {
     <figure className={cn('mt-4 overflow-hidden rounded-lg border border-slate-800 bg-[#0d1117] text-slate-100', className)}>
       <figcaption className="flex items-center justify-between gap-3 border-b border-slate-800 px-3 py-1.5 text-xs">
         <span className="font-semibold text-slate-300">{label}</span>
-        <button type="button" onClick={copy} aria-label={`Copier le code ${label}`} className="flex items-center gap-1 rounded px-1.5 py-0.5 text-slate-400 hover:bg-white/10 hover:text-white">
+        <button type="button" onClick={copy} aria-label={`Copier le code ${label}`} className="flex items-center gap-1 rounded px-1.5 py-0.5 text-faint hover:bg-white/10 hover:text-white">
           {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
           {copied ? 'Copié' : 'Copier'}
         </button>
       </figcaption>
       <div className="flex overflow-x-auto font-mono text-[13px] leading-6 [tab-size:2] sm:text-sm">
-        <pre aria-hidden className="sticky left-0 shrink-0 bg-[#0d1117] py-3 pr-3 pl-3 text-right text-slate-500 select-none">
+        <pre aria-hidden className="sticky left-0 shrink-0 bg-[#0d1117] py-3 pr-3 pl-3 text-right text-muted-foreground select-none">
           {Array.from({ length: lines }, (_, i) => i + 1).join('\n')}
         </pre>
         <pre className="py-3 pr-4">

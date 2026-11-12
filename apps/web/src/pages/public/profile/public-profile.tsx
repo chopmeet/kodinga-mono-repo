@@ -21,14 +21,14 @@ type TabId = 'about' | 'career' | 'portfolio' | 'communities' | 'contributions';
 function Banner({ imageUrl }: { imageUrl?: string }) {
   const { t } = useTranslation();
   return (
-    <div className="relative isolate h-56 overflow-hidden border-b border-slate-200 sm:h-60">
+    <div className="relative isolate h-56 overflow-hidden border-b border-border sm:h-60">
       {imageUrl ? <img src={imageUrl} alt="" className="absolute inset-0 -z-10 size-full object-cover" /> : <GlassBackdrop className="-z-10" />}
       <div className="mx-auto flex h-full max-w-[1440px] flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
-        <Link to="/" className="flex w-fit items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+        <Link to="/" className="flex w-fit items-center gap-2 text-sm text-soft hover:text-foreground">
           <ArrowLeft className="size-4" />
           {t('profile.backExplore')}
         </Link>
-        <p className="hidden self-end pb-6 text-xs font-semibold sm:block tracking-[0.2em] text-slate-600 uppercase">{t('profile.bannerTagline')}</p>
+        <p className="hidden self-end pb-6 text-xs font-semibold sm:block tracking-[0.2em] text-soft uppercase">{t('profile.bannerTagline')}</p>
       </div>
     </div>
   );
@@ -48,8 +48,8 @@ function PublicProfile() {
       <div aria-busy="true" aria-label={t('profile.loading')}>
         <Banner />
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-          <div className="relative z-10 -mt-20 size-40 animate-pulse rounded-full border-4 border-white bg-slate-100" />
-          <div className="mt-6 h-7 w-64 animate-pulse rounded bg-slate-100" />
+          <div className="relative z-10 -mt-20 size-40 animate-pulse rounded-full border-4 border-white bg-muted" />
+          <div className="mt-6 h-7 w-64 animate-pulse rounded bg-muted" />
         </div>
       </div>
     );
@@ -61,8 +61,8 @@ function PublicProfile() {
       <div>
         <Banner />
         <div className="mx-auto max-w-[1440px] px-4 py-16 text-center sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-slate-900">{notFound ? t('profile.notFound') : t('profile.unavailable')}</h1>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">{notFound ? t('profile.notFound') : t('profile.unavailable')}</h1>
+          <p className="mt-2 text-muted-foreground">
             {notFound ? t('profile.notFoundText') : t('profile.unavailableText')}
           </p>
         </div>
@@ -85,7 +85,7 @@ function PublicProfile() {
   };
 
   return (
-    <div className="bg-slate-50 pb-16">
+    <div className="bg-subtle pb-16">
       <Banner imageUrl={profile.banner_url || undefined} />
 
       <div className="mx-auto grid max-w-[1440px] grid-cols-[minmax(0,1fr)] gap-12 px-4 sm:px-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:px-8">
@@ -102,31 +102,31 @@ function PublicProfile() {
             </span>
           )}
 
-          <p className="mt-8 flex items-center gap-1.5 text-xs font-medium tracking-wide text-slate-500 uppercase">
+          <p className="mt-8 flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             <UserRound className="size-3.5" aria-hidden />
             {t('profile.publicProfile')}
           </p>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{name}</h1>
-          <p className="mt-2 text-sm text-slate-500">@{profile.user.username}</p>
-          {profile.headline && <p className="mt-5 text-slate-700">{profile.headline}</p>}
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground">{name}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">@{profile.user.username}</p>
+          {profile.headline && <p className="mt-5 text-body">{profile.headline}</p>}
           <ProfileAvailability profile={profile} />
 
-          <ul className="mt-5 space-y-2 text-sm text-slate-600">
+          <ul className="mt-5 space-y-2 text-sm text-soft">
             {profile.location && (
               <li className="flex items-center gap-2">
-                <MapPin className="size-4 text-slate-400" aria-hidden />
+                <MapPin className="size-4 text-faint" aria-hidden />
                 {profile.location}
               </li>
             )}
             <li className="flex items-center gap-2">
-              <CalendarDays className="size-4 text-slate-400" aria-hidden />
+              <CalendarDays className="size-4 text-faint" aria-hidden />
               {t('profile.joined', { date: dateFormat({ day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(profile.user.date_joined)) })}
             </li>
           </ul>
           <ProfileFollows profile={profile} name={name} />
           <ProfileLinks profile={profile} />
 
-          <dl className="mt-8 grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-5 text-center">
+          <dl className="mt-8 grid grid-cols-3 divide-x divide-border border-y border-border py-5 text-center">
             {(
               [
                 [t('profile.stats.posts'), profile.contributions?.posts_count],
@@ -135,8 +135,8 @@ function PublicProfile() {
               ] as const
             ).map(([label, value]) => (
               <div key={label}>
-                <dd className="text-2xl font-bold text-slate-900 tabular-nums">{value === undefined ? '—' : formatCompact(value)}</dd>
-                <dt className="mt-1 text-xs text-slate-500">{label}</dt>
+                <dd className="text-2xl font-bold text-foreground tabular-nums">{value === undefined ? '—' : formatCompact(value)}</dd>
+                <dt className="mt-1 text-xs text-muted-foreground">{label}</dt>
               </div>
             ))}
           </dl>
@@ -154,7 +154,7 @@ function PublicProfile() {
             <button
               type="button"
               onClick={share}
-              className="flex h-13 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white font-semibold text-slate-900 shadow-2xs transition-colors hover:bg-slate-50"
+              className="flex h-13 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card font-semibold text-foreground shadow-2xs transition-colors hover:bg-subtle"
             >
               <Copy className="size-4.5" />
               {t('profile.share')}
@@ -166,11 +166,11 @@ function PublicProfile() {
         <section className="pt-12" aria-labelledby="activity-title">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-slate-600 uppercase">{t('profile.activity.eyebrow')}</p>
-              <h2 id="activity-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              <p className="text-xs font-semibold tracking-[0.2em] text-soft uppercase">{t('profile.activity.eyebrow')}</p>
+              <h2 id="activity-title" className="mt-3 text-3xl font-bold tracking-tight text-foreground">
                 {t('profile.activity.title')}
               </h2>
-              <p className="mt-4 text-slate-600" aria-live="polite">
+              <p className="mt-4 text-soft" aria-live="polite">
                 {activity.failed
                   ? t('profile.activity.failed')
                   : activity.total === undefined
@@ -185,7 +185,7 @@ function PublicProfile() {
               id="activity-year"
               value={activity.year}
               onChange={(e) => activity.setYear(Number(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900"
+              className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground"
             >
               {activity.years.map((y) => (
                 <option key={y} value={y}>
@@ -199,7 +199,7 @@ function PublicProfile() {
             <ActivityHeatmap year={activity.year} counts={activity.counts} />
           </div>
 
-          <div className="no-scrollbar mt-12 flex gap-2 overflow-x-auto border-b border-slate-200" role="tablist">
+          <div className="no-scrollbar mt-12 flex gap-2 overflow-x-auto border-b border-border" role="tablist">
             {(
               [
                 { id: 'about', icon: UserRound },
@@ -217,7 +217,7 @@ function PublicProfile() {
                 onClick={() => setTab(id)}
                 className={cn(
                   '-mb-px flex shrink-0 items-center gap-2 border-b-2 px-1 py-3 font-medium transition-colors sm:px-3',
-                  tab === id ? 'border-primary text-primary' : 'border-transparent text-slate-700 hover:text-slate-900'
+                  tab === id ? 'border-primary text-primary' : 'border-transparent text-body hover:text-foreground'
                 )}
               >
                 <Icon className="size-4.5" aria-hidden />

@@ -22,8 +22,8 @@ export function FilterChip({ active, onClick, children, disabled, title }: Props
       title={title}
       className={cn(
         'rounded-full border px-3 py-1 text-sm transition-colors',
-        active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
-        disabled && 'cursor-not-allowed opacity-50 hover:border-slate-200'
+        active ? 'border-slate-900 bg-slate-900 text-white' : 'border-border bg-card text-body hover:border-border-strong',
+        disabled && 'cursor-not-allowed opacity-50 hover:border-border'
       )}
     >
       {children}

@@ -10,12 +10,12 @@ import type { CoursePlayer } from './form/UseCoursePlayer';
 
 function Figure({ icon, value, label }: { icon: ReactNode; value: string; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-3 py-3">
-      <span className="text-blue-900" aria-hidden>
+    <div className="flex flex-col items-center gap-1 rounded-xl bg-subtle px-3 py-3">
+      <span className="text-brand-strong" aria-hidden>
         {icon}
       </span>
-      <span className="text-lg font-bold text-slate-900 tabular-nums">{value}</span>
-      <span className="text-xs text-slate-500">{label}</span>
+      <span className="text-lg font-bold text-foreground tabular-nums">{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -40,7 +40,7 @@ export function CourseCompletedDialog({ player }: { player: CoursePlayer }) {
         <DialogHeader className="items-center text-center sm:text-center">
           <DialogTitle className="text-2xl">{t('course.completed.title')}</DialogTitle>
           <DialogDescription>
-            {t('course.completed.text')} <strong className="text-slate-900">« {course.title} »</strong>.
+            {t('course.completed.text')} <strong className="text-foreground">« {course.title} »</strong>.
           </DialogDescription>
         </DialogHeader>
 

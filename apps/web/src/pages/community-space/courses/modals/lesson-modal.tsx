@@ -41,7 +41,7 @@ function LessonModal({ slug, courseSlug, target, onClose }: Props) {
           </DialogDescription>
         </DialogHeader>
         {form.isLoadingDetail ? (
-          <p className="text-sm text-slate-500">Chargement de la leçon…</p>
+          <p className="text-sm text-muted-foreground">Chargement de la leçon…</p>
         ) : (
           <form
             id="lesson-form"

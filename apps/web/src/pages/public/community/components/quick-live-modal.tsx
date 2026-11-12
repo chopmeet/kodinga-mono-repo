@@ -125,7 +125,7 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
           />
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-slate-700">{t('community.quickLive.privacy')}</span>
+            <span className="text-xs font-semibold text-body">{t('community.quickLive.privacy')}</span>
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
@@ -133,14 +133,14 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
                 className={cn(
                   'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all cursor-pointer',
                   isPublic
-                    ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300',
+                    ? 'border-blue-600 bg-brand-subtle/60 ring-2 ring-blue-600/20'
+                    : 'border-border bg-card hover:border-border-strong',
                 )}
               >
-                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                  <Globe className={cn('size-3.5', isPublic ? 'text-blue-600' : 'text-slate-400')} /> {t('community.quickLive.public')}
+                <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <Globe className={cn('size-3.5', isPublic ? 'text-blue-600' : 'text-faint')} /> {t('community.quickLive.public')}
                 </span>
-                <span className="text-[11px] leading-tight text-slate-500">
+                <span className="text-[11px] leading-tight text-muted-foreground">
                   {t('community.quickLive.publicText')}
                 </span>
               </button>
@@ -152,13 +152,13 @@ export function QuickLiveModal({ slug, open, onClose }: Props) {
                   'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all cursor-pointer',
                   !isPublic
                     ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-600/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300',
+                    : 'border-border bg-card hover:border-border-strong',
                 )}
               >
-                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                  <Lock className={cn('size-3.5', !isPublic ? 'text-amber-600' : 'text-slate-400')} /> {t('community.quickLive.private')}
+                <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <Lock className={cn('size-3.5', !isPublic ? 'text-amber-600' : 'text-faint')} /> {t('community.quickLive.private')}
                 </span>
-                <span className="text-[11px] leading-tight text-slate-500">
+                <span className="text-[11px] leading-tight text-muted-foreground">
                   {t('community.quickLive.privateText')}
                 </span>
               </button>

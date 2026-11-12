@@ -25,11 +25,11 @@ function AdjustPointsModal({ open, slug, onOpenChange, onAdjust }: Props) {
         </DialogHeader>
         <form id="adjust-form" onSubmit={form.onSubmit} noValidate>
           {member ? (
-            <p className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+            <p className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-border bg-subtle px-3 py-2 text-sm">
               <span>
-                Membre : <strong className="text-slate-900">{member.name}</strong>
+                Membre : <strong className="text-foreground">{member.name}</strong>
               </span>
-              <button type="button" className="font-semibold text-blue-900 hover:underline" onClick={() => form.setMember(null)}>
+              <button type="button" className="font-semibold text-brand-strong hover:underline" onClick={() => form.setMember(null)}>
                 Changer
               </button>
             </p>
@@ -45,15 +45,15 @@ function AdjustPointsModal({ open, slug, onOpenChange, onAdjust }: Props) {
                 error={form.memberError ? 'Choisissez le membre concerné' : undefined}
               />
               {form.results.length > 0 && (
-                <ul aria-label="Membres trouvés" className="-mt-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200">
+                <ul aria-label="Membres trouvés" className="-mt-2 max-h-48 overflow-y-auto rounded-lg border border-border">
                   {form.results.map((m) => (
                     <li key={m.id}>
                       <button
                         type="button"
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-subtle"
                         onClick={() => form.setMember({ id: m.user.id, name: getName(m.user) })}
                       >
-                        {getName(m.user)} <span className="text-slate-400">@{m.user.username}</span>
+                        {getName(m.user)} <span className="text-faint">@{m.user.username}</span>
                       </button>
                     </li>
                   ))}

@@ -32,9 +32,9 @@ const DURATIONS = [
 const statusStyle: Record<InvitationStatus, { label: string; className: string }> = {
   pending: { label: 'En attente', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   accepted: { label: 'Acceptée', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
-  declined: { label: 'Refusée', className: 'border-slate-200 bg-slate-50 text-slate-600' },
-  expired: { label: 'Expirée', className: 'border-slate-200 bg-slate-50 text-slate-600' },
-  revoked: { label: 'Révoquée', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  declined: { label: 'Refusée', className: 'border-border bg-subtle text-soft' },
+  expired: { label: 'Expirée', className: 'border-border bg-subtle text-soft' },
+  revoked: { label: 'Révoquée', className: 'border-border bg-subtle text-soft' },
 };
 
 /** A pending invitation past its date is expired, even before the api says so */
@@ -59,7 +59,7 @@ function LinkField({ id, link, label }: { id: string; link: string; label: strin
         readOnly
         value={link}
         onFocus={(e) => e.target.select()}
-        className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"
+        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-subtle px-3 text-sm text-body"
       />
       <Button type="button" variant="outline" size="sm" onClick={copy} aria-label={`Copier ${label.toLowerCase()}`}>
         {copied ? <Check /> : <Copy />}
@@ -73,16 +73,16 @@ function LinkField({ id, link, label }: { id: string; link: string; label: strin
 function ShareLink({ slug }: { slug: string }) {
   const { shareLink, link, isLoading, reveal } = UseShareLink(slug);
   return (
-    <section aria-labelledby="community-share-link" className="rounded-xl border border-slate-200 p-4">
-      <h3 id="community-share-link" className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <Link2 className="size-4 text-blue-900" aria-hidden />
+    <section aria-labelledby="community-share-link" className="rounded-xl border border-border p-4">
+      <h3 id="community-share-link" className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Link2 className="size-4 text-brand-strong" aria-hidden />
         Lien de la communauté
       </h3>
-      <p className="mt-1 mb-3 text-xs text-slate-500">Toute personne qui a ce lien rejoint la communauté comme membre : nombre de personnes illimité, valable 30 jours.</p>
+      <p className="mt-1 mb-3 text-xs text-muted-foreground">Toute personne qui a ce lien rejoint la communauté comme membre : nombre de personnes illimité, valable 30 jours.</p>
       {shareLink ? (
         <>
           <LinkField id="community-share-link-url" link={link} label="Lien de la communauté" />
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             Utilisé {shareLink.uses_count} fois · expire le {dateFormat.format(new Date(shareLink.expires_at))}
           </p>
         </>
@@ -103,9 +103,9 @@ function InvitationRow({ i, list, slug }: { i: CommunityInvitation; list: Invita
   const who = i.email || 'Lien partageable';
   const renewed = list.renewed[i.id];
   return (
-    <li className="rounded-lg border border-slate-200 p-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-        <span className="font-semibold text-slate-800">{who}</span>
+    <li className="rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">{who}</span>
         <span>{memberRoleLabel[i.role] ?? i.role}</span>
         {!i.email && i.uses_count !== undefined && (
           <span>{i.max_uses ? `utilisé ${i.uses_count} fois sur ${i.max_uses}` : `utilisé ${i.uses_count} fois`}</span>
@@ -142,17 +142,17 @@ function Invitations({ slug }: { slug: string }) {
   const [showPast, setShowPast] = useState(false);
 
   return (
-    <section aria-labelledby="community-invitations" className="mt-6 border-t border-slate-100 pt-5">
-      <h3 id="community-invitations" className="text-sm font-semibold text-slate-900">
-        Invitations en attente {!list.isLoading && <span className="font-normal text-slate-400 tabular-nums">{list.pending.length}</span>}
+    <section aria-labelledby="community-invitations" className="mt-6 border-t border-border-soft pt-5">
+      <h3 id="community-invitations" className="text-sm font-semibold text-foreground">
+        Invitations en attente {!list.isLoading && <span className="font-normal text-faint tabular-nums">{list.pending.length}</span>}
       </h3>
-      <p className="mt-0.5 text-xs text-slate-500">Le lien d'une invitation n'est affiché qu'à sa création ; renvoyez une invitation par email pour en obtenir un nouveau.</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">Le lien d'une invitation n'est affiché qu'à sa création ; renvoyez une invitation par email pour en obtenir un nouveau.</p>
       {list.isLoading ? (
-        <p className="py-4 text-sm text-slate-500">Chargement…</p>
+        <p className="py-4 text-sm text-muted-foreground">Chargement…</p>
       ) : list.loadError ? (
         <p className="py-4 text-sm text-red-700">{list.loadError}</p>
       ) : list.pending.length === 0 ? (
-        <p className="py-4 text-sm text-slate-500">Aucune invitation en attente.</p>
+        <p className="py-4 text-sm text-muted-foreground">Aucune invitation en attente.</p>
       ) : (
         <ul className="mt-3 space-y-3" aria-label="Invitations en attente">
           {list.pending.map((i) => (
@@ -162,7 +162,7 @@ function Invitations({ slug }: { slug: string }) {
       )}
       {list.others.length > 0 && (
         <>
-          <button type="button" className="mt-4 text-sm font-semibold text-blue-900 hover:underline" onClick={() => setShowPast((v) => !v)} aria-expanded={showPast}>
+          <button type="button" className="mt-4 text-sm font-semibold text-brand-strong hover:underline" onClick={() => setShowPast((v) => !v)} aria-expanded={showPast}>
             {showPast ? 'Masquer' : 'Voir'} les invitations passées ({list.others.length})
           </button>
           {showPast && (

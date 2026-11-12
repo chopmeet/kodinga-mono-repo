@@ -52,7 +52,7 @@ function CommunityPosts() {
         </Button>
       </div>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <div className="flex flex-wrap items-start gap-3">
           <SearchInput
             id="space-posts-search"

@@ -4,14 +4,15 @@ import { cn } from '@kodinga/ui';
 
 /**
  * Abstract blue glass ribbons (the hero picture of the design, redrawn in SVG so no image is needed).
- * Decorative: fills its positioned parent; `fade` blends it into the page on the left.
+ * Decorative: fills its positioned parent; `fade` blends it into the page on the left. Dark theme:
+ * a night blue gradient, the ribbons dimmed.
  */
 export function GlassBackdrop({ className, fade = true }: { className?: string; fade?: boolean }) {
   const id = useId().replace(/:/g, '');
   return (
     <div aria-hidden className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}>
-      <div className="absolute inset-0 bg-linear-to-br from-slate-50 via-blue-50 to-blue-200" />
-      <svg className="absolute inset-0 size-full" viewBox="0 0 1200 600" preserveAspectRatio="xMaxYMid slice">
+      <div className="absolute inset-0 bg-linear-to-br from-slate-50 via-blue-50 to-blue-200 dark:from-background dark:via-blue-950/70 dark:to-blue-900/60" />
+      <svg className="absolute inset-0 size-full dark:opacity-55" viewBox="0 0 1200 600" preserveAspectRatio="xMaxYMid slice">
         <defs>
           <linearGradient id={`${id}-a`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
@@ -38,7 +39,7 @@ export function GlassBackdrop({ className, fade = true }: { className?: string; 
         <path d="M960 -40 C 1180 160, 1230 420, 1080 640" fill="none" stroke={`url(#${id}-c)`} strokeWidth="14" />
         <path d="M800 -40 C 1060 150, 1110 380, 930 640" fill="none" stroke="#ffffff" strokeOpacity="0.55" strokeWidth="2" />
       </svg>
-      {fade && <div className="absolute inset-0 bg-linear-to-r from-white via-white/70 to-transparent" />}
+      {fade && <div className="absolute inset-0 bg-linear-to-r from-white via-white/70 to-transparent dark:from-background dark:via-background/70" />}
     </div>
   );
 }

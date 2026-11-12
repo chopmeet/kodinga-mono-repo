@@ -19,6 +19,8 @@ import i18n from '@/utils/i18n';
 import type { ChatMessage } from '@/utils/api/messaging/messaging.type';
 import { nameInitials } from '@/utils/Utils';
 import { conversationName, otherPerson, type MessagesPage } from '../form/UseMessages';
+import { EmojiPickerButton } from '@/pages/shared/emoji-picker-button';
+import { useEmojiInsert } from '@/pages/shared/use-emoji-insert';
 
 
 /** "Aujourd’hui", "Hier", "lundi 12 octobre" */
@@ -35,6 +37,7 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(m.content);
+  const draftEmoji = useEmojiInsert(draft, setDraft);
 
   const save = async () => {
     const text = draft.trim();
@@ -47,7 +50,7 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
       {mine && !m.is_deleted && !editing && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button type="button" aria-label={t('inbox.messages.actions')} className="rounded-md p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-100 focus:opacity-100">
+            <button type="button" aria-label={t('inbox.messages.actions')} className="rounded-md p-1 text-faint opacity-0 group-hover:opacity-100 hover:bg-muted focus:opacity-100">
               <MoreHorizontal className="size-4" />
             </button>
           </DropdownMenuTrigger>
@@ -69,20 +72,22 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
       <div
         className={cn(
           'max-w-[78%] rounded-2xl px-4 py-2.5 text-sm',
-          m.is_deleted ? 'border border-dashed border-slate-200 bg-transparent text-slate-400 italic' : mine ? 'rounded-br-md bg-blue-900 text-white' : 'rounded-bl-md bg-white text-slate-800 shadow-2xs ring-1 ring-slate-200',
+          m.is_deleted ? 'border border-dashed border-border bg-transparent text-faint italic' : mine ? 'rounded-br-md bg-blue-900 text-white' : 'rounded-bl-md bg-card text-foreground shadow-2xs ring-1 ring-border',
         )}
       >
         {editing ? (
           <div className="flex flex-col gap-2">
             <textarea
+              ref={draftEmoji.ref}
               aria-label={t('inbox.messages.editLabel')}
               value={draft}
               autoFocus
               rows={2}
               onChange={(e) => setDraft(e.target.value)}
-              className="w-64 max-w-full resize-y rounded-md bg-white/95 p-2 text-sm text-slate-900"
+              className="w-64 max-w-full resize-y rounded-md bg-card/95 p-2 text-sm text-foreground"
             />
-            <div className="flex justify-end gap-2 text-xs">
+            <div className="flex items-center justify-end gap-2 text-xs">
+              <EmojiPickerButton onSelect={draftEmoji.insert} className="mr-auto p-1 text-blue-100 hover:bg-white/10 hover:text-white" />
               <button type="button" onClick={() => setEditing(false)} className="opacity-80 hover:opacity-100">
                 {t('common.actions.cancel')}
               </button>
@@ -94,7 +99,7 @@ function Bubble({ message: m, mine, page }: { message: ChatMessage; mine: boolea
         ) : (
           <p className="break-words whitespace-pre-line">{m.is_deleted ? t('inbox.messages.deleted') : m.content}</p>
         )}
-        <p className={cn('mt-1 text-right text-[10px]', mine && !m.is_deleted ? 'text-blue-100' : 'text-slate-400')}>
+        <p className={cn('mt-1 text-right text-[10px]', mine && !m.is_deleted ? 'text-blue-100' : 'text-faint')}>
           {dateFormat({ hour: '2-digit', minute: '2-digit' }).format(new Date(m.created_at))}
           {m.is_edited && !m.is_deleted ? t('inbox.messages.edited') : ''}
         </p>
@@ -115,6 +120,10 @@ export function typingLabel(names: string[]) {
 export function Thread({ page }: { page: MessagesPage }) {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
+  const contentEmoji = useEmojiInsert(content, (next) => {
+    setContent(next);
+    page.sendTyping(!!next.trim());
+  });
   const endRef = useRef<HTMLDivElement>(null);
   const conversation = page.current;
   const count = page.messages.length;
@@ -144,36 +153,36 @@ export function Thread({ page }: { page: MessagesPage }) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
-        <Link to="/messages" className="rounded-md p-1 text-slate-600 hover:bg-slate-100 md:hidden" aria-label={t('inbox.messages.backToList')}>
+      <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
+        <Link to="/messages" className="rounded-md p-1 text-soft hover:bg-muted md:hidden" aria-label={t('inbox.messages.backToList')}>
           <ArrowLeft className="size-5" />
         </Link>
         <Avatar className="size-10">
           {other?.avatar_url && <AvatarImage src={other.avatar_url} alt="" />}
-          <AvatarFallback className="bg-blue-50 text-sm font-semibold text-blue-900">{nameInitials(name)}</AvatarFallback>
+          <AvatarFallback className="bg-brand-subtle text-sm font-semibold text-brand-strong">{nameInitials(name)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-semibold text-slate-900">{name}</h2>
+          <h2 className="truncate font-semibold text-foreground">{name}</h2>
           {other && (
-            <Link to={`/profiles/${other.username}`} className="text-xs text-slate-500 hover:text-blue-900 hover:underline">
+            <Link to={`/profiles/${other.username}`} className="text-xs text-muted-foreground hover:text-brand-strong hover:underline">
               {t('inbox.messages.seeProfile', { username: other.username })}
             </Link>
           )}
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-5" aria-live="polite">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-subtle px-4 py-5" aria-live="polite">
         {page.isMessagesLoading ? (
-          <p className="text-center text-sm text-slate-500">{t('inbox.messages.loading')}</p>
+          <p className="text-center text-sm text-muted-foreground">{t('inbox.messages.loading')}</p>
         ) : count === 0 ? (
-          <p className="mt-10 text-center text-sm text-slate-500">{t('inbox.messages.sayHello', { name })}</p>
+          <p className="mt-10 text-center text-sm text-muted-foreground">{t('inbox.messages.sayHello', { name })}</p>
         ) : (
           <ol className="flex flex-col gap-2" aria-label={t('inbox.messages.title')}>
             {page.messages.map((m, i) => {
               const newDay = i === 0 || day(page.messages[i - 1].created_at) !== day(m.created_at);
               return (
                 <li key={m.id}>
-                  {newDay && <p className="my-3 text-center text-xs font-medium text-slate-400 first-letter:uppercase">{day(m.created_at)}</p>}
+                  {newDay && <p className="my-3 text-center text-xs font-medium text-faint first-letter:uppercase">{day(m.created_at)}</p>}
                   <Bubble message={m} mine={m.sender.id === page.meId} page={page} />
                 </li>
               );
@@ -183,7 +192,7 @@ export function Thread({ page }: { page: MessagesPage }) {
         <div ref={endRef} />
       </div>
 
-      <p className="min-h-6 bg-slate-50 px-5 pb-1 text-xs text-slate-500 italic" aria-live="polite">
+      <p className="min-h-6 bg-subtle px-5 pb-1 text-xs text-muted-foreground italic" aria-live="polite">
         {typingLabel(page.typingUsers)}
       </p>
 
@@ -192,12 +201,14 @@ export function Thread({ page }: { page: MessagesPage }) {
           e.preventDefault();
           submit();
         }}
-        className="flex items-end gap-2 border-t border-slate-200 bg-white p-3"
+        className="flex items-end gap-2 border-t border-border bg-card p-3"
       >
         <label className="sr-only" htmlFor="message-input">
           {t('inbox.messages.yourMessage')}
         </label>
+        <EmojiPickerButton onSelect={contentEmoji.insert} align="start" className="mb-1.5" />
         <textarea
+          ref={contentEmoji.ref}
           id="message-input"
           rows={1}
           value={content}
@@ -208,7 +219,7 @@ export function Thread({ page }: { page: MessagesPage }) {
           onBlur={() => page.sendTyping(false)}
           onKeyDown={onKeyDown}
           placeholder={t('inbox.messages.writeTo', { name })}
-          className="max-h-40 min-h-11 flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-blue-900 focus:bg-white focus:outline-none"
+          className="max-h-40 min-h-11 flex-1 resize-y rounded-xl border border-border bg-subtle px-4 py-2.5 text-sm placeholder:text-faint focus:border-blue-900 focus:bg-card focus:outline-none"
         />
         <Button type="submit" className="h-11" isLoading={page.isSending} disabled={!content.trim()} aria-label={t('inbox.messages.send')}>
           <Send />

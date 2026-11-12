@@ -114,6 +114,8 @@ import type {
   ManagedRole,
   MyCommunityMembership,
   SanctionData,
+  MediaDownload,
+  UploadedPostFile,
 } from './community.type';
 import type { User } from '../user/user.type';
 import { authBaseQuery } from '../authBaseQuery';
@@ -168,6 +170,26 @@ async function patchRsvp({ dispatch, getState, queryFulfilled }: RsvpPatchApi, s
   } catch {
     patches.forEach((patch) => patch.undo());
   }
+}
+
+/** Count per reaction; without a summary (before the emoji reactions) every reaction was a like */
+export const reactionsOf = (target: { reactions_count: number; reactions_summary?: Record<string, number> }): Record<string, number> =>
+  target.reactions_summary ?? (target.reactions_count > 0 ? { like: target.reactions_count } : {});
+
+/**
+ * A reaction toggled by the signed-in user on a post or a comment: their reactions, the total and
+ * the count per reaction (a summary emptied of a reaction at 0)
+ */
+function applyReaction(target: { user_reactions?: string[]; reactions_count: number; reactions_summary?: Record<string, number> }, reaction: string, reacted: boolean) {
+  // No summary (data from before the emoji reactions): every reaction was a like
+  const summary = { ...reactionsOf(target) };
+  const others = (target.user_reactions ?? []).filter((r) => r !== reaction);
+  target.user_reactions = reacted ? [...others, reaction] : others;
+  target.reactions_count = Math.max(0, target.reactions_count + (reacted ? 1 : -1));
+  const count = Math.max(0, (summary[reaction] ?? 0) + (reacted ? 1 : -1));
+  if (count) summary[reaction] = count;
+  else delete summary[reaction];
+  target.reactions_summary = summary;
 }
 
 export const CommunityApi = createApi({
@@ -412,6 +434,33 @@ export const CommunityApi = createApi({
     createCheckout: builder.mutation<CheckoutSession, { plan_id: string; return_url?: string; cancel_url?: string; referral_code?: string }>({
       query: (body) => ({ url: 'billing/checkout/', method: 'POST', body }),
       transformResponse: unwrap<CheckoutSession>,
+    }),
+    // One image or document of a post, sent as multipart (POST media/upload/): its MediaAsset, attached by media_ids
+    uploadPostFile: builder.mutation<UploadedPostFile, { file: File; purpose: 'post_image' | 'post_document' }>({
+      query: ({ file, purpose }) => {
+        const body = new FormData();
+        body.append('file', file);
+        body.append('purpose', purpose);
+        return { url: 'media/upload/', method: 'POST', body };
+      },
+      transformResponse: unwrap<UploadedPostFile>,
+    }),
+    // A video uploaded for a post that is finally not published
+    deleteVideoAsset: builder.mutation<unknown, string>({
+      query: (videoId) => ({ url: `media/videos/${videoId}/`, method: 'DELETE' }),
+    }),
+    // A file uploaded for a post that is finally not published (owner only)
+    deleteMediaAsset: builder.mutation<unknown, string>({
+      query: (assetId) => ({ url: `media/assets/${assetId}/`, method: 'DELETE' }),
+    }),
+    // An attachment removed from a published post: detached and deleted from the storage (author, moderators)
+    deletePostMedia: builder.mutation<unknown, { postId: string; mediaId: string }>({
+      query: ({ postId, mediaId }) => ({ url: `posts/${postId}/media/${mediaId}/`, method: 'DELETE' }),
+    }),
+    // A document of a post: the api checks the access to its community, then gives its url
+    getMediaDownload: builder.mutation<MediaDownload, string>({
+      query: (assetId) => `media/assets/${assetId}/download/`,
+      transformResponse: unwrap<MediaDownload>,
     }),
     // Media upload, step 1 and 3 (step 2 sends the file to upload_url: see utils/api/media/upload.ts)
     requestUploadUrl: builder.mutation<UploadTarget, UploadUrlRequest>({
@@ -806,28 +855,19 @@ export const CommunityApi = createApi({
         }
       },
     }),
-    // Like / unlike (signed-in users): the cached feeds are patched, no new GET
-    togglePostLike: builder.mutation<{ reacted: boolean }, string>({
-      query: (postId) => ({ url: `posts/${postId}/react/`, method: 'POST', body: { reaction_type: 'like' } }),
+    // Adds or removes one reaction ('like' or any emoji) of the signed-in user: the cached post and feeds are patched
+    togglePostReaction: builder.mutation<{ reacted: boolean }, { postId: string; reaction: string }>({
+      query: ({ postId, reaction }) => ({ url: `posts/${postId}/react/`, method: 'POST', body: { reaction_type: reaction } }),
       transformResponse: unwrap<{ reacted: boolean }>,
-      async onQueryStarted(postId, { dispatch, getState, queryFulfilled }) {
+      async onQueryStarted({ postId, reaction }, { dispatch, getState, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          dispatch(
-            CommunityApi.util.updateQueryData('getPost', postId, (post) => {
-              const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
-              post.user_reactions = data.reacted ? [...others, 'like'] : others;
-              post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
-            }),
-          );
+          dispatch(CommunityApi.util.updateQueryData('getPost', postId, (post) => applyReaction(post, reaction, data.reacted)));
           for (const args of CommunityApi.util.selectCachedArgsForQuery(getState(), 'getCommunityFeed')) {
             dispatch(
               CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
                 const post = feed.results.find((p) => p.id === postId);
-                if (!post) return;
-                const others = (post.user_reactions ?? []).filter((r) => r !== 'like');
-                post.user_reactions = data.reacted ? [...others, 'like'] : others;
-                post.reactions_count = Math.max(0, post.reactions_count + (data.reacted ? 1 : -1));
+                if (post) applyReaction(post, reaction, data.reacted);
               }),
             );
           }
@@ -1038,35 +1078,20 @@ export const CommunityApi = createApi({
         }
       },
     }),
-    toggleCommentLike: builder.mutation<{ reacted: boolean }, { postId: string; commentId: string }>({
-      query: ({ commentId }) => ({ url: `comments/${commentId}/react/`, method: 'POST', body: { reaction_type: 'like' } }),
+    toggleCommentReaction: builder.mutation<{ reacted: boolean }, { postId: string; commentId: string; reaction: string }>({
+      query: ({ commentId, reaction }) => ({ url: `comments/${commentId}/react/`, method: 'POST', body: { reaction_type: reaction } }),
       transformResponse: unwrap<{ reacted: boolean }>,
-      async onQueryStarted({ postId, commentId }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ postId, commentId, reaction }, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
           dispatch(
             CommunityApi.util.updateQueryData('getPostComments', postId, (comments) => {
-              const update = (c: PostComment) => {
-                const others = (c.user_reactions ?? []).filter((r) => r !== 'like');
-                c.user_reactions = data.reacted ? [...others, 'like'] : others;
-                c.reactions_count = Math.max(0, c.reactions_count + (data.reacted ? 1 : -1));
-              };
-              const top = comments.find((c) => c.id === commentId);
-              if (top) {
-                update(top);
-                return;
-              }
-              for (const p of comments) {
-                const rep = (p.replies ?? []).find((r) => r.id === commentId);
-                if (rep) {
-                  update(rep);
-                  return;
-                }
-              }
+              const target = comments.find((c) => c.id === commentId) ?? comments.flatMap((c) => c.replies ?? []).find((r) => r.id === commentId);
+              if (target) applyReaction(target, reaction, data.reacted);
             }),
           );
         } catch {
-          // ignore
+          // the caller shows the error
         }
       },
     }),
@@ -1173,8 +1198,12 @@ export const CommunityApi = createApi({
       transformResponse: unwrap<CommunityEvent>,
       invalidatesTags: ['events'],
     }),
-    // Replay of an event: a video created on the api (Mux direct upload), then attached to the event
-    createVideoUpload: builder.mutation<VideoUploadTarget, { title: string; cors_origin: string }>({
+    // A video created on the api (Mux direct upload): the file is then PUT to upload_url (putFile), and
+    // the video attached to an event (replay) or a post (video_ids, purpose post_video)
+    createVideoUpload: builder.mutation<
+      VideoUploadTarget,
+      { title: string; cors_origin: string; file_name?: string; file_size?: number; mime_type?: string; purpose?: 'post_video' | 'lesson_video' }
+    >({
       query: (body) => ({ url: 'media/videos/upload-url/', method: 'POST', body }),
       transformResponse: unwrap<VideoUploadTarget>,
     }),
@@ -2002,12 +2031,17 @@ export const {
   useTogglePostLockMutation,
   useDeletePostMutation,
   useCreatePostMutation,
-  useTogglePostLikeMutation,
+  useTogglePostReactionMutation,
+  useUploadPostFileMutation,
+  useDeleteVideoAssetMutation,
+  useDeleteMediaAssetMutation,
+  useDeletePostMediaMutation,
+  useGetMediaDownloadMutation,
   useGetPostQuery,
   useGetPostCommentsQuery,
   useAddPostCommentMutation,
   useDeletePostCommentMutation,
-  useToggleCommentLikeMutation,
+  useToggleCommentReactionMutation,
   useAcceptAnswerMutation,
   useVotePollMutation,
   useUpdatePostMutation,

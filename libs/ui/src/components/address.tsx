@@ -173,12 +173,12 @@ export function PhotonInput(
                     }}
                     placeholder={placeholder ?? "Rechercher une adresse..."}
                     autoComplete="off"
-                    className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 outline-none transition
+                    className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-faint outline-none transition
                         focus:ring-2 focus:ring-blue-500
-                        ${error ? "border-red-500" : "border-gray-300"}`}
+                        ${error ? "border-red-500" : "border-border-strong"}`}
                 />
                 {loading && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs animate-pulse">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-faint text-xs animate-pulse">
                     ...
                 </span>
                 )}
@@ -187,7 +187,7 @@ export function PhotonInput(
             {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
             {open && suggestions.length > 0 && (
-            <ColgateWrapper className="absolute z-50 mt-1 w-full border border-gray-200 dark:border-gray-600 max-h-64 overflow-y-auto">
+            <ColgateWrapper className="absolute z-50 mt-1 w-full border border-border max-h-64 overflow-y-auto">
                 <ul className="">
                 {suggestions.map((feature, index) => {
                     const place = parsePhoton(feature);
@@ -195,19 +195,19 @@ export function PhotonInput(
                         <li
                             key={index}
                             onMouseDown={() => handleSelect(feature)}
-                            className="flex items-start gap-2 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                            className="flex items-start gap-2 py-2 text-sm cursor-pointer hover:bg-brand-subtle transition-colors"
                         >
-                            <span className="mt-0.5 text-gray-400">
+                            <span className="mt-0.5 text-faint">
                                 
                             </span>
                             <div className="leading-snug">
-                                <span className="text-gray-800 dark:text-gray-300 font-medium">
+                                <span className="text-foreground font-medium">
                                     {[feature.properties?.street, feature.properties?.housenumber]
                                     .filter(Boolean)
                                     .join(" ") || feature.properties?.name}
                                 </span>
                                 {place.city && (
-                                    <span className="text-gray-500 ml-1">
+                                    <span className="text-muted-foreground ml-1">
                                     — {place.city}{place.country ? `, ${place.country}` : ""}
                                     </span>
                                 )}

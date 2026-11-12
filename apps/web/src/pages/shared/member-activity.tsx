@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 import { cn } from '@kodinga/ui';
 import type { ActivityCommunity, HackathonResult, MemberActivity } from '@/utils/api/analytics/member-activity.type';
+import { formatDayMonth } from '@/utils/format';
 
-const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 const percent = (n: number) => `${Math.round(n)} %`;
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -14,10 +14,10 @@ const resultLabel: Record<HackathonResult, { label: string; className: string }>
   podium: { label: 'Podium', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   submitted: { label: 'Projet soumis', className: 'border-sky-200 bg-sky-50 text-sky-800' },
   in_progress: { label: 'En cours', className: 'border-sky-200 bg-sky-50 text-sky-800' },
-  pending: { label: 'Candidature en attente', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  pending: { label: 'Candidature en attente', className: 'border-border bg-subtle text-soft' },
   rejected: { label: 'Candidature refusée', className: 'border-red-200 bg-red-50 text-red-700' },
-  withdrawn: { label: 'Retiré', className: 'border-slate-200 bg-slate-50 text-slate-600' },
-  failed: { label: 'Non classé', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  withdrawn: { label: 'Retiré', className: 'border-border bg-subtle text-soft' },
+  failed: { label: 'Non classé', className: 'border-border bg-subtle text-soft' },
 };
 
 const applicationStyle = (a: { is_successful: boolean; is_failed: boolean }) =>
@@ -25,22 +25,22 @@ const applicationStyle = (a: { is_successful: boolean; is_failed: boolean }) =>
 
 function Kpi({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail: string }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
-      <p className="flex items-center gap-2 text-sm text-slate-500">
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         {icon}
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{detail}</p>
+      <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
 }
 
 function Block({ title, empty, children }: { title: string; empty: string; children: ReactNode[] }) {
   return (
-    <section aria-label={title} className="rounded-xl border border-neutral-200 bg-white p-4">
-      <h3 className="font-semibold text-slate-900">{title}</h3>
-      {children.length === 0 ? <p className="mt-2 text-sm text-slate-500">{empty}</p> : <ul className="mt-3 space-y-3">{children}</ul>}
+    <section aria-label={title} className="rounded-xl border border-border bg-card p-4">
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      {children.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">{empty}</p> : <ul className="mt-3 space-y-3">{children}</ul>}
     </section>
   );
 }
@@ -68,25 +68,25 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
     <div className="flex flex-col gap-4">
       <div role="group" aria-label="Mes indicateurs" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
-          icon={<CalendarDays className="size-4 text-blue-900" aria-hidden />}
+          icon={<CalendarDays className="size-4 text-brand-strong" aria-hidden />}
           label="Événements suivis"
           value={String(kpis.events.attended_count)}
           detail={`${kpis.events.upcoming_count} à venir · présence ${percent(kpis.events.attendance_rate)}`}
         />
         <Kpi
-          icon={<BookOpen className="size-4 text-blue-900" aria-hidden />}
+          icon={<BookOpen className="size-4 text-brand-strong" aria-hidden />}
           label="Formations en cours"
           value={String(kpis.courses.in_progress_count)}
           detail={`${plural(kpis.courses.completed_count, 'terminée', 'terminées')} · ${percent(kpis.courses.average_progress_percent)} en moyenne`}
         />
         <Kpi
-          icon={<Briefcase className="size-4 text-blue-900" aria-hidden />}
+          icon={<Briefcase className="size-4 text-brand-strong" aria-hidden />}
           label="Candidatures"
           value={String(kpis.opportunities.total_applied)}
           detail={`${plural(kpis.opportunities.accepted_count, 'acceptée', 'acceptées')} · ${kpis.opportunities.in_review_count} en cours d’examen`}
         />
         <Kpi
-          icon={<Trophy className="size-4 text-blue-900" aria-hidden />}
+          icon={<Trophy className="size-4 text-brand-strong" aria-hidden />}
           label="Hackathons"
           value={String(kpis.hackathons.total_participated)}
           detail={`${plural(kpis.hackathons.prizes_won_count, 'prix', 'prix')} · réussite ${percent(kpis.hackathons.success_rate)}`}
@@ -98,11 +98,11 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
           {highlights.upcoming_or_recent_events.map((e) => (
             <li key={e.id} className="flex items-start justify-between gap-3 text-sm">
               <span className="min-w-0">
-                <Link to={`/communities/${slugOf(e.community)}?tab=events`} className="block truncate font-medium text-slate-900 hover:underline">
+                <Link to={`/communities/${slugOf(e.community)}?tab=events`} className="block truncate font-medium text-foreground hover:underline">
                   {e.title}
                 </Link>
-                <span className="text-xs text-slate-500">
-                  {day.format(new Date(e.start_time))} · {e.event_type_display}
+                <span className="text-xs text-muted-foreground">
+                  {formatDayMonth(e.start_time)} · {e.event_type_display}
                   {where(e.community)}
                 </span>
               </span>
@@ -111,7 +111,7 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
               ) : e.is_upcoming ? (
                 <Badge className="border-sky-200 bg-sky-50 text-sky-800">À venir</Badge>
               ) : (
-                <Badge className={e.is_checked_in ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-600'}>
+                <Badge className={e.is_checked_in ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-border bg-subtle text-soft'}>
                   {e.is_checked_in ? 'Présent' : 'Absent'}
                 </Badge>
               )}
@@ -122,10 +122,10 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
         <Block title="Mes formations" empty="Aucune formation commencée.">
           {highlights.active_courses.map((c) => (
             <li key={c.id} className="text-sm">
-              <Link to={`/communities/${slugOf(c.community)}/courses/${c.slug}`} className="block truncate font-medium text-slate-900 hover:underline">
+              <Link to={`/communities/${slugOf(c.community)}/courses/${c.slug}`} className="block truncate font-medium text-foreground hover:underline">
                 {c.title}
               </Link>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 {c.completed_lessons} / {plural(c.total_lessons, 'leçon', 'leçons')}
                 {where(c.community)}
               </span>
@@ -135,7 +135,7 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(c.overall_progress_percent)}
-                className="mt-1 block h-1.5 overflow-hidden rounded-full bg-slate-100"
+                className="mt-1 block h-1.5 overflow-hidden rounded-full bg-muted"
               >
                 <span className="block h-full rounded-full bg-blue-900" style={{ width: `${Math.min(100, c.overall_progress_percent)}%` }} />
               </span>
@@ -147,11 +147,11 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
           {highlights.recent_opportunity_applications.map((a) => (
             <li key={a.id} className="flex items-start justify-between gap-3 text-sm">
               <span className="min-w-0">
-                <Link to={`/opportunities/${a.opportunity.slug}`} className="block truncate font-medium text-slate-900 hover:underline">
+                <Link to={`/opportunities/${a.opportunity.slug}`} className="block truncate font-medium text-foreground hover:underline">
                   {a.opportunity.title}
                 </Link>
-                <span className="text-xs text-slate-500">
-                  {a.opportunity.company_name} · {day.format(new Date(a.applied_at))}
+                <span className="text-xs text-muted-foreground">
+                  {a.opportunity.company_name} · {formatDayMonth(a.applied_at)}
                 </span>
               </span>
               <Badge className={applicationStyle(a)}>{a.status_display}</Badge>
@@ -165,10 +165,10 @@ export function MemberActivityView({ activity, communitySlug }: Props) {
             return (
               <li key={h.id} className="flex items-start justify-between gap-3 text-sm">
                 <span className="min-w-0">
-                  <Link to={`/communities/${slugOf(h.community)}/hackathons/${h.slug}`} className="block truncate font-medium text-slate-900 hover:underline">
+                  <Link to={`/communities/${slugOf(h.community)}/hackathons/${h.slug}`} className="block truncate font-medium text-foreground hover:underline">
                     {h.title}
                   </Link>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     {h.team ? `Équipe ${h.team.name}` : 'En solo'}
                     {where(h.community)}
                   </span>

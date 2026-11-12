@@ -19,9 +19,9 @@ function GeneralSettingsTab() {
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      <h2 className="text-lg font-semibold text-slate-900">Général</h2>
-      <p className="text-sm text-slate-500">Identité de la plateforme et règles d'inscription.</p>
-      <p className="mt-2 mb-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+      <h2 className="text-lg font-semibold text-foreground">Général</h2>
+      <p className="text-sm text-muted-foreground">Identité de la plateforme et règles d'inscription.</p>
+      <p className="mt-2 mb-5 rounded-lg bg-subtle px-3 py-2 text-xs text-muted-foreground">
         Seule la « Création de communautés » est enregistrée sur la plateforme pour l'instant ; les autres réglages restent locaux.
       </p>
 
@@ -56,7 +56,7 @@ function GeneralSettingsTab() {
         />
       </div>
 
-      <div className="mt-2 divide-y divide-slate-100 border-t border-slate-100">
+      <div className="mt-2 divide-y divide-border-soft border-t border-border-soft">
         <Controller
           control={control}
           name="registrations_open"

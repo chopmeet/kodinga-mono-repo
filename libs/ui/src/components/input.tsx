@@ -183,9 +183,9 @@ export const Input = forwardRef<
           </label>
         )}
         <div className="relative">
-          {!!icon && <span className={`absolute ${iconPosition === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-zinc-400`}>{icon}</span>}
+          {!!icon && <span className={`absolute ${iconPosition === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-faint`}>{icon}</span>}
           <input
-            className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+            className={`w-full block px-4 py-2 custom-form-control border bg-background placeholder:text-faint ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
             name={name}
             id={id}
             ref={ref}
@@ -194,7 +194,7 @@ export const Input = forwardRef<
             onWheel={(event) => event.currentTarget.blur()}
           />
         </div>
-        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {!!fieldHelp && <p className="my-1 text-xs text-faint">{fieldHelp}</p>}
         {<FormError error={error} />}
       </div>
     );
@@ -391,7 +391,7 @@ export const InputQuill = forwardRef<
         ref={ref}
         {...rest}
       ></ReactQuill>
-      {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+      {!!fieldHelp && <p className="my-1 text-xs text-faint">{fieldHelp}</p>}
       {<FormError error={error} />}
     </div>
   );
@@ -430,7 +430,7 @@ export const InputPassword = forwardRef<
         )}
         <div className="input-group custom-input-group relative mb-1">
           <input
-            className={`w-full block px-4 ${icon ? 'pl-9!' : ''} py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
+            className={`w-full block px-4 ${icon ? 'pl-9!' : ''} py-2 custom-form-control bg-background placeholder:text-faint ${customClassInput} ${icon ? 'pr-18' : 'pr-11'} ${!!error && 'border-2! border-red-400!'}`}
             name={name}
             id={id}
             ref={ref}
@@ -438,20 +438,20 @@ export const InputPassword = forwardRef<
             type={showPassword ? "text" : "password"}
             {...rest}
           />
-          {!!icon && <span className="pointer-events-none absolute left-3 top-[38%] grid place-items-center text-zinc-400">{icon}</span>}
+          {!!icon && <span className="pointer-events-none absolute left-3 top-[38%] grid place-items-center text-faint">{icon}</span>}
           <span
             className="input-group-icon icon__wrapper"
             id="basic-addon2"
             onClick={() => setShowPassword((showPassword) => !showPassword)}
           >
             {showPassword ? (
-              <FaEye className="show_password__icon text-zinc-500" size={16} />
+              <FaEye className="show_password__icon text-muted-foreground" size={16} />
             ) : (
-              <FaEyeSlash className="hide_password__icon text-zinc-500" size={16} />
+              <FaEyeSlash className="hide_password__icon text-muted-foreground" size={16} />
             )}
           </span>
         </div>
-        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {!!fieldHelp && <p className="my-1 text-xs text-faint">{fieldHelp}</p>}
         {<FormError error={error} />}
       </div>
     );
@@ -488,13 +488,13 @@ export const SelectInput = forwardRef<
           </label>
         )}
         <div className="relative">
-          {!!icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span>}
+          {!!icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-faint">{icon}</span>}
           <select
             {...rest}
             name={name}
             id={name}
             ref={ref}
-            className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-gray-400 ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
+            className={`w-full block px-4 py-2 custom-form-control bg-background mb-2 placeholder:text-faint ${customClassInput} ${icon ? 'pl-9' : ''} ${!!error && 'border-2! border-red-400!'}`}
           >
             {!!placeholder && <option value="">{placeholder}</option>}
             {options?.map((option) => (
@@ -504,7 +504,7 @@ export const SelectInput = forwardRef<
             ))}
           </select>
         </div>
-        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {!!fieldHelp && <p className="my-1 text-xs text-faint">{fieldHelp}</p>}
         {<FormError error={error} />}
       </div>
     );
@@ -549,7 +549,7 @@ export const InputPhone = forwardRef<
           }}
           country={"bf"}
           containerClass="p-0"
-          inputClass={`w-full block custom-form-control bg-background! placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
+          inputClass={`w-full block custom-form-control bg-background! placeholder:text-faint ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
           placeholder="Numéro de télephone"
           inputProps={{
               name: name,
@@ -567,7 +567,7 @@ export const InputPhone = forwardRef<
           {...rest}
         />
         <span ref={ref}></span>
-        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {!!fieldHelp && <p className="my-1 text-xs text-faint">{fieldHelp}</p>}
         {<FormError error={error} />}
       </div>
     );
@@ -609,7 +609,7 @@ export const TextareaInput = forwardRef<
         )}
         <div className="relative">
           <textarea 
-            className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-gray-400 ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
+            className={`w-full block px-4 py-2 custom-form-control bg-background placeholder:text-faint ${customClassInput} ${!!error && 'border-2! border-red-400!'}`}
             name={name} 
             id={id}
             readOnly={readOnly || false}
@@ -622,7 +622,7 @@ export const TextareaInput = forwardRef<
             placeholder={placeholder}
           ></textarea>
         </div>
-        {!!fieldHelp && <p className="my-1 text-xs text-neutral-400">{fieldHelp}</p>}
+        {!!fieldHelp && <p className="my-1 text-xs text-faint">{fieldHelp}</p>}
         {<FormError error={error} />}
       </div>
     );
@@ -652,7 +652,7 @@ export const InputSwitch = forwardRef<
             }}
             {...props}
           />
-          <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+          <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-card after:border-border-strong after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
         </label>
       );
     }
@@ -668,13 +668,13 @@ export function SearchInput({
     <div className={`relative w-full ${containerClassName}`}>
       <input
         type="search"
-        className={`w-full rounded-xl bg-gray-100 py-3 pl-4 ${
+        className={`w-full rounded-xl bg-muted py-3 pl-4 ${
           showIcon ? "pl-10" : "pr-4"
-        } text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-gray-300 ${className}`}
+        } text-sm text-body placeholder:text-faint outline-none focus:ring-2 focus:ring-gray-300 ${className}`}
         {...inputProps}
       />
       {showIcon && (
-        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" size={16} />
       )}
     </div>
   );

@@ -96,6 +96,16 @@ export function ago(iso: string) {
 }
 
 /** Plain text of a Markdown post or comment */
+/**
+ * Text with `insert` put at the caret of `el` (replacing the selection), and where the caret goes
+ * after it; at the end when the field is unknown. For emojis, which are several code units.
+ */
+export function insertAtCursor(el: HTMLInputElement | HTMLTextAreaElement | null, value: string, insert: string) {
+  const start = el?.selectionStart ?? value.length;
+  const end = el?.selectionEnd ?? start;
+  return { value: value.slice(0, start) + insert + value.slice(end), caret: start + insert.length };
+}
+
 export const plain = (content: string) => content.replace(/[#*_`>[\]]/g, '').replace(/[ \t]+/g, ' ').trim();
 
 /** /communities/<slug>/posts/<id> */
@@ -300,8 +310,8 @@ export const memberStatusStyle: Record<MemberStatus, { label: string; className:
   pending: { label: 'En attente', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   suspended: { label: 'Suspendu', className: 'border-orange-200 bg-orange-50 text-orange-800' },
   banned: { label: 'Banni', className: 'border-red-200 bg-red-50 text-red-700' },
-  rejected: { label: 'Refusé', className: 'border-slate-200 bg-slate-50 text-slate-600' },
-  left: { label: 'Parti', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  rejected: { label: 'Refusé', className: 'border-border bg-subtle text-soft' },
+  left: { label: 'Parti', className: 'border-border bg-subtle text-soft' },
 };
 
 export const postTypeLabel = translatedLabels<PostType>('labels.postType.', ['discussion', 'question', 'project_showcase', 'poll', 'announcement']);
@@ -311,15 +321,15 @@ export const paymentStatusStyle: Record<PaymentStatus, { label: string; classNam
   PENDING: { label: 'En attente', className: 'border-amber-200 bg-amber-50 text-amber-800' },
   PROCESSING: { label: 'En cours', className: 'border-sky-200 bg-sky-50 text-sky-800' },
   FAILED: { label: 'Échec', className: 'border-red-200 bg-red-50 text-red-700' },
-  CANCELLED: { label: 'Annulé', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  CANCELLED: { label: 'Annulé', className: 'border-border bg-subtle text-soft' },
 };
 
 export const subscriptionStatusStyle: Record<SubscriptionStatus, { label: string; className: string }> = {
   active: { label: 'Actif', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
   trialing: { label: 'Essai', className: 'border-sky-200 bg-sky-50 text-sky-800' },
   past_due: { label: 'Impayé', className: 'border-red-200 bg-red-50 text-red-700' },
-  canceled: { label: 'Résilié', className: 'border-slate-200 bg-slate-50 text-slate-600' },
-  expired: { label: 'Expiré', className: 'border-slate-200 bg-slate-50 text-slate-600' },
+  canceled: { label: 'Résilié', className: 'border-border bg-subtle text-soft' },
+  expired: { label: 'Expiré', className: 'border-border bg-subtle text-soft' },
 };
 
 export const payoutStatusStyle: Record<PayoutStatus, { label: string; className: string }> = {
@@ -350,7 +360,26 @@ export const intervalLabel = Object.fromEntries(
   ]),
 ) as Record<BillingInterval, { label: string; suffix: string }>;
 
+/** "2026-11": the month of a date (local time, like monthly_revenue[].month), this month by default */
+export const monthKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
 export const xof = (value: number) => `${numberFormat().format(value)} FCFA`;
+
+type Priced = { price: string | number; billing_interval: BillingInterval };
+
+/** "Annuel"; a Kodinga Pro bought once reads "À vie" (a community plan: "Paiement unique") */
+export const periodLabel = (interval: BillingInterval, pro = false) =>
+  pro && interval === 'one_time' ? i18n.t('labels.proLifetime.label') : intervalLabel[interval].label;
+
+/** "/ an"; a Kodinga Pro bought once reads "à vie" (a community plan: "une fois") */
+export const periodSuffix = (interval: BillingInterval, pro = false) =>
+  pro && interval === 'one_time' ? i18n.t('labels.proLifetime.suffix') : intervalLabel[interval].suffix;
+
+/** "5 000 FCFA / mois" (the price as the api sends it: "5000.00") */
+export const planPrice = (plan: Priced, pro = false) => `${xof(Number(plan.price))} ${periodSuffix(plan.billing_interval, pro)}`;
+
+/** FCFA as usual, any other currency with its code (amounts arrive as strings: "15000.00") */
+export const amountOf = (value: string, currency: string) => (currency === 'XOF' ? xof(Number(value)) : `${numberFormat().format(Number(value))} ${currency}`);
 
 // Labels of the developer profile, shared by /dashboard/profile and the public profile
 // Texts in locales/*/labels.ts, read in the current language

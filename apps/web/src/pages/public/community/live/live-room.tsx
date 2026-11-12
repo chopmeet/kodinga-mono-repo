@@ -74,7 +74,7 @@ function Stage() {
         </div>
         <div className="max-w-md space-y-1.5">
           <p className="text-lg font-semibold text-white">{tr('live.stage.soon')}</p>
-          <p className="text-sm text-slate-400">{tr('live.stage.settle')}</p>
+          <p className="text-sm text-faint">{tr('live.stage.settle')}</p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-slate-300">
           <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -139,7 +139,7 @@ function ParticipantsDrawer({ open, onClose }: { open: boolean; onClose: () => v
           type="button"
           onClick={onClose}
           aria-label={t('common.actions.close')}
-          className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white"
+          className="rounded-lg p-1 text-faint hover:bg-white/10 hover:text-white"
         >
           <X className="size-5" />
         </button>
@@ -159,19 +159,19 @@ function ParticipantsDrawer({ open, onClose }: { open: boolean; onClose: () => v
                 </Avatar>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-white">{name}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-faint">
                     {isHost ? t('live.host') : t('live.participant')}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-faint">
                 {p.isSpeaking && (
                   <span className="flex size-2 rounded-full bg-emerald-400 animate-ping" />
                 )}
                 {p.isMicrophoneEnabled ? (
                   <Mic className="size-3.5 text-emerald-400" />
                 ) : (
-                  <MicOff className="size-3.5 text-slate-500" />
+                  <MicOff className="size-3.5 text-muted-foreground" />
                 )}
               </div>
             </li>
@@ -256,7 +256,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
           <div className="flex items-center gap-3 min-w-0">
             <Link
               to={live.back}
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-faint hover:bg-white/10 hover:text-white transition-colors"
               title={t('live.room.back')}
             >
               <ArrowLeft className="size-4" />
@@ -264,7 +264,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
 
             <div className="min-w-0">
               <h1 className="truncate text-sm font-semibold text-white sm:text-base">{e.title}</h1>
-              <p className="text-xs text-slate-400 truncate">
+              <p className="text-xs text-faint truncate">
                 {e.host ? t('live.room.hostedBy', { name: e.host.full_name || e.host.username }) : t('live.room.interactive')}
               </p>
             </div>
@@ -273,7 +273,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
           <div className="flex items-center gap-2.5">
             {isLive ? (
               <span className="flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm shadow-red-600/50">
-                <span className="size-1.5 animate-pulse rounded-full bg-white" /> {t('live.room.live')}
+                <span className="size-1.5 animate-pulse rounded-full bg-card" /> {t('live.room.live')}
                 <span className="ml-1 text-[11px] font-mono font-medium text-red-100">
                   {formatTimer(secondsElapsed)}
                 </span>
@@ -297,7 +297,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
               size="sm"
               variant="outline"
               onClick={copyLiveLink}
-              className="hidden sm:inline-flex bg-white text-black border-slate-200 hover:bg-slate-100 hover:text-black font-semibold shadow-xs transition-colors"
+              className="hidden sm:inline-flex bg-card text-black border-border hover:bg-muted hover:text-black font-semibold shadow-xs transition-colors"
               title={t('live.room.invite')}
             >
               {showShareSuccess ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5 text-black" />}
@@ -311,7 +311,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                 'flex size-8 items-center justify-center rounded-lg border transition-colors',
                 chatOpen
                   ? 'border-red-500/50 bg-red-600/20 text-red-400'
-                  : 'border-white/10 text-slate-400 hover:bg-white/10 hover:text-white',
+                  : 'border-white/10 text-faint hover:bg-white/10 hover:text-white',
               )}
               title={t('live.room.toggleChat')}
             >
@@ -375,7 +375,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
 
             {/* Quick interactive reaction bar */}
             <div className="absolute bottom-6 right-6 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/90 p-1.5 shadow-2xl backdrop-blur-md">
-              <span className="pl-2 pr-1 text-xs font-semibold text-slate-400 flex items-center gap-1">
+              <span className="pl-2 pr-1 text-xs font-semibold text-faint flex items-center gap-1">
                 <Smile className="size-3.5 text-amber-400" />
               </span>
               {[
@@ -413,7 +413,7 @@ function Room({ live, session }: { live: LiveRoom; session: NonNullable<LiveRoom
                 <button
                   type="button"
                   onClick={() => setChatOpen(false)}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                  className="rounded-lg p-1 text-faint hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
                   title={t('live.room.closeChat')}
                 >
                   <X className="size-4" />
@@ -519,7 +519,7 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
         {videoEnabled ? (
           <video ref={videoRef} autoPlay playsInline muted className="size-full object-cover -scale-x-100" />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-slate-500">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <CameraOff className="size-8" />
             <span className="text-xs">{tr('live.preview.cameraOff')}</span>
           </div>
@@ -550,7 +550,7 @@ function DevicePreviewTester({ isHost }: { isHost: boolean }) {
           </button>
         </div>
       </div>
-      <div className="p-2.5 text-center text-xs text-slate-400">
+      <div className="p-2.5 text-center text-xs text-faint">
         {tr('live.preview.hint')}
       </div>
     </div>
@@ -575,7 +575,7 @@ function Lobby({ live }: { live: LiveRoom }) {
   let action;
   if (e.format !== 'livekit') {
     action = (
-      <p className="text-slate-400">
+      <p className="text-faint">
         {t('live.lobby.external')}
       </p>
     );
@@ -615,7 +615,7 @@ function Lobby({ live }: { live: LiveRoom }) {
           {e.status === 'live' ? t('live.lobby.join') : t('live.lobby.waitingRoom')}
         </Button>
         {e.status !== 'live' && (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-faint">
             {t('live.lobby.notStarted')}
           </p>
         )}
@@ -654,7 +654,7 @@ function Lobby({ live }: { live: LiveRoom }) {
       <div className="flex flex-wrap items-center justify-center gap-2">
         {isLive ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-red-600/40 animate-pulse">
-            <span className="size-2 rounded-full bg-white" /> {t('live.room.live')}
+            <span className="size-2 rounded-full bg-card" /> {t('live.room.live')}
           </span>
         ) : (
           <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
@@ -677,12 +677,12 @@ function Lobby({ live }: { live: LiveRoom }) {
 
       <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-slate-300">
         <span className="inline-flex items-center gap-1.5">
-          <CalendarClock className="size-4 text-slate-400" aria-hidden />
+          <CalendarClock className="size-4 text-faint" aria-hidden />
           {formatEventWhen(e)}
         </span>
-        <span className="text-slate-600">•</span>
+        <span className="text-soft">•</span>
         <span className="inline-flex items-center gap-1.5">
-          <Users className="size-4 text-slate-400" />
+          <Users className="size-4 text-faint" />
           {t('live.lobby.participants', { count: e.attendees_count })}
         </span>
       </div>
@@ -711,7 +711,7 @@ function Lobby({ live }: { live: LiveRoom }) {
         <button
           type="button"
           onClick={copyLink}
-          className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="mt-2 inline-flex items-center gap-1.5 text-xs text-faint hover:text-white transition-colors cursor-pointer"
         >
           <Copy className="size-3.5" /> {t('live.lobby.copyInvite')}
         </button>
@@ -746,7 +746,7 @@ function LiveRoomPage() {
           {t('live.page.privateTitle')}
         </h1>
 
-        <p className="mt-3 max-w-md text-sm text-slate-400 leading-relaxed">
+        <p className="mt-3 max-w-md text-sm text-faint leading-relaxed">
           {t('live.page.privateText')}
         </p>
 
@@ -773,7 +773,7 @@ function LiveRoomPage() {
   if (!live.event) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {live.notFound ? t('live.page.notFound') : t('live.page.loadFailed')}
         </h1>
         <Button asChild variant="outline">
@@ -790,7 +790,7 @@ function LiveRoomPage() {
       <div className="mx-auto max-w-285 px-4 pt-6 sm:px-6 lg:px-8">
         <Link
           to={live.back}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-faint hover:text-white transition-colors"
         >
           <ArrowLeft className="size-4" /> {t('live.lobby.communityEvents')}
         </Link>
