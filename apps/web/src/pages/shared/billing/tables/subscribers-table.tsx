@@ -13,8 +13,8 @@ const columns: ColumnDef<CommunitySubscriber>[] = [
     header: 'Membre',
     cell: ({ row }) => (
       <>
-        <span className="block font-medium text-slate-900">{row.original.user.full_name}</span>
-        <span className="text-xs text-slate-500">@{row.original.user.username}</span>
+        <span className="block font-medium text-foreground">{row.original.user.full_name}</span>
+        <span className="text-xs text-muted-foreground">@{row.original.user.username}</span>
       </>
     ),
   },
@@ -27,7 +27,7 @@ const columns: ColumnDef<CommunitySubscriber>[] = [
       return (
         <>
           <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>
-          {s.cancel_at_period_end && s.status === 'active' && <span className="mt-1 block text-xs text-slate-500">Ne sera pas renouvelé</span>}
+          {s.cancel_at_period_end && s.status === 'active' && <span className="mt-1 block text-xs text-muted-foreground">Ne sera pas renouvelé</span>}
         </>
       );
     },
@@ -38,9 +38,9 @@ const columns: ColumnDef<CommunitySubscriber>[] = [
     cell: ({ row }) => {
       const { plan } = row.original;
       return (
-        <span className="text-slate-700">
+        <span className="text-body">
           {plan.name}
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-muted-foreground">
             {xof(Number(plan.price))} {intervalLabel[plan.billing_interval]?.suffix}
           </span>
         </span>
@@ -51,7 +51,7 @@ const columns: ColumnDef<CommunitySubscriber>[] = [
     id: 'period_end',
     header: 'Échéance',
     cell: ({ row }) => (
-      <span className="text-slate-700">{row.original.plan.billing_interval === 'one_time' ? 'Accès à vie' : formatDate(row.original.current_period_end)}</span>
+      <span className="text-body">{row.original.plan.billing_interval === 'one_time' ? 'Accès à vie' : formatDate(row.original.current_period_end)}</span>
     ),
   },
 ];
@@ -63,7 +63,7 @@ function SubscribersTable({ query: subscribers }: { query: BillingQuery<Communit
 
   const list = subscribers.data ?? [];
   if (list.length === 0) {
-    return <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Aucun abonné pour l’instant : ils apparaîtront ici dès leur premier paiement.</p>;
+    return <p className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-muted-foreground">Aucun abonné pour l’instant : ils apparaîtront ici dès leur premier paiement.</p>;
   }
 
   return <DataTable columns={columns} data={list} isLoading={false} caption="Abonnés de la communauté" />;

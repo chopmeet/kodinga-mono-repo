@@ -105,8 +105,8 @@ function CommunityHackathonsTab() {
         const place = h.format === 'online' ? hackathonFormatLabel.online : [hackathonFormatLabel[h.format], h.venue_city].filter(Boolean).join(' · ');
         return (
           <div className="max-w-md min-w-64">
-            <p className="truncate font-medium text-slate-900">{h.title}</p>
-            <p className="text-xs text-slate-500">
+            <p className="truncate font-medium text-foreground">{h.title}</p>
+            <p className="text-xs text-muted-foreground">
               {place}
               {h.organizer && ` · organisé par ${h.organizer.full_name || h.organizer.username}`}
             </p>
@@ -118,9 +118,9 @@ function CommunityHackathonsTab() {
       id: 'dates',
       header: 'Dates',
       cell: ({ row }) => (
-        <div className="whitespace-nowrap text-slate-600">
+        <div className="whitespace-nowrap text-soft">
           {formatDay(row.original.start_time)}
-          <span className="block text-xs text-slate-500">Rendu le {formatDay(row.original.submission_deadline)}</span>
+          <span className="block text-xs text-muted-foreground">Rendu le {formatDay(row.original.submission_deadline)}</span>
         </div>
       ),
     },
@@ -128,7 +128,7 @@ function CommunityHackathonsTab() {
       id: 'figures',
       header: 'Participants',
       cell: ({ row }) => (
-        <span className="flex items-center gap-3 text-slate-600 tabular-nums">
+        <span className="flex items-center gap-3 text-soft tabular-nums">
           <span className="flex items-center gap-1" title="Participants"><Users className="size-3.5" />{row.original.participants_count}</span>
           <span className="flex items-center gap-1" title="Prix"><Trophy className="size-3.5" />{row.original.prizes_count}</span>
         </span>
@@ -137,7 +137,7 @@ function CommunityHackathonsTab() {
     {
       id: 'theme',
       header: 'Thème',
-      cell: ({ row }) => (row.original.theme ? <Badge variant="outline" className="text-slate-700">{row.original.theme}</Badge> : <span className="text-slate-400">—</span>),
+      cell: ({ row }) => (row.original.theme ? <Badge variant="outline" className="text-body">{row.original.theme}</Badge> : <span className="text-faint">—</span>),
     },
     {
       id: 'status',

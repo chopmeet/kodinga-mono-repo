@@ -68,7 +68,7 @@ function CommunityEvents() {
         )}
       </div>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer les événements">
           {FILTERS.map((f) => (
             <FilterChip
@@ -86,13 +86,13 @@ function CommunityEvents() {
 
         <div className="mt-4" aria-busy={isFetching}>
           {isLoading ? (
-            <ul aria-label="Chargement des événements" className="divide-y divide-slate-100">
+            <ul aria-label="Chargement des événements" className="divide-y divide-border-soft">
               {[0, 1, 2].map((i) => (
                 <li key={i} className="flex gap-4 py-4">
-                  <span className="h-14 w-14 animate-pulse rounded-xl bg-slate-100" />
+                  <span className="h-14 w-14 animate-pulse rounded-xl bg-muted" />
                   <span className="flex-1 space-y-2">
-                    <span className="block h-4 w-1/2 animate-pulse rounded bg-slate-100" />
-                    <span className="block h-3 w-2/3 animate-pulse rounded bg-slate-100" />
+                    <span className="block h-4 w-1/2 animate-pulse rounded bg-muted" />
+                    <span className="block h-3 w-2/3 animate-pulse rounded bg-muted" />
                   </span>
                 </li>
               ))}
@@ -107,8 +107,8 @@ function CommunityEvents() {
             </div>
           ) : events.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
-              <p className="font-semibold text-slate-900">{filter === 'upcoming' ? 'Aucun événement à venir' : 'Aucun événement ici'}</p>
-              <p className="mt-1 text-sm text-slate-500">Les lives et rencontres rassemblent la communauté.</p>
+              <p className="font-semibold text-foreground">{filter === 'upcoming' ? 'Aucun événement à venir' : 'Aucun événement ici'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Les lives et rencontres rassemblent la communauté.</p>
               {canManage && (
                 <Button className="mt-5" onClick={() => setEditing('new')}>
                   <CalendarPlus />
@@ -118,7 +118,7 @@ function CommunityEvents() {
             </div>
           ) : (
             <>
-              <ul className={`divide-y divide-slate-100 ${isFetching ? 'opacity-60 transition-opacity' : ''}`} aria-label="Événements">
+              <ul className={`divide-y divide-border-soft ${isFetching ? 'opacity-60 transition-opacity' : ''}`} aria-label="Événements">
                 {events.map((event) => (
                   <EventRow key={event.id} event={event} href={`/c/${community.slug}/events/${event.id}`} actions={actionsFor(event)} />
                 ))}

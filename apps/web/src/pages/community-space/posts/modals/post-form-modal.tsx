@@ -104,7 +104,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
                 onClick={() => setValue('post_type', t.value, { shouldValidate: false })}
                 className={cn(
                   'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-semibold transition-colors [&_svg]:size-5',
-                  type === t.value ? 'border-blue-900 bg-blue-50 text-blue-900' : 'border-slate-200 text-slate-600 hover:border-slate-300',
+                  type === t.value ? 'border-blue-900 bg-brand-subtle text-brand-strong' : 'border-border text-soft hover:border-border-strong',
                   'disabled:cursor-not-allowed disabled:opacity-40',
                 )}
               >
@@ -140,7 +140,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
               <ul className="mt-2 flex flex-col gap-1.5" aria-label="Questions proches">
                 {duplicates.map((d) => (
                   <li key={d.id} className="text-sm">
-                    <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-blue-900 hover:underline">
+                    <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-brand-strong hover:underline">
                       {d.title || 'Question sans titre'}
                     </a>
                     {d.is_solved && <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Résolue</span>}
@@ -151,8 +151,8 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
           )}
 
           {type === 'poll' && !post && (
-            <fieldset className="mb-4 rounded-xl border border-slate-200 p-4">
-              <legend className="px-1 text-sm font-semibold text-slate-900">Options du sondage</legend>
+            <fieldset className="mb-4 rounded-xl border border-border p-4">
+              <legend className="px-1 text-sm font-semibold text-foreground">Options du sondage</legend>
               <ol className="space-y-2">
                 {options.fields.map((field, i) => (
                   <li key={field.id} className="flex items-start gap-2">
@@ -195,9 +195,9 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
           )}
 
           {withCode ? (
-            <fieldset className="mb-4 rounded-xl border border-slate-200 p-4" aria-labelledby="post-code-title">
+            <fieldset className="mb-4 rounded-xl border border-border p-4" aria-labelledby="post-code-title">
               <div className="flex items-center justify-between">
-                <p id="post-code-title" className="text-sm font-semibold text-slate-900">Extrait de code</p>
+                <p id="post-code-title" className="text-sm font-semibold text-foreground">Extrait de code</p>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setValue('with_code', false)}>
                   <Trash2 />
                   Retirer
@@ -215,7 +215,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
               {/* What the members will read: colored, numbered */}
               {codePreview.trim() && (
                 <div aria-label="Aperçu du code" role="group">
-                  <p className="text-xs font-medium text-slate-500">Aperçu</p>
+                  <p className="text-xs font-medium text-muted-foreground">Aperçu</p>
                   <CodeBlock code={codePreview} language={codeLanguagePreview} className="mt-1" />
                 </div>
               )}
@@ -227,7 +227,7 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
               onSelect={insertEmoji}
               label="Insérer un emoji dans le contenu"
               align="start"
-              className="h-8 gap-1.5 border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700"
+              className="h-8 gap-1.5 border border-border bg-card px-3 text-sm font-medium text-body"
             >
               <Smile className="size-4" />
               Emoji

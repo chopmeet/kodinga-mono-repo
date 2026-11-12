@@ -1,6 +1,7 @@
 import type { Translations } from '../types';
 
 export const header: Translations['header'] = {
+  theme: { toggle: 'Change the theme', light: 'Light', dark: 'Dark', system: 'System' },
   login: 'Log in',
   home: 'Home',
   explore: 'Explore communities',

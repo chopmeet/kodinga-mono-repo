@@ -18,6 +18,7 @@ import { onSetSearchQuery } from '@/redux/slice/Search.slice';
 import { languages } from '@/utils/i18n';
 import { useUnreadMessages } from '@/pages/public/messages/form/UseMessages';
 import { scrollToResults } from '@/utils/Utils';
+import { AppThemeToggle } from './app-theme-toggle';
 
 function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
@@ -26,7 +27,7 @@ function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 text-[15px] font-medium text-slate-700" aria-label={t('header.language')}>
+        <Button variant="ghost" size="sm" className="gap-2 text-[15px] font-medium text-body" aria-label={t('header.language')}>
           <Globe className="size-4.5" />
           {/* Tablets / small laptops: the globe alone, the links need the room */}
           <span className="hidden sm:inline md:hidden lg:inline">{current.short}</span>
@@ -66,7 +67,7 @@ export function Logo({ compact = false, variant = 'responsive', className, link 
       </span>
       {variant !== 'mark' && (
         <span
-          className={cn('text-2xl font-bold tracking-tight text-slate-900', variant === 'responsive' && 'hidden sm:inline', compact && 'md:hidden lg:inline')}
+          className={cn('text-2xl font-bold tracking-tight text-foreground', variant === 'responsive' && 'hidden sm:inline', compact && 'md:hidden lg:inline')}
           aria-hidden={!link || undefined}
         >
           kodinga<span className="text-primary">.</span>
@@ -98,7 +99,7 @@ function MessagesLink() {
       to="/messages"
       aria-label={label}
       title={label}
-      className="relative flex size-10 items-center justify-center rounded-lg text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
+      className="relative flex size-10 items-center justify-center rounded-lg text-body transition-colors hover:bg-muted hover:text-foreground"
     >
       <MessageCircle className="size-5" />
       {unread > 0 && (
@@ -111,7 +112,7 @@ function MessagesLink() {
 }
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
-  cn('text-[15px] font-medium whitespace-nowrap transition-colors hover:text-slate-900', isActive ? 'text-slate-900' : 'text-slate-500');
+  cn('text-[15px] font-medium whitespace-nowrap transition-colors hover:text-foreground', isActive ? 'text-foreground' : 'text-muted-foreground');
 
 function Header() {
   const { t } = useTranslation();
@@ -124,7 +125,7 @@ function Header() {
   const showSearch = pathname === '/' && !heroSearchVisible;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur-md">
       {/* 3 columns; on lg+ the side columns are equal so the middle stays centered */}
       <nav className="mx-auto grid h-[72px] max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:px-8">
         <div className="justify-self-start">
@@ -160,7 +161,7 @@ function Header() {
             to="/search"
             aria-label={t('header.searchSite')}
             title={t('header.searchSite')}
-            className={({ isActive }) => cn('flex size-10 items-center justify-center rounded-lg hover:bg-slate-100', isActive ? 'text-slate-900' : 'text-slate-500')}
+            className={({ isActive }) => cn('flex size-10 items-center justify-center rounded-lg hover:bg-muted', isActive ? 'text-foreground' : 'text-muted-foreground')}
           >
             <Search className="size-5" aria-hidden />
           </NavLink>
@@ -173,7 +174,7 @@ function Header() {
           {token ? (
             <UserMenu />
           ) : (
-            <NavLink to="/auth/login" className="px-2 text-[15px] font-medium whitespace-nowrap text-slate-900 hover:text-primary">
+            <NavLink to="/auth/login" className="px-2 text-[15px] font-medium whitespace-nowrap text-foreground hover:text-primary">
               {t('header.login')}
             </NavLink>
           )}

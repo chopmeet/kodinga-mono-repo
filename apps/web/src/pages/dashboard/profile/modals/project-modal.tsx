@@ -57,7 +57,7 @@ function ProjectModal({ entries, target, onClose }: { entries: ProfileEntries; t
       <Field label="Dépôt du code" type="url" value={v.repo_url} onChange={(x) => set({ repo_url: x.target.value })} placeholder="https://github.com/…" />
       <Field label="Image (lien)" wide type="url" value={v.thumbnail_url} onChange={(x) => set({ thumbnail_url: x.target.value })} placeholder="https://…/capture.png" />
       <TechnologyPicker id="project-tech" value={techs} onAdd={(t) => setTechs((c) => [...c, { id: t.id, name: t.name }])} onRemove={(id) => setTechs((c) => c.filter((t) => t.id !== id))} />
-      <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
+      <label className="flex items-center gap-2 text-sm text-body sm:col-span-2">
         <input type="checkbox" checked={v.is_featured} onChange={(x) => set({ is_featured: x.target.checked })} className="size-4 accent-(--primary)" />
         Mettre en avant en tête du portfolio
       </label>

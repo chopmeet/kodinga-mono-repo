@@ -32,7 +32,7 @@ function ResetPassword() {
           <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <CircleCheck className="size-6" />
           </div>
-          <p className="text-[15px] leading-relaxed text-slate-600">
+          <p className="text-[15px] leading-relaxed text-soft">
             {t('auth.reset.done')}
           </p>
           <Link
@@ -58,7 +58,7 @@ function ResetPassword() {
       >
         <div className="flex flex-col gap-5">
           <FormAlert>{t('auth.reset.invalid')}</FormAlert>
-          <p className="text-[15px] text-slate-600">
+          <p className="text-[15px] text-soft">
             {t('auth.common.singleUse')}{' '}
             <Link to="/auth/forgot-password" className={linkClassName}>
               {t('auth.reset.newLink')}

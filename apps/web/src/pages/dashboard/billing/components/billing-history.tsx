@@ -64,13 +64,13 @@ function BillingHistory() {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="subscriptions-title">
-        <h2 id="subscriptions-title" className="flex items-center gap-2 font-semibold text-slate-900">
-          <CreditCard className="size-5 text-blue-900" /> Mes abonnements
+        <h2 id="subscriptions-title" className="flex items-center gap-2 font-semibold text-foreground">
+          <CreditCard className="size-5 text-brand-strong" /> Mes abonnements
         </h2>
         {subs.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-muted-foreground">
             Aucun abonnement. Les communautés payantes vous proposent leurs formules au moment de les rejoindre.{' '}
-            <Link to="/" className="font-semibold text-blue-900 hover:underline">
+            <Link to="/" className="font-semibold text-brand-strong hover:underline">
               Explorer les communautés
             </Link>
           </p>
@@ -80,18 +80,18 @@ function BillingHistory() {
               const style = subscriptionStatusStyle[s.status] ?? subscriptionStatusStyle.expired;
               const oneTime = s.plan?.billing_interval === 'one_time';
               return (
-                <li key={s.id} className="rounded-xl border border-slate-200 p-4">
+                <li key={s.id} className="rounded-xl border border-border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-900">{s.plan?.community_name ?? 'Communauté'}</p>
-                      <p className="text-sm text-slate-600">
+                      <p className="font-semibold text-foreground">{s.plan?.community_name ?? 'Communauté'}</p>
+                      <p className="text-sm text-soft">
                         {s.plan?.name}
                         {s.plan && ` · ${amountOf(s.plan.price, s.plan.currency)} ${intervalLabel[s.plan.billing_interval]?.suffix ?? ''}`}
                       </p>
                     </div>
                     <span className={cn('shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>
                   </div>
-                  <p className="mt-3 text-sm text-slate-500">
+                  <p className="mt-3 text-sm text-muted-foreground">
                     {oneTime
                       ? 'Accès à vie'
                       : s.cancel_at_period_end || s.status === 'canceled'
@@ -105,7 +105,7 @@ function BillingHistory() {
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {confirming === s.id ? (
                         <>
-                          <span className="text-sm text-slate-600">Résilier ? L’accès reste ouvert jusqu’à l’échéance.</span>
+                          <span className="text-sm text-soft">Résilier ? L’accès reste ouvert jusqu’à l’échéance.</span>
                           <Button size="sm" variant="danger" isLoading={isCanceling} onClick={() => cancel(s)}>
                             Confirmer
                           </Button>
@@ -128,17 +128,17 @@ function BillingHistory() {
       </section>
 
       <section aria-labelledby="payments-title">
-        <h2 id="payments-title" className="flex items-center gap-2 font-semibold text-slate-900">
-          <Receipt className="size-5 text-blue-900" /> Historique des paiements
+        <h2 id="payments-title" className="flex items-center gap-2 font-semibold text-foreground">
+          <Receipt className="size-5 text-brand-strong" /> Historique des paiements
         </h2>
         {history.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Aucun paiement pour le moment.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Aucun paiement pour le moment.</p>
         ) : (
           <div className="mt-4">
             <PaymentsHistoryTable payments={history} verifyingId={verifyingId} onFinalize={handleFinalize} />
           </div>
         )}
-        <p className="mt-3 text-xs text-slate-500">Paiements sécurisés par PayDunya (Orange Money, Wave, MTN MoMo, Moov Money, carte).</p>
+        <p className="mt-3 text-xs text-muted-foreground">Paiements sécurisés par PayDunya (Orange Money, Wave, MTN MoMo, Moov Money, carte).</p>
       </section>
     </div>
   );

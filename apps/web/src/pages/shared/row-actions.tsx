@@ -54,7 +54,7 @@ export const dateFormat = { format: (date: Date) => intlDate({ day: '2-digit', m
 /** Marks a feature the api does not offer yet */
 export function SoonBadge({ className }: { className?: string }) {
   return (
-    <span className={cn('rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-500 uppercase', className)}>
+    <span className={cn('rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase', className)}>
       Bientôt
     </span>
   );

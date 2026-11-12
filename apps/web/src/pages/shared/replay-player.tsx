@@ -18,8 +18,8 @@ export function ReplayPlayer({ video, title, className }: { video: ReplayVideo; 
   if (!ready) {
     const failed = video.status === 'errored' || video.status === 'deleted';
     return (
-      <div role="status" className={cn('flex aspect-video flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 px-6 text-center text-sm text-slate-600', className)}>
-        {failed ? <AlertTriangle className="size-6 text-amber-600" aria-hidden /> : <LoaderCircle className="size-6 animate-spin text-slate-400" aria-hidden />}
+      <div role="status" className={cn('flex aspect-video flex-col items-center justify-center gap-2 rounded-xl bg-muted px-6 text-center text-sm text-soft', className)}>
+        {failed ? <AlertTriangle className="size-6 text-amber-600" aria-hidden /> : <LoaderCircle className="size-6 animate-spin text-faint" aria-hidden />}
         {failed ? 'Le replay n’a pas pu être préparé.' : 'Le replay est en cours de préparation : il sera visible dans quelques minutes.'}
       </div>
     );

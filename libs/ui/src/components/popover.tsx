@@ -24,7 +24,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "bg-white text-slate-900 z-50 rounded-lg border border-slate-200 shadow-lg outline-hidden",
+          "bg-card text-foreground z-50 rounded-lg border border-border shadow-lg outline-hidden",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           className

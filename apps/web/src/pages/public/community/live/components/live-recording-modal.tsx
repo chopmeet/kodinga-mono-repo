@@ -111,7 +111,7 @@ export function LiveRecordingModal({
               <h2 id="live-recording-modal-title" className="text-sm sm:text-base font-semibold text-white truncate">
                 {t('live.recording.title')}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-faint">
                 {t('live.recording.meta', { duration: formatRecordingTime(durationSeconds), size: sizeMb })}
               </p>
             </div>
@@ -120,7 +120,7 @@ export function LiveRecordingModal({
             type="button"
             onClick={onClose}
             disabled={isUploading}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer disabled:opacity-50 shrink-0 ml-2"
+            className="rounded-lg p-1.5 text-faint hover:bg-white/10 hover:text-white transition-colors cursor-pointer disabled:opacity-50 shrink-0 ml-2"
             title={t('common.actions.close')}
             aria-label={t('live.recording.close')}
           >
@@ -144,7 +144,7 @@ export function LiveRecordingModal({
 
           <div className="rounded-xl border border-red-500/20 bg-red-950/20 p-3 sm:p-3.5 text-xs text-slate-300 space-y-1">
             <p className="font-semibold text-red-400">{t('live.recording.publishTitle')}</p>
-            <p className="text-slate-400 leading-relaxed">
+            <p className="text-faint leading-relaxed">
               {t('live.recording.publishText')}
             </p>
           </div>
@@ -170,7 +170,7 @@ export function LiveRecordingModal({
               size="sm"
               onClick={onClose}
               disabled={isUploading}
-              className="text-slate-400 hover:text-white hover:bg-white/5"
+              className="text-faint hover:text-white hover:bg-white/5"
             >
               {t('live.recording.ignore')}
             </Button>

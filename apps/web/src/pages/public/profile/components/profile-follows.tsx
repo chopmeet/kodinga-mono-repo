@@ -16,19 +16,19 @@ export function ProfileFollows({ profile, name }: { profile: PublicProfile; name
 
   const title = follows.open === 'following' ? t('profile.follow.followingOf', { name }) : t('profile.follow.followersOf', { name });
   const empty = follows.open === 'following' ? t('profile.follow.noFollowing', { name }) : t('profile.follow.noFollowers', { name });
-  const countClass = 'rounded text-sm text-slate-600 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none';
+  const countClass = 'rounded text-sm text-soft hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none';
 
   return (
     <>
       <p className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1">
         <button type="button" className={countClass} onClick={() => follows.show('followers')}>
-          <strong className="font-semibold text-slate-900 tabular-nums">{formatCompact(followers ?? 0)}</strong> {t('profile.follow.followers', { count: followers ?? 0 })}
+          <strong className="font-semibold text-foreground tabular-nums">{formatCompact(followers ?? 0)}</strong> {t('profile.follow.followers', { count: followers ?? 0 })}
         </button>
         <span className="text-slate-300" aria-hidden>
           ·
         </span>
         <button type="button" className={countClass} onClick={() => follows.show('following')}>
-          <strong className="font-semibold text-slate-900 tabular-nums">{formatCompact(following ?? 0)}</strong> {t('profile.follow.followingCount', { count: following ?? 0 })}
+          <strong className="font-semibold text-foreground tabular-nums">{formatCompact(following ?? 0)}</strong> {t('profile.follow.followingCount', { count: following ?? 0 })}
         </button>
       </p>
 
@@ -39,23 +39,23 @@ export function ProfileFollows({ profile, name }: { profile: PublicProfile; name
             <DialogDescription className="sr-only">{title}</DialogDescription>
           </DialogHeader>
           {follows.isLoading ? (
-            <p className="py-6 text-center text-sm text-slate-500">{t('common.actions.loading')}</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('common.actions.loading')}</p>
           ) : follows.failed ? (
             <p className="py-6 text-center text-sm text-red-700">{t('profile.follow.listFailed')}</p>
           ) : follows.people.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-500">{empty}</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>
           ) : (
-            <ul className="divide-y divide-slate-100" aria-label={title}>
+            <ul className="divide-y divide-border-soft" aria-label={title}>
               {follows.people.map((p) => (
                 <li key={p.id}>
-                  <Link to={`/profiles/${p.username}`} onClick={follows.close} className="flex items-center gap-3 rounded-lg py-3 hover:bg-slate-50">
+                  <Link to={`/profiles/${p.username}`} onClick={follows.close} className="flex items-center gap-3 rounded-lg py-3 hover:bg-subtle">
                     <Avatar className="size-10">
                       {p.avatar_url && <AvatarImage src={p.avatar_url} alt="" />}
-                      <AvatarFallback className="bg-blue-50 text-sm font-semibold text-blue-900">{nameInitials(p.display_name || p.username)}</AvatarFallback>
+                      <AvatarFallback className="bg-brand-subtle text-sm font-semibold text-brand-strong">{nameInitials(p.display_name || p.username)}</AvatarFallback>
                     </Avatar>
                     <span className="min-w-0">
-                      <span className="block truncate font-medium text-slate-900">{p.display_name || p.username}</span>
-                      <span className="block truncate text-xs text-slate-500">{p.headline || `@${p.username}`}</span>
+                      <span className="block truncate font-medium text-foreground">{p.display_name || p.username}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{p.headline || `@${p.username}`}</span>
                     </span>
                   </Link>
                 </li>

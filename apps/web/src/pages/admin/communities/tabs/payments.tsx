@@ -18,8 +18,8 @@ import { useDetailsCommunity } from '../form/UseCommunityFromParams';
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
     <section className="min-w-0">
-      <h3 className="font-semibold text-slate-900">{title}</h3>
-      {description && <p className="text-sm text-slate-500">{description}</p>}
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -45,12 +45,12 @@ function CommunityPaymentsTab() {
 
   if (free) {
     return (
-      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 px-6 py-12 text-center">
-        <span className="flex size-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-border px-6 py-12 text-center">
+        <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
           <Wallet className="size-5" />
         </span>
-        <p className="mt-4 font-semibold text-slate-900">Communauté gratuite</p>
-        <p className="mt-1 max-w-md text-sm text-slate-500">Ses membres ne paient pas d'abonnement : aucun paiement à afficher.</p>
+        <p className="mt-4 font-semibold text-foreground">Communauté gratuite</p>
+        <p className="mt-1 max-w-md text-sm text-muted-foreground">Ses membres ne paient pas d'abonnement : aucun paiement à afficher.</p>
       </div>
     );
   }

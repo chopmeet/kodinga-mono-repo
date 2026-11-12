@@ -95,8 +95,8 @@ function CommunityEventsTab() {
       header: 'Événement',
       cell: ({ row }) => (
         <div className="max-w-md min-w-64">
-          <p className="truncate font-medium text-slate-900">{row.original.title}</p>
-          <p className="text-xs text-slate-500">
+          <p className="truncate font-medium text-foreground">{row.original.title}</p>
+          <p className="text-xs text-muted-foreground">
             {formatEventPlace(row.original)}
             {row.original.host && ` · animé par ${row.original.host.full_name}`}
             {!row.original.is_public && ' · réservé aux membres'}
@@ -104,17 +104,17 @@ function CommunityEventsTab() {
         </div>
       ),
     },
-    { id: 'type', header: 'Type', cell: ({ row }) => <Badge variant="outline" className="text-slate-700">{eventTypeLabel[row.original.event_type]}</Badge> },
+    { id: 'type', header: 'Type', cell: ({ row }) => <Badge variant="outline" className="text-body">{eventTypeLabel[row.original.event_type]}</Badge> },
     {
       id: 'date',
       header: 'Date',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat({ day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(row.original.start_time))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat({ day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(row.original.start_time))}</span>,
     },
     {
       id: 'attendees',
       header: 'Inscrits',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1 text-slate-600 tabular-nums">
+        <span className="flex items-center gap-1 text-soft tabular-nums">
           <Users className="size-3.5" />
           {row.original.attendees_count}
           {row.original.max_attendees ? ` / ${row.original.max_attendees}` : ''}

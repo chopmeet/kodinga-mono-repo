@@ -14,9 +14,9 @@ import { hackathonFormatLabel } from './hackathon-labels';
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <ColgateWrapper className="border border-neutral-200 p-5">
-      <h2 className="font-semibold text-slate-900">{title}</h2>
-      {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+    <ColgateWrapper className="border border-border p-5">
+      <h2 className="font-semibold text-foreground">{title}</h2>
+      {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       <div className="mt-4">{children}</div>
     </ColgateWrapper>
   );
@@ -37,7 +37,7 @@ function HackathonForm({ hackathon }: { hackathon?: Hackathon }) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="community__hackathon-form pb-24">
-      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
         <ArrowLeft className="size-4" />
         {hackathon ? hackathon.title : 'Hackathons'}
       </Link>
@@ -110,7 +110,7 @@ function HackathonForm({ hackathon }: { hackathon?: Hackathon }) {
         </Section>
 
         <Section title="Participation">
-          <div className="divide-y divide-slate-100 border-y border-slate-100">
+          <div className="divide-y divide-border-soft border-y border-border-soft">
             {(
               [
                 ['is_member_only', 'Réservé aux membres', 'Seuls les membres de la communauté peuvent candidater.'],
@@ -146,7 +146,7 @@ function HackathonForm({ hackathon }: { hackathon?: Hackathon }) {
         </Section>
 
         <Section title="Soumissions" description="Ce que chaque projet doit fournir.">
-          <div className="divide-y divide-slate-100 border-y border-slate-100">
+          <div className="divide-y divide-border-soft border-y border-border-soft">
             {(
               [
                 ['require_repo_url', 'Dépôt de code', 'Lien GitHub, GitLab…'],
@@ -168,7 +168,7 @@ function HackathonForm({ hackathon }: { hackathon?: Hackathon }) {
           <ol className="flex flex-col gap-3">
             {prizes.fields.map((field, i) => (
               <li key={field.id} className="grid items-start gap-x-3 sm:grid-cols-[2rem_1fr_10rem_1fr_auto]">
-                <span className="mt-9 text-sm font-semibold text-slate-500">#{i + 1}</span>
+                <span className="mt-9 text-sm font-semibold text-muted-foreground">#{i + 1}</span>
                 <Input id={`hk-prize-${i}`} label="Prix" error={errors.prizes?.[i]?.title?.message} {...register(`prizes.${i}.title`)} />
                 <Input id={`hk-prize-amount-${i}`} type="number" min={0} label="Montant" error={errors.prizes?.[i]?.reward_amount?.message} {...register(`prizes.${i}.reward_amount`)} />
                 <Input id={`hk-prize-desc-${i}`} label="Ou en nature" placeholder="Ex. Incubation 3 mois" {...register(`prizes.${i}.reward_description`)} />
@@ -204,7 +204,7 @@ function HackathonForm({ hackathon }: { hackathon?: Hackathon }) {
         </Section>
       </div>
 
-      <div className="sticky bottom-0 z-10 -mx-4 mt-6 flex justify-end gap-2 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-0 z-10 -mx-4 mt-6 flex justify-end gap-2 border-t border-border bg-card/95 px-4 py-3 backdrop-blur">
         <Button asChild variant="outline">
           <Link to={back}>Annuler</Link>
         </Button>

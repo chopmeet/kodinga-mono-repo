@@ -31,26 +31,26 @@ function CommunitySwitcher({ current, collapsed }: { current: MyCommunity; colla
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Communauté : ${current.community.name}. Changer de communauté`}
-        className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+        className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
       >
         <CommunityAvatar community={current.community} className="size-9 rounded-lg font-mono text-xs" />
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-900">
+              <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-foreground">
                 <span className="truncate">{current.community.name}</span>
                 {current.community.active_live && (
                   <span className="inline-flex size-2 shrink-0 rounded-full bg-red-600 animate-ping" title="En direct" />
                 )}
               </span>
-              <span className="block truncate text-xs text-slate-500">{roleLabel[current.role]}</span>
+              <span className="block truncate text-xs text-muted-foreground">{roleLabel[current.role]}</span>
             </span>
-            <ChevronsUpDown className="size-4 shrink-0 text-slate-400" />
+            <ChevronsUpDown className="size-4 shrink-0 text-faint" />
           </>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel className="text-xs text-slate-500">Mes communautés</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">Mes communautés</DropdownMenuLabel>
         {communities.map((m) => (
           <DropdownMenuItem key={m.community.id} onSelect={() => navigate(`/c/${m.community.slug}/${subPath}`)}>
             <CommunityAvatar community={m.community} className="size-7 rounded-lg font-mono text-xs" />
@@ -61,7 +61,7 @@ function CommunitySwitcher({ current, collapsed }: { current: MyCommunity; colla
                   <span className="inline-flex size-2 shrink-0 rounded-full bg-red-600 animate-ping" title="En direct" />
                 )}
               </span>
-              <span className="block text-xs text-slate-500">{roleLabel[m.role]}</span>
+              <span className="block text-xs text-muted-foreground">{roleLabel[m.role]}</span>
             </span>
             {m.community.slug === current.community.slug && <Check className="size-4 text-primary" />}
           </DropdownMenuItem>

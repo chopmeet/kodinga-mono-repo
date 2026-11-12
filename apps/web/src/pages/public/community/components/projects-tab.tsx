@@ -21,7 +21,7 @@ export function UpvoteButton({ project, page }: { project: Pick<ProjectListItem,
   const label = t(project.is_upvoted ? 'community.projects.unvote' : 'community.projects.upvote', { title: project.title, count: project.upvotes_count });
   const className = cn(
     'flex w-14 shrink-0 flex-col items-center rounded-lg border py-2 text-sm font-semibold transition-colors',
-    project.is_upvoted ? 'border-blue-900 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
+    project.is_upvoted ? 'border-blue-900 bg-brand-subtle text-brand-strong' : 'border-border bg-card text-body hover:border-border-strong',
   );
   if (page.membership === 'visitor') {
     return (
@@ -100,15 +100,15 @@ export function ProjectsTab({ page }: { page: CommunityPage }) {
       {isLoading ? (
         <Loader inline size="sm" message={t('community.projects.loading')} />
       ) : projects.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <FolderKanban className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{t('community.projects.none')}</p>
-          <p className="mt-1 text-sm text-slate-500">{t('community.projects.beFirst')}</p>
+          <p className="mt-3 font-semibold text-foreground">{t('community.projects.none')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('community.projects.beFirst')}</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-4" aria-label={t('community.projects.title')}>
           {projects.map((p) => (
-            <li key={p.id} className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <li key={p.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
               <div className="relative hidden h-24 w-36 shrink-0 overflow-hidden rounded-lg sm:block">
                 {p.cover_image_url ? <img src={p.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
                 {(p.demo_images?.length ?? 0) > 0 && (
@@ -120,17 +120,17 @@ export function ProjectsTab({ page }: { page: CommunityPage }) {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg text-slate-900">
-                  <Link to={`/projects/${p.slug}?from=${slug}`} className="hover:text-blue-900 hover:underline">
+                <h3 className="text-lg text-foreground">
+                  <Link to={`/projects/${p.slug}?from=${slug}`} className="hover:text-brand-strong hover:underline">
                     {p.title}
                   </Link>
                 </h3>
-                {p.tagline && <p className="mt-0.5 text-sm text-slate-600">{p.tagline}</p>}
-                <p className="mt-2 text-xs text-slate-500">
+                {p.tagline && <p className="mt-0.5 text-sm text-soft">{p.tagline}</p>}
+                <p className="mt-2 text-xs text-muted-foreground">
                   {t('community.projects.by', { name: getName(p.owner) })}
                   {p.technologies.length > 0 && ` · ${p.technologies.map((t) => t.name).join(' · ')}`}
                 </p>
-                <Link to={`/projects/${p.slug}?from=${slug}#commentaires`} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-900">
+                <Link to={`/projects/${p.slug}?from=${slug}#commentaires`} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-brand-strong">
                   <MessageCircle className="size-3.5" aria-hidden /> {t('community.projects.reviews')}
                 </Link>
               </div>

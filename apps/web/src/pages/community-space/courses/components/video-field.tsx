@@ -56,12 +56,12 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-subtle/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span id={`${id}-label`} className="custom-form-label">
           Vidéo de la leçon
         </span>
-        <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-semibold">
+        <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-border bg-card p-0.5 text-xs font-semibold">
           {(
             [
               { value: 'file', label: 'Fichier', icon: Upload },
@@ -76,7 +76,7 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
               onClick={() => onSourceChange(value)}
               className={cn(
                 'flex items-center gap-1 rounded-md px-2.5 py-1 transition-colors',
-                source === value ? 'bg-blue-50 text-blue-900' : 'text-slate-500 hover:text-slate-800',
+                source === value ? 'bg-brand-subtle text-brand-strong' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <Icon className="size-3.5" aria-hidden />
@@ -99,7 +99,7 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
           <track kind="captions" />
         </video>
       ) : platformLink ? (
-        <p className="rounded-lg bg-white px-3 py-6 text-center text-sm text-slate-500">Vidéo hébergée sur une plateforme : elle s’affichera dans son lecteur après l’enregistrement.</p>
+        <p className="rounded-lg bg-card px-3 py-6 text-center text-sm text-muted-foreground">Vidéo hébergée sur une plateforme : elle s’affichera dans son lecteur après l’enregistrement.</p>
       ) : currentSrc ? (
         <div className="flex flex-col gap-1">
           {current?.video_embed_url && isPlatformUrl(currentSrc) ? (
@@ -109,14 +109,14 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
               <track kind="captions" />
             </video>
           )}
-          <p className="text-xs text-slate-500">Vidéo actuelle. Choisissez un fichier ou un lien pour la remplacer.</p>
+          <p className="text-xs text-muted-foreground">Vidéo actuelle. Choisissez un fichier ou un lien pour la remplacer.</p>
         </div>
       ) : current?.has_video ? (
-        <p className="rounded-lg bg-white px-3 py-6 text-center text-sm text-slate-500">
+        <p className="rounded-lg bg-card px-3 py-6 text-center text-sm text-muted-foreground">
           {current.video_status === 'errored' ? 'La vidéo actuelle n’a pas pu être traitée : envoyez-la à nouveau.' : 'La vidéo actuelle est en cours de traitement.'}
         </p>
       ) : (
-        <p className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-6 text-center text-sm text-slate-400">
+        <p className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-border-strong bg-card px-3 py-6 text-center text-sm text-faint">
           <Video className="size-6" aria-hidden />
           Aucune vidéo pour le moment
         </p>
@@ -126,7 +126,7 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
         <div className="flex flex-wrap items-center gap-3">
           <label
             htmlFor={`${id}-file`}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-600 bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-600 bg-brand-subtle px-3.5 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-brand-muted"
           >
             <Upload className="size-3.5" />
             {file ? 'Changer de fichier' : 'Sélectionner une vidéo'}
@@ -135,13 +135,13 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
           {file ? (
             <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-emerald-700">
               <span className="truncate font-semibold">{file.name}</span>
-              <span className="shrink-0 text-slate-500">({(file.size / (1024 * 1024)).toFixed(1)} Mo)</span>
-              <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 font-semibold text-slate-500 hover:text-red-600">
+              <span className="shrink-0 text-muted-foreground">({(file.size / (1024 * 1024)).toFixed(1)} Mo)</span>
+              <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 font-semibold text-muted-foreground hover:text-red-600">
                 <Trash2 className="size-3.5" /> Retirer
               </button>
             </p>
           ) : (
-            <p className="text-xs text-slate-500">MP4, WebM ou MOV, {VIDEO_MAX_MB} Mo au maximum.</p>
+            <p className="text-xs text-muted-foreground">MP4, WebM ou MOV, {VIDEO_MAX_MB} Mo au maximum.</p>
           )}
         </div>
       ) : (
@@ -155,10 +155,10 @@ function VideoField({ source, onSourceChange, file, onFileChange, url, onUrlChan
             placeholder="https://youtu.be/… ou https://…/ma-video.mp4"
             className="custom-form-control bg-background px-4 py-2"
           />
-          <span className="text-xs text-slate-500">YouTube, Vimeo, Dailymotion, ou lien direct vers un fichier vidéo public (.mp4, .webm…).</span>
+          <span className="text-xs text-muted-foreground">YouTube, Vimeo, Dailymotion, ou lien direct vers un fichier vidéo public (.mp4, .webm…).</span>
         </div>
       )}
-      {!platformLink && <p className="text-[11px] text-slate-400">La vidéo est préparée pour une lecture fluide : comptez quelques minutes avant qu’elle soit disponible.</p>}
+      {!platformLink && <p className="text-[11px] text-faint">La vidéo est préparée pour une lecture fluide : comptez quelques minutes avant qu’elle soit disponible.</p>}
       {(fileError || error) && (
         <p role="alert" className="text-sm text-red-600">
           {fileError ?? error}

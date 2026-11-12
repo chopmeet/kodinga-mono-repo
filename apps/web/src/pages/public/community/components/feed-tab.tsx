@@ -56,20 +56,20 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
   };
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-7">
+    <article className="rounded-xl border border-border bg-card p-7">
       {post.is_pinned && (
-        <p className="mb-4 flex items-center gap-1.5 text-xs font-medium text-blue-900">
+        <p className="mb-4 flex items-center gap-1.5 text-xs font-medium text-brand-strong">
           <Pin className="size-3.5" /> {t('community.feed.pinned')}
         </p>
       )}
       <header className="flex items-center gap-3">
         <Avatar className="size-12">
           {post.author.avatar && <AvatarImage src={post.author.avatar} alt="" />}
-          <AvatarFallback className="bg-blue-50 font-semibold text-blue-900">{nameInitials(author)}</AvatarFallback>
+          <AvatarFallback className="bg-brand-subtle font-semibold text-brand-strong">{nameInitials(author)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-slate-900">{author}</p>
-          <p className="text-xs text-slate-500">
+          <p className="truncate font-semibold text-foreground">{author}</p>
+          <p className="text-xs text-muted-foreground">
             <time dateTime={post.created_at}>{ago(post.created_at)}</time> · {postTypeLabel[post.post_type]}
           </p>
         </div>
@@ -80,24 +80,24 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
           aria-pressed={!!post.is_bookmarked}
           aria-label={post.is_bookmarked ? t('community.feed.unsave') : t('community.feed.save')}
           title={signedIn ? undefined : t('community.feed.loginToSave')}
-          className={cn('rounded-md p-1 transition-colors disabled:cursor-not-allowed disabled:text-slate-300', post.is_bookmarked ? 'text-blue-900' : 'text-slate-400 hover:text-slate-700')}
+          className={cn('rounded-md p-1 transition-colors disabled:cursor-not-allowed disabled:text-slate-300', post.is_bookmarked ? 'text-brand-strong' : 'text-faint hover:text-body')}
         >
-          <Bookmark className={cn('size-5', post.is_bookmarked && 'fill-blue-900')} />
+          <Bookmark className={cn('size-5', post.is_bookmarked && 'fill-brand-strong')} />
         </button>
       </header>
 
       {post.title && (
-        <h3 className="mt-6 text-xl font-medium text-slate-900">
-          <Link to={href} className="hover:text-blue-900">
+        <h3 className="mt-6 text-xl font-medium text-foreground">
+          <Link to={href} className="hover:text-brand-strong">
             {post.title}
           </Link>
         </h3>
       )}
-      <p className={cn('leading-relaxed whitespace-pre-line text-slate-700', post.title ? 'mt-3' : 'mt-5')}>
+      <p className={cn('leading-relaxed whitespace-pre-line text-body', post.title ? 'mt-3' : 'mt-5')}>
         {expanded || !long ? text : `${text.slice(0, 420)}…`}
       </p>
       {long && (
-        <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-2 text-sm font-semibold text-blue-900 hover:underline">
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-2 text-sm font-semibold text-brand-strong hover:underline">
           {expanded ? t('community.feed.less') : t('community.feed.readMore')}
         </button>
       )}
@@ -107,7 +107,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
         <CodeBlock code={post.code_snippet} language={post.code_language} />
       )}
 
-      <footer className="mt-6 flex items-center gap-6 border-t border-slate-200 pt-4 text-sm text-slate-600">
+      <footer className="mt-6 flex items-center gap-6 border-t border-border pt-4 text-sm text-soft">
         <ReactionBar
           target={post}
           canReact={canReact}
@@ -119,7 +119,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
           type="button"
           onClick={() => setShowComments((v) => !v)}
           aria-expanded={showComments}
-          className={cn('flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:text-slate-900', showComments && 'font-semibold text-blue-900')}
+          className={cn('flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:text-foreground', showComments && 'font-semibold text-brand-strong')}
         >
           <MessageCircle className="size-5" />
           {post.post_type === 'question'
@@ -131,7 +131,7 @@ function PostCard({ post, canReact, href, page }: { post: CommunityPostItem; can
             <CircleCheck className="size-3.5" /> {t('community.feed.resolved')}
           </span>
         )}
-        {post.is_locked && <span className="ml-auto text-xs text-slate-500">{t('community.feed.commentsClosed')}</span>}
+        {post.is_locked && <span className="ml-auto text-xs text-muted-foreground">{t('community.feed.commentsClosed')}</span>}
       </footer>
       {showComments && <PostComments post={post} page={page} />}
     </article>
@@ -182,17 +182,17 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         <button
           type="button"
           onClick={() => setWriting(true)}
-          className="flex items-center gap-5 rounded-xl border border-slate-200 bg-white px-5 py-5 text-left shadow-2xs hover:border-slate-300"
+          className="flex items-center gap-5 rounded-xl border border-border bg-card px-5 py-5 text-left shadow-2xs hover:border-border-strong"
         >
           <Avatar className="size-12">
-            <AvatarFallback className="bg-blue-50 font-semibold text-blue-900">{nameInitials(me)}</AvatarFallback>
+            <AvatarFallback className="bg-brand-subtle font-semibold text-brand-strong">{nameInitials(me)}</AvatarFallback>
           </Avatar>
-          <span className="flex-1 text-slate-700">{t('community.feed.composer')}</span>
-          <PenLine className="size-5 text-slate-600" aria-hidden />
+          <span className="flex-1 text-body">{t('community.feed.composer')}</span>
+          <PenLine className="size-5 text-soft" aria-hidden />
         </button>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-5">
-          <p className="flex-1 text-sm text-slate-500">{t('community.feed.joinToPost')}</p>
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-5">
+          <p className="flex-1 text-sm text-muted-foreground">{t('community.feed.joinToPost')}</p>
           {page.community?.pricing_type !== 'paid' && <MembershipActions page={page} className="w-full sm:w-auto" />}
         </div>
       )}
@@ -227,7 +227,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         {/* Phones: the search takes the whole row, the sort goes under it */}
         <label className="relative min-w-0 flex-1 basis-full sm:basis-0">
           <span className="sr-only">{t('community.feed.searchLabel')}</span>
-          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" aria-hidden />
           <input
             type="search"
             value={search}
@@ -236,10 +236,10 @@ export function FeedTab({ page }: { page: CommunityPage }) {
               setCount(PAGE_SIZE);
             }}
             placeholder={t('community.feed.searchPlaceholder')}
-            className="h-12 w-full rounded-lg border border-slate-200 bg-white pr-4 pl-11 text-sm text-slate-800 placeholder:text-slate-400"
+            className="h-12 w-full rounded-lg border border-border bg-card pr-4 pl-11 text-sm text-foreground placeholder:text-faint"
           />
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-body">
           <SlidersHorizontal className="size-4" aria-hidden />
           <select
             aria-label={t('community.feed.sortLabel')}
@@ -259,12 +259,12 @@ export function FeedTab({ page }: { page: CommunityPage }) {
       {isMember && <SemanticSearch slug={page.slug} query={search} />}
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">{t('community.feed.loading')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{t('community.feed.loading')}</p>
       ) : posts.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <MessagesSquare className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{saved && !q && type === 'all' ? t('community.feed.noSaved') : q || type !== 'all' || saved ? t('community.feed.noMatch') : t('community.feed.noPost')}</p>
-          <p className="mt-1 text-sm text-slate-500">{saved ? t('community.feed.savedHint') : isMember ? t('community.feed.firstDiscussion') : t('community.feed.firstExchanges')}</p>
+          <p className="mt-3 font-semibold text-foreground">{saved && !q && type === 'all' ? t('community.feed.noSaved') : q || type !== 'all' || saved ? t('community.feed.noMatch') : t('community.feed.noPost')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{saved ? t('community.feed.savedHint') : isMember ? t('community.feed.firstDiscussion') : t('community.feed.firstExchanges')}</p>
         </div>
       ) : (
         <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label={t('community.feed.postsLabel')}>

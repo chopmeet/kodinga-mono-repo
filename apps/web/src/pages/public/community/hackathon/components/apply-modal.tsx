@@ -98,13 +98,13 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
                     onClick={() => setMode(value)}
                     className={cn(
                       'flex items-start gap-3 rounded-xl border p-3 text-left transition-colors',
-                      mode === value ? 'border-blue-900 bg-blue-50/60 ring-1 ring-blue-900' : 'border-slate-200 hover:border-slate-300',
+                      mode === value ? 'border-blue-900 bg-brand-subtle/60 ring-1 ring-blue-900' : 'border-border hover:border-border-strong',
                     )}
                   >
-                    <Icon className="mt-0.5 size-5 shrink-0 text-blue-900" aria-hidden />
+                    <Icon className="mt-0.5 size-5 shrink-0 text-brand-strong" aria-hidden />
                     <span>
-                      <span className="block font-semibold text-slate-900">{label}</span>
-                      <span className="block text-xs text-slate-500">{help}</span>
+                      <span className="block font-semibold text-foreground">{label}</span>
+                      <span className="block text-xs text-muted-foreground">{help}</span>
                     </span>
                   </button>
                 ))}
@@ -115,7 +115,7 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
             <label className="flex flex-col gap-1">
               <span className="custom-form-label">{t('hackathon.apply.teamName')}</span>
               <input value={teamName} onChange={(e) => setTeamName(e.target.value)} className="custom-form-control bg-background px-4 py-2" />
-              <span className="text-xs text-slate-500">{t('hackathon.apply.teamNameHelp')}</span>
+              <span className="text-xs text-muted-foreground">{t('hackathon.apply.teamNameHelp')}</span>
             </label>
           )}
           {questions.map((q, i) => {
@@ -133,9 +133,9 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
             );
           })}
           {h.terms_and_conditions && (
-            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm whitespace-pre-line text-slate-600">{h.terms_and_conditions}</div>
+            <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-subtle p-3 text-sm whitespace-pre-line text-soft">{h.terms_and_conditions}</div>
           )}
-          <label className="flex items-start gap-2 text-sm text-slate-700">
+          <label className="flex items-start gap-2 text-sm text-body">
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-(--primary)" />
             <span>
               {t('hackathon.apply.acceptBefore')}
@@ -143,7 +143,7 @@ function ApplyModal({ page, open, onClose }: { page: HackathonPage; open: boolea
                 <>
                   {' '}
                   (
-                  <a href={h.rules_url} target="_blank" rel="noreferrer" className="font-medium text-blue-900 underline">
+                  <a href={h.rules_url} target="_blank" rel="noreferrer" className="font-medium text-brand-strong underline">
                     {t('hackathon.apply.readRules')}
                   </a>
                   )

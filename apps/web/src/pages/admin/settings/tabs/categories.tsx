@@ -75,8 +75,8 @@ function CategoriesSettingsTab() {
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Catégories</h2>
-          <p className="text-sm text-slate-500">Une catégorie désactivée n'apparaît plus dans les filtres, ses communautés restent visibles.</p>
+          <h2 className="text-lg font-semibold text-foreground">Catégories</h2>
+          <p className="text-sm text-muted-foreground">Une catégorie désactivée n'apparaît plus dans les filtres, ses communautés restent visibles.</p>
         </div>
         <Button onClick={() => setEditing('new')}>
           <Plus />

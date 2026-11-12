@@ -8,11 +8,11 @@ import { formatDate } from '@/utils/format';
 /** Payout requests of the community (billing/communities/<slug>/payouts/), most recent first */
 function PayoutsTable({ payouts }: { payouts: CommunityPayout[] }) {
   const columns: ColumnDef<CommunityPayout>[] = [
-    { id: 'date', header: 'Date', cell: ({ row }) => <span className="text-slate-700">{formatDate(row.original.created_at)}</span> },
+    { id: 'date', header: 'Date', cell: ({ row }) => <span className="text-body">{formatDate(row.original.created_at)}</span> },
     {
       id: 'amount',
       header: () => <span className="block text-right">Montant</span>,
-      cell: ({ row }) => <span className="block text-right font-semibold text-slate-900 tabular-nums">{xof(Number(row.original.amount))}</span>,
+      cell: ({ row }) => <span className="block text-right font-semibold text-foreground tabular-nums">{xof(Number(row.original.amount))}</span>,
     },
     {
       id: 'status',
@@ -32,9 +32,9 @@ function PayoutsTable({ payouts }: { payouts: CommunityPayout[] }) {
       id: 'method',
       header: 'Moyen',
       cell: ({ row }) => (
-        <span className="text-slate-700">
+        <span className="text-body">
           {payoutMethodLabel[row.original.payment_method] ?? row.original.payment_method}
-          <span className="block text-xs text-slate-500">{row.original.account_identifier}</span>
+          <span className="block text-xs text-muted-foreground">{row.original.account_identifier}</span>
         </span>
       ),
     },

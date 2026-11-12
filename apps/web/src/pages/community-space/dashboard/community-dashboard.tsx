@@ -15,10 +15,10 @@ import UseCommunityDashboard, { RECENT_POSTS } from './form/UseCommunityDashboar
 
 function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <ColgateWrapper className="h-full min-w-0 border border-neutral-200 p-4">
+    <ColgateWrapper className="h-full min-w-0 border border-border p-4">
       <div className="mb-4">
-        <h2 className="text-lg font-medium text-zinc-700">{title}</h2>
-        {description && <p className="text-sm text-slate-500">{description}</p>}
+        <h2 className="text-lg font-medium text-body">{title}</h2>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {children}
     </ColgateWrapper>
@@ -26,7 +26,7 @@ function Panel({ title, description, children }: { title: string; description?: 
 }
 
 const Placeholder = ({ children, className = 'h-64' }: { children: ReactNode; className?: string }) => (
-  <div className={`flex items-center justify-center rounded-lg bg-slate-50 px-4 text-center text-sm text-slate-500 ${className}`}>{children}</div>
+  <div className={`flex items-center justify-center rounded-lg bg-subtle px-4 text-center text-sm text-muted-foreground ${className}`}>{children}</div>
 );
 
 /** /c/:slug/dashboard — overview of the community for its team */
@@ -73,13 +73,13 @@ function CommunityDashboardPage() {
         </div>
         <div className="min-w-0 lg:col-span-2">
           <Panel title="À traiter">
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-border-soft">
               <li>
                 <Link to={`${base}/members?status=pending`} className="flex items-center gap-3 py-3 text-sm hover:text-primary">
-                  <span className={`flex size-8 items-center justify-center rounded-full ${pending > 0 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                  <span className={`flex size-8 items-center justify-center rounded-full ${pending > 0 ? 'bg-amber-50 text-amber-700' : 'bg-muted text-muted-foreground'}`}>
                     <UserRoundCheck className="size-4" />
                   </span>
-                  <span className={`flex-1 ${pending > 0 ? 'font-medium text-slate-900' : 'text-slate-500'}`}>
+                  <span className={`flex-1 ${pending > 0 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                     {stats.pendingRequests === undefined
                       ? 'Demandes d’adhésion…'
                       : pending > 1
@@ -88,17 +88,17 @@ function CommunityDashboardPage() {
                           ? "1 demande d'adhésion à traiter"
                           : "Aucune demande d'adhésion"}
                   </span>
-                  <ChevronRight className="size-4 text-slate-400" />
+                  <ChevronRight className="size-4 text-faint" />
                 </Link>
               </li>
               {stats.nextEvents.length === 0 ? (
                 <li>
-                  <Link to={`${base}/events`} className="flex items-center gap-3 py-3 text-sm text-slate-500 hover:text-primary">
-                    <span className="flex size-8 items-center justify-center rounded-full bg-slate-100">
+                  <Link to={`${base}/events`} className="flex items-center gap-3 py-3 text-sm text-muted-foreground hover:text-primary">
+                    <span className="flex size-8 items-center justify-center rounded-full bg-muted">
                       <CalendarDays className="size-4" />
                     </span>
                     <span className="flex-1">Aucun événement à venir</span>
-                    <ChevronRight className="size-4 text-slate-400" />
+                    <ChevronRight className="size-4 text-faint" />
                   </Link>
                 </li>
               ) : (
@@ -109,10 +109,10 @@ function CommunityDashboardPage() {
                         <CalendarDays className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium text-slate-900">{event.title}</span>
-                        <span className="block text-xs text-slate-500">{formatEventWhen(event)}</span>
+                        <span className="block truncate font-medium text-foreground">{event.title}</span>
+                        <span className="block text-xs text-muted-foreground">{formatEventWhen(event)}</span>
                       </span>
-                      <ChevronRight className="size-4 text-slate-400" />
+                      <ChevronRight className="size-4 text-faint" />
                     </Link>
                   </li>
                 ))
@@ -134,15 +134,15 @@ function CommunityDashboardPage() {
                 </span>
               </Placeholder>
             ) : (
-              <ol className="divide-y divide-slate-100" aria-label="Publications les plus populaires">
+              <ol className="divide-y divide-border-soft" aria-label="Publications les plus populaires">
                 {stats.topPosts.map((post, i) => (
                   <li key={post.id} className="flex items-center gap-3 py-3">
-                    <span className="w-5 text-center font-mono text-sm font-semibold text-slate-400">{i + 1}</span>
+                    <span className="w-5 text-center font-mono text-sm font-semibold text-faint">{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-slate-900">{post.title}</p>
-                      <p className="text-xs text-slate-500">par {post.author}</p>
+                      <p className="truncate font-medium text-foreground">{post.title}</p>
+                      <p className="text-xs text-muted-foreground">par {post.author}</p>
                     </div>
-                    <span className="flex items-center gap-3 text-sm text-slate-600 tabular-nums">
+                    <span className="flex items-center gap-3 text-sm text-soft tabular-nums">
                       <span className="flex items-center gap-1" title="Réactions">
                         <Heart className="size-3.5" />
                         {post.reactions}

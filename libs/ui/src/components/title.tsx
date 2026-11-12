@@ -40,7 +40,7 @@ function MediumTitle({
             <h4 
                 title={title}
                 className={cn(
-                    "text-lg lg:text-xl text-zinc-600 dark:text-foreground font-medium",
+                    "text-lg lg:text-xl text-soft dark:text-foreground font-medium",
                     className
                 )}
             >{title}</h4>

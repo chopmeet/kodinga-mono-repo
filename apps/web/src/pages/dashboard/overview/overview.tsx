@@ -12,17 +12,15 @@ import { formatCompact, getName, monthKey, useUser, xof } from '@/utils/Utils';
 
 function Stat({ value, label, to }: { value: ReactNode; label: string; to: string }) {
   return (
-    <Link to={to} className="rounded-xl border border-neutral-200 bg-white p-5 transition-shadow hover:shadow-md">
-      <p className="text-2xl font-bold text-blue-900 tabular-nums">{value}</p>
-      <p className="mt-1 text-sm text-slate-500">{label}</p>
+    <Link to={to} className="rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
+      <p className="text-2xl font-bold text-brand-strong tabular-nums">{value}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
     </Link>
   );
 }
 
 /** A figure still loading (or missing): a dash, not a made-up zero */
 const figure = (n: number | undefined) => (n === undefined ? '—' : formatCompact(n));
-
-/** YYYY-MM of today, the key of monthly_revenue */
 
 
 function Overview() {
@@ -63,39 +61,39 @@ function Overview() {
       </section>
 
       <section aria-labelledby="activity-title" className="mt-8">
-        <h2 id="activity-title" className="mb-3 text-lg font-semibold text-slate-900">
+        <h2 id="activity-title" className="mb-3 text-lg font-semibold text-foreground">
           Mon activité
         </h2>
         {activity.data ? (
           <MemberActivityView activity={activity.data} />
         ) : activity.isError ? (
-          <p className="text-sm text-slate-500">Votre activité n’a pas pu être chargée.</p>
+          <p className="text-sm text-muted-foreground">Votre activité n’a pas pu être chargée.</p>
         ) : (
-          <p className="text-sm text-slate-500" role="status">
+          <p className="text-sm text-muted-foreground" role="status">
             Chargement de votre activité…
           </p>
         )}
       </section>
 
       <section aria-labelledby="points-title" className="mt-8">
-        <h2 id="points-title" className="mb-3 text-lg font-semibold text-slate-900">
+        <h2 id="points-title" className="mb-3 text-lg font-semibold text-foreground">
           Mes points et badges
         </h2>
         <MyPointsAndBadges />
       </section>
 
-      <ColgateWrapper className="mt-6 border border-neutral-200 p-4 md:p-6">
+      <ColgateWrapper className="mt-6 border border-border p-4 md:p-6">
         <section aria-labelledby="session-title" className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 id="session-title" className="font-semibold text-slate-900">
+            <h2 id="session-title" className="font-semibold text-foreground">
               Session
             </h2>
-            <p className="text-slate-600">Vous êtes connecté en tant que {getName(user) || user?.email}.</p>
+            <p className="text-soft">Vous êtes connecté en tant que {getName(user) || user?.email}.</p>
           </div>
           <button
             type="button"
             onClick={() => logout()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-body hover:border-border-strong hover:text-foreground"
           >
             <LogOut className="size-4" />
             Se déconnecter

@@ -21,17 +21,17 @@ export function CommunityPreview({ values, slug, category, images }: Props) {
   const name = values.name.trim() || t('create.preview.namePlaceholder');
   const access =
     values.pricing_type === 'paid'
-      ? { label: t('create.preview.paid'), className: 'border-slate-200 bg-slate-50 text-slate-700' }
+      ? { label: t('create.preview.paid'), className: 'border-border bg-subtle text-body' }
       : isPrivate
         ? { label: t('create.preview.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' }
-        : { label: t('create.preview.freeAccess'), className: 'border-blue-100 bg-blue-50 text-blue-800' };
+        : { label: t('create.preview.freeAccess'), className: 'border-brand-muted bg-brand-subtle text-brand-strong' };
   const tags = [category?.name ?? t('create.preview.theme'), t('create.preview.new')];
 
   return (
-    <figure aria-label={t('create.preview.label')} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <figure aria-label={t('create.preview.label')} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="relative h-52 overflow-hidden">
         {images.banner ? <img src={images.banner} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
-        <span className="relative m-4 inline-flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-700 uppercase shadow-2xs">
+        <span className="relative m-4 inline-flex items-center gap-1.5 rounded-md bg-card/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-body uppercase shadow-2xs">
           {isPrivate ? <Lock className="size-3.5" /> : <Globe className="size-3.5" />}
           {isPrivate ? t('create.preview.private') : t('create.preview.community')}
         </span>
@@ -51,17 +51,17 @@ export function CommunityPreview({ values, slug, category, images }: Props) {
           )}
           <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${access.className}`}>{access.label}</span>
         </div>
-        <p className={`mt-4 text-xl font-bold break-words ${values.name.trim() ? 'text-slate-900' : 'text-slate-900/90'}`}>{name}</p>
-        <p className="mt-2 text-[15px] break-words text-slate-600">{values.tagline.trim() || t('create.preview.descriptionPlaceholder')}</p>
+        <p className={`mt-4 text-xl font-bold break-words ${values.name.trim() ? 'text-foreground' : 'text-foreground/90'}`}>{name}</p>
+        <p className="mt-2 text-[15px] break-words text-soft">{values.tagline.trim() || t('create.preview.descriptionPlaceholder')}</p>
         <div className="mt-5 flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <span key={tag} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+            <span key={tag} className="rounded-md border border-border bg-subtle px-2.5 py-1 text-xs text-soft">
               {tag}
             </span>
           ))}
         </div>
-        <figcaption className="mt-6 truncate border-t border-slate-100 pt-4 text-sm text-slate-600">
-          kodinga.com/communities/<span className="text-slate-900">{slug || '…'}</span>
+        <figcaption className="mt-6 truncate border-t border-border-soft pt-4 text-sm text-soft">
+          kodinga.com/communities/<span className="text-foreground">{slug || '…'}</span>
         </figcaption>
       </div>
     </figure>

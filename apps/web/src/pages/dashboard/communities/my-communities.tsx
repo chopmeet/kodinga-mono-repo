@@ -15,7 +15,7 @@ import { formatCompact, memberRoleLabel } from '@/utils/Utils';
 const createLinkClassName =
   'inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover';
 const actionClassName =
-  'inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 hover:text-slate-900';
+  'inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-body hover:border-border-strong hover:text-foreground';
 
 type RoleFilter = 'all' | CommunityRole;
 type VisibilityFilter = 'all' | 'public' | 'private';
@@ -77,15 +77,15 @@ function MyCommunities() {
 
       <MyInvitations className="mb-4" />
 
-      <ColgateWrapper className="border border-neutral-200 p-4 md:p-6">
+      <ColgateWrapper className="border border-border p-4 md:p-6">
         {isLoading ? (
           <ul className="grid gap-3" aria-busy="true" aria-label="Chargement de vos communautés">
             {[0, 1, 2].map((i) => (
               <li key={i} className="flex items-center gap-4">
-                <span className="size-12 animate-pulse rounded-xl bg-slate-100" />
+                <span className="size-12 animate-pulse rounded-xl bg-muted" />
                 <span className="flex-1 space-y-2">
-                  <span className="block h-4 w-1/3 animate-pulse rounded bg-slate-100" />
-                  <span className="block h-3 w-1/4 animate-pulse rounded bg-slate-100" />
+                  <span className="block h-4 w-1/3 animate-pulse rounded bg-muted" />
+                  <span className="block h-3 w-1/4 animate-pulse rounded bg-muted" />
                 </span>
               </li>
             ))}
@@ -108,8 +108,8 @@ function MyCommunities() {
             <span className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
               <Sparkles className="size-6" />
             </span>
-            <p className="mt-4 text-lg font-semibold text-slate-900">Vous n'avez encore aucune communauté</p>
-            <p className="mt-1 max-w-sm text-sm text-slate-500">
+            <p className="mt-4 text-lg font-semibold text-foreground">Vous n'avez encore aucune communauté</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
               Lancez la vôtre en quelques minutes, ou{' '}
               <Link to="/" className="font-semibold text-brand hover:underline">
                 rejoignez-en une
@@ -123,10 +123,10 @@ function MyCommunities() {
           </div>
         ) : (
           <>
-            <h2 className="font-semibold text-slate-900">
+            <h2 className="font-semibold text-foreground">
               {shown.length} communauté{shown.length > 1 ? 's' : ''}
             </h2>
-            <p className="text-sm text-slate-500">Propriétaire, modérateur ou membre : choisissez où aller.</p>
+            <p className="text-sm text-muted-foreground">Propriétaire, modérateur ou membre : choisissez où aller.</p>
 
             <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer par rôle">
               {roleFilters.map((f) => (
@@ -144,9 +144,9 @@ function MyCommunities() {
             </div>
 
             {shown.length === 0 ? (
-              <p className="mt-6 text-sm text-slate-500">Aucune communauté ne correspond à ces filtres.</p>
+              <p className="mt-6 text-sm text-muted-foreground">Aucune communauté ne correspond à ces filtres.</p>
             ) : (
-              <ul className="mt-5 divide-y divide-slate-100" aria-label="Mes communautés">
+              <ul className="mt-5 divide-y divide-border-soft" aria-label="Mes communautés">
                 {shown.map((m) => {
                   const { community } = m;
                   return (
@@ -155,16 +155,16 @@ function MyCommunities() {
                       <span className="flex min-w-0 flex-[1_1_18rem] items-center gap-4">
                         <CommunityAvatar community={community} className="size-12 shrink-0 rounded-xl font-mono" />
                         <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2 font-semibold text-slate-900">
+                          <span className="flex items-center gap-2 font-semibold text-foreground">
                             <span className="truncate">{community.name}</span>
                             {community.active_live && (
                               <span className="inline-flex shrink-0 animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                                <span className="size-1.5 animate-ping rounded-full bg-white" />
+                                <span className="size-1.5 animate-ping rounded-full bg-card" />
                                 Live
                               </span>
                             )}
                           </span>
-                          <span className="mt-0.5 block text-sm text-slate-500">
+                          <span className="mt-0.5 block text-sm text-muted-foreground">
                             {memberRoleLabel[m.role]} · {community.privacy_type === 'public' ? 'Publique' : 'Privée'} ·{' '}
                             {formatCompact(community.members_count)} membre{community.members_count > 1 ? 's' : ''}
                           </span>

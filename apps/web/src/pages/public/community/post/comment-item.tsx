@@ -29,7 +29,7 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
         kind: accepted ? t('community.comment.accepted') : isReply ? t('community.comment.answer') : t('community.comment.comment'),
         author,
       })}
-      className={cn(!isReply && 'rounded-xl border bg-white p-5', !isReply && (accepted ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200'))}
+      className={cn(!isReply && 'rounded-xl border bg-card p-5', !isReply && (accepted ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-border'))}
     >
       {accepted && (
         <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
@@ -39,19 +39,19 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
       <header className="flex items-center gap-3">
         <Avatar className={isReply ? 'size-8' : 'size-10'}>
           {c.author.avatar && <AvatarImage src={c.author.avatar} alt="" />}
-          <AvatarFallback className="bg-blue-50 text-xs font-semibold text-blue-900">{nameInitials(author)}</AvatarFallback>
+          <AvatarFallback className="bg-brand-subtle text-xs font-semibold text-brand-strong">{nameInitials(author)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-900">{author}</p>
-          <p className="text-xs text-slate-500">
+          <p className="truncate text-sm font-semibold text-foreground">{author}</p>
+          <p className="text-xs text-muted-foreground">
             <time dateTime={c.created_at}>{c.created_at ? ago(c.created_at) : ''}</time>
           </p>
         </div>
       </header>
 
-      <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-slate-700">{plain(c.content)}</p>
+      <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-body">{plain(c.content)}</p>
 
-      <footer className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+      <footer className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-soft">
         <ReactionBar
           target={c}
           size="sm"
@@ -60,12 +60,12 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
           likeLabel={(liked) => t('community.comment.likeOf', { action: liked ? t('community.feed.unlike') : t('community.feed.like'), author })}
         />
         {!isReply && page.canComment && (
-          <button type="button" onClick={() => setReplying((v) => !v)} aria-expanded={replying} className="hover:text-slate-900">
+          <button type="button" onClick={() => setReplying((v) => !v)} aria-expanded={replying} className="hover:text-foreground">
             {t('community.comment.reply')}
           </button>
         )}
         {page.canDelete(c) && (
-          <button type="button" onClick={() => onDelete(c)} className="flex items-center gap-1 text-slate-500 hover:text-red-600">
+          <button type="button" onClick={() => onDelete(c)} className="flex items-center gap-1 text-muted-foreground hover:text-red-600">
             <Trash2 className="size-3.5" /> {t('community.comment.delete')}
           </button>
         )}
@@ -77,7 +77,7 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
       </footer>
 
       {!isReply && (c.replies.length > 0 || replying) && (
-        <ul className="mt-4 space-y-4 border-l-2 border-slate-100 pl-4" aria-label={t('community.comment.repliesTo', { author })}>
+        <ul className="mt-4 space-y-4 border-l-2 border-border-soft pl-4" aria-label={t('community.comment.repliesTo', { author })}>
           {c.replies.map((r) => (
             <li key={r.id}>
               <CommentItem comment={r} page={page} onDelete={onDelete} isReply />
@@ -85,7 +85,7 @@ export function CommentItem({ comment: c, page, onDelete, isReply = false }: Pro
           ))}
           {replying && (
             <li className="flex gap-2">
-              <CornerDownRight className="mt-8 size-4 shrink-0 text-slate-400" aria-hidden />
+              <CornerDownRight className="mt-8 size-4 shrink-0 text-faint" aria-hidden />
               <div className="flex-1">
                 <CommentForm
                   label={t('community.comment.replyTo', { author })}

@@ -70,12 +70,12 @@ function OpportunityDetails() {
 
   return (
     <div className="community__opportunity">
-      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
         <ArrowLeft className="size-4" />
         Opportunités
       </Link>
 
-      <ColgateWrapper className="border border-neutral-200 p-5">
+      <ColgateWrapper className="border border-border p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-4">
             <CompanyLogo name={o.company_name} url={o.company_logo_url} size="size-14" />
@@ -84,12 +84,12 @@ function OpportunityDetails() {
                 <Badge variant="outline" className={status.className}>
                   {status.label}
                 </Badge>
-                <Badge variant="outline" className="text-slate-600">
+                <Badge variant="outline" className="text-soft">
                   {opportunityTypeLabel[o.opportunity_type]}
                 </Badge>
               </div>
-              <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{o.title}</h1>
-              <p className="mt-1 text-slate-600">
+              <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{o.title}</h1>
+              <p className="mt-1 text-soft">
                 {o.company_website ? (
                   <a href={o.company_website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-primary hover:underline">
                     {o.company_name}
@@ -114,7 +114,7 @@ function OpportunityDetails() {
         {o.technologies.length > 0 && (
           <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Technologies">
             {o.technologies.map((t) => (
-              <li key={t.id} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              <li key={t.id} className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-soft">
                 {t.name}
               </li>
             ))}
@@ -123,13 +123,13 @@ function OpportunityDetails() {
       </ColgateWrapper>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <ColgateWrapper className="border border-neutral-200 p-5 lg:col-span-2">
-          <h2 className="font-semibold text-slate-900">Description</h2>
-          <p className="mt-3 whitespace-pre-line text-slate-700">{o.description}</p>
+        <ColgateWrapper className="border border-border p-5 lg:col-span-2">
+          <h2 className="font-semibold text-foreground">Description</h2>
+          <p className="mt-3 whitespace-pre-line text-body">{o.description}</p>
           {o.requirements && (
             <>
-              <h2 className="mt-6 font-semibold text-slate-900">Profil recherché</h2>
-              <p className="mt-3 whitespace-pre-line text-slate-700">{o.requirements}</p>
+              <h2 className="mt-6 font-semibold text-foreground">Profil recherché</h2>
+              <p className="mt-3 whitespace-pre-line text-body">{o.requirements}</p>
             </>
           )}
           {(o.apply_url || o.apply_email) && (
@@ -149,14 +149,14 @@ function OpportunityDetails() {
             </div>
           )}
         </ColgateWrapper>
-        <ColgateWrapper className="border border-neutral-200 p-5">
+        <ColgateWrapper className="border border-border p-5">
           <dl className="space-y-4">
             {facts.map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex gap-3">
-                <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
+                <Icon className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
                 <div>
-                  <dt className="text-xs text-slate-500">{label}</dt>
-                  <dd className="text-sm font-medium text-slate-900">{value}</dd>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd className="text-sm font-medium text-foreground">{value}</dd>
                 </div>
               </div>
             ))}
@@ -168,7 +168,7 @@ function OpportunityDetails() {
         {handles ? (
           <ApplicationsSection opportunitySlug={o.slug} />
         ) : (
-          <ColgateWrapper className="border border-neutral-200 p-4 text-sm text-slate-600">
+          <ColgateWrapper className="border border-border p-4 text-sm text-soft">
             Les candidatures sont visibles par {getName(o.poster)}, qui a publié l'offre.
           </ColgateWrapper>
         )}

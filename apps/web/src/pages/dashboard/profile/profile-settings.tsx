@@ -12,7 +12,6 @@ const tabs: Tab[] = [
   { id: 'security', title: 'Sécurité', link: 'security', icon: <ShieldCheck className="size-4" /> },
 ];
 
-/** /dashboard/profile — the public profile of the user (identity, skills, career, portfolio) and the security of the account */
 function ProfileSettings() {
   const user = useUser();
 
@@ -23,7 +22,7 @@ function ProfileSettings() {
         {user?.username && (
           <Link
             to={`/profiles/${user.username}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-body hover:border-border-strong hover:text-foreground"
           >
             Voir le profil public
             <ArrowUpRight className="size-4" />

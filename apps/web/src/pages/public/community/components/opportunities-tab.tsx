@@ -50,10 +50,10 @@ export function OpportunitiesTab({ page }: { page: CommunityPage }) {
       {isLoading ? (
         <Loader inline size="sm" message={t('community.opportunitiesTab.loading')} />
       ) : offers.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <Briefcase className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{t('community.opportunitiesTab.none')}</p>
-          <p className="mt-1 text-sm text-slate-500">{t('community.opportunitiesTab.noneText')}</p>
+          <p className="mt-3 font-semibold text-foreground">{t('community.opportunitiesTab.none')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('community.opportunitiesTab.noneText')}</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-4" aria-label={t('community.opportunitiesTab.title')}>

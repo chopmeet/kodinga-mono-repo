@@ -13,7 +13,7 @@ function NotFound() {
   const canGoBack = window.history.state?.idx > 0;
 
   return (
-    <div className="flex min-h-svh flex-col bg-slate-50">
+    <div className="flex min-h-svh flex-col bg-subtle">
       <header className="mx-auto flex h-20 w-full max-w-6xl items-center px-4 sm:px-6">
         <Logo />
       </header>
@@ -21,8 +21,8 @@ function NotFound() {
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 pb-16 text-center">
         <img src="/images/not-found.svg" alt={t('common.notFound.illustration')} className="w-full max-w-md sm:max-w-lg" />
         <div className="max-w-md">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-5xl">{t('common.notFound.title')}</h1>
-          <p className="mt-3 text-slate-600">{t('common.notFound.text')}</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">{t('common.notFound.title')}</h1>
+          <p className="mt-3 text-soft">{t('common.notFound.text')}</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           {canGoBack && (

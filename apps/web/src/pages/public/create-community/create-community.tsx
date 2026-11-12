@@ -17,11 +17,11 @@ import UseCreateCommunity from './form/UseCreateCommunity';
 
 
 const notices: Record<Exclude<PaymentReturn, null>, { icon: ReactNode; className: string }> = {
-  checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950' },
+  checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-brand-muted bg-brand-subtle text-brand-strong' },
   paid: { icon: <CircleCheck className="size-4 shrink-0" />, className: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
   pending: { icon: <Clock className="size-4 shrink-0" />, className: 'border-amber-200 bg-amber-50 text-amber-900' },
   failed: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-red-200 bg-red-50 text-red-900' },
-  cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-slate-200 bg-white text-slate-700' },
+  cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-border bg-card text-body' },
 };
 
 /**
@@ -62,10 +62,10 @@ function CreateCommunity() {
   const showsPlan = flow.planChosen && !flow.pro.isPro;
 
   return (
-    <div className="min-h-svh bg-slate-50">
+    <div className="min-h-svh bg-subtle">
       <header className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Logo />
-        <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 font-medium text-slate-700 hover:bg-white hover:text-slate-900">
+        <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 font-medium text-body hover:bg-card hover:text-foreground">
           <ArrowLeft className="size-4.5" />
           {t('create.page.quit')}
         </Link>
@@ -78,12 +78,12 @@ function CreateCommunity() {
             e.preventDefault();
             if (canContinue) flow.next();
           }}
-          className="rounded-2xl bg-white p-6 shadow-sm sm:p-10"
+          className="rounded-2xl bg-card p-6 shadow-sm sm:p-10"
         >
           {/* One segment per step: done and current steps are filled */}
           <div className="flex gap-2" role="progressbar" aria-valuemin={1} aria-valuemax={flow.steps.length} aria-valuenow={flow.index + 1} aria-label={t('create.page.progress')}>
             {flow.steps.map((s, i) => (
-              <span key={s.id} className={cn('h-1 flex-1 rounded-full transition-colors', i <= flow.index ? 'bg-blue-800' : 'bg-slate-200')} />
+              <span key={s.id} className={cn('h-1 flex-1 rounded-full transition-colors', i <= flow.index ? 'bg-blue-800' : 'bg-border')} />
             ))}
           </div>
 
@@ -96,9 +96,9 @@ function CreateCommunity() {
 
           {/* Like the "(modifier)" of the plan recap: the choice stays at hand on every step */}
           {showsPlan && (
-            <p className="mt-6 text-sm text-slate-600">
+            <p className="mt-6 text-sm text-soft">
               {t('create.plan.recap')}{' '}
-              <span className="font-semibold text-slate-900">
+              <span className="font-semibold text-foreground">
                 {flow.values.formula === 'pro'
                   ? `${t('create.plan.pro')}${proPlan ? ` (${planPrice(proPlan, true)})` : ''}`
                   : t('create.plan.free')}
@@ -115,13 +115,13 @@ function CreateCommunity() {
             </div>
           )}
 
-          <p className="mt-7 text-sm font-semibold text-blue-800">
+          <p className="mt-7 text-sm font-semibold text-brand-strong">
             {t('create.page.stepOf', { n: flow.index + 1, total: flow.steps.length })}
           </p>
-          <h1 ref={titleRef} tabIndex={-1} className="mt-2 text-3xl leading-tight font-bold tracking-tight text-slate-900 outline-none sm:text-4xl">
+          <h1 ref={titleRef} tabIndex={-1} className="mt-2 text-3xl leading-tight font-bold tracking-tight text-foreground outline-none sm:text-4xl">
             {heading.title}
           </h1>
-          <p className="mt-3 text-[15px] text-slate-600">{heading.subtitle}</p>
+          <p className="mt-3 text-[15px] text-soft">{heading.subtitle}</p>
 
           <div className="mt-8">
             {flow.formError && (
@@ -147,7 +147,7 @@ function CreateCommunity() {
                 type="button"
                 onClick={flow.back}
                 disabled={flow.isSubmitting}
-                className="inline-flex h-12 items-center gap-2 rounded-lg px-4 font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                className="inline-flex h-12 items-center gap-2 rounded-lg px-4 font-semibold text-body hover:bg-muted disabled:opacity-60"
               >
                 <ArrowLeft className="size-4" />
                 {t('create.page.back')}
@@ -186,15 +186,15 @@ function CreateCommunity() {
         </form>
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-8">
-          <p className="text-[15px] font-semibold text-blue-800">{t('create.page.previewTitle')}</p>
+          <p className="text-[15px] font-semibold text-brand-strong">{t('create.page.previewTitle')}</p>
           <CommunityPreview values={flow.values} slug={flow.slug} category={category} images={flow.previews} />
 
-          <ol className="space-y-1 rounded-xl bg-white p-4 shadow-2xs" aria-label={t('create.page.stepsLabel')}>
+          <ol className="space-y-1 rounded-xl bg-card p-4 shadow-2xs" aria-label={t('create.page.stepsLabel')}>
             {flow.steps.map((s, i) => (
               <li
                 key={s.id}
                 aria-current={i === flow.index ? 'step' : undefined}
-                className={cn('flex items-center gap-3 py-1 text-[15px]', i === flow.index ? 'font-semibold text-slate-900' : 'text-slate-600')}
+                className={cn('flex items-center gap-3 py-1 text-[15px]', i === flow.index ? 'font-semibold text-foreground' : 'text-soft')}
               >
                 <span
                   className={cn(
@@ -202,8 +202,8 @@ function CreateCommunity() {
                     i < flow.index
                       ? 'border-blue-800 bg-blue-800 text-white'
                       : i === flow.index
-                        ? 'border-blue-800 text-blue-800'
-                        : 'border-slate-300 text-slate-500'
+                        ? 'border-blue-800 text-brand-strong'
+                        : 'border-border-strong text-muted-foreground'
                   )}
                 >
                   {i < flow.index ? <Check className="size-3.5" /> : i + 1}

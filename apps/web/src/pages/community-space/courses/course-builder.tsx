@@ -101,29 +101,29 @@ function CourseBuilder() {
 
   return (
     <div className="community__course">
-      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
         <ArrowLeft className="size-4" />
         Formations
       </Link>
 
-      <ColgateWrapper className="border border-neutral-200 p-5">
+      <ColgateWrapper className="border border-border p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className={course.is_published ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-600'}
+                className={course.is_published ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-border bg-subtle text-soft'}
               >
                 {course.is_published ? 'Publiée' : 'Brouillon'}
               </Badge>
-              <Badge variant="outline" className="text-slate-600">
+              <Badge variant="outline" className="text-soft">
                 {courseLevelLabel[course.level]}
               </Badge>
-              {course.is_sequential && <Badge variant="outline" className="text-slate-600">Parcours progressif</Badge>}
+              {course.is_sequential && <Badge variant="outline" className="text-soft">Parcours progressif</Badge>}
             </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{course.title}</h1>
-            {course.description && <p className="mt-1 max-w-3xl text-slate-600">{course.description}</p>}
-            <p className="mt-2 text-sm text-slate-500">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{course.title}</h1>
+            {course.description && <p className="mt-1 max-w-3xl text-soft">{course.description}</p>}
+            <p className="mt-2 text-sm text-muted-foreground">
               {course.modules_count} module{course.modules_count > 1 ? 's' : ''} · {course.lessons_count} leçon{course.lessons_count > 1 ? 's' : ''}
               {course.duration_seconds ? ` · ${formatDuration(course.duration_seconds)}` : ''}
             </p>
@@ -146,21 +146,21 @@ function CourseBuilder() {
 
       <section aria-label="Programme" className="mt-6 flex flex-col gap-4">
         {modules.length === 0 && (
-          <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-300 py-12 text-center">
-            <p className="font-semibold text-slate-900">Le programme est vide</p>
-            <p className="mt-1 text-sm text-slate-500">Commencez par un module, puis ajoutez-y des leçons.</p>
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-border-strong py-12 text-center">
+            <p className="font-semibold text-foreground">Le programme est vide</p>
+            <p className="mt-1 text-sm text-muted-foreground">Commencez par un module, puis ajoutez-y des leçons.</p>
           </div>
         )}
 
         {modules.map((m, mi) => {
           const lessons = byOrder(m.lessons ?? []);
           return (
-            <ColgateWrapper key={m.id} className="border border-neutral-200 p-0" aria-label={`Module ${m.title}`}>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <ColgateWrapper key={m.id} className="border border-border p-0" aria-label={`Module ${m.title}`}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Module {mi + 1}</p>
-                  <h2 className="truncate font-semibold text-slate-900">{m.title}</h2>
-                  {m.description && <p className="text-sm text-slate-500">{m.description}</p>}
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Module {mi + 1}</p>
+                  <h2 className="truncate font-semibold text-foreground">{m.title}</h2>
+                  {m.description && <p className="text-sm text-muted-foreground">{m.description}</p>}
                 </div>
                 {canManage && (
                   <div className="flex items-center gap-0.5">
@@ -192,18 +192,18 @@ function CourseBuilder() {
                 )}
               </div>
 
-              <ol className="divide-y divide-slate-100">
+              <ol className="divide-y divide-border-soft">
                 {lessons.map((l, li) => (
                   <li key={l.id} className="flex items-center gap-3 px-5 py-3">
-                    <FileText className="size-4 shrink-0 text-slate-400" aria-hidden />
+                    <FileText className="size-4 shrink-0 text-faint" aria-hidden />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-slate-900">{l.title}</span>
-                      <span className="text-xs text-slate-500">
+                      <span className="block truncate text-sm font-medium text-foreground">{l.title}</span>
+                      <span className="text-xs text-muted-foreground">
                         {lessonTypeLabel[l.lesson_type]}
                         {l.duration_seconds ? ` · ${formatDuration(l.duration_seconds)}` : ''}
                       </span>
                     </span>
-                    {l.is_free_preview && <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-800">Aperçu gratuit</Badge>}
+                    {l.is_free_preview && <Badge variant="outline" className="border-brand-muted bg-brand-subtle text-brand-strong">Aperçu gratuit</Badge>}
                     {canManage && (
                       <span className="flex items-center gap-0.5">
                         <Button variant="ghost" size="icon-sm" aria-label={`Monter la leçon ${l.title}`} disabled={li === 0} onClick={() => move(lessons, li, -1, saveLessonOrder)}>
@@ -239,11 +239,11 @@ function CourseBuilder() {
                     )}
                   </li>
                 ))}
-                {lessons.length === 0 && <li className="px-5 py-4 text-sm text-slate-500">Aucune leçon dans ce module.</li>}
+                {lessons.length === 0 && <li className="px-5 py-4 text-sm text-muted-foreground">Aucune leçon dans ce module.</li>}
               </ol>
 
               {canManage && (
-                <div className="border-t border-slate-100 px-5 py-3">
+                <div className="border-t border-border-soft px-5 py-3">
                   <Button variant="ghost" size="sm" onClick={() => setLessonTarget({ moduleId: m.id, lesson: null, nextOrder: lessons.length })}>
                     <Plus />
                     Ajouter une leçon

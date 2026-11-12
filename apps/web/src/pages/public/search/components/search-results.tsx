@@ -15,11 +15,11 @@ const plural = (n: number, key: 'members' | 'lessons' | 'replies') => i18n.t(`se
 function Row({ to, media, title, meta }: { to: string; media: ReactNode; title: string; meta: string }) {
   return (
     <li>
-      <Link to={to} className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-slate-50">
+      <Link to={to} className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-subtle">
         {media}
         <span className="min-w-0">
-          <span className="block truncate font-medium text-slate-900">{title}</span>
-          <span className="block truncate text-xs text-slate-500">{meta}</span>
+          <span className="block truncate font-medium text-foreground">{title}</span>
+          <span className="block truncate text-xs text-muted-foreground">{meta}</span>
         </span>
       </Link>
     </li>
@@ -27,7 +27,7 @@ function Row({ to, media, title, meta }: { to: string; media: ReactNode; title: 
 }
 
 const Icon = ({ children }: { children: ReactNode }) => (
-  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500" aria-hidden>
+  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden>
     {children}
   </span>
 );
@@ -69,7 +69,7 @@ export const DeveloperRow = ({ d }: { d: DiscoveryDeveloper }) => (
       d.avatar_url ? (
         <img src={d.avatar_url} alt="" className="size-10 shrink-0 rounded-full object-cover" />
       ) : (
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-900" aria-hidden>
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-sm font-semibold text-brand-strong" aria-hidden>
           {nameInitials(d.full_name || d.username)}
         </span>
       )

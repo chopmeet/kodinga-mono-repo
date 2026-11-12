@@ -15,11 +15,11 @@ const longDate = (iso: string) => format({ day: 'numeric', month: 'long', year: 
 
 // Seen by the candidate (the poster sees "Nouvelle" for a pending one)
 const candidateStatus = translatedStyles<OpportunityApplicationStatus>('discover.offer.candidate.', {
-  pending: 'bg-blue-50 text-blue-900',
+  pending: 'bg-brand-subtle text-brand-strong',
   reviewing: 'bg-amber-50 text-amber-800',
   shortlisted: 'bg-violet-50 text-violet-800',
   accepted: 'bg-emerald-50 text-emerald-800',
-  rejected: 'bg-slate-100 text-slate-600',
+  rejected: 'bg-muted text-soft',
 });
 
 const isUrl = (v: string) => !v.trim() || /^https?:\/\/\S+\.\S+/.test(v.trim());
@@ -56,7 +56,7 @@ function ApplyModal({ page, open, onClose }: { page: OpportunityPage; open: bool
           <label className="flex flex-col gap-1">
             <span className="custom-form-label">{t('discover.offer.modal.resume')}</span>
             <input type="url" value={v.resume_url} onChange={(e) => set({ resume_url: e.target.value })} placeholder="https://…/cv.pdf" className="custom-form-control bg-background px-4 py-2" />
-            <span className="text-xs text-slate-500">{t('discover.offer.modal.resumeHelp')}</span>
+            <span className="text-xs text-muted-foreground">{t('discover.offer.modal.resumeHelp')}</span>
           </label>
           <label className="flex flex-col gap-1">
             <span className="custom-form-label">{t('discover.offer.modal.portfolio')}</span>
@@ -95,7 +95,7 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
 
   let body;
   if (page.isPoster) {
-    body = <p className="text-sm text-slate-600">{t('discover.offer.poster')}</p>;
+    body = <p className="text-sm text-soft">{t('discover.offer.poster')}</p>;
   } else if (page.hasApplied) {
     body = (
       <>
@@ -103,7 +103,7 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
           <CheckCircle2 className="size-5" /> {t('discover.offer.applied')}
         </p>
         {page.application && (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-soft">
             {t('discover.offer.appliedOn', { date: longDate(page.application.created_at) })}
             {status && (
               <>
@@ -116,7 +116,7 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
       </>
     );
   } else if (!page.isOpen) {
-    body = <p className="text-sm text-slate-600">{t('discover.offer.closed')}</p>;
+    body = <p className="text-sm text-soft">{t('discover.offer.closed')}</p>;
   } else if (!page.signedIn) {
     body = (
       <Button asChild>
@@ -136,7 +136,7 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
       <>
         <Button onClick={() => setOpen(true)}>{t('discover.offer.apply')}</Button>
         {o.apply_email && (
-          <a href={`mailto:${o.apply_email}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-900 hover:underline">
+          <a href={`mailto:${o.apply_email}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-strong hover:underline">
             <Mail className="size-4" /> {t('discover.offer.orWrite', { email: o.apply_email })}
           </a>
         )}
@@ -145,7 +145,7 @@ function ApplyCard({ page }: { page: OpportunityPage }) {
   }
 
   return (
-    <section aria-label={t('discover.offer.application')} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5">
+    <section aria-label={t('discover.offer.application')} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
       {body}
       <ApplyModal page={page} open={open} onClose={() => setOpen(false)} />
     </section>
@@ -162,7 +162,7 @@ function OpportunityPageView() {
   if (!o) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('discover.offer.notFound') : t('discover.offer.loadFailed')}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{page.notFound ? t('discover.offer.notFound') : t('discover.offer.loadFailed')}</h1>
         <Button asChild variant="outline">
           <Link to={page.back.to}>{t('common.actions.back')}</Link>
         </Button>
@@ -178,39 +178,39 @@ function OpportunityPageView() {
   ].filter(Boolean) as { icon: typeof MapPin; text: string }[];
 
   return (
-    <div className="min-h-full bg-slate-50/60">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-full bg-subtle/60">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-285 px-4 py-8 sm:px-6 lg:px-8">
-          <Link to={page.back.to} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+          <Link to={page.back.to} className="inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
             <ArrowLeft className="size-4" /> {page.back.label}
           </Link>
           <div className="mt-5 flex gap-4">
             {o.company_logo_url ? (
-              <img src={o.company_logo_url} alt="" className="size-16 shrink-0 rounded-xl border border-slate-100 object-cover" />
+              <img src={o.company_logo_url} alt="" className="size-16 shrink-0 rounded-xl border border-border-soft object-cover" />
             ) : (
-              <span className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400" aria-hidden>
+              <span className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-muted text-faint" aria-hidden>
                 <Building2 className="size-8" />
               </span>
             )}
             <div className="min-w-0">
-              <p className="text-xs font-semibold tracking-wide text-blue-900 uppercase">
+              <p className="text-xs font-semibold tracking-wide text-brand-strong uppercase">
                 {opportunityTypeLabel[o.opportunity_type] ?? o.opportunity_type}
                 {experienceLabel[o.experience_level] && ` · ${experienceLabel[o.experience_level]}`}
               </p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{o.title}</h1>
-              <p className="mt-1 text-slate-600">
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{o.title}</h1>
+              <p className="mt-1 text-soft">
                 {o.company_website && /^https?:\/\//.test(o.company_website) ? (
-                  <a href={o.company_website} target="_blank" rel="noreferrer" className="hover:text-blue-900 hover:underline">
+                  <a href={o.company_website} target="_blank" rel="noreferrer" className="hover:text-brand-strong hover:underline">
                     {o.company_name}
                   </a>
                 ) : (
                   o.company_name
                 )}
               </p>
-              <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
+              <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-soft">
                 {facts.map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-center gap-1.5">
-                    <Icon className="size-4 text-slate-400" aria-hidden /> {text}
+                    <Icon className="size-4 text-faint" aria-hidden /> {text}
                   </li>
                 ))}
               </ul>
@@ -220,14 +220,14 @@ function OpportunityPageView() {
       </header>
 
       <div className="mx-auto grid max-w-285 items-start gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
-        <article className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
+        <article className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 sm:p-8">
           <section>
-            <h2 className="text-lg font-semibold text-slate-900">{t('discover.offer.role')}</h2>
-            <div className="mt-3">{o.description ? <Markdown source={o.description} /> : <p className="text-slate-500">{t('discover.offer.noDescription')}</p>}</div>
+            <h2 className="text-lg font-semibold text-foreground">{t('discover.offer.role')}</h2>
+            <div className="mt-3">{o.description ? <Markdown source={o.description} /> : <p className="text-muted-foreground">{t('discover.offer.noDescription')}</p>}</div>
           </section>
           {o.requirements && (
             <section>
-              <h2 className="text-lg font-semibold text-slate-900">{t('discover.offer.profile')}</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('discover.offer.profile')}</h2>
               <div className="mt-3">
                 <Markdown source={o.requirements} />
               </div>
@@ -235,10 +235,10 @@ function OpportunityPageView() {
           )}
           {o.technologies.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-slate-900">{t('discover.offer.technologies')}</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('discover.offer.technologies')}</h2>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {o.technologies.map((tech) => (
-                  <li key={tech.id} className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900">
+                  <li key={tech.id} className="rounded-full bg-brand-subtle px-3 py-1 text-sm font-medium text-brand-strong">
                     {tech.name}
                   </li>
                 ))}
@@ -248,7 +248,7 @@ function OpportunityPageView() {
         </article>
         <aside className="order-first lg:sticky lg:top-24 lg:order-none">
           <ApplyCard page={page} />
-          <p className="mt-3 px-1 text-xs text-slate-500">
+          <p className="mt-3 px-1 text-xs text-muted-foreground">
             {t('discover.offer.footer', { count: o.applications_count, date: longDate(o.created_at) })}
           </p>
         </aside>

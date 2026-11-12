@@ -17,7 +17,7 @@ import { useLogout } from '@/pages/auth/hooks/useLogout';
 import { getInitials, getName, isAdmin, useUser } from '@/utils/Utils';
 import { LuUsers } from 'react-icons/lu';
 
-const itemClassName = 'gap-3 px-3 py-2.5 text-[15px] text-slate-700';
+const itemClassName = 'gap-3 px-3 py-2.5 text-[15px] text-body';
 
 /** Avatar of the signed-in user in the public header: their spaces, account and logout */
 export function UserMenu() {
@@ -46,8 +46,8 @@ export function UserMenu() {
             <AvatarFallback className="bg-blue-900 font-semibold text-white">{initials}</AvatarFallback>
           </Avatar>
           <span className="min-w-0">
-            <span className="block truncate text-base font-semibold text-slate-900">{name}</span>
-            {user?.username && <span className="block truncate text-sm text-slate-500">@{user.username}</span>}
+            <span className="block truncate text-base font-semibold text-foreground">{name}</span>
+            {user?.username && <span className="block truncate text-sm text-muted-foreground">@{user.username}</span>}
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

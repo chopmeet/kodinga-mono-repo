@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
-import { TooltipProvider } from '@kodinga/ui';
+import { ThemeProvider, TooltipProvider } from '@kodinga/ui';
 import store from '@/redux/store';
 import '@/utils/i18n';
 
@@ -15,14 +15,16 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <TooltipProvider>
-          <Suspense fallback={null}>
-            <App />
-          </Suspense>
-        </TooltipProvider>
-      </BrowserRouter>
-    </Provider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="kodinga-theme" disableTransitionOnChange>
+      <Provider store={store}>
+        <BrowserRouter>
+          <TooltipProvider>
+            <Suspense fallback={null}>
+              <App />
+            </Suspense>
+          </TooltipProvider>
+        </BrowserRouter>
+      </Provider>
+    </ThemeProvider>
   </StrictMode>
 );

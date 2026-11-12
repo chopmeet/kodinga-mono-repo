@@ -17,24 +17,24 @@ function PlansTab() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">Ces formules sont proposées aux membres qui rejoignent la communauté.</p>
+        <p className="text-sm text-muted-foreground">Ces formules sont proposées aux membres qui rejoignent la communauté.</p>
         <Button onClick={() => setModal({ open: true, plan: null })}>
           <Plus />
           Nouvelle formule
         </Button>
       </div>
 
-      {plans.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Aucune formule : créez-en une pour que les membres puissent rejoindre la communauté.</p>}
+      {plans.length === 0 && <p className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-muted-foreground">Aucune formule : créez-en une pour que les membres puissent rejoindre la communauté.</p>}
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => (
-          <li key={plan.id} aria-label={`Formule ${plan.name}`} className="flex flex-col rounded-xl border border-slate-200 bg-white p-4">
-            <h3 className="font-semibold text-slate-900">{plan.name}</h3>
-            <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">
-              {xof(Number(plan.price))} <span className="text-sm font-normal text-slate-500">{intervalLabel[plan.billing_interval].suffix}</span>
+          <li key={plan.id} aria-label={`Formule ${plan.name}`} className="flex flex-col rounded-xl border border-border bg-card p-4">
+            <h3 className="font-semibold text-foreground">{plan.name}</h3>
+            <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">
+              {xof(Number(plan.price))} <span className="text-sm font-normal text-muted-foreground">{intervalLabel[plan.billing_interval].suffix}</span>
             </p>
-            {plan.description && <p className="mt-1 text-sm text-slate-600">{plan.description}</p>}
+            {plan.description && <p className="mt-1 text-sm text-soft">{plan.description}</p>}
             {plan.features.length > 0 && (
-              <ul className="mt-3 space-y-1 text-sm text-slate-700">
+              <ul className="mt-3 space-y-1 text-sm text-body">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex gap-2">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
@@ -43,7 +43,7 @@ function PlansTab() {
                 ))}
               </ul>
             )}
-            <div className="mt-auto flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+            <div className="mt-auto flex flex-wrap gap-2 border-t border-border-soft pt-4">
               <Button size="sm" variant="outline" onClick={() => setModal({ open: true, plan })}>
                 <Pencil />
                 Modifier

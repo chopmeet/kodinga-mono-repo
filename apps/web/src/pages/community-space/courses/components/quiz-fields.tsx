@@ -39,9 +39,9 @@ export function QuizFields({ value, onChange }: Props) {
       </label>
 
       {value.questions.map((q, i) => (
-        <section key={q.id} aria-label={`Question ${i + 1}`} className="grid gap-3 rounded-xl border border-slate-200 p-4">
+        <section key={q.id} aria-label={`Question ${i + 1}`} className="grid gap-3 rounded-xl border border-border p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-slate-900">Question {i + 1}</p>
+            <p className="text-sm font-semibold text-foreground">Question {i + 1}</p>
             <Button type="button" variant="ghost" size="sm" onClick={() => onChange({ ...value, questions: value.questions.filter((x) => x.id !== q.id) })} aria-label={`Retirer la question ${i + 1}`}>
               <Trash2 /> Retirer
             </Button>
@@ -88,7 +88,7 @@ export function QuizFields({ value, onChange }: Props) {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-slate-500">Cochez la ou les bonnes réponses.</p>
+          <p className="text-xs text-muted-foreground">Cochez la ou les bonnes réponses.</p>
           <Button type="button" variant="outline" size="sm" className="justify-self-start" onClick={() => setQuestion(q.id, { options: [...q.options, emptyOption()] })}>
             <Plus /> Ajouter un choix
           </Button>

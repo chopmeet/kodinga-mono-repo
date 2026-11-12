@@ -37,14 +37,14 @@ function NavTabs({
     const listRef = useActiveTabInView(pathname);
     return (
         <div className="custom_tabs__wrapper">
-            <div className="border-b border-slate-200 dark:border-slate-800 mb-8">
+            <div className="border-b border-border mb-8">
                 <ul ref={listRef} className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 ${wrapperClass}`}>
                     {tabs.map((tab, key) => (
                         <NavLink
                             role="button"
                             className={`flex items-center text-[#586A84] text-base font-medium leading-[22px] py-3.5 px-4 relative text-center text-nowrap tab_item 
                             ${pathname?.includes(tab?.link)
-                                ? "bg-white shadow-[inset_0_-3px_0_0_#2d3748] tab_item__active"
+                                ? "bg-card shadow-[inset_0_-3px_0_0_var(--body)] tab_item__active"
                                 : ""
                             }`}
                             to={`${tab.link}`}
@@ -107,7 +107,7 @@ function FloatedNavTabs({
     const listRef = useActiveTabInView(pathname);
     return (
         <div className="custom_tabs__wrapper">
-            <ul ref={listRef} className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 rounded-lg bg-white/90 shadow-2xl ${wrapperClass}`}>
+            <ul ref={listRef} className={`flex list-none p-0 flex-nowrap gap-2 overflow-x-auto tabs__container mb-0 rounded-lg bg-card/90 shadow-2xl ${wrapperClass}`}>
                 {tabs.map((tab, key) => (
                     <NavLink
                         role="button"

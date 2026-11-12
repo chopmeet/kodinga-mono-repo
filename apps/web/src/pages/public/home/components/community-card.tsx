@@ -10,9 +10,9 @@ import { formatCompact } from '@/utils/Utils';
 
 /** Free + public: join right away. Paid: subscription. Private / secret: the request is reviewed */
 function accessOf(community: CommunityListItem, t: TFunction) {
-  if (community.pricing_type === 'paid') return { label: t('home.card.paid'), className: 'border-slate-200 bg-slate-50 text-slate-700' };
+  if (community.pricing_type === 'paid') return { label: t('home.card.paid'), className: 'border-border bg-subtle text-body' };
   if (community.privacy_type !== 'public') return { label: t('home.card.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' };
-  return { label: t('home.card.freeAccess'), className: 'border-blue-100 bg-blue-50 text-blue-800' };
+  return { label: t('home.card.freeAccess'), className: 'border-brand-muted bg-brand-subtle text-brand-strong' };
 }
 
 export function CommunityCard({ community }: { community: CommunityListItem }) {
@@ -24,7 +24,7 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
   const activeLive = community.active_live;
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs transition-all hover:border-slate-300 hover:shadow-md">
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xs transition-all hover:border-border-strong hover:shadow-md">
       <div className="relative h-52 w-full overflow-hidden">
         {community.banner_url ? (
           <img
@@ -39,13 +39,13 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
         )}
         <div className="relative flex items-start justify-between gap-2 p-4">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-700 uppercase shadow-2xs">
+            <span className="flex items-center gap-1.5 rounded-md bg-card/95 px-2.5 py-1 text-xs font-semibold tracking-wide text-body uppercase shadow-2xs">
               {isPrivate ? <Lock className="size-3.5" /> : <Users className="size-3.5" />}
               {isPrivate ? t('home.card.private') : t('home.card.community')}
             </span>
             {activeLive && (
               <span className="flex items-center gap-1.5 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-md animate-pulse">
-                <span className="size-1.5 rounded-full bg-white animate-ping" />
+                <span className="size-1.5 rounded-full bg-card animate-ping" />
                 Live {activeLive.is_public ? '' : '🔒'}
               </span>
             )}
@@ -65,19 +65,19 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
           <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold tracking-wide uppercase ${access.className}`}>{access.label}</span>
         </div>
 
-        <h3 className="mt-4 flex items-center gap-1.5 text-xl leading-tight font-bold text-slate-900">
+        <h3 className="mt-4 flex items-center gap-1.5 text-xl leading-tight font-bold text-foreground">
           {/* Stretched link: the whole card opens the community */}
           <Link to={href} className="after:absolute after:inset-0 group-hover:text-primary">
             {community.name}
           </Link>
           {community.is_verified && <BadgeCheck className="size-5 shrink-0 text-primary" aria-label={t('home.card.verified')} />}
         </h3>
-        {community.tagline && <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-slate-600">{community.tagline}</p>}
+        {community.tagline && <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-soft">{community.tagline}</p>}
 
         {tags.length > 0 && (
           <div className="mt-5 flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <span key={tag} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+              <span key={tag} className="rounded-md border border-border bg-subtle px-2.5 py-1 text-xs text-soft">
                 {tag}
               </span>
             ))}
@@ -86,9 +86,9 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
 
         {/* Keeps the footers aligned on a row of cards */}
         <div className="flex-1" />
-        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-sm">
-          <span className="flex items-center gap-2 text-slate-600">
-            <Users className="size-4.5 text-slate-500" />
+        <div className="mt-6 flex items-center justify-between border-t border-border-soft pt-4 text-sm">
+          <span className="flex items-center gap-2 text-soft">
+            <Users className="size-4.5 text-muted-foreground" />
             {t('home.card.members', { count: community.members_count, formatted: formatCompact(community.members_count) })}
           </span>
           {activeLive ? (
@@ -102,7 +102,7 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
           ) : (
             <NavLink
               to={href}
-              className="relative z-10 flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-slate-900 transition-colors hover:text-primary"
+              className="relative z-10 flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-foreground transition-colors hover:text-primary"
             >
               {community.is_member ? t('home.card.open') : t('home.card.discover')}
               <ArrowUpRight className="size-4.5" />
@@ -117,12 +117,12 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
 /** `count` placeholders with the shape of a CommunityCard, shown while the directory loads */
 export function CommunityCardSkeleton({ count = 4 }: { count?: number }) {
   return Array.from({ length: count }, (_, i) => (
-    <div key={i} className="overflow-hidden rounded-xl border border-slate-200 bg-white" aria-hidden>
-      <div className="h-52 animate-pulse bg-slate-100" />
+    <div key={i} className="overflow-hidden rounded-xl border border-border bg-card" aria-hidden>
+      <div className="h-52 animate-pulse bg-muted" />
       <div className="space-y-4 p-6">
-        <div className="size-12 animate-pulse rounded-lg bg-slate-100" />
-        <div className="h-5 w-2/3 animate-pulse rounded bg-slate-100" />
-        <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
+        <div className="size-12 animate-pulse rounded-lg bg-muted" />
+        <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-full animate-pulse rounded bg-muted" />
       </div>
     </div>
   ));

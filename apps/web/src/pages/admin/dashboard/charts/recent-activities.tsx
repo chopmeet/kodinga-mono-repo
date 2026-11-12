@@ -16,14 +16,14 @@ export type DashboardActivity = {
 };
 
 const ACTION_CONFIG: Record<ActivityType, { icon: typeof UserPlus; color: string; bg: string }> = {
-  community: { icon: UsersRound, color: 'text-blue-700', bg: 'bg-blue-50' },
+  community: { icon: UsersRound, color: 'text-blue-700', bg: 'bg-brand-subtle' },
   member: { icon: UserPlus, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   post: { icon: FileText, color: 'text-sky-700', bg: 'bg-sky-50' },
   payment: { icon: CreditCard, color: 'text-emerald-700', bg: 'bg-emerald-50' },
   report: { icon: Flag, color: 'text-red-600', bg: 'bg-red-50' },
-  login: { icon: LogIn, color: 'text-slate-600', bg: 'bg-slate-100' },
+  login: { icon: LogIn, color: 'text-soft', bg: 'bg-muted' },
   admin: { icon: ShieldCheck, color: 'text-violet-700', bg: 'bg-violet-50' },
-  setting: { icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100' },
+  setting: { icon: Settings, color: 'text-soft', bg: 'bg-muted' },
 };
 
 function formatRelativeTime(iso: string) {
@@ -43,12 +43,12 @@ export default function RecentActivities({ activities }: { activities: Dashboard
   const visible = activities.slice(0, visibleCount);
 
   if (activities.length === 0) {
-    return <p className="px-5 py-10 text-center text-sm text-slate-400">Aucune activité pour le moment.</p>;
+    return <p className="px-5 py-10 text-center text-sm text-faint">Aucune activité pour le moment.</p>;
   }
 
   return (
     <div>
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-border-soft">
         {visible.map((activity) => {
           const config = ACTION_CONFIG[activity.type];
           const Icon = config.icon;
@@ -58,11 +58,11 @@ export default function RecentActivities({ activities }: { activities: Dashboard
                 <Icon className={`size-4.5 ${config.color}`} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm leading-snug text-slate-700">
-                  <span className="font-medium text-slate-900">{activity.actor}</span> {activity.action}
-                  {activity.target && <span className="font-medium text-slate-900"> · {activity.target}</span>}
+                <p className="text-sm leading-snug text-body">
+                  <span className="font-medium text-foreground">{activity.actor}</span> {activity.action}
+                  {activity.target && <span className="font-medium text-foreground"> · {activity.target}</span>}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 text-xs text-faint">
                   <time dateTime={activity.at}>{formatRelativeTime(activity.at)}</time>
                 </p>
               </div>
@@ -81,7 +81,7 @@ export default function RecentActivities({ activities }: { activities: Dashboard
         <button
           type="button"
           onClick={() => setVisibleCount((c) => c + PAGE)}
-          className="flex w-full items-center justify-center gap-1.5 border-t border-slate-100 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          className="flex w-full items-center justify-center gap-1.5 border-t border-border-soft py-3 text-sm font-medium text-soft transition-colors hover:bg-subtle hover:text-foreground"
         >
           Voir plus
           <ChevronDown className="size-4" />

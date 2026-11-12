@@ -35,15 +35,15 @@ function ApplicationItem({ application: a, opportunitySlug }: { application: Opp
       </Avatar>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-slate-900">{name}</span>
-          <span className="text-sm text-slate-500">@{a.applicant.username}</span>
+          <span className="font-semibold text-foreground">{name}</span>
+          <span className="text-sm text-muted-foreground">@{a.applicant.username}</span>
           <Badge variant="outline" className={applicationStatusStyle[a.status]}>
             {applicationStatusLabel[a.status]}
           </Badge>
         </div>
-        <p className="mt-0.5 text-xs text-slate-500">Reçue le {dateFormat.format(new Date(a.created_at))}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Reçue le {dateFormat.format(new Date(a.created_at))}</p>
         {a.cover_letter && (
-          <div className="mt-2 text-sm text-slate-700">
+          <div className="mt-2 text-sm text-body">
             <p className="whitespace-pre-line">{expanded || !longLetter ? a.cover_letter : `${a.cover_letter.slice(0, 220)}…`}</p>
             {longLetter && (
               <button type="button" className="mt-1 text-sm font-semibold text-brand hover:underline" onClick={() => setExpanded((v) => !v)}>
@@ -69,11 +69,11 @@ function ApplicationItem({ application: a, opportunitySlug }: { application: Opp
           </div>
         )}
       </div>
-      <label className="flex shrink-0 flex-col gap-1 text-xs font-medium text-slate-500">
+      <label className="flex shrink-0 flex-col gap-1 text-xs font-medium text-muted-foreground">
         Statut
         <select
           aria-label={`Statut de la candidature de ${name}`}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-800 disabled:opacity-60"
+          className="h-9 rounded-lg border border-border bg-card px-2 text-sm text-foreground disabled:opacity-60"
           value={a.status}
           disabled={isLoading}
           onChange={(e) => change(e.target.value as OpportunityApplicationStatus)}
@@ -96,8 +96,8 @@ export function ApplicationsSection({ opportunitySlug }: { opportunitySlug: stri
   const list = filter === 'all' ? data : data.filter((a) => a.status === filter);
 
   return (
-    <ColgateWrapper id="candidatures" className="scroll-mt-20 border border-neutral-200 p-4">
-      <h2 className="text-lg font-semibold text-slate-900">Candidatures</h2>
+    <ColgateWrapper id="candidatures" className="scroll-mt-20 border border-border p-4">
+      <h2 className="text-lg font-semibold text-foreground">Candidatures</h2>
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filtrer les candidatures">
         <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
           Toutes <span className="tabular-nums opacity-70">{data.length}</span>
@@ -110,7 +110,7 @@ export function ApplicationsSection({ opportunitySlug }: { opportunitySlug: stri
       </div>
 
       {isLoading ? (
-        <p className="py-8 text-center text-sm text-slate-500">Chargement des candidatures…</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">Chargement des candidatures…</p>
       ) : error ? (
         <div className="mt-4 flex flex-col items-start gap-3">
           <EmptyAlert text={parseApiError(error).message} />
@@ -119,9 +119,9 @@ export function ApplicationsSection({ opportunitySlug }: { opportunitySlug: stri
           </Button>
         </div>
       ) : list.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-500">{data.length ? 'Aucune candidature avec ce statut.' : 'Aucune candidature pour le moment.'}</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{data.length ? 'Aucune candidature avec ce statut.' : 'Aucune candidature pour le moment.'}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-slate-100" aria-label="Liste des candidatures">
+        <ul className="mt-2 divide-y divide-border-soft" aria-label="Liste des candidatures">
           {list.map((a) => (
             <ApplicationItem key={a.id} application={a} opportunitySlug={opportunitySlug} />
           ))}

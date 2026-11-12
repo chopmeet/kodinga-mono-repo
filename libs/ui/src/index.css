@@ -6,7 +6,8 @@
 /* Scan this lib for Tailwind classes (apps only scan their own folder) */
 @source "./";
 
-@custom-variant dark (&:is(.dark *));
+/* .dark on <html> (ThemeProvider): the element itself and everything under it */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
     --radius-sm: calc(var(--radius) * 0.6);
@@ -47,29 +48,41 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Kodinga roles (light = the Tailwind shade they replace, see :root): text from strong to faint,
+       surfaces, lines, brand tints */
+    --color-body: var(--body);
+    --color-soft: var(--soft);
+    --color-faint: var(--faint);
+    --color-subtle: var(--subtle);
+    --color-border-soft: var(--border-soft);
+    --color-border-strong: var(--border-strong);
+    --color-brand-strong: var(--brand-strong);
+    --color-brand-subtle: var(--brand-subtle);
+    --color-brand-muted: var(--brand-muted);
 }
 
 :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --foreground: oklch(0.208 0.042 265.755);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.208 0.042 265.755);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.208 0.042 265.755);
     /* #1D4ED8 */
     --primary: oklch(0.488 0.217 264.38);
     --primary-foreground: oklch(0.985 0 0);
     /* #C94A1A, Kodinga orange darkened for AA contrast with white text */
     --secondary: oklch(0.577 0.171 38.72);
     --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.968 0.007 247.896);
+    --muted-foreground: oklch(0.554 0.046 257.417);
+    --accent: oklch(0.968 0.007 247.896);
+    --accent-foreground: oklch(0.208 0.042 265.755);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
+    --border: oklch(0.929 0.013 255.508);
+    --input: oklch(0.929 0.013 255.508);
     --ring: oklch(0.488 0.217 264.38);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
@@ -84,42 +97,64 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    /* Kodinga roles: text-body (slate-700), text-soft (slate-600), text-faint (slate-400),
+       bg-subtle (slate-50), border-border-soft (slate-100), border-border-strong (slate-300),
+       text-brand-strong (blue-900), bg-brand-subtle (blue-50), bg-brand-muted (blue-100) */
+    --body: oklch(0.372 0.044 257.287);
+    --soft: oklch(0.446 0.043 257.281);
+    --faint: oklch(0.704 0.04 256.788);
+    --subtle: oklch(0.984 0.003 247.858);
+    --border-soft: oklch(0.968 0.007 247.896);
+    --border-strong: oklch(0.869 0.022 252.894);
+    --brand-strong: oklch(0.379 0.146 265.522);
+    --brand-subtle: oklch(0.97 0.014 254.604);
+    --brand-muted: oklch(0.932 0.032 255.585);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
+    --background: oklch(0.165 0.03 265);
+    --foreground: oklch(0.968 0.007 247.896);
+    --card: oklch(0.205 0.034 265);
+    --card-foreground: oklch(0.968 0.007 247.896);
+    --popover: oklch(0.225 0.036 265);
+    --popover-foreground: oklch(0.968 0.007 247.896);
     /* #60A5FA, lighter blue for dark backgrounds */
     --primary: oklch(0.714 0.143 254.62);
     --primary-foreground: oklch(0.205 0 0);
     /* #FB923C */
     --secondary: oklch(0.758 0.159 55.93);
     --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.26 0.036 265);
+    --muted-foreground: oklch(0.68 0.04 257);
+    --accent: oklch(0.27 0.04 265);
+    --accent-foreground: oklch(0.968 0.007 247.896);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
+    --border: oklch(0.3 0.035 265);
+    --input: oklch(0.32 0.035 265);
     --ring: oklch(0.714 0.143 254.62);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
+    --sidebar: oklch(0.185 0.032 265);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.714 0.143 254.62);
     --sidebar-primary-foreground: oklch(0.205 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent: oklch(0.26 0.036 265);
     --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-border: oklch(0.28 0.035 265);
     --sidebar-ring: oklch(0.556 0 0);
+    /* Kodinga roles, on the night blue of the dark theme */
+    --body: oklch(0.869 0.022 252.894);
+    --soft: oklch(0.78 0.03 255);
+    --faint: oklch(0.56 0.04 257);
+    --subtle: oklch(0.19 0.032 265);
+    --border-soft: oklch(0.255 0.034 265);
+    --border-strong: oklch(0.38 0.04 265);
+    --brand-strong: oklch(0.809 0.105 251.813);
+    --brand-subtle: oklch(0.27 0.07 264);
+    --brand-muted: oklch(0.32 0.09 264);
 }
 
 @layer base {
@@ -198,4 +233,20 @@
 /* Card shadow used by OverviewCardItem (ported from moovi-app) */
 @utility moovi-shadow {
   box-shadow: 0 2px 10px 0 rgb(0 0 0 / 0.05);
+}
+
+/* Dark theme of the form controls above (their light colors stay those of moovi) */
+@layer components {
+  .dark .custom-form-label {
+    color: var(--muted-foreground);
+  }
+  .dark .custom-form-control,
+  .dark .react-tel-input .form-control,
+  .dark .react-tel-input .flag-dropdown,
+  .dark .quill .ql-container.ql-snow,
+  .dark .quill .ql-toolbar.ql-snow,
+  .dark .css-13cymwt-control {
+    border-color: var(--input) !important;
+    color: var(--foreground);
+  }
 }

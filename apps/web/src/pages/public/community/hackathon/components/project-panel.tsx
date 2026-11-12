@@ -37,21 +37,21 @@ function ProjectFiles({ project, hackathon }: { project: HackathonProject; hacka
   };
 
   return (
-    <fieldset className="flex flex-col gap-3 border-t border-slate-100 pt-5">
-      <legend className="flex items-center gap-2 font-semibold text-slate-900">
-        <Paperclip className="size-4 text-blue-900" /> {t('hackathon.project.attachments', { count: files.length, max: project.maxFiles })}
+    <fieldset className="flex flex-col gap-3 border-t border-border-soft pt-5">
+      <legend className="flex items-center gap-2 font-semibold text-foreground">
+        <Paperclip className="size-4 text-brand-strong" /> {t('hackathon.project.attachments', { count: files.length, max: project.maxFiles })}
       </legend>
       {files.length > 0 && (
         <ul className="flex flex-col gap-2" aria-label={t('hackathon.project.attachmentsLabel')}>
           {files.map((f) => (
-            <li key={f.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-              <a href={f.file_url} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-2 font-medium text-blue-900 hover:underline">
+            <li key={f.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+              <a href={f.file_url} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-2 font-medium text-brand-strong hover:underline">
                 <FileText className="size-4 shrink-0" />
                 <span className="truncate">{f.file_name}</span>
-                {f.file_size > 1 && <span className="shrink-0 text-xs font-normal text-slate-500">{size(f.file_size)}</span>}
+                {f.file_size > 1 && <span className="shrink-0 text-xs font-normal text-muted-foreground">{size(f.file_size)}</span>}
               </a>
               {project.canEdit && (
-                <button type="button" aria-label={t('hackathon.project.removeFile', { name: f.file_name })} onClick={() => project.removeFile(f.id)} className="text-slate-400 hover:text-red-600">
+                <button type="button" aria-label={t('hackathon.project.removeFile', { name: f.file_name })} onClick={() => project.removeFile(f.id)} className="text-faint hover:text-red-600">
                   <Trash2 className="size-4" />
                 </button>
               )}
@@ -68,12 +68,12 @@ function ProjectFiles({ project, hackathon }: { project: HackathonProject; hacka
               </option>
             ))}
           </select>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-600 bg-blue-50 px-3.5 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-600 bg-brand-subtle px-3.5 py-2 text-sm font-semibold text-blue-700 hover:bg-brand-muted">
             {project.isAttaching ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}
             {t('hackathon.project.addFile')}
             <input type="file" aria-label={t('hackathon.project.fileToAttach')} accept={extensions.map((x) => `.${x}`).join(',')} onChange={choose} disabled={project.isAttaching} className="sr-only" />
           </label>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted-foreground">
             {t('hackathon.project.maxSize', { formats: extensions.join(', '), max: project.maxFileMb })}
           </span>
         </div>
@@ -98,11 +98,11 @@ function ProjectPanel({ slug, hackathonSlug, hackathon, inTeam }: { slug: string
   const isRequired = (field: string) => project.required.some((r) => r.field === field);
 
   return (
-    <section aria-labelledby="project-title" className="rounded-xl border border-slate-200 bg-white p-6">
+    <section aria-labelledby="project-title" className="rounded-xl border border-border bg-card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{inTeam ? t('hackathon.project.team') : t('hackathon.project.mine')}</p>
-          <h2 id="project-title" className="mt-1 text-lg font-semibold text-slate-900">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{inTeam ? t('hackathon.project.team') : t('hackathon.project.mine')}</p>
+          <h2 id="project-title" className="mt-1 text-lg font-semibold text-foreground">
             {project.project?.title || t('hackathon.project.project')}
           </h2>
         </div>
@@ -115,17 +115,17 @@ function ProjectPanel({ slug, hackathonSlug, hackathon, inTeam }: { slug: string
                 : t('hackathon.project.submitted')}
             </span>
           ) : (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">{t('hackathon.project.draft')}</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-sm font-semibold text-soft">{t('hackathon.project.draft')}</span>
           ))}
       </div>
 
       {project.isLoading ? (
         <Loader inline size="sm" className="py-8" message={t('hackathon.project.loading')} />
       ) : project.loadError ? (
-        <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">{project.loadError}</p>
+        <p className="mt-4 rounded-lg bg-subtle p-4 text-sm text-soft">{project.loadError}</p>
       ) : (
         <>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-soft">
             {project.canEdit
               ? t(inTeam ? 'hackathon.project.editableUntilTeam' : 'hackathon.project.editableUntil', { date: formatDateTime(hackathon.submission_deadline) })
               : t('hackathon.project.closed')}
@@ -159,7 +159,7 @@ function ProjectPanel({ slug, hackathonSlug, hackathon, inTeam }: { slug: string
             </fieldset>
             <ProjectFiles project={project} hackathon={hackathon} />
             {project.canEdit && (
-              <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-5">
+              <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-border-soft pt-5">
                 <Button type="submit" variant={project.isFinal ? 'default' : 'outline'} isLoading={project.isSaving && !project.isSubmitting}>
                   {project.isFinal ? t('hackathon.project.saveChanges') : t('hackathon.project.saveDraft')}
                 </Button>

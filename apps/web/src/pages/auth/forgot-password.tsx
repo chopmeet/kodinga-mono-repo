@@ -39,12 +39,12 @@ function ForgotPassword() {
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
             <MailCheck className="size-6" />
           </div>
-          <p className="text-[15px] leading-relaxed text-slate-600">
-            {t('auth.forgot.sentBefore')} <strong className="font-semibold text-slate-900">{sentTo}</strong>
+          <p className="text-[15px] leading-relaxed text-soft">
+            {t('auth.forgot.sentBefore')} <strong className="font-semibold text-foreground">{sentTo}</strong>
             {t('auth.forgot.sentAfter')}
           </p>
           {formError && <FormAlert>{formError}</FormAlert>}
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             {t('auth.common.nothingReceived')}{' '}
             <button
               type="button"

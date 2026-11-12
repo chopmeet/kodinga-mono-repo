@@ -28,7 +28,7 @@ type Card = {
 };
 
 const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
-const AVATAR_TONES = ['bg-blue-50 text-blue-900', 'bg-blue-900 text-white', 'bg-amber-50 text-amber-700', 'bg-emerald-50 text-emerald-800'];
+const AVATAR_TONES = ['bg-brand-subtle text-brand-strong', 'bg-blue-900 text-white', 'bg-amber-50 text-amber-700', 'bg-emerald-50 text-emerald-800'];
 
 /** Choices of the list, by the api (GET .../members/?ordering=) */
 const ORDERINGS = ['reputation', '-joined_at', 'username'] as const;
@@ -111,7 +111,7 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
         eyebrow={t('community.members.eyebrow')}
         title={canList ? t('community.members.title') : t('community.members.titleActive')}
         aside={
-          <span className="flex items-center gap-2 text-sm text-slate-600">
+          <span className="flex items-center gap-2 text-sm text-soft">
             <Users className="size-4" /> {t('community.hero.members', { count: n, formatted: formatCompact(n) })}
           </span>
         }
@@ -120,8 +120,8 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
       </SectionHeader>
 
       {!canList && !isLoading && (
-        <p className="mb-6 flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-blue-950">
-          <Info className="mt-0.5 size-4 shrink-0 text-blue-900" aria-hidden />
+        <p className="mb-6 flex items-start gap-2.5 rounded-xl border border-brand-muted bg-brand-subtle/70 px-4 py-3 text-sm text-brand-strong">
+          <Info className="mt-0.5 size-4 shrink-0 text-brand-strong" aria-hidden />
           <span>
             {t('community.members.youSee')} <strong>{t('community.members.activeCount', { count: cards.length })}</strong>{' '}
             {t('community.members.outOf', { total: formatCompact(n) })}
@@ -154,7 +154,7 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
           </Pill>
         </div>
         {canList && (
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+          <label className="flex items-center gap-2 text-sm text-soft">
             <span className="sr-only">{t('community.members.sortLabel')}</span>
             <select
               value={ordering}
@@ -162,7 +162,7 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
                 setOrdering(e.target.value as Ordering);
                 setSize(PAGE_SIZE);
               }}
-              className="h-10 rounded-lg border border-slate-200 bg-white px-2 font-medium text-slate-700"
+              className="h-10 rounded-lg border border-border bg-card px-2 font-medium text-body"
             >
               {ORDERINGS.map((o) => (
                 <option key={o} value={o}>
@@ -188,52 +188,52 @@ export function MembersTab({ community, isTeam }: { community: CommunityDetail; 
       </div>
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">{t('community.members.loading')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{t('community.members.loading')}</p>
       ) : failed ? (
-        <div role="alert" className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div role="alert" className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <Users className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{t('community.members.loadFailed')}</p>
+          <p className="mt-3 font-semibold text-foreground">{t('community.members.loadFailed')}</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={retry} isLoading={isRetrying}>
             <RotateCw /> {t('common.actions.retry')}
           </Button>
         </div>
       ) : shown.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <Users className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{cards.length || query ? t('community.members.noMatch') : canList ? t('community.members.willAppear') : t('community.members.noActive')}</p>
-          {!canList && !cards.length && <p className="mt-1 text-sm text-slate-500">{t('community.members.firstContributions')}</p>}
+          <p className="mt-3 font-semibold text-foreground">{cards.length || query ? t('community.members.noMatch') : canList ? t('community.members.willAppear') : t('community.members.noActive')}</p>
+          {!canList && !cards.length && <p className="mt-1 text-sm text-muted-foreground">{t('community.members.firstContributions')}</p>}
         </div>
       ) : (
         <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-label={canList ? t('community.members.title') : t('community.members.titleActive')}>
           {shown.map((c, i) => (
-            <li key={c.id} className="flex flex-col rounded-xl border border-slate-200 bg-white p-6">
+            <li key={c.id} className="flex flex-col rounded-xl border border-border bg-card p-6">
               <div className="flex items-start justify-between gap-2">
                 <Avatar className="relative size-14 overflow-visible">
                   {c.online && <span className="absolute right-0 bottom-0 z-10 size-3.5 rounded-full border-2 border-white bg-emerald-500" title={t('community.members.online')} />}
                   {c.avatar && <AvatarImage src={c.avatar} alt="" className="rounded-full" />}
                   <AvatarFallback className={cn('text-lg font-semibold', AVATAR_TONES[i % AVATAR_TONES.length])}>{nameInitials(c.name)}</AvatarFallback>
                 </Avatar>
-                <span className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600">{c.badge}</span>
+                <span className="rounded-md bg-muted px-2 py-1 text-xs text-soft">{c.badge}</span>
               </div>
-              <p className="mt-5 flex items-center gap-2 text-lg font-medium text-slate-900">
+              <p className="mt-5 flex items-center gap-2 text-lg font-medium text-foreground">
                 <span className="truncate">{c.name}</span>
                 {c.level !== undefined && (
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-semibold text-blue-900" title={t('community.members.level', { level: c.level })}>
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-[11px] font-semibold text-brand-strong" title={t('community.members.level', { level: c.level })}>
                     {c.level}
                   </span>
                 )}
               </p>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 @{c.username}
                 {c.online && <span className="ml-2 font-medium text-emerald-700">{t('community.members.onlineDot')}</span>}
               </p>
-              <p className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-                {canList ? <CalendarDays className="size-4 text-slate-400" /> : <Sparkles className="size-4 text-slate-400" />}
+              <p className="mt-4 flex items-center gap-2 text-sm text-soft">
+                {canList ? <CalendarDays className="size-4 text-faint" /> : <Sparkles className="size-4 text-faint" />}
                 {c.line}
               </p>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-4">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-soft pt-4">
                 <MessageButton userId={c.userId} label={t('community.members.write')} size="sm" variant="outline" className="mt-4" />
-                <Link to={`/profiles/${c.username}`} className="mt-4 ml-auto inline-flex items-center gap-1.5 text-sm text-slate-800 hover:text-blue-900">
+                <Link to={`/profiles/${c.username}`} className="mt-4 ml-auto inline-flex items-center gap-1.5 text-sm text-foreground hover:text-brand-strong">
                   {t('community.members.profile')} <ArrowUpRight className="size-4" />
                 </Link>
               </div>

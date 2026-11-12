@@ -28,11 +28,11 @@ function PaymentNotice({ community, param }: { community: CommunityDetail | unde
   const state = UsePaymentReturn(community && { slug: community.slug, communityId: community.id }, param);
   if (!state) return null;
   const notices = {
-    checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-blue-200 bg-blue-50 text-blue-950' },
+    checking: { icon: <LoaderCircle className="size-4 shrink-0 animate-spin" />, className: 'border-brand-muted bg-brand-subtle text-brand-strong' },
     paid: { icon: <CircleCheck className="size-4 shrink-0" />, className: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
     pending: { icon: <Clock className="size-4 shrink-0" />, className: 'border-amber-200 bg-amber-50 text-amber-900' },
     failed: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-red-200 bg-red-50 text-red-900' },
-    cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-slate-200 bg-white text-slate-700' },
+    cancelled: { icon: <CircleX className="size-4 shrink-0" />, className: 'border-border bg-card text-body' },
   } as const;
   const notice = notices[state];
   return (
@@ -63,8 +63,8 @@ function CommunityDetails() {
   if (!community) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">{page.notFound ? t('community.page.notFound') : t('community.page.loadFailed')}</h1>
-        <p className="text-slate-500">
+        <h1 className="text-2xl font-bold text-foreground">{page.notFound ? t('community.page.notFound') : t('community.page.loadFailed')}</h1>
+        <p className="text-muted-foreground">
           {page.notFound ? t('community.page.notFoundText') : parseApiError(page.error).message}
         </p>
         <Button asChild variant="outline">
@@ -77,7 +77,7 @@ function CommunityDetails() {
   const fullWidth = activeTab === 'members';
 
   return (
-    <div className="min-h-full bg-slate-50/60">
+    <div className="min-h-full bg-subtle/60">
       <CommunityHero page={page} />
       <CommunityTabs activeTab={activeTab} slug={community.slug} isMember={page.membership === 'member'} />
 

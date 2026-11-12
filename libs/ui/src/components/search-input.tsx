@@ -4,7 +4,7 @@ import { ArrowRight, Search, X } from "lucide-react"
 import { cn } from "cn"
 
 const searchInputVariants = cva(
-  "w-full border border-slate-200 bg-white text-slate-900 outline-none transition-shadow placeholder:text-slate-400 focus:border-brand focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden",
+  "w-full border border-border bg-card text-foreground outline-none transition-shadow placeholder:text-faint focus:border-brand focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden",
   {
     variants: {
       size: {
@@ -62,7 +62,7 @@ function SearchInput({
       <Search
         aria-hidden
         className={cn(
-          "pointer-events-none absolute top-1/2 -translate-y-1/2 text-slate-400",
+          "pointer-events-none absolute top-1/2 -translate-y-1/2 text-faint",
           ui.icon
         )}
       />
@@ -85,7 +85,7 @@ function SearchInput({
           onClick={() => onValueChange("")}
           aria-label={clearLabel}
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700",
+            "absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-faint hover:bg-muted hover:text-body",
             onSubmit ? ui.clearWithSubmit : ui.clear
           )}
         >

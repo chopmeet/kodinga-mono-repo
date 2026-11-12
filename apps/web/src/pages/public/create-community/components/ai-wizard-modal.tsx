@@ -74,17 +74,17 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
   return (
     <>
       {/* Banner placed at the top of the creation flow */}
-      <div className="mb-8 overflow-hidden rounded-2xl border border-brand/20 bg-gradient-to-r from-brand/10 via-brand/5 to-slate-50 p-4 shadow-xs">
+      <div className="mb-8 overflow-hidden rounded-2xl border border-brand/20 bg-gradient-to-r from-brand/10 via-brand/5 to-subtle p-4 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3 sm:items-center">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-brand ring-1 ring-brand/30">
               <Sparkles className="size-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-foreground">
                 {t('create.ai.bannerTitle')}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {t('create.ai.bannerText')}
               </p>
             </div>
@@ -104,7 +104,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
       <Dialog open={isOpen} onOpenChange={(open) => !isLoading && setIsOpen(open)}>
         <DialogContent
           showCloseButton={false}
-          className="flex max-h-[calc(100dvh-3rem)] max-w-full flex-col gap-0 overflow-hidden border-slate-200 p-0 sm:max-h-[calc(100dvh-5rem)] sm:max-w-2xl sm:rounded-2xl"
+          className="flex max-h-[calc(100dvh-3rem)] max-w-full flex-col gap-0 overflow-hidden border-border p-0 sm:max-h-[calc(100dvh-5rem)] sm:max-w-2xl sm:rounded-2xl"
         >
           {/* Modal Header */}
           <div className="flex shrink-0 items-center justify-between gap-3 bg-slate-900 px-4 py-3.5 text-white sm:px-6 sm:py-4">
@@ -114,14 +114,14 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
               </div>
               <div className="min-w-0">
                 <DialogTitle className="text-sm leading-snug font-bold text-white">{t('create.ai.title')}</DialogTitle>
-                <DialogDescription className="sr-only text-[11px] text-slate-400 sm:not-sr-only">{t('create.ai.poweredBy')}</DialogDescription>
+                <DialogDescription className="sr-only text-[11px] text-faint sm:not-sr-only">{t('create.ai.poweredBy')}</DialogDescription>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label={t('common.actions.close')}
-              className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+              className="shrink-0 rounded-lg p-1.5 text-faint hover:bg-slate-800 hover:text-white"
             >
               <X className="size-4" />
             </button>
@@ -130,7 +130,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
           {/* Modal Content */}
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 text-sm sm:p-6">
             <div>
-              <label htmlFor="ai-wizard-idea" className="block text-xs font-bold tracking-wider text-slate-600 uppercase">
+              <label htmlFor="ai-wizard-idea" className="block text-xs font-bold tracking-wider text-soft uppercase">
                 {t('create.ai.describe')}
               </label>
               {/* 16 px on phones: iOS zooms into smaller fields */}
@@ -140,18 +140,18 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
                 placeholder={t('create.ai.placeholder')}
-                className="mt-2 w-full resize-y rounded-xl border border-slate-200 p-3 text-base leading-relaxed text-slate-800 placeholder-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none sm:text-sm"
+                className="mt-2 w-full resize-y rounded-xl border border-border p-3 text-base leading-relaxed text-foreground placeholder-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none sm:text-sm"
               />
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <label className="flex items-center gap-2">
-                <Globe className="size-4 shrink-0 text-slate-400" aria-hidden />
-                <span className="text-xs text-slate-600">{t('create.ai.language')}</span>
+                <Globe className="size-4 shrink-0 text-faint" aria-hidden />
+                <span className="text-xs text-soft">{t('create.ai.language')}</span>
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm font-semibold text-slate-700"
+                  className="rounded-lg border border-border bg-subtle px-2 py-1.5 text-sm font-semibold text-body"
                 >
                   <option value="fr">Français</option>
                   <option value="en">English</option>
@@ -182,7 +182,7 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
 
             {/* Generated Proposal View */}
             {proposal && (
-              <div ref={proposalRef} className="scroll-mt-4 space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 sm:p-4">
+              <div ref={proposalRef} className="scroll-mt-4 space-y-4 rounded-xl border border-border bg-subtle/70 p-3.5 sm:p-4">
                 <div>
                   <span className="text-xs font-bold tracking-wider text-brand uppercase">{t('create.ai.names')}</span>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -195,8 +195,8 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                         className={cn(
                           'max-w-full rounded-lg px-3 py-1.5 text-left text-sm font-semibold break-words transition sm:text-xs',
                           selectedName === name
-                            ? 'border-2 border-brand bg-white text-brand shadow-xs'
-                            : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                            ? 'border-2 border-brand bg-card text-brand shadow-xs'
+                            : 'border border-border bg-card text-body hover:border-border-strong'
                         )}
                       >
                         {name}
@@ -207,17 +207,17 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                 </div>
 
                 <div>
-                  <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">{t('create.ai.mission')}</span>
-                  <p className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-sm text-slate-700 sm:text-xs">
+                  <span className="text-xs font-bold tracking-wider text-body uppercase">{t('create.ai.mission')}</span>
+                  <p className="mt-1 rounded-lg border border-border bg-card p-2.5 text-sm text-body sm:text-xs">
                     {proposal.purpose || proposal.description}
                   </p>
                 </div>
 
                 <div>
-                  <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">{t('create.ai.categories')}</span>
+                  <span className="text-xs font-bold tracking-wider text-body uppercase">{t('create.ai.categories')}</span>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {proposal.suggested_categories.map((cat, i) => (
-                      <span key={i} className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600">
+                      <span key={i} className="rounded-md border border-border bg-card px-2 py-0.5 text-xs font-medium text-soft">
                         {cat}
                       </span>
                     ))}
@@ -225,14 +225,14 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
                 </div>
 
                 <div>
-                  <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">{t('create.ai.firstDiscussion')}</span>
-                  <p className="mt-1 text-sm text-slate-600 italic sm:text-xs">
+                  <span className="text-xs font-bold tracking-wider text-body uppercase">{t('create.ai.firstDiscussion')}</span>
+                  <p className="mt-1 text-sm text-soft italic sm:text-xs">
                     "{proposal.first_discussion_prompts[0] || t('create.ai.defaultPrompt')}"
                   </p>
                 </div>
 
-                <div className="border-t border-slate-200 pt-3">
-                  <p className="text-xs text-slate-500 sm:text-[11px]">
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs text-muted-foreground sm:text-[11px]">
                     <span role="img" aria-label={t('create.ai.warning')}>
                       ⚠️
                     </span>{' '}
@@ -244,11 +244,11 @@ export function AIWizardModal({ flow }: AIWizardModalProps) {
           </div>
 
           {/* Modal Footer: full-width buttons on phones, the main one on top */}
-          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6 sm:py-3.5">
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border-soft bg-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6 sm:py-3.5">
             <Button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:w-auto sm:text-xs"
+              className="w-full rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-body hover:bg-muted sm:w-auto sm:text-xs"
             >
               {t('common.actions.cancel')}
             </Button>

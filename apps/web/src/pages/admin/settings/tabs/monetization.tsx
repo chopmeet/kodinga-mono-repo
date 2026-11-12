@@ -28,8 +28,8 @@ function MonetizationSettingsTab() {
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      <h2 className="text-lg font-semibold text-slate-900">Monétisation</h2>
-      <p className="mb-5 text-sm text-slate-500">Prix de Kodinga Pro, commission de la plateforme et paiements des communautés payantes (PayDunya).</p>
+      <h2 className="text-lg font-semibold text-foreground">Monétisation</h2>
+      <p className="mb-5 text-sm text-muted-foreground">Prix de Kodinga Pro, commission de la plateforme et paiements des communautés payantes (PayDunya).</p>
 
       <div className="grid gap-x-4 md:grid-cols-3">
         <Input
@@ -85,8 +85,8 @@ function MonetizationSettingsTab() {
             {...register('pro_yearly_description')}
           />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className="text-slate-500">
-              Texte d’après les prix ci-dessus : <span className="text-slate-700">« {yearlySuggestion} »</span>
+            <span className="text-muted-foreground">
+              Texte d’après les prix ci-dessus : <span className="text-body">« {yearlySuggestion} »</span>
             </span>
             <Button type="button" variant="outline" size="sm" onClick={applyYearlySuggestion}>
               Utiliser ce texte
@@ -124,13 +124,13 @@ function MonetizationSettingsTab() {
           {...register('payout_delay_days')}
         />
       </div>
-      <p className="mb-4 text-sm text-slate-500">
-        Devise : <span className="font-medium text-slate-900">Franc CFA (XOF)</span>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Devise : <span className="font-medium text-foreground">Franc CFA (XOF)</span>
       </p>
 
-      <fieldset className="border-t border-slate-100 pt-3">
-        <legend className="pt-3 text-sm font-semibold text-slate-900">Moyens de paiement</legend>
-        <div className="divide-y divide-slate-100">
+      <fieldset className="border-t border-border-soft pt-3">
+        <legend className="pt-3 text-sm font-semibold text-foreground">Moyens de paiement</legend>
+        <div className="divide-y divide-border-soft">
           {fields.map((channel, index) => (
             <Controller
               key={channel.id}

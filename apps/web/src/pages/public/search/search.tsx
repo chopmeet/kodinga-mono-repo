@@ -22,11 +22,11 @@ function Group({ title, count, type, search, children }: { title: string; count:
   const { t } = useTranslation();
   if (count === 0) return null;
   return (
-    <section aria-label={title} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+    <section aria-label={title} className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <div className="flex items-center justify-between gap-3 px-2">
-        <h2 className="font-semibold text-slate-900">{title}</h2>
+        <h2 className="font-semibold text-foreground">{title}</h2>
         {!search.type && count >= 5 && (
-          <button type="button" onClick={() => search.setType(type)} className="text-sm font-semibold text-blue-900 hover:underline">
+          <button type="button" onClick={() => search.setType(type)} className="text-sm font-semibold text-brand-strong hover:underline">
             {t('common.actions.seeMore')}
           </button>
         )}
@@ -42,7 +42,7 @@ function Results({ search }: { search: GlobalSearch }) {
   if (!r) return null;
   const total = r.communities.length + r.courses.length + r.events.length + r.developers.length + r.posts.length;
   if (total === 0) {
-    return <p className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-500">{t('search.noResult', { q: search.q })}</p>;
+    return <p className="rounded-xl border border-border bg-card px-6 py-12 text-center text-muted-foreground">{t('search.noResult', { q: search.q })}</p>;
   }
   return (
     <div className="flex flex-col gap-4">
@@ -91,20 +91,20 @@ function GlobalSearchPage() {
   const search = UseGlobalSearch();
 
   return (
-    <div className="min-h-full bg-slate-50/60">
+    <div className="min-h-full bg-subtle/60">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('search.title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('search.title')}</h1>
         <div role="search" className="mt-4">
           <label className="relative block">
             <span className="sr-only">{t('search.title')}</span>
-            <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" aria-hidden />
             <input
               type="search"
               autoFocus
               value={search.text}
               onChange={(e) => search.setText(e.target.value)}
               placeholder={t('search.placeholder')}
-              className="h-12 w-full rounded-lg border border-slate-200 bg-white pr-4 pl-11 text-slate-800 placeholder:text-slate-400"
+              className="h-12 w-full rounded-lg border border-border bg-card pr-4 pl-11 text-foreground placeholder:text-faint"
             />
           </label>
         </div>
@@ -119,7 +119,7 @@ function GlobalSearchPage() {
                 onClick={() => search.setType(f.value)}
                 className={cn(
                   'rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors',
-                  search.type === f.value ? 'border-blue-900 bg-blue-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
+                  search.type === f.value ? 'border-blue-900 bg-blue-900 text-white' : 'border-border bg-card text-soft hover:border-border-strong',
                 )}
               >
                 {t(`search.filters.${f.label}`)}
@@ -132,10 +132,10 @@ function GlobalSearchPage() {
           {search.failed ? (
             <p className="text-center text-sm text-red-700">{t('search.unavailable')}</p>
           ) : search.searching ? (
-            search.isLoading && !search.results ? <p className="py-12 text-center text-sm text-slate-500">{t('search.searching')}</p> : <Results search={search} />
+            search.isLoading && !search.results ? <p className="py-12 text-center text-sm text-muted-foreground">{t('search.searching')}</p> : <Results search={search} />
           ) : (
             <>
-              {search.text.trim().length > 0 && search.text.trim().length < MIN_QUERY && <p className="mb-4 text-sm text-slate-500">{t('search.oneMoreLetter')}</p>}
+              {search.text.trim().length > 0 && search.text.trim().length < MIN_QUERY && <p className="mb-4 text-sm text-muted-foreground">{t('search.oneMoreLetter')}</p>}
               <Trending search={search} />
             </>
           )}

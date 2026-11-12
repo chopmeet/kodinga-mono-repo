@@ -104,7 +104,7 @@ function EventFormModal({ slug, open, event, onClose, onSaved }: Props) {
             )}
           />
 
-          <div className="divide-y divide-slate-100 border-t border-slate-100 sm:col-span-2">
+          <div className="divide-y divide-border-soft border-t border-border-soft sm:col-span-2">
             <Controller
               control={control}
               name="is_public"

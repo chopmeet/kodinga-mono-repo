@@ -89,7 +89,7 @@ export function ImageField({
         <span id={`${id}-label`} className="custom-form-label dark:text-foreground! block">
           {label}
         </span>
-        <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
+        <div role="radiogroup" aria-labelledby={`${id}-label`} className="flex rounded-lg border border-border bg-subtle p-0.5 text-xs font-semibold">
           {(
             [
               { value: 'file', label: t('create.image.file'), icon: Upload },
@@ -104,7 +104,7 @@ export function ImageField({
               onClick={() => onSourceChange(value)}
               className={cn(
                 'flex items-center gap-1 rounded-md px-2.5 py-1 transition-colors',
-                source === value ? 'bg-white text-blue-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800',
+                source === value ? 'bg-card text-brand-strong shadow-2xs' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <Icon className="size-3.5" aria-hidden />
@@ -115,7 +115,7 @@ export function ImageField({
       </div>
 
       <div className="grid place-items-center">
-        <div className={cn('group relative mx-auto my-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50', isWide ? 'aspect-video w-full max-w-sm' : 'size-40')}>
+        <div className={cn('group relative mx-auto my-4 overflow-hidden rounded-2xl border border-border bg-subtle', isWide ? 'aspect-video w-full max-w-sm' : 'size-40')}>
           {image ? (
             <img
               src={image}
@@ -124,7 +124,7 @@ export function ImageField({
               onError={source === 'url' ? () => setBrokenUrl(link) : undefined}
             />
           ) : (
-            <span className="flex size-full flex-col items-center justify-center gap-1.5 px-4 text-center text-slate-400">
+            <span className="flex size-full flex-col items-center justify-center gap-1.5 px-4 text-center text-faint">
               {broken ? <ImageOff className="size-7" aria-hidden /> : <ImagePlus className="size-7" aria-hidden />}
               <span className="text-xs font-medium">
                 {broken ? t('create.image.notFound') : source === 'file' ? t('create.image.clickToChoose') : t('create.image.preview')}
@@ -142,7 +142,7 @@ export function ImageField({
                 className="peer absolute top-0 left-0 z-20 size-full cursor-pointer opacity-0"
               />
               {image && (
-                <span className="pointer-events-none absolute -bottom-full left-0 z-10 flex h-1/2 w-full flex-col items-center justify-center bg-white/50 text-center text-[#333] transition-[bottom] duration-300 ease-in-out peer-hover:bottom-[5%] peer-focus-visible:bottom-[5%]">
+                <span className="pointer-events-none absolute -bottom-full left-0 z-10 flex h-1/2 w-full flex-col items-center justify-center bg-card/50 text-center text-[#333] transition-[bottom] duration-300 ease-in-out peer-hover:bottom-[5%] peer-focus-visible:bottom-[5%]">
                   <AiFillCamera size={22} />
                   <p className="text-[15px] font-bold">{t('create.image.change')}</p>
                 </span>
@@ -156,7 +156,7 @@ export function ImageField({
         <div className="flex flex-col items-center gap-2 text-center">
           <label
             htmlFor={`${id}-file-btn`}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-600 bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-2xs transition hover:bg-blue-100"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-600 bg-brand-subtle px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-2xs transition hover:bg-brand-muted"
           >
             <Upload className="size-3.5" />
             {file ? t('create.image.changeFile') : t('create.image.selectFile')}
@@ -172,13 +172,13 @@ export function ImageField({
             <div className="flex flex-col items-center gap-1.5">
               <p className="flex max-w-full items-center gap-2 text-xs font-medium text-emerald-700">
                 <span className="truncate font-semibold">{file.name}</span>
-                <span className="shrink-0 text-xs text-slate-500">{t('create.image.size', { size: (file.size / (1024 * 1024)).toFixed(2) })}</span>
-                <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600">
+                <span className="shrink-0 text-xs text-muted-foreground">{t('create.image.size', { size: (file.size / (1024 * 1024)).toFixed(2) })}</span>
+                <button type="button" onClick={() => onFileChange(null)} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-600">
                   <Trash2 className="size-3.5" /> {t('create.image.remove')}
                 </button>
               </p>
               {isUploading && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 animate-pulse">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-2.5 py-1 text-[11px] font-semibold text-blue-700 animate-pulse">
                   <LoaderCircle className="size-3 animate-spin" /> {t('create.image.uploading')}
                 </span>
               )}
@@ -189,9 +189,9 @@ export function ImageField({
               )}
             </div>
           ) : (
-            <p className="text-xs text-slate-500">{help}</p>
+            <p className="text-xs text-muted-foreground">{help}</p>
           )}
-          <span className="text-[11px] font-medium text-slate-400">
+          <span className="text-[11px] font-medium text-faint">
             {t('create.image.storage')}
           </span>
           {(fileError || error) && <p className="text-sm text-red-600">{fileError ?? error}</p>}

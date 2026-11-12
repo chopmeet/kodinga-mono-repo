@@ -13,9 +13,9 @@ const byStart = <T extends { start_date: string }>(list: T[] = []) => [...list].
 
 const availabilityStyle: Record<AvailabilityStatus, string> = {
   available: 'bg-emerald-50 text-emerald-800',
-  open_to_offers: 'bg-blue-50 text-blue-900',
+  open_to_offers: 'bg-brand-subtle text-brand-strong',
   busy: 'bg-amber-50 text-amber-800',
-  unavailable: 'bg-slate-100 text-slate-600',
+  unavailable: 'bg-muted text-soft',
 };
 
 /** Availability, what the developer is open to, years of experience */
@@ -40,14 +40,14 @@ export function ProfileAvailability({ profile }: { profile: PublicProfile }) {
       {open.length > 0 && (
         <p className="flex flex-wrap gap-1.5">
           {open.map((label) => (
-            <span key={label} className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-700">
+            <span key={label} className="rounded-full border border-border bg-card px-2.5 py-0.5 text-xs font-medium text-body">
               {label}
             </span>
           ))}
         </p>
       )}
       {profile.years_of_experience ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-soft">
           {t('profile.availability.years', { count: profile.years_of_experience })}
         </p>
       ) : null}
@@ -70,8 +70,8 @@ export function ProfileLinks({ profile }: { profile: PublicProfile }) {
     <ul className="mt-5 space-y-2 text-sm" aria-label={t('profile.links.label')}>
       {links.map(({ label, href, text, icon: Icon }) => (
         <li key={label}>
-          <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-slate-700 hover:text-primary">
-            <Icon className="size-4 shrink-0 text-slate-400" aria-hidden />
+          <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-body hover:text-primary">
+            <Icon className="size-4 shrink-0 text-faint" aria-hidden />
             <span className="sr-only">{label} : </span>
             <span className="truncate">{text}</span>
           </a>
@@ -84,10 +84,10 @@ export function ProfileLinks({ profile }: { profile: PublicProfile }) {
 function Empty({ icon: Icon, text }: { icon: typeof Globe; text: string }) {
   return (
     <div className="flex flex-col items-center py-14 text-center">
-      <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
+      <span className="flex size-12 items-center justify-center rounded-xl bg-brand-subtle text-primary" aria-hidden>
         <Icon className="size-6" />
       </span>
-      <p className="mt-4 text-sm text-slate-500">{text}</p>
+      <p className="mt-4 text-sm text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -99,18 +99,18 @@ export function ProfileAbout({ profile, name }: { profile: PublicProfile; name: 
   if (!profile.bio && skills.length === 0) return <Empty icon={Star} text={t('profile.about.empty', { name })} />;
   return (
     <div className="flex flex-col gap-8 py-8">
-      {profile.bio && <p className="whitespace-pre-line text-slate-700">{profile.bio}</p>}
+      {profile.bio && <p className="whitespace-pre-line text-body">{profile.bio}</p>}
       {skills.length > 0 && (
         <section aria-labelledby="skills-title">
-          <h3 id="skills-title" className="font-semibold text-slate-900">
+          <h3 id="skills-title" className="font-semibold text-foreground">
             {t('profile.about.skills')}
           </h3>
           <ul className="mt-3 flex flex-wrap gap-2" aria-label={t('profile.about.skills')}>
             {skills.map((s) => (
-              <li key={s.id} className={cn('flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm', s.is_highlighted ? 'border-blue-200 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700')}>
+              <li key={s.id} className={cn('flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm', s.is_highlighted ? 'border-brand-muted bg-brand-subtle text-brand-strong' : 'border-border bg-card text-body')}>
                 {s.is_highlighted && <Star className="size-3.5 fill-amber-400 text-amber-400" aria-label={t('profile.about.highlighted')} />}
                 <span className="font-medium">{s.technology.name}</span>
-                {skillLevelLabel[s.level] && <span className="text-xs text-slate-500">· {skillLevelLabel[s.level]}</span>}
+                {skillLevelLabel[s.level] && <span className="text-xs text-muted-foreground">· {skillLevelLabel[s.level]}</span>}
               </li>
             ))}
           </ul>
@@ -130,15 +130,15 @@ export function ProfileCareer({ profile, name }: { profile: PublicProfile; name:
     <div className="flex flex-col gap-10 py-8">
       {experiences.length > 0 && (
         <section aria-labelledby="experiences-title">
-          <h3 id="experiences-title" className="flex items-center gap-2 font-semibold text-slate-900">
+          <h3 id="experiences-title" className="flex items-center gap-2 font-semibold text-foreground">
             <Briefcase className="size-5 text-primary" aria-hidden /> {t('profile.career.experiences')}
           </h3>
-          <ol className="mt-4 space-y-6 border-l border-slate-200 pl-6" aria-label={t('profile.career.experiences')}>
+          <ol className="mt-4 space-y-6 border-l border-border pl-6" aria-label={t('profile.career.experiences')}>
             {experiences.map((x) => (
               <li key={x.id} className="relative">
                 <span className="absolute top-1.5 -left-[1.85rem] size-2.5 rounded-full border-2 border-white bg-primary ring-1 ring-primary/30" aria-hidden />
-                <p className="font-semibold text-slate-900">{x.title}</p>
-                <p className="text-sm text-slate-700">
+                <p className="font-semibold text-foreground">{x.title}</p>
+                <p className="text-sm text-body">
                   {safeUrl(x.company_url) ? (
                     <a href={x.company_url} target="_blank" rel="noreferrer" className="hover:text-primary hover:underline">
                       {x.company_name}
@@ -148,9 +148,9 @@ export function ProfileCareer({ profile, name }: { profile: PublicProfile; name:
                   )}
                   {employmentLabel[x.employment_type] && ` · ${employmentLabel[x.employment_type]}`}
                 </p>
-                <p className="text-sm text-slate-500">{[period(x.start_date, x.end_date, x.is_current), x.is_remote ? t('profile.career.remote') : x.location].filter(Boolean).join(' · ')}</p>
-                {x.description && <p className="mt-2 text-sm whitespace-pre-line text-slate-600">{x.description}</p>}
-                {x.technologies.length > 0 && <p className="mt-2 text-xs text-slate-500">{x.technologies.map((t) => t.name).join(' · ')}</p>}
+                <p className="text-sm text-muted-foreground">{[period(x.start_date, x.end_date, x.is_current), x.is_remote ? t('profile.career.remote') : x.location].filter(Boolean).join(' · ')}</p>
+                {x.description && <p className="mt-2 text-sm whitespace-pre-line text-soft">{x.description}</p>}
+                {x.technologies.length > 0 && <p className="mt-2 text-xs text-muted-foreground">{x.technologies.map((t) => t.name).join(' · ')}</p>}
               </li>
             ))}
           </ol>
@@ -158,16 +158,16 @@ export function ProfileCareer({ profile, name }: { profile: PublicProfile; name:
       )}
       {educations.length > 0 && (
         <section aria-labelledby="educations-title">
-          <h3 id="educations-title" className="flex items-center gap-2 font-semibold text-slate-900">
+          <h3 id="educations-title" className="flex items-center gap-2 font-semibold text-foreground">
             <GraduationCap className="size-5 text-primary" aria-hidden /> {t('profile.career.educations')}
           </h3>
           <ul className="mt-4 space-y-4" aria-label={t('profile.career.educations')}>
             {educations.map((x) => (
               <li key={x.id}>
-                <p className="font-semibold text-slate-900">{x.degree}</p>
-                <p className="text-sm text-slate-700">{[x.institution, x.field_of_study].filter(Boolean).join(' · ')}</p>
-                <p className="text-sm text-slate-500">{period(x.start_date, x.end_date, x.is_current)}</p>
-                {x.description && <p className="mt-1 text-sm whitespace-pre-line text-slate-600">{x.description}</p>}
+                <p className="font-semibold text-foreground">{x.degree}</p>
+                <p className="text-sm text-body">{[x.institution, x.field_of_study].filter(Boolean).join(' · ')}</p>
+                <p className="text-sm text-muted-foreground">{period(x.start_date, x.end_date, x.is_current)}</p>
+                {x.description && <p className="mt-1 text-sm whitespace-pre-line text-soft">{x.description}</p>}
               </li>
             ))}
           </ul>
@@ -185,19 +185,19 @@ export function ProfilePortfolio({ profile, name }: { profile: PublicProfile; na
   return (
     <ul className="grid gap-4 py-8 sm:grid-cols-2" aria-label={t('profile.portfolio.label')}>
       {projects.map((p) => (
-        <li key={p.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <li key={p.id} className="overflow-hidden rounded-xl border border-border bg-card">
           <div className="relative h-36">
             {safeUrl(p.thumbnail_url) ? <img src={p.thumbnail_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
             {p.is_featured && (
-              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-xs font-semibold text-amber-700">
                 <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden /> {t('profile.portfolio.featured')}
               </span>
             )}
           </div>
           <div className="p-4">
-            <h3 className="font-semibold text-slate-900">{p.title}</h3>
-            {p.description && <p className="mt-1 line-clamp-3 text-sm text-slate-600">{p.description}</p>}
-            {p.technologies.length > 0 && <p className="mt-2 text-xs text-slate-500">{p.technologies.map((t) => t.name).join(' · ')}</p>}
+            <h3 className="font-semibold text-foreground">{p.title}</h3>
+            {p.description && <p className="mt-1 line-clamp-3 text-sm text-soft">{p.description}</p>}
+            {p.technologies.length > 0 && <p className="mt-2 text-xs text-muted-foreground">{p.technologies.map((t) => t.name).join(' · ')}</p>}
             <p className="mt-3 flex gap-4 text-sm">
               {safeUrl(p.project_url) && (
                 <a href={p.project_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
@@ -226,17 +226,17 @@ export function ProfileCommunities({ profile, name }: { profile: PublicProfile; 
     <ul className="grid gap-4 py-6 sm:grid-cols-2" aria-label={t('profile.communities.label', { name })}>
       {communities.map((c) => (
         <li key={c.id}>
-          <Link to={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-slate-300">
+          <Link to={`/communities/${c.slug}`} className="flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-border-strong">
             {c.avatar_url ? (
               <img src={c.avatar_url} alt="" className="size-11 shrink-0 rounded-xl object-cover" />
             ) : (
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary" aria-hidden>
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-primary" aria-hidden>
                 <Users className="size-5" />
               </span>
             )}
             <span className="min-w-0">
-              <span className="block truncate font-semibold text-slate-900">{c.name}</span>
-              <span className="block text-sm text-slate-500">
+              <span className="block truncate font-semibold text-foreground">{c.name}</span>
+              <span className="block text-sm text-muted-foreground">
                 {memberRoleLabel[c.role] ?? c.role} · {t('profile.communities.members', { count: c.members_count, formatted: formatCompact(c.members_count) })}
               </span>
             </span>
@@ -255,31 +255,31 @@ export function ProfileContributions({ profile, name }: { profile: PublicProfile
   return (
     <div className="flex flex-col gap-8 py-6">
       {c.badges_count > 0 && (
-        <p className="flex items-center gap-2 text-sm text-slate-600">
+        <p className="flex items-center gap-2 text-sm text-soft">
           <Award className="size-4 text-amber-600" aria-hidden />
           {t('profile.contributions.badges', { count: c.badges_count })}
         </p>
       )}
       {c.recent_posts.length > 0 && (
         <section aria-label={t('profile.contributions.latestPosts')}>
-          <h3 className="font-semibold text-slate-900">{t('profile.contributions.latestPosts')}</h3>
-          <ul className="mt-3 divide-y divide-slate-100">
+          <h3 className="font-semibold text-foreground">{t('profile.contributions.latestPosts')}</h3>
+          <ul className="mt-3 divide-y divide-border-soft">
             {c.recent_posts.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                 <span className="min-w-0">
                   {p.community_slug ? (
-                    <Link to={`/communities/${p.community_slug}/posts/${p.id}`} className="block truncate font-medium text-slate-900 hover:text-primary">
+                    <Link to={`/communities/${p.community_slug}/posts/${p.id}`} className="block truncate font-medium text-foreground hover:text-primary">
                       {plain(p.title) || t('profile.contributions.untitled')}
                     </Link>
                   ) : (
-                    <span className="block truncate font-medium text-slate-900">{plain(p.title) || t('profile.contributions.untitled')}</span>
+                    <span className="block truncate font-medium text-foreground">{plain(p.title) || t('profile.contributions.untitled')}</span>
                   )}
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     {p.community_name ? `${p.community_name} · ` : ''}
                     {ago(p.created_at)}
                   </span>
                 </span>
-                <span className="flex items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1" aria-label={t('profile.contributions.reactions', { count: p.reactions_count })}>
                     <ThumbsUp className="size-3.5" aria-hidden /> {p.reactions_count}
                   </span>
@@ -294,14 +294,14 @@ export function ProfileContributions({ profile, name }: { profile: PublicProfile
       )}
       {c.recent_projects.length > 0 && (
         <section aria-label={t('profile.contributions.latestProjects')}>
-          <h3 className="font-semibold text-slate-900">{t('profile.contributions.latestProjects')}</h3>
-          <ul className="mt-3 divide-y divide-slate-100">
+          <h3 className="font-semibold text-foreground">{t('profile.contributions.latestProjects')}</h3>
+          <ul className="mt-3 divide-y divide-border-soft">
             {c.recent_projects.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                <Link to={`/projects/${p.slug}`} className="min-w-0 truncate font-medium text-slate-900 hover:text-primary">
+                <Link to={`/projects/${p.slug}`} className="min-w-0 truncate font-medium text-foreground hover:text-primary">
                   {p.title}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 text-xs text-slate-500" aria-label={t('profile.contributions.votes', { count: p.upvotes_count })}>
+                <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" aria-label={t('profile.contributions.votes', { count: p.upvotes_count })}>
                   <ThumbsUp className="size-3.5" aria-hidden /> {p.upvotes_count}
                 </span>
               </li>

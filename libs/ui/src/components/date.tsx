@@ -52,27 +52,27 @@ export default function DateDayFilter({
                         className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl border px-4 py-3 min-w-19 transition-colors cursor-pointer font-barlow
                             ${isActive
                                 ? "border-transparent bg-primary/80 shadow-sm"
-                                : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-neutral-800"
+                                : "border-border bg-card hover:border-border-strong"
                             }
                         `}
                     >
                         <span
                             className={`text-[11px] font-semibold tracking-wide uppercase
-                                ${isActive ? "text-white" : "text-gray-900 dark:text-gray-300"}
+                                ${isActive ? "text-white" : "text-foreground"}
                             `}
                         >
                             {dayFormatter.format(date).replace(".", "")}.
                         </span>
                         <span
                             className={`text-3xl font-bold leading-none
-                                ${isActive ? "text-white" : "text-gray-900 dark:text-gray-300"}
+                                ${isActive ? "text-white" : "text-foreground"}
                             `}
                         >
                             {date.getDate()}
                         </span>
                         <span
                             className={`text-xs
-                                ${isActive ? "text-violet-200" : "text-gray-400"}
+                                ${isActive ? "text-violet-200" : "text-faint"}
                             `}
                         >
                             {monthFormatter.format(date)}

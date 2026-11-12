@@ -24,7 +24,7 @@ type Props = {
 function AuthWrapper({ title, subtitle, children, footer }: Props) {
   const { t } = useTranslation();
   return (
-    <div className="grid min-h-svh bg-white lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:p-8">
+    <div className="grid min-h-svh bg-card lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:p-8">
       <aside className="relative hidden overflow-hidden rounded-3xl bg-primary lg:flex lg:items-center">
         {/* Soft light blobs for depth */}
         <div className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-white/10 blur-3xl" />
@@ -38,7 +38,7 @@ function AuthWrapper({ title, subtitle, children, footer }: Props) {
             {highlights.map(({ label, translate, icon: Icon, iconClassName }) => (
               <li
                 key={label}
-                className="flex items-center gap-2.5 rounded-xl bg-white px-4 py-2.5 text-[15px] text-slate-800 shadow-sm"
+                className="flex items-center gap-2.5 rounded-xl bg-card px-4 py-2.5 text-[15px] text-foreground shadow-sm"
               >
                 <span className={`flex size-5 items-center justify-center rounded-md text-white ${iconClassName}`}>
                   <Icon className="size-3" />
@@ -56,17 +56,17 @@ function AuthWrapper({ title, subtitle, children, footer }: Props) {
             <span className="flex size-8 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-brand">
               K
             </span>
-            <span className="text-xl font-bold tracking-tight text-slate-900">
+            <span className="text-xl font-bold tracking-tight text-foreground">
               kodinga<span className="text-brand">.</span>
             </span>
           </NavLink>
 
-          <h1 className="mt-10 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{title}</h1>
-          {subtitle && <div className="mt-3 text-[15px] text-slate-500">{subtitle}</div>}
+          <h1 className="mt-10 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{title}</h1>
+          {subtitle && <div className="mt-3 text-[15px] text-muted-foreground">{subtitle}</div>}
 
           <div className="mt-8">{children}</div>
 
-          {footer && <div className="mt-8 text-center text-sm leading-relaxed text-slate-500">{footer}</div>}
+          {footer && <div className="mt-8 text-center text-sm leading-relaxed text-muted-foreground">{footer}</div>}
         </div>
       </main>
     </div>

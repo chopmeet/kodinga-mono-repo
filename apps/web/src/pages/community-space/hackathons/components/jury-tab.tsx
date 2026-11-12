@@ -46,17 +46,17 @@ export function JuryTab({ slug, hackathon, canManage }: { slug: string; hackatho
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section>
-        <h2 className="mb-3 font-semibold text-slate-900">Membres du jury ({hackathon.judges.length})</h2>
+        <h2 className="mb-3 font-semibold text-foreground">Membres du jury ({hackathon.judges.length})</h2>
         {hackathon.judges.length === 0 ? (
           <EmptyAlert text="Aucun juré pour le moment." />
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200" aria-label="Jury">
+          <ul className="divide-y divide-border-soft rounded-xl border border-border" aria-label="Jury">
             {hackathon.judges.map((j) => (
               <li key={j.id} className="flex items-center gap-3 px-4 py-3">
                 <ShieldCheck className="size-4 shrink-0 text-violet-600" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-slate-900">{getName(j.user)}</span>
-                  <span className="block truncate text-xs text-slate-500">{j.user.email}</span>
+                  <span className="block truncate text-sm font-medium text-foreground">{getName(j.user)}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{j.user.email}</span>
                 </span>
                 {canManage && (
                   <Button variant="ghost" size="icon-sm" aria-label={`Retirer ${getName(j.user)} du jury`} onClick={() => drop(j.user.id, getName(j.user))}>
@@ -71,12 +71,12 @@ export function JuryTab({ slug, hackathon, canManage }: { slug: string; hackatho
 
       {canManage && (
         <section>
-          <h2 className="mb-3 font-semibold text-slate-900">Ajouter un juré</h2>
+          <h2 className="mb-3 font-semibold text-foreground">Ajouter un juré</h2>
           <label htmlFor="jury-search" className="sr-only">
             Rechercher un membre
           </label>
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" aria-hidden />
             <input
               id="jury-search"
               type="search"
@@ -88,17 +88,17 @@ export function JuryTab({ slug, hackathon, canManage }: { slug: string; hackatho
           </div>
           <div className="mt-3" aria-busy={isFetching}>
             {query.length < 2 ? (
-              <p className="text-sm text-slate-500">Saisissez au moins 2 caractères.</p>
+              <p className="text-sm text-muted-foreground">Saisissez au moins 2 caractères.</p>
             ) : (members?.results ?? []).length === 0 && !isFetching ? (
-              <p className="text-sm text-slate-500">Aucun membre actif ne correspond.</p>
+              <p className="text-sm text-muted-foreground">Aucun membre actif ne correspond.</p>
             ) : (
-              <ul className="divide-y divide-slate-100" aria-label="Membres trouvés">
+              <ul className="divide-y divide-border-soft" aria-label="Membres trouvés">
                 {(members?.results ?? []).map((m) => {
                   const name = getName(m.user) || m.user.username;
                   const already = judgeIds.has(m.user.id);
                   return (
                     <li key={m.id} className="flex items-center gap-3 py-2.5">
-                      <span className="min-w-0 flex-1 truncate text-sm text-slate-900">{name}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{name}</span>
                       {already ? (
                         <span className="text-xs font-medium text-violet-700">Déjà juré</span>
                       ) : (

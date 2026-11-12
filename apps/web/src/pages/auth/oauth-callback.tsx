@@ -71,7 +71,7 @@ function OAuthCallback() {
       >
         <div className="flex flex-col gap-5">
           <FormAlert>{error}</FormAlert>
-          <p className="text-[15px] text-slate-600">
+          <p className="text-[15px] text-soft">
             {t('auth.callback.retryBefore')}{' '}
             <Link to="/auth/register" className={linkClassName}>
               {t('auth.callback.registerWithEmail')}

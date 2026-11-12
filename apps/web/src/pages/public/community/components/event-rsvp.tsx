@@ -61,7 +61,7 @@ export function EventRsvpActions({ event, page, rsvp }: { event: CommunityEvent;
       </Button>
     );
   }
-  if (!canRegister(event, page)) return <p className="text-sm text-slate-500">{t('community.rsvp.membersOnly')}</p>;
+  if (!canRegister(event, page)) return <p className="text-sm text-muted-foreground">{t('community.rsvp.membersOnly')}</p>;
 
   const status = event.user_rsvp_status;
   if (status === 'attending') {
@@ -74,7 +74,7 @@ export function EventRsvpActions({ event, page, rsvp }: { event: CommunityEvent;
         <Button size="sm" variant="outline" onClick={() => downloadIcs(event, `${window.location.origin}/communities/${page.slug}?tab=events`)}>
           <CalendarPlus /> {t('community.rsvp.addToCalendar')}
         </Button>
-        <button type="button" disabled={busy} onClick={() => rsvp.cancel(event)} className="text-sm font-semibold text-slate-500 hover:text-red-600 disabled:opacity-50">
+        <button type="button" disabled={busy} onClick={() => rsvp.cancel(event)} className="text-sm font-semibold text-muted-foreground hover:text-red-600 disabled:opacity-50">
           {t('community.rsvp.cancel')}
         </button>
       </div>
@@ -94,7 +94,7 @@ export function EventRsvpActions({ event, page, rsvp }: { event: CommunityEvent;
           <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-800">
             <Star className="size-4" /> {t('community.rsvp.interested')}
           </span>
-          <button type="button" disabled={busy} onClick={() => rsvp.cancel(event)} className="text-sm font-semibold text-slate-500 hover:text-slate-800 disabled:opacity-50">
+          <button type="button" disabled={busy} onClick={() => rsvp.cancel(event)} className="text-sm font-semibold text-muted-foreground hover:text-foreground disabled:opacity-50">
             {t('community.rsvp.remove')}
           </button>
         </>

@@ -13,7 +13,18 @@
     />
     <meta name="application-name" content="Kodinga" />
     <meta name="theme-color" content="#1D4ED8" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Theme before React draws (same key and rule as ThemeProvider in src/main.tsx): no white flash in dark mode -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('kodinga-theme');
+          var dark = stored === 'dark' || ((!stored || stored === 'system') && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.add(dark ? 'dark' : 'light');
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
     <meta name="robots" content="index, follow" />
 
     <link rel="icon" href="/favicon.ico" sizes="48x48" />

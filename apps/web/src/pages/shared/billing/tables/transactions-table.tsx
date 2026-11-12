@@ -10,13 +10,13 @@ import type { BillingQuery } from '../billing-query';
 const right = (label: string) => () => <span className="block text-right">{label}</span>;
 
 const columns: ColumnDef<CommunityTransaction>[] = [
-  { id: 'date', header: 'Date', cell: ({ row }) => <span className="text-slate-700">{formatDate(row.original.paid_at ?? row.original.created_at)}</span> },
-  { id: 'member', header: 'Membre', cell: ({ row }) => <span className="font-medium text-slate-900">{row.original.user.full_name}</span> },
+  { id: 'date', header: 'Date', cell: ({ row }) => <span className="text-body">{formatDate(row.original.paid_at ?? row.original.created_at)}</span> },
+  { id: 'member', header: 'Membre', cell: ({ row }) => <span className="font-medium text-foreground">{row.original.user.full_name}</span> },
   {
     id: 'net',
     header: right('Net'),
     cell: ({ row }) => (
-      <span className="block text-right font-semibold text-slate-900 tabular-nums">{row.original.status === 'PAID' ? xof(Number(row.original.net_amount)) : '—'}</span>
+      <span className="block text-right font-semibold text-foreground tabular-nums">{row.original.status === 'PAID' ? xof(Number(row.original.net_amount)) : '—'}</span>
     ),
   },
   {
@@ -27,13 +27,13 @@ const columns: ColumnDef<CommunityTransaction>[] = [
       return <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-semibold', style.className)}>{style.label}</span>;
     },
   },
-  { id: 'plan', header: 'Formule', cell: ({ row }) => <span className="text-slate-700">{row.original.plan_name}</span> },
-  { id: 'amount', header: right('Montant'), cell: ({ row }) => <span className="block text-right text-slate-900 tabular-nums">{xof(Number(row.original.amount))}</span> },
+  { id: 'plan', header: 'Formule', cell: ({ row }) => <span className="text-body">{row.original.plan_name}</span> },
+  { id: 'amount', header: right('Montant'), cell: ({ row }) => <span className="block text-right text-foreground tabular-nums">{xof(Number(row.original.amount))}</span> },
   {
     id: 'fee',
     header: right('Commission'),
     cell: ({ row }) => (
-      <span className="block text-right text-slate-500 tabular-nums">{row.original.status === 'PAID' ? `− ${xof(Number(row.original.platform_fee))}` : '—'}</span>
+      <span className="block text-right text-muted-foreground tabular-nums">{row.original.status === 'PAID' ? `− ${xof(Number(row.original.platform_fee))}` : '—'}</span>
     ),
   },
 ];
@@ -48,7 +48,7 @@ function TransactionsTable({ query: transactions }: { query: BillingQuery<Commun
 
   const list = transactions.data ?? [];
   if (list.length === 0) {
-    return <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Aucun paiement reçu pour l’instant.</p>;
+    return <p className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-muted-foreground">Aucun paiement reçu pour l’instant.</p>;
   }
 
   return <DataTable columns={columns} data={list} isLoading={false} caption="Paiements reçus" />;

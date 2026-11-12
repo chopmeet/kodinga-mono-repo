@@ -38,14 +38,14 @@ function PostVideo({ video }: { video: Media }) {
   if (!ready) {
     const failed = video.status === 'FAILED';
     return (
-      <div role="status" className="flex aspect-video flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-6 text-center">
-        <span className="relative flex size-12 items-center justify-center rounded-full bg-white shadow-xs ring-1 ring-slate-200">
-          {failed ? <AlertTriangle className="size-5 text-amber-600" aria-hidden /> : <Film className="size-5 text-blue-900" aria-hidden />}
+      <div role="status" className="flex aspect-video flex-col items-center justify-center gap-3 rounded-xl border border-border bg-subtle px-6 text-center">
+        <span className="relative flex size-12 items-center justify-center rounded-full bg-card shadow-xs ring-1 ring-border">
+          {failed ? <AlertTriangle className="size-5 text-amber-600" aria-hidden /> : <Film className="size-5 text-brand-strong" aria-hidden />}
           {!failed && <span className="absolute -top-0.5 -right-0.5 size-3 animate-pulse rounded-full bg-blue-600 ring-2 ring-white" aria-hidden />}
         </span>
         <div>
-          <p className="text-sm font-medium text-slate-800">{failed ? t('community.media.videoFailed') : t('community.media.videoProcessing')}</p>
-          {!failed && <p className="mt-0.5 text-xs text-slate-500">{t('community.media.videoProcessingHint')}</p>}
+          <p className="text-sm font-medium text-foreground">{failed ? t('community.media.videoFailed') : t('community.media.videoProcessing')}</p>
+          {!failed && <p className="mt-0.5 text-xs text-muted-foreground">{t('community.media.videoProcessingHint')}</p>}
         </div>
       </div>
     );
@@ -66,7 +66,7 @@ function PostVideo({ video }: { video: Media }) {
         <button type="button" onClick={() => setPlaying(true)} aria-label={t('community.media.play', { name: video.filename })} className="group absolute inset-0">
           {poster && <img src={poster} alt="" loading="lazy" className="size-full object-cover" />}
           <span className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" aria-hidden />
-          <span className="absolute inset-0 m-auto flex size-16 items-center justify-center rounded-full bg-white/95 text-blue-900 shadow-lg transition-transform group-hover:scale-105" aria-hidden>
+          <span className="absolute inset-0 m-auto flex size-16 items-center justify-center rounded-full bg-card/95 text-brand-strong shadow-lg transition-transform group-hover:scale-105" aria-hidden>
             <Play className="ml-1 size-7 fill-current" />
           </span>
           {!!video.duration && (
@@ -91,7 +91,7 @@ function ImageGrid({ images, onOpen }: { images: Media[]; onOpen: (index: number
             type="button"
             onClick={() => onOpen(i)}
             aria-label={t('community.media.open', { name: image.filename })}
-            className="relative block size-full overflow-hidden bg-slate-100"
+            className="relative block size-full overflow-hidden bg-muted"
           >
             <img
               src={image.url ?? image.thumbnail_url ?? ''}
@@ -157,14 +157,14 @@ function DocumentCard({ doc }: { doc: Media }) {
     }
   };
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-      <span className="flex size-10 shrink-0 flex-col items-center justify-center rounded-md bg-white text-[10px] font-bold text-blue-900 ring-1 ring-slate-200">
+    <li className="flex items-center gap-3 rounded-lg border border-border bg-subtle px-4 py-3">
+      <span className="flex size-10 shrink-0 flex-col items-center justify-center rounded-md bg-card text-[10px] font-bold text-brand-strong ring-1 ring-border">
         <FileText className="size-4" aria-hidden />
         {extensionOf(doc.filename)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-900">{doc.filename}</p>
-        <p className="text-xs text-slate-500">{formatFileSize(doc.size)}</p>
+        <p className="truncate text-sm font-medium text-foreground">{doc.filename}</p>
+        <p className="text-xs text-muted-foreground">{formatFileSize(doc.size)}</p>
       </div>
       <Button type="button" variant="outline" size="sm" isLoading={isLoading} onClick={download} aria-label={t('community.media.downloadOf', { name: doc.filename })}>
         <Download /> {t('community.media.download')}

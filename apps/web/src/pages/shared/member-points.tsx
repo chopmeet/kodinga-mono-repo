@@ -12,12 +12,12 @@ const signed = (n: number) => `${n > 0 ? '+' : ''}${points.format(n)}`;
 
 function Figure({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
-      <p className="flex items-center gap-2 text-sm text-slate-500">
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         {icon}
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{value}</p>
     </div>
   );
 }
@@ -25,17 +25,17 @@ function Figure({ icon, label, value }: { icon: ReactNode; label: string; value:
 /** Last gains (and losses) of points, the community named when across Kodinga */
 function History({ items, showCommunity }: { items: PointsTransaction[]; showCommunity: boolean }) {
   return (
-    <section aria-label="Derniers points" className="rounded-xl border border-neutral-200 bg-white p-4">
-      <h3 className="font-semibold text-slate-900">Derniers points</h3>
+    <section aria-label="Derniers points" className="rounded-xl border border-border bg-card p-4">
+      <h3 className="font-semibold text-foreground">Derniers points</h3>
       {items.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-500">Aucun point pour l’instant : publier, commenter et suivre les formations en rapporte.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Aucun point pour l’instant : publier, commenter et suivre les formations en rapporte.</p>
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100">
+        <ul className="mt-3 divide-y divide-border-soft">
           {items.map((t) => (
             <li key={t.id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0">
-                <span className="block truncate text-slate-900">{t.description || t.action_label}</span>
-                <span className="text-xs text-slate-500">
+                <span className="block truncate text-foreground">{t.description || t.action_label}</span>
+                <span className="text-xs text-muted-foreground">
                   {formatDayMonth(t.created_at)}
                   {showCommunity && t.community_name ? ` · ${t.community_name}` : ''}
                   {t.source === 'manual_adjustment' ? ' · ajustement manuel' : ''}
@@ -59,23 +59,23 @@ export function MyPointsAndBadges() {
   return (
     <div className="flex flex-col gap-3">
       <div role="group" aria-label="Ma réputation" className="grid gap-3 sm:grid-cols-3">
-        <Figure icon={<Sparkles className="size-4 text-blue-900" aria-hidden />} label="Points" value={reputation ? points.format(reputation.total_points) : '—'} />
+        <Figure icon={<Sparkles className="size-4 text-brand-strong" aria-hidden />} label="Points" value={reputation ? points.format(reputation.total_points) : '—'} />
         <Figure
-          icon={<Medal className="size-4 text-blue-900" aria-hidden />}
+          icon={<Medal className="size-4 text-brand-strong" aria-hidden />}
           label="Niveau"
           value={reputation ? `${reputation.level} · ${reputation.rank_title}` : '—'}
         />
         <Figure
-          icon={<Flame className="size-4 text-blue-900" aria-hidden />}
+          icon={<Flame className="size-4 text-brand-strong" aria-hidden />}
           label="Série en cours"
           value={reputation ? `${reputation.current_streak_days} j` : '—'}
         />
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <section aria-label="Mes badges" className="rounded-xl border border-neutral-200 bg-white p-4">
-          <h3 className="font-semibold text-slate-900">Mes badges</h3>
+        <section aria-label="Mes badges" className="rounded-xl border border-border bg-card p-4">
+          <h3 className="font-semibold text-foreground">Mes badges</h3>
           {badges.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">Aucun badge pour l’instant.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Aucun badge pour l’instant.</p>
           ) : (
             <ul className="mt-3 flex flex-wrap gap-2">
               {badges.map((b) => (
@@ -105,31 +105,31 @@ export function MyCommunityPoints({ slug }: { slug: string }) {
   return (
     <div className="flex flex-col gap-3">
       <div role="group" aria-label="Mes points ici" className="grid gap-3 sm:grid-cols-3">
-        <Figure icon={<Sparkles className="size-4 text-blue-900" aria-hidden />} label="Points" value={mine ? points.format(mine.total_points) : '—'} />
+        <Figure icon={<Sparkles className="size-4 text-brand-strong" aria-hidden />} label="Points" value={mine ? points.format(mine.total_points) : '—'} />
         <Figure
-          icon={<Medal className="size-4 text-blue-900" aria-hidden />}
+          icon={<Medal className="size-4 text-brand-strong" aria-hidden />}
           label="Rang"
           value={!mine ? '—' : mine.rank ? `${ordinal(mine.rank)} sur ${mine.total_ranked_members}` : 'Pas encore classé'}
         />
         <Figure
-          icon={<Award className="size-4 text-blue-900" aria-hidden />}
+          icon={<Award className="size-4 text-brand-strong" aria-hidden />}
           label="Avant le rang suivant"
           value={mine ? `${points.format(mine.points_to_next_rank)} pts` : '—'}
         />
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <section aria-label="D’où viennent mes points" className="rounded-xl border border-neutral-200 bg-white p-4">
-          <h3 className="font-semibold text-slate-900">D’où viennent mes points</h3>
+        <section aria-label="D’où viennent mes points" className="rounded-xl border border-border bg-card p-4">
+          <h3 className="font-semibold text-foreground">D’où viennent mes points</h3>
           {!mine || mine.breakdown_by_action.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">Aucun point gagné ici pour l’instant.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Aucun point gagné ici pour l’instant.</p>
           ) : (
-            <ul className="mt-3 divide-y divide-slate-100">
+            <ul className="mt-3 divide-y divide-border-soft">
               {mine.breakdown_by_action.map((a) => (
                 <li key={a.action} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <span className="text-slate-700">
-                    {a.action_label} <span className="text-slate-400">× {a.count}</span>
+                  <span className="text-body">
+                    {a.action_label} <span className="text-faint">× {a.count}</span>
                   </span>
-                  <span className="font-semibold text-slate-900 tabular-nums">{signed(a.points)}</span>
+                  <span className="font-semibold text-foreground tabular-nums">{signed(a.points)}</span>
                 </li>
               ))}
             </ul>

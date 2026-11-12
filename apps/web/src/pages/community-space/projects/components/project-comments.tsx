@@ -17,8 +17,8 @@ function Author({ person, at }: { person: ProjectPerson; at: string }) {
         <AvatarFallback>{nameInitials(name)}</AvatarFallback>
       </Avatar>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
-        <p className="text-xs text-slate-500">{formatDateTime(at)}</p>
+        <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+        <p className="text-xs text-muted-foreground">{formatDateTime(at)}</p>
       </div>
     </div>
   );
@@ -62,26 +62,26 @@ export function ProjectComments({ projectSlug }: { projectSlug: string }) {
   const count = data.reduce((n, c) => n + 1 + c.replies.length, 0);
 
   return (
-    <ColgateWrapper className="border border-neutral-200 p-5">
-      <h2 className="font-semibold text-slate-900">
-        Commentaires <span className="text-slate-400 tabular-nums">{count}</span>
+    <ColgateWrapper className="border border-border p-5">
+      <h2 className="font-semibold text-foreground">
+        Commentaires <span className="text-faint tabular-nums">{count}</span>
       </h2>
       <div className="mt-3">
         <CommentForm projectSlug={projectSlug} label="Ajouter un commentaire" />
       </div>
 
       {isLoading ? (
-        <p className="py-6 text-center text-sm text-slate-500">Chargement des commentaires…</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">Chargement des commentaires…</p>
       ) : error ? (
         <EmptyAlert text={parseApiError(error).message} />
       ) : data.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-500">Pas encore de commentaire.</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">Pas encore de commentaire.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-slate-100" aria-label="Commentaires">
+        <ul className="mt-4 divide-y divide-border-soft" aria-label="Commentaires">
           {data.map((c) => (
             <li key={c.id} className="py-4">
               <Author person={c.author} at={c.created_at} />
-              <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{c.content}</p>
+              <p className="mt-2 whitespace-pre-line text-sm text-body">{c.content}</p>
               <button
                 type="button"
                 className="mt-1 text-sm font-semibold text-brand hover:underline"
@@ -91,16 +91,16 @@ export function ProjectComments({ projectSlug }: { projectSlug: string }) {
                 Répondre
               </button>
               {(c.replies.length > 0 || replyTo === c.id) && (
-                <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4" aria-label={`Réponses à ${getName(c.author)}`}>
+                <ul className="mt-3 space-y-3 border-l-2 border-border-soft pl-4" aria-label={`Réponses à ${getName(c.author)}`}>
                   {c.replies.map((r) => (
                     <li key={r.id}>
                       <Author person={r.author} at={r.created_at} />
-                      <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{r.content}</p>
+                      <p className="mt-1 whitespace-pre-line text-sm text-body">{r.content}</p>
                     </li>
                   ))}
                   {replyTo === c.id && (
                     <li className="flex gap-2">
-                      <CornerDownRight className="mt-2 size-4 shrink-0 text-slate-400" aria-hidden />
+                      <CornerDownRight className="mt-2 size-4 shrink-0 text-faint" aria-hidden />
                       <div className="flex-1">
                         <CommentForm projectSlug={projectSlug} parentId={c.id} label={`Répondre à ${getName(c.author)}`} onSent={() => setReplyTo(null)} />
                       </div>

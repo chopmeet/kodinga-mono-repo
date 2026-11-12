@@ -46,12 +46,12 @@ function AdminCommunities() {
         paragraph={data ? `${total} communauté${total > 1 ? 's' : ''} dans l'annuaire` : "Toutes les communautés de l'annuaire"}
       />
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <CommunitiesToolbar filters={filters} categories={categories} onChange={updateFilters} />
 
         <div className="mt-4" aria-busy={isFetching}>
           {error && !data ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
               <p>{parseApiError(error).message}</p>
               <button
                 type="button"

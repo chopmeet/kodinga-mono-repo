@@ -21,23 +21,23 @@ function PayoutsTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-label="Solde" className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <section aria-label="Solde" className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-subtle p-4">
         <div>
-          <p className="text-sm text-slate-500">Solde disponible</p>
-          <p className="text-2xl font-bold text-slate-900 tabular-nums">{xof(balance)}</p>
-          {revenue.data && <p className="mt-1 text-xs text-slate-500">Déjà reversé : {xof(Number(revenue.data.withdrawn_amount))}</p>}
+          <p className="text-sm text-muted-foreground">Solde disponible</p>
+          <p className="text-2xl font-bold text-foreground tabular-nums">{xof(balance)}</p>
+          {revenue.data && <p className="mt-1 text-xs text-muted-foreground">Déjà reversé : {xof(Number(revenue.data.withdrawn_amount))}</p>}
         </div>
         <div className="flex flex-col items-end gap-1">
           <Button onClick={() => setOpen(true)} disabled={balance < MIN_PAYOUT}>
             <Banknote />
             Demander un reversement
           </Button>
-          {balance < MIN_PAYOUT && <p className="text-xs text-slate-500">À partir de {xof(MIN_PAYOUT)} disponibles</p>}
+          {balance < MIN_PAYOUT && <p className="text-xs text-muted-foreground">À partir de {xof(MIN_PAYOUT)} disponibles</p>}
         </div>
       </section>
 
       {list.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Aucune demande de reversement pour l’instant.</p>
+        <p className="rounded-xl border border-dashed border-border-strong p-6 text-center text-sm text-muted-foreground">Aucune demande de reversement pour l’instant.</p>
       ) : (
         <PayoutsTable payouts={list} />
       )}

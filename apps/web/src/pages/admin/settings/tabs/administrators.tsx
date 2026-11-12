@@ -57,8 +57,8 @@ function AdministratorsSettingsTab() {
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Super-administrateurs</h2>
-          <p className="max-w-2xl text-sm text-slate-500">
+          <h2 className="text-lg font-semibold text-foreground">Super-administrateurs</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
             Accès complet à l'administration : communautés, utilisateurs, paiements et paramètres. Gardez cette liste courte.
           </p>
         </div>
@@ -80,7 +80,7 @@ function AdministratorsSettingsTab() {
         <>
           <AdministratorsTable admins={admins} isLoading={isLoading} currentUserId={currentUser?.id} onRevoke={askRevoke} />
           {data && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               {admins.length} super-administrateur{admins.length > 1 ? 's' : ''}
             </p>
           )}

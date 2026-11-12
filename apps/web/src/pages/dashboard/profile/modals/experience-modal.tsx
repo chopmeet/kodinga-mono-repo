@@ -73,7 +73,7 @@ function ExperienceModal({ entries, target, onClose }: { entries: ProfileEntries
       <Field label="Lieu" value={v.location} onChange={(x) => set({ location: x.target.value })} placeholder="Abidjan, Côte d’Ivoire" />
       <Field label="Début" type="month" value={v.start} onChange={(x) => set({ start: x.target.value })} />
       <Field label="Fin" type="month" value={v.end} disabled={v.is_current} onChange={(x) => set({ end: x.target.value })} />
-      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-700 sm:col-span-2">
+      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-body sm:col-span-2">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={v.is_current} onChange={(x) => set({ is_current: x.target.checked })} className="size-4 accent-(--primary)" />
           J’occupe ce poste actuellement

@@ -2,7 +2,7 @@ import { TrendingUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { ChartTooltip, formatCompact, formatXof, GRID_COLOR, SERIES, TICK } from '@/pages/shared/chart-theme';
+import { ChartTooltip, formatCompact, formatXof, GRID_COLOR, SERIES, TICK, CURSOR_FILL } from '@/pages/shared/chart-theme';
 import type { MonthlyRevenue } from '@/utils/api/billing/billing.type';
 import { dateFormat } from '@/utils/format';
 import { monthKey } from '@/utils/Utils';
@@ -60,9 +60,9 @@ function RevenueChart({
 
   if (points.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-300 px-6 py-10 text-center">
-        <TrendingUp className="size-6 text-slate-400" aria-hidden />
-        <p className="mt-2 text-sm text-slate-500">{emptyText}</p>
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-border-strong px-6 py-10 text-center">
+        <TrendingUp className="size-6 text-faint" aria-hidden />
+        <p className="mt-2 text-sm text-muted-foreground">{emptyText}</p>
       </div>
     );
   }
@@ -75,7 +75,7 @@ function RevenueChart({
             <CartesianGrid stroke={GRID_COLOR} vertical={false} />
             <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" />
             <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={formatCompact} width={48} />
-            <Tooltip content={<RevenueTooltip netLabel={netLabel} />} cursor={{ fill: '#f1f5f9' }} />
+            <Tooltip content={<RevenueTooltip netLabel={netLabel} />} cursor={{ fill: CURSOR_FILL }} />
             <Bar isAnimationActive={false} dataKey="net" name={netLabel} fill={SERIES[0]} maxBarSize={32} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

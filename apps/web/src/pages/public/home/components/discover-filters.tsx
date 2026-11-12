@@ -33,7 +33,7 @@ type Props = {
 const pillClassName = (active: boolean) =>
   cn(
     'flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-medium whitespace-nowrap transition-colors',
-    active ? 'border-blue-900 bg-blue-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900'
+    active ? 'border-blue-900 bg-blue-900 text-white' : 'border-border bg-card text-body hover:border-border-strong hover:text-foreground'
   );
 
 /** One-line strip above the directory (no wrapping): pills, "Plus…" overflow menu, "Filtre" menu */
@@ -45,9 +45,9 @@ export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, acces
   const extraFilters = Number(access !== 'all') + Number(privacy !== 'all');
 
   return (
-    <section id="grille-communautes" className="sticky top-[72px] z-40 scroll-mt-[72px] bg-slate-50/95 backdrop-blur">
+    <section id="grille-communautes" className="sticky top-[72px] z-40 scroll-mt-[72px] bg-subtle/95 backdrop-blur">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3 border-b border-slate-200 py-4">
+        <div className="flex items-center gap-3 border-b border-border py-4">
           {/* Never wraps: scrolls sideways on narrow screens */}
           <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto" role="group" aria-label={t('home.filters.label')}>
             {visible.map(({ id, label, icon: Icon }) => (
@@ -64,7 +64,7 @@ export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, acces
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="max-h-80 w-60 overflow-y-auto">
                   {hidden.map((c) => (
-                    <DropdownMenuItem key={c.id} onSelect={() => onChange(c.id)} className={cn(c.id === active && 'font-semibold text-blue-900')}>
+                    <DropdownMenuItem key={c.id} onSelect={() => onChange(c.id)} className={cn(c.id === active && 'font-semibold text-brand-strong')}>
                       {c.label}
                     </DropdownMenuItem>
                   ))}
@@ -77,7 +77,7 @@ export function DiscoverFilters({ chips, active, onChange, maxVisible = 6, acces
             <DropdownMenuTrigger className={cn(pillClassName(extraFilters > 0), 'font-semibold')} aria-label={t('home.filters.filter')}>
               {t('home.filters.filter')}
               {extraFilters > 0 && (
-                <span className="flex size-5 items-center justify-center rounded-full bg-white text-xs font-bold text-blue-900">{extraFilters}</span>
+                <span className="flex size-5 items-center justify-center rounded-full bg-card text-xs font-bold text-brand-strong">{extraFilters}</span>
               )}
               <SlidersHorizontal className="size-4.5" aria-hidden />
             </DropdownMenuTrigger>

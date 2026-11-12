@@ -14,17 +14,17 @@ export function ActivityTab({ slug }: { slug: string }) {
 
   return (
     <section>
-      <SectionHeader eyebrow={t('community.activity.eyebrow')} title={t('community.activity.title')} aside={<Activity className="size-7 text-blue-900" aria-hidden />}>
+      <SectionHeader eyebrow={t('community.activity.eyebrow')} title={t('community.activity.title')} aside={<Activity className="size-7 text-brand-strong" aria-hidden />}>
         {t('community.activity.intro')}
       </SectionHeader>
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">{t('community.activity.loading')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{t('community.activity.loading')}</p>
       ) : error || !data ? (
-        <p className="py-12 text-center text-sm text-slate-500">{error ? parseApiError(error).message : t('community.activity.failed')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{error ? parseApiError(error).message : t('community.activity.failed')}</p>
       ) : (
         <MemberActivityView activity={data} communitySlug={slug} />
       )}
-      <h3 className="mt-8 mb-3 text-lg font-semibold text-slate-900">{t('community.activity.points')}</h3>
+      <h3 className="mt-8 mb-3 text-lg font-semibold text-foreground">{t('community.activity.points')}</h3>
       <MyCommunityPoints slug={slug} />
     </section>
   );

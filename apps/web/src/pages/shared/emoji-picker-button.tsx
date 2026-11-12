@@ -36,7 +36,7 @@ export function EmojiPickerButton({ onSelect, label, children, className, align 
           aria-label={label ?? t('common.emoji.open')}
           title={label ?? t('common.emoji.open')}
           className={cn(
-            'inline-flex items-center justify-center rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50',
+            'inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
             className
           )}
         >
@@ -45,7 +45,7 @@ export function EmojiPickerButton({ onSelect, label, children, className, align 
       </PopoverTrigger>
       <PopoverContent align={align} className="w-auto overflow-hidden border-0 p-0">
         {open && (
-          <Suspense fallback={<p className="w-80 p-6 text-center text-sm text-slate-500">{t('common.emoji.loading')}</p>}>
+          <Suspense fallback={<p className="w-80 p-6 text-center text-sm text-muted-foreground">{t('common.emoji.loading')}</p>}>
             <Picker
               onEmojiClick={(data) => {
                 onSelect(data.emoji);

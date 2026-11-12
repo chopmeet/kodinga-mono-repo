@@ -59,7 +59,7 @@ function RulesModal({ open, rules, onOpenChange, onSave }: Props) {
           <DialogTitle>Barème des points</DialogTitle>
           <DialogDescription>Points gagnés pour chaque action dans la communauté. Les points déjà gagnés ne changent pas.</DialogDescription>
         </DialogHeader>
-        <ul className="divide-y divide-slate-100" aria-label="Règles du barème">
+        <ul className="divide-y divide-border-soft" aria-label="Règles du barème">
           {rules.map((r) => (
             <li key={r.action} className="grid grid-cols-[1fr_6rem] items-center gap-3 py-2">
               <SettingSwitch

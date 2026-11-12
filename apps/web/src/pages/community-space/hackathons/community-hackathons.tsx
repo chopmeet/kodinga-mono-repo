@@ -57,7 +57,7 @@ function CommunityHackathons() {
         )}
       </div>
 
-      <ColgateWrapper className="border border-neutral-200 p-4">
+      <ColgateWrapper className="border border-border p-4">
         <div className="no-scrollbar flex gap-2 overflow-x-auto" role="group" aria-label="Filtrer les hackathons">
           {FILTERS.map((f) => (
             <FilterChip
@@ -75,7 +75,7 @@ function CommunityHackathons() {
 
         <div className="mt-4" aria-busy={isFetching}>
           {isLoading ? (
-            <p className="py-10 text-center text-sm text-slate-500">Chargement des hackathons…</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">Chargement des hackathons…</p>
           ) : error && !data ? (
             <div className="flex flex-col items-start gap-3">
               <EmptyAlert text={parseApiError(error).message} />
@@ -89,8 +89,8 @@ function CommunityHackathons() {
               <span className="flex size-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600" aria-hidden>
                 <Trophy className="size-6" />
               </span>
-              <p className="mt-4 font-semibold text-slate-900">Aucun hackathon {filter === 'all' ? 'pour le moment' : 'avec ce statut'}</p>
-              <p className="mt-1 text-sm text-slate-500">Un défi de quelques jours fédère la communauté et révèle des talents.</p>
+              <p className="mt-4 font-semibold text-foreground">Aucun hackathon {filter === 'all' ? 'pour le moment' : 'avec ce statut'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Un défi de quelques jours fédère la communauté et révèle des talents.</p>
               {canManage && (
                 <Button asChild className="mt-5">
                   <Link to={newLink}>
@@ -102,7 +102,7 @@ function CommunityHackathons() {
             </div>
           ) : (
             <>
-              <ul className={`divide-y divide-slate-100 ${isFetching ? 'opacity-60 transition-opacity' : ''}`} aria-label="Hackathons">
+              <ul className={`divide-y divide-border-soft ${isFetching ? 'opacity-60 transition-opacity' : ''}`} aria-label="Hackathons">
                 {hackathons.map((h) => {
                   const status = hackathonStatusStyle[h.status];
                   return (
@@ -112,22 +112,22 @@ function CommunityHackathons() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <Link to={`/c/${community.slug}/hackathons/${h.slug}`} className="truncate font-semibold text-slate-900 hover:text-primary">
+                          <Link to={`/c/${community.slug}/hackathons/${h.slug}`} className="truncate font-semibold text-foreground hover:text-primary">
                             {h.title}
                           </Link>
                           <Badge variant="outline" className={status.className}>
                             {status.label}
                           </Badge>
                         </div>
-                        {h.tagline && <p className="mt-0.5 truncate text-sm text-slate-600">{h.tagline}</p>}
-                        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                        {h.tagline && <p className="mt-0.5 truncate text-sm text-soft">{h.tagline}</p>}
+                        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-soft">
                           <span className="flex items-center gap-1.5">
-                            <CalendarDays className="size-3.5 text-slate-400" aria-hidden />
+                            <CalendarDays className="size-3.5 text-faint" aria-hidden />
                             {formatDay(h.start_time)} → {formatDay(h.submission_deadline)}
                           </span>
                           <span>{hackathonFormatLabel[h.format]}</span>
                           <span className="flex items-center gap-1.5">
-                            <Users className="size-3.5 text-slate-400" aria-hidden />
+                            <Users className="size-3.5 text-faint" aria-hidden />
                             {h.participants_count} participant{h.participants_count > 1 ? 's' : ''}
                           </span>
                           {h.prizes_count > 0 && (

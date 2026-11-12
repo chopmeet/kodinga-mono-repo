@@ -27,11 +27,11 @@ function AdministratorsTable({ admins, isLoading, currentUserId, onRevoke }: Pro
               {nameInitials(name)}
             </span>
             <div className="min-w-0">
-              <p className="truncate font-medium text-slate-900">
+              <p className="truncate font-medium text-foreground">
                 {name}
-                {currentUserId === row.original.id && <span className="ml-1.5 text-xs font-normal text-slate-500">(vous)</span>}
+                {currentUserId === row.original.id && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(vous)</span>}
               </p>
-              <p className="truncate text-xs text-slate-500">{row.original.email}</p>
+              <p className="truncate text-xs text-muted-foreground">{row.original.email}</p>
             </div>
           </div>
         );
@@ -41,12 +41,12 @@ function AdministratorsTable({ admins, isLoading, currentUserId, onRevoke }: Pro
     {
       id: 'joined',
       header: 'Inscrit le',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.original.date_joined))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat.format(new Date(row.original.date_joined))}</span>,
     },
     {
       id: 'login',
       header: 'Dernière connexion',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{formatLastLogin(row.original.last_login)}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{formatLastLogin(row.original.last_login)}</span>,
     },
     {
       id: 'actions',

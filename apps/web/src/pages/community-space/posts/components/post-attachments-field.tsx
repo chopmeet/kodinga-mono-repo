@@ -11,7 +11,7 @@ function RemoveButton({ item, onRemove, className }: { item: Attachment; onRemov
       type="button"
       onClick={onRemove}
       aria-label={`Retirer « ${item.name} »`}
-      className={cn('rounded-full bg-white/95 p-1 text-slate-700 shadow-sm ring-1 ring-slate-200 hover:text-red-600', className)}
+      className={cn('rounded-full bg-card/95 p-1 text-body shadow-sm ring-1 ring-border hover:text-red-600', className)}
     >
       <X className="size-3.5" />
     </button>
@@ -22,18 +22,18 @@ function RemoveButton({ item, onRemove, className }: { item: Attachment; onRemov
 function VideoRow({ item, onRemove }: { item: Attachment; onRemove: () => void }) {
   const local = !item.existing && item.previewUrl;
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2 pr-3">
+    <li className="flex items-center gap-3 rounded-lg border border-border bg-card p-2 pr-3">
       <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-md bg-slate-900">
         {local ? (
           <video src={`${item.previewUrl}#t=0.1`} muted playsInline preload="metadata" aria-hidden className="size-full object-cover" />
         ) : item.previewUrl ? (
           <img src={item.previewUrl} alt="" className="size-full object-cover" />
         ) : (
-          <Film className="absolute inset-0 m-auto size-5 text-slate-400" aria-hidden />
+          <Film className="absolute inset-0 m-auto size-5 text-faint" aria-hidden />
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-800">{item.name}</p>
+        <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
         {item.status === 'uploading' ? (
           <div className="mt-1.5 flex items-center gap-2">
             <div
@@ -42,14 +42,14 @@ function VideoRow({ item, onRemove }: { item: Attachment; onRemove: () => void }
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={item.progress ?? 0}
-              className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
             >
               <div className="h-full rounded-full bg-blue-900 transition-[width]" style={{ width: `${item.progress ?? 0}%` }} />
             </div>
-            <span className="w-9 text-right text-xs text-slate-500 tabular-nums">{item.progress ?? 0} %</span>
+            <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{item.progress ?? 0} %</span>
           </div>
         ) : (
-          <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-slate-500')}>
+          <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-muted-foreground')}>
             {item.status === 'error' ? (item.error ?? 'Échec de l’envoi') : item.existing ? 'Publiée' : `${formatFileSize(item.size)} · prête, traitée après publication`}
           </p>
         )}
@@ -74,11 +74,11 @@ export function PostAttachmentsField({ attachments, children }: { attachments: P
       {attachments.images.length > 0 && (
         <ul aria-label="Images jointes" className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {attachments.images.map((item) => (
-            <li key={item.key} className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+            <li key={item.key} className="relative aspect-square overflow-hidden rounded-lg border border-border bg-subtle">
               {item.previewUrl && <img src={item.previewUrl} alt={item.name} className="size-full object-cover" />}
               {item.status === 'uploading' && (
-                <span className="absolute inset-0 flex items-center justify-center bg-white/60" role="status" aria-label={`Envoi de « ${item.name} »`}>
-                  <LoaderCircle className="size-5 animate-spin text-blue-900" />
+                <span className="absolute inset-0 flex items-center justify-center bg-card/60" role="status" aria-label={`Envoi de « ${item.name} »`}>
+                  <LoaderCircle className="size-5 animate-spin text-brand-strong" />
                 </span>
               )}
               {item.status === 'error' && (
@@ -103,15 +103,15 @@ export function PostAttachmentsField({ attachments, children }: { attachments: P
       {attachments.documents.length > 0 && (
         <ul aria-label="Documents joints" className="mb-3 flex flex-col gap-2">
           {attachments.documents.map((item) => (
-            <li key={item.key} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
-              <FileText className="size-5 shrink-0 text-slate-500" aria-hidden />
+            <li key={item.key} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+              <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-800">{item.name}</p>
-                <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-slate-500')}>
+                <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+                <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-muted-foreground')}>
                   {item.status === 'uploading' ? 'Envoi…' : item.status === 'error' ? (item.error ?? 'Échec de l’envoi') : formatFileSize(item.size)}
                 </p>
               </div>
-              {item.status === 'uploading' && <LoaderCircle className="size-4 animate-spin text-blue-900" aria-hidden />}
+              {item.status === 'uploading' && <LoaderCircle className="size-4 animate-spin text-brand-strong" aria-hidden />}
               <RemoveButton item={item} onRemove={() => attachments.remove(item.key)} />
             </li>
           ))}

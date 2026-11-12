@@ -43,8 +43,8 @@ function SubmissionSheet({ slug, hackathonSlug, submission, onClose }: { slug: s
               <SheetDescription>{s.team_name ? `Équipe ${s.team_name}` : getName(s.applicant)}</SheetDescription>
             </SheetHeader>
             <div className="space-y-5 px-4 pb-6">
-              {s.tagline && <p className="text-slate-700">{s.tagline}</p>}
-              {s.description && <p className="whitespace-pre-line text-sm text-slate-700">{s.description}</p>}
+              {s.tagline && <p className="text-body">{s.tagline}</p>}
+              {s.description && <p className="whitespace-pre-line text-sm text-body">{s.description}</p>}
               <Links s={s} />
               {(s.files ?? []).length > 0 && (
                 <ul className="space-y-1.5">
@@ -58,7 +58,7 @@ function SubmissionSheet({ slug, hackathonSlug, submission, onClose }: { slug: s
                   ))}
                 </ul>
               )}
-              {s.submitted_at && <p className="text-xs text-slate-500">Soumis le {formatDateTime(s.submitted_at)}</p>}
+              {s.submitted_at && <p className="text-xs text-muted-foreground">Soumis le {formatDateTime(s.submitted_at)}</p>}
             </div>
           </>
         )}
@@ -102,37 +102,37 @@ export function ProjectsTab({ slug, hackathon, isJudge }: { slug: string; hackat
             Avec les brouillons
           </FilterChip>
         </div>
-        {isJudge && !canEvaluate && <p className="text-sm text-slate-500">L'évaluation s'ouvre à la clôture des soumissions.</p>}
+        {isJudge && !canEvaluate && <p className="text-sm text-muted-foreground">L'évaluation s'ouvre à la clôture des soumissions.</p>}
       </div>
 
       {error && !data ? (
         <EmptyAlert text={parseApiError(error).message} />
       ) : isLoading ? (
-        <p className="py-8 text-center text-sm text-slate-500">Chargement des projets…</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">Chargement des projets…</p>
       ) : projects.length === 0 ? (
         <EmptyAlert text={finalOnly ? 'Aucun projet soumis pour le moment.' : 'Aucun projet, même en brouillon.'} />
       ) : (
         <>
-          <ul className="divide-y divide-slate-100" aria-label="Projets">
+          <ul className="divide-y divide-border-soft" aria-label="Projets">
             {projects.map((s) => (
               <li key={s.id} className="flex flex-wrap items-start gap-4 py-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => setOpened(s)} className="truncate text-left font-semibold text-slate-900 hover:text-primary">
+                    <button type="button" onClick={() => setOpened(s)} className="truncate text-left font-semibold text-foreground hover:text-primary">
                       {s.title}
                     </button>
-                    {!s.is_final && <Badge variant="outline" className="text-slate-500">Brouillon</Badge>}
+                    {!s.is_final && <Badge variant="outline" className="text-muted-foreground">Brouillon</Badge>}
                   </div>
-                  <p className="text-sm text-slate-600">{s.team_name ? `Équipe ${s.team_name}` : getName(s.applicant)}</p>
+                  <p className="text-sm text-soft">{s.team_name ? `Équipe ${s.team_name}` : getName(s.applicant)}</p>
                   <div className="mt-1.5">
                     <Links s={s} />
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-slate-600">
+                <div className="flex items-center gap-4 text-sm text-soft">
                   <span className="flex items-center gap-1.5" title="Score pondéré">
-                    <Gauge className="size-4 text-slate-400" aria-hidden />
+                    <Gauge className="size-4 text-faint" aria-hidden />
                     {s.total_score ? Number(s.total_score).toFixed(1) : '—'}
-                    <span className="text-xs text-slate-400">({s.evaluations_count} éval.)</span>
+                    <span className="text-xs text-faint">({s.evaluations_count} éval.)</span>
                   </span>
                   {canEvaluate && s.is_final && (
                     <Button size="sm" variant="outline" onClick={() => setEvaluating(s)} aria-label={`Évaluer ${s.title}`}>

@@ -15,11 +15,11 @@ type Props = {
 /** The payments of the user, most recent first; a pending one can be checked again or reopened */
 function PaymentsHistoryTable({ payments, verifyingId, onFinalize }: Props) {
   const columns: ColumnDef<MyPayment>[] = [
-    { id: 'date', header: 'Date', cell: ({ row }) => <span className="text-slate-700">{formatLongDate(row.original.paid_at ?? row.original.created_at)}</span> },
+    { id: 'date', header: 'Date', cell: ({ row }) => <span className="text-body">{formatLongDate(row.original.paid_at ?? row.original.created_at)}</span> },
     {
       id: 'amount',
       header: () => <span className="block text-right">Montant</span>,
-      cell: ({ row }) => <span className="block text-right font-medium text-slate-900 tabular-nums">{amountOf(row.original.amount, row.original.currency)}</span>,
+      cell: ({ row }) => <span className="block text-right font-medium text-foreground tabular-nums">{amountOf(row.original.amount, row.original.currency)}</span>,
     },
     {
       id: 'status',
@@ -47,7 +47,7 @@ function PaymentsHistoryTable({ payments, verifyingId, onFinalize }: Props) {
                     href={p.checkout_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-slate-500 hover:text-slate-800 hover:underline"
+                    className="text-xs text-muted-foreground hover:text-foreground hover:underline"
                     title="Rouvrir la page PayDunya si vous n'aviez pas encore payé"
                   >
                     Finaliser
@@ -63,8 +63,8 @@ function PaymentsHistoryTable({ payments, verifyingId, onFinalize }: Props) {
       id: 'plan',
       header: 'Formule',
       cell: ({ row }) => (
-        <span className="text-slate-700">
-          {row.original.plan?.community_name && <span className="block font-medium text-slate-900">{row.original.plan.community_name}</span>}
+        <span className="text-body">
+          {row.original.plan?.community_name && <span className="block font-medium text-foreground">{row.original.plan.community_name}</span>}
           {row.original.plan?.name ?? '—'}
         </span>
       ),

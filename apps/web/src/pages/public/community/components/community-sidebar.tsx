@@ -39,25 +39,25 @@ function Plans({ page }: { page: CommunityPage }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  if (isLoading) return <p className="text-center text-sm text-slate-500">{t('community.sidebar.loadingPlans')}</p>;
-  if (plans.length === 0) return <p className="text-center text-sm text-slate-500">{t('community.sidebar.noPlans')}</p>;
+  if (isLoading) return <p className="text-center text-sm text-muted-foreground">{t('community.sidebar.loadingPlans')}</p>;
+  if (plans.length === 0) return <p className="text-center text-sm text-muted-foreground">{t('community.sidebar.noPlans')}</p>;
 
   return (
     <ul id="formules" className="scroll-mt-40 space-y-3" aria-label={t('community.sidebar.plansLabel')}>
       {plans.map((plan) => (
-        <li key={plan.id} className="rounded-xl border border-slate-200 p-4">
+        <li key={plan.id} className="rounded-xl border border-border p-4">
           <div className="flex items-baseline justify-between gap-2">
-            <p className="font-semibold text-slate-900">{plan.name}</p>
+            <p className="font-semibold text-foreground">{plan.name}</p>
             <p className="text-right text-sm whitespace-nowrap">
-              <span className="font-bold text-slate-900">{price(plan)}</span>{' '}
-              <span className="text-slate-500">{intervalLabel(plan.billing_interval)}</span>
+              <span className="font-bold text-foreground">{price(plan)}</span>{' '}
+              <span className="text-muted-foreground">{intervalLabel(plan.billing_interval)}</span>
             </p>
           </div>
-          {plan.description && <p className="mt-1 text-xs text-slate-500">{plan.description}</p>}
+          {plan.description && <p className="mt-1 text-xs text-muted-foreground">{plan.description}</p>}
           {plan.features.length > 0 && (
             <ul className="mt-2 space-y-1">
               {plan.features.map((f) => (
-                <li key={f} className="flex items-start gap-1.5 text-xs text-slate-600">
+                <li key={f} className="flex items-start gap-1.5 text-xs text-soft">
                   <Check className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
                   {f}
                 </li>
@@ -84,7 +84,7 @@ function Plans({ page }: { page: CommunityPage }) {
           )}
         </li>
       ))}
-      <li className="text-center text-[11px] text-slate-500">{t('community.sidebar.securedBy')}</li>
+      <li className="text-center text-[11px] text-muted-foreground">{t('community.sidebar.securedBy')}</li>
     </ul>
   );
 }
@@ -146,7 +146,7 @@ export function MembershipActions({ page, className }: { page: CommunityPage; cl
             </Button>
           )}
           {page.role !== 'owner' && (
-            <Button variant="ghost" size="sm" className="w-full text-slate-500" onClick={() => setConfirmLeave(true)}>
+            <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={() => setConfirmLeave(true)}>
               <LogOut /> {t('community.sidebar.leaveCommunity')}
             </Button>
           )}
@@ -203,25 +203,25 @@ function HonourBoard({ slug }: { slug: string }) {
   if (data.length === 0) return null;
   return (
     <section aria-labelledby="honour-board">
-      <h3 id="honour-board" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+      <h3 id="honour-board" className="flex items-center gap-2 text-lg font-semibold text-foreground">
         <Trophy className="size-5 text-amber-600" /> {t('community.sidebar.honourTitle')}
       </h3>
-      <p className="mt-1 text-sm text-slate-500">{t('community.sidebar.sinceStart')}</p>
-      <ol className="mt-3 divide-y divide-slate-200" aria-label={t('community.sidebar.honourLabel')}>
+      <p className="mt-1 text-sm text-muted-foreground">{t('community.sidebar.sinceStart')}</p>
+      <ol className="mt-3 divide-y divide-border" aria-label={t('community.sidebar.honourLabel')}>
         {data.map((e) => (
           <li key={e.user.id} className="flex items-center gap-3 py-3">
-            <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold', e.rank === 1 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-slate-600')}>
+            <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold', e.rank === 1 ? 'bg-amber-50 text-amber-700' : 'bg-brand-subtle text-soft')}>
               {e.rank}
             </span>
             <Avatar className="size-9">
               {e.user.avatar_url && <AvatarImage src={e.user.avatar_url} alt="" />}
-              <AvatarFallback className="bg-blue-50 text-xs font-semibold text-blue-900">{nameInitials(e.user.name || e.user.username)}</AvatarFallback>
+              <AvatarFallback className="bg-brand-subtle text-xs font-semibold text-brand-strong">{nameInitials(e.user.name || e.user.username)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{e.user.name}</p>
-              <p className="text-xs text-slate-500">{t('community.sidebar.level', { level: e.level })}</p>
+              <p className="truncate text-sm font-semibold text-foreground">{e.user.name}</p>
+              <p className="text-xs text-muted-foreground">{t('community.sidebar.level', { level: e.level })}</p>
             </div>
-            <span className="text-sm font-semibold text-blue-900 tabular-nums">+{formatCompact(e.points)}</span>
+            <span className="text-sm font-semibold text-brand-strong tabular-nums">+{formatCompact(e.points)}</span>
           </li>
         ))}
       </ol>
@@ -241,20 +241,20 @@ function MemberSidebar({ page }: { page: CommunityPage }) {
   ];
   return (
     <div className="flex flex-col gap-8">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xs">
         <div className="relative hidden h-44 lg:block" style={community.banner_url ? undefined : { backgroundColor: community.brand_color || '#1D4ED8' }}>
           {community.banner_url ? <img src={community.banner_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
         <div className="p-6">
-          <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">{t('community.sidebar.connections')}</p>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">{community.name}</h2>
-          {community.tagline && <p className="mt-3 leading-relaxed text-slate-600">{community.tagline}</p>}
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-soft uppercase">{t('community.sidebar.connections')}</p>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">{community.name}</h2>
+          {community.tagline && <p className="mt-3 leading-relaxed text-soft">{community.tagline}</p>}
 
-          <dl className="mt-6 grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-5 text-center">
+          <dl className="mt-6 grid grid-cols-3 divide-x divide-border border-y border-border py-5 text-center">
             {stats.map((s) => (
               <div key={s.label} className="flex flex-col-reverse gap-1">
-                <dt className="text-xs text-slate-500">{s.label}</dt>
-                <dd className="text-lg font-semibold text-slate-900">{formatCompact(s.value)}</dd>
+                <dt className="text-xs text-muted-foreground">{s.label}</dt>
+                <dd className="text-lg font-semibold text-foreground">{formatCompact(s.value)}</dd>
               </div>
             ))}
           </dl>
@@ -270,7 +270,7 @@ function MemberSidebar({ page }: { page: CommunityPage }) {
               </Link>
             )}
           </Button>
-          <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500">
+          <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="size-3.5" /> {t('community.sidebar.memberOfThis')}
           </p>
         </div>
@@ -300,30 +300,30 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xs">
         <div className="relative hidden h-44 lg:block" style={community.banner_url ? undefined : { backgroundColor: community.brand_color || '#1D4ED8' }}>
           {community.banner_url ? <img src={community.banner_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
         <div className="p-6">
-          <p className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] text-slate-600 uppercase">
+          <p className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] text-soft uppercase">
             <span className="size-2 rounded-full bg-brand ring-4 ring-brand/15" aria-hidden />
             {t('community.sidebar.nextCommunity')}
           </p>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">{community.name}</h2>
-          {community.tagline && <p className="mt-3 leading-relaxed text-slate-600">{community.tagline}</p>}
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">{community.name}</h2>
+          {community.tagline && <p className="mt-3 leading-relaxed text-soft">{community.tagline}</p>}
 
-          <dl className="mt-6 grid grid-cols-3 divide-x divide-slate-200 border-t border-slate-200 pt-5 text-center">
+          <dl className="mt-6 grid grid-cols-3 divide-x divide-border border-t border-border pt-5 text-center">
             {stats.map((s) => (
               <div key={s.label} className="flex flex-col-reverse gap-1">
-                <dt className="text-xs text-slate-500">{s.label}</dt>
-                <dd className="text-slate-900">{s.value}</dd>
+                <dt className="text-xs text-muted-foreground">{s.label}</dt>
+                <dd className="text-foreground">{s.value}</dd>
               </div>
             ))}
           </dl>
 
           <MembershipActions page={page} className="mt-6" />
           {note && (
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500">
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="size-3.5" /> {note}
             </p>
           )}
@@ -331,12 +331,12 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
       </div>
 
       <section aria-labelledby="community-connect" className="px-1">
-        <CalendarDays className="size-7 text-blue-900" aria-hidden />
-        <h3 id="community-connect" className="mt-3 text-lg font-semibold text-slate-900">
+        <CalendarDays className="size-7 text-brand-strong" aria-hidden />
+        <h3 id="community-connect" className="mt-3 text-lg font-semibold text-foreground">
           {t('community.sidebar.connectTitle')}
         </h3>
-        <p className="mt-1 text-sm text-slate-600">{t('community.sidebar.connectText')}</p>
-        <ul className="mt-4 space-y-3 text-sm font-semibold text-blue-900">
+        <p className="mt-1 text-sm text-soft">{t('community.sidebar.connectText')}</p>
+        <ul className="mt-4 space-y-3 text-sm font-semibold text-brand-strong">
           <li>
             <Link to="?tab=feed" replace className="inline-flex items-center gap-1.5 hover:underline">
               {t('community.sidebar.memberSpace')} <ChevronRight className="size-4" />
@@ -350,9 +350,9 @@ export function CommunitySidebar({ page }: { page: CommunityPage }) {
         </ul>
       </section>
 
-      <section className="border-t border-slate-200 pt-6 text-sm">
-        <p className="text-slate-600">{t('community.sidebar.ownCommunity')}</p>
-        <Link to="/create-community" className="mt-2 inline-flex items-center gap-1.5 font-semibold text-blue-900 hover:underline">
+      <section className="border-t border-border pt-6 text-sm">
+        <p className="text-soft">{t('community.sidebar.ownCommunity')}</p>
+        <Link to="/create-community" className="mt-2 inline-flex items-center gap-1.5 font-semibold text-brand-strong hover:underline">
           {t('community.sidebar.launch')} <ArrowRight className="size-4" />
         </Link>
       </section>

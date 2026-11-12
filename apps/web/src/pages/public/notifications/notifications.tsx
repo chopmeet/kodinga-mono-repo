@@ -33,8 +33,8 @@ function Notifications() {
   if (!signedIn) {
     return (
       <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <Bell className="size-8 text-slate-400" />
-        <h1 className="text-2xl font-bold text-slate-900">{t('inbox.notifications.yours')}</h1>
+        <Bell className="size-8 text-faint" />
+        <h1 className="text-2xl font-bold text-foreground">{t('inbox.notifications.yours')}</h1>
         <Button asChild>
           <Link to="/auth/login?next=%2Fnotifications">{t('inbox.notifications.login')}</Link>
         </Button>
@@ -46,8 +46,8 @@ function Notifications() {
     <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t('inbox.notifications.title')}</h1>
-          <p className="mt-1 text-slate-500">{unread > 0 ? t('inbox.notifications.unread', { count: unread }) : t('inbox.notifications.upToDate')}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t('inbox.notifications.title')}</h1>
+          <p className="mt-1 text-muted-foreground">{unread > 0 ? t('inbox.notifications.unread', { count: unread }) : t('inbox.notifications.upToDate')}</p>
         </div>
         {unread > 0 && (
           <Button variant="outline" onClick={actions.markAll} isLoading={actions.isMarkingAll}>
@@ -77,7 +77,7 @@ function Notifications() {
             }}
             className={cn(
               'rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors',
-              unreadOnly === value ? 'border-blue-900 bg-blue-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
+              unreadOnly === value ? 'border-blue-900 bg-blue-900 text-white' : 'border-border bg-card text-soft hover:border-border-strong',
             )}
           >
             {label}
@@ -86,20 +86,20 @@ function Notifications() {
       </div>
 
       {isLoading ? (
-        <p className="py-16 text-center text-slate-500">{t('inbox.notifications.loading')}</p>
+        <p className="py-16 text-center text-muted-foreground">{t('inbox.notifications.loading')}</p>
       ) : notifications.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-14 text-center">
+        <div className="mt-6 flex flex-col items-center rounded-xl border border-border bg-card px-6 py-14 text-center">
           <Bell className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{unreadOnly ? t('inbox.notifications.noneUnread') : t('inbox.notifications.none')}</p>
-          <p className="mt-1 text-sm text-slate-500">{t('inbox.notifications.noneText')}</p>
+          <p className="mt-3 font-semibold text-foreground">{unreadOnly ? t('inbox.notifications.noneUnread') : t('inbox.notifications.none')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('inbox.notifications.noneText')}</p>
         </div>
       ) : (
         <>
-          <ul className="mt-6 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white" aria-label={t('inbox.notifications.title')}>
+          <ul className="mt-6 divide-y divide-border-soft overflow-hidden rounded-xl border border-border bg-card" aria-label={t('inbox.notifications.title')}>
             {notifications.map((n) => {
               const href = notificationHref(n.action_url);
               return (
-                <li key={n.id} className={cn('group flex items-start gap-2 px-4 py-4', !n.is_read && 'bg-blue-50/40')}>
+                <li key={n.id} className={cn('group flex items-start gap-2 px-4 py-4', !n.is_read && 'bg-brand-subtle/40')}>
                   <div className="flex min-w-0 flex-1 flex-col gap-3">
                     <button
                       type="button"
@@ -130,7 +130,7 @@ function Notifications() {
                     type="button"
                     aria-label={t('inbox.notifications.delete', { title: n.title })}
                     onClick={() => actions.remove(n)}
-                    className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600"
+                    className="rounded-md p-1.5 text-faint hover:bg-muted hover:text-red-600"
                   >
                     <Trash2 className="size-4" />
                   </button>

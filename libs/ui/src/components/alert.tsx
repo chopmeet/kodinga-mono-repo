@@ -17,15 +17,15 @@ export function EmptyAlert({
     return (
         <div
             className={cn(
-                "flex items-center w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-primary/1 px-4 py-8",
+                "flex items-center w-full rounded-lg border border-border bg-primary/1 px-4 py-8",
                 className
             )}
         >
             <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0">
-                    <Icon className="w-9 h-9 text-slate-600" />
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-border shrink-0">
+                    <Icon className="w-9 h-9 text-soft" />
                 </div>
-                <p className="text-sm text-slate-600 font-barlow font-semibold">
+                <p className="text-sm text-soft font-barlow font-semibold">
                     {text || "Pas de données"}
                 </p>
             </div>

@@ -42,9 +42,9 @@ export function ReactionBar({ target, canReact, onToggle, busy, likeLabel, size 
         aria-pressed={liked}
         aria-label={likeLabel(liked)}
         title={blocked}
-        className={cn('flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors disabled:cursor-not-allowed', liked ? 'font-semibold text-blue-900' : 'hover:text-slate-900')}
+        className={cn('flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors disabled:cursor-not-allowed', liked ? 'font-semibold text-brand-strong' : 'hover:text-foreground')}
       >
-        <ThumbsUp className={cn(icon, liked && 'fill-blue-900/15')} /> {summary.like ?? 0}
+        <ThumbsUp className={cn(icon, liked && 'fill-brand-strong/15')} /> {summary.like ?? 0}
       </button>
       {others.map(([reaction, count]) => {
         const on = mine.includes(reaction);
@@ -59,7 +59,7 @@ export function ReactionBar({ target, canReact, onToggle, busy, likeLabel, size 
             title={blocked}
             className={cn(
               'flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm transition-colors disabled:cursor-not-allowed',
-              on ? 'border-blue-300 bg-blue-50 font-semibold text-blue-900' : 'border-slate-200 bg-white hover:border-slate-300'
+              on ? 'border-blue-300 bg-brand-subtle font-semibold text-brand-strong' : 'border-border bg-card hover:border-border-strong'
             )}
           >
             <span aria-hidden>{emojiOf(reaction)}</span> {count}

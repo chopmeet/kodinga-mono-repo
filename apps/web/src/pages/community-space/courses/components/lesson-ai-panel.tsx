@@ -13,7 +13,7 @@ const DIFFICULTIES: { value: AIDifficulty; label: string }[] = [
 ];
 const COUNTS = [3, 5, 10];
 
-const selectClass = 'h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700';
+const selectClass = 'h-9 rounded-lg border border-border bg-card px-2 text-sm text-body';
 
 /** Asks the AI for a quiz or an exercise; a lesson not saved yet has no content for it to read */
 export function LessonAIPanel({ slug, courseSlug, form }: { slug: string; courseSlug: string; form: LessonForm }) {
@@ -30,16 +30,16 @@ export function LessonAIPanel({ slug, courseSlug, form }: { slug: string; course
   const hasExercise = !!(form.exercise.statement.trim() || form.exercise.starter.trim() || form.exercise.solution.trim());
 
   return (
-    <section aria-label="Proposition de l’IA" className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 sm:col-span-3">
-      <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
+    <section aria-label="Proposition de l’IA" className="rounded-lg border border-brand-muted bg-brand-subtle/50 p-3 sm:col-span-3">
+      <p className="flex items-center gap-2 text-sm font-semibold text-brand-strong">
         <Sparkles className="size-4" aria-hidden />
         {form.isQuiz ? 'Proposer des questions avec l’IA' : 'Proposer un exercice avec l’IA'}
       </p>
       {!form.editing ? (
-        <p className="mt-1 text-xs text-slate-600">Enregistrez d’abord la leçon : l’IA part de son contenu.</p>
+        <p className="mt-1 text-xs text-soft">Enregistrez d’abord la leçon : l’IA part de son contenu.</p>
       ) : (
         <>
-          <p className="mt-1 text-xs text-slate-600">À partir du contenu enregistré de la leçon. Rien n’est publié tant que vous n’enregistrez pas.</p>
+          <p className="mt-1 text-xs text-soft">À partir du contenu enregistré de la leçon. Rien n’est publié tant que vous n’enregistrez pas.</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {form.isQuiz && (
               <select aria-label="Nombre de questions" value={count} onChange={(e) => setCount(Number(e.target.value))} className={selectClass}>

@@ -41,12 +41,12 @@ export function HackathonsTab({ slug, communityId }: { slug: string; communityId
       </div>
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-slate-500">{t('community.hackathonsTab.loading')}</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">{t('community.hackathonsTab.loading')}</p>
       ) : hackathons.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <Trophy className="size-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-900">{t('community.hackathonsTab.none')}</p>
-          <p className="mt-1 text-sm text-slate-500">{t('community.hackathonsTab.noneText')}</p>
+          <p className="mt-3 font-semibold text-foreground">{t('community.hackathonsTab.none')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('community.hackathonsTab.noneText')}</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-6" aria-label={t('community.tabs.hackathons')}>

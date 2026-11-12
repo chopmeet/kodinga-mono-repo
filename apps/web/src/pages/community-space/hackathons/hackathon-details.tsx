@@ -48,14 +48,14 @@ function Timeline({ h }: { h: Hackathon }) {
             <span
               className={cn(
                 'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border',
-                done ? 'border-primary bg-primary text-white' : 'border-slate-300 bg-white'
+                done ? 'border-primary bg-primary text-white' : 'border-border-strong bg-card'
               )}
             >
               {done && <Check className="size-3" />}
             </span>
             <div>
-              <p className="text-sm font-medium text-slate-900">{s.label}</p>
-              <p className="text-xs text-slate-500">{formatDateTime(s.at)}</p>
+              <p className="text-sm font-medium text-foreground">{s.label}</p>
+              <p className="text-xs text-muted-foreground">{formatDateTime(s.at)}</p>
             </div>
           </li>
         );
@@ -88,29 +88,29 @@ function Overview({ h, slug, canManage }: { h: Hackathon; slug: string; canManag
         </section>
       )}
       <div className="grid gap-6 lg:grid-cols-3">
-        <ColgateWrapper className="border border-neutral-200 p-5 lg:col-span-2">
-          <h2 className="font-semibold text-slate-900">Le défi</h2>
-          <p className="mt-3 whitespace-pre-line text-slate-700">{h.description}</p>
+        <ColgateWrapper className="border border-border p-5 lg:col-span-2">
+          <h2 className="font-semibold text-foreground">Le défi</h2>
+          <p className="mt-3 whitespace-pre-line text-body">{h.description}</p>
           <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-slate-500">Format</dt>
-              <dd className="font-medium text-slate-900">{hackathonFormatLabel[h.format]}{place ? ` · ${place}` : ''}</dd>
+              <dt className="text-muted-foreground">Format</dt>
+              <dd className="font-medium text-foreground">{hackathonFormatLabel[h.format]}{place ? ` · ${place}` : ''}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">Participation</dt>
-              <dd className="font-medium text-slate-900">
+              <dt className="text-muted-foreground">Participation</dt>
+              <dd className="font-medium text-foreground">
                 {h.allow_teams ? `Équipes de ${h.min_team_size} à ${h.max_team_size}` : 'Individuelle'}
                 {h.max_participants ? ` · ${h.max_participants} places` : ''}
                 {h.is_member_only ? ' · membres uniquement' : ''}
               </dd>
             </div>
             <div>
-              <dt className="text-slate-500">Candidatures</dt>
-              <dd className="font-medium text-slate-900">{h.auto_accept_applications ? 'Acceptées automatiquement' : 'Validées par l’équipe'}</dd>
+              <dt className="text-muted-foreground">Candidatures</dt>
+              <dd className="font-medium text-foreground">{h.auto_accept_applications ? 'Acceptées automatiquement' : 'Validées par l’équipe'}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">À soumettre</dt>
-              <dd className="font-medium text-slate-900">{requirements.length ? requirements.join(', ') : 'Libre'}</dd>
+              <dt className="text-muted-foreground">À soumettre</dt>
+              <dd className="font-medium text-foreground">{requirements.length ? requirements.join(', ') : 'Libre'}</dd>
             </div>
           </dl>
           {(h.location_url || h.rules_url) && (
@@ -130,27 +130,27 @@ function Overview({ h, slug, canManage }: { h: Hackathon; slug: string; canManag
             </div>
           )}
         </ColgateWrapper>
-        <ColgateWrapper className="border border-neutral-200 p-5">
-          <h2 className="mb-4 font-semibold text-slate-900">Calendrier</h2>
+        <ColgateWrapper className="border border-border p-5">
+          <h2 className="mb-4 font-semibold text-foreground">Calendrier</h2>
           <Timeline h={h} />
         </ColgateWrapper>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <ColgateWrapper className="border border-neutral-200 p-5">
-          <h2 className="mb-3 font-semibold text-slate-900">Prix</h2>
+        <ColgateWrapper className="border border-border p-5">
+          <h2 className="mb-3 font-semibold text-foreground">Prix</h2>
           {h.prizes.length === 0 ? (
-            <p className="text-sm text-slate-500">Aucun prix défini.</p>
+            <p className="text-sm text-muted-foreground">Aucun prix défini.</p>
           ) : (
-            <ol className="divide-y divide-slate-100">
+            <ol className="divide-y divide-border-soft">
               {[...h.prizes]
                 .sort((a, b) => a.rank - b.rank)
                 .map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                    <span className="font-medium text-slate-900">
+                    <span className="font-medium text-foreground">
                       #{p.rank} {p.title}
                     </span>
-                    <span className="text-slate-600">
+                    <span className="text-soft">
                       {p.reward_amount ? `${Number(p.reward_amount).toLocaleString('fr-FR')} ${p.reward_currency === 'XOF' ? 'FCFA' : p.reward_currency}` : p.reward_description || '—'}
                     </span>
                   </li>
@@ -158,16 +158,16 @@ function Overview({ h, slug, canManage }: { h: Hackathon; slug: string; canManag
             </ol>
           )}
         </ColgateWrapper>
-        <ColgateWrapper className="border border-neutral-200 p-5">
-          <h2 className="mb-3 font-semibold text-slate-900">Critères d'évaluation</h2>
+        <ColgateWrapper className="border border-border p-5">
+          <h2 className="mb-3 font-semibold text-foreground">Critères d'évaluation</h2>
           {h.criteria.length === 0 ? (
-            <p className="text-sm text-slate-500">Aucun critère défini.</p>
+            <p className="text-sm text-muted-foreground">Aucun critère défini.</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-border-soft">
               {h.criteria.map((c) => (
                 <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="font-medium text-slate-900">{c.name}</span>
-                  <span className="text-slate-600">
+                  <span className="font-medium text-foreground">{c.name}</span>
+                  <span className="text-soft">
                     sur {Number(c.max_score)} · poids {Number(c.weight)}
                   </span>
                 </li>
@@ -212,12 +212,12 @@ function HackathonDetails() {
 
   return (
     <div className="community__hackathon">
-      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+      <Link to={back} className="mb-4 inline-flex items-center gap-2 text-sm text-soft hover:text-foreground">
         <ArrowLeft className="size-4" />
         Hackathons
       </Link>
 
-      <ColgateWrapper className="overflow-hidden border border-neutral-200 p-0">
+      <ColgateWrapper className="overflow-hidden border border-border p-0">
         <div className="relative h-36">
           {h.cover_image_url ? <img src={h.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
         </div>
@@ -227,10 +227,10 @@ function HackathonDetails() {
               <Badge variant="outline" className={status.className}>
                 {status.label}
               </Badge>
-              {h.theme && <Badge variant="outline" className="text-slate-600">{h.theme}</Badge>}
+              {h.theme && <Badge variant="outline" className="text-soft">{h.theme}</Badge>}
             </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{h.title}</h1>
-            {h.tagline && <p className="mt-1 text-slate-600">{h.tagline}</p>}
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{h.title}</h1>
+            {h.tagline && <p className="mt-1 text-soft">{h.tagline}</p>}
           </div>
           {canManage && (
             <div className="flex flex-wrap items-center gap-2">
@@ -252,7 +252,7 @@ function HackathonDetails() {
             </div>
           )}
         </div>
-        <div className="no-scrollbar flex gap-2 overflow-x-auto border-t border-slate-100 px-5" role="tablist">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto border-t border-border-soft px-5" role="tablist">
           {TABS.map(([id, label]) => (
             <button
               key={id}
@@ -260,7 +260,7 @@ function HackathonDetails() {
               role="tab"
               aria-selected={tab === id}
               onClick={() => setParams(id === 'overview' ? {} : { tab: id }, { replace: true })}
-              className={cn('-mb-px shrink-0 border-b-2 px-2 py-3 text-sm font-medium whitespace-nowrap', tab === id ? 'border-primary text-primary' : 'border-transparent text-slate-600 hover:text-slate-900')}
+              className={cn('-mb-px shrink-0 border-b-2 px-2 py-3 text-sm font-medium whitespace-nowrap', tab === id ? 'border-primary text-primary' : 'border-transparent text-soft hover:text-foreground')}
             >
               {label}
             </button>
@@ -272,7 +272,7 @@ function HackathonDetails() {
         {tab === 'overview' ? (
           <Overview h={h} slug={community.slug} canManage={canManage} />
         ) : (
-          <ColgateWrapper className="border border-neutral-200 p-5">
+          <ColgateWrapper className="border border-border p-5">
             {tab === 'applications' && <ApplicationsTab slug={community.slug} hackathonSlug={h.slug} canManage={canManage} />}
             {tab === 'teams' && <TeamsTab slug={community.slug} hackathonSlug={h.slug} />}
             {tab === 'projects' && <ProjectsTab slug={community.slug} hackathon={h} isJudge={isJudge} />}

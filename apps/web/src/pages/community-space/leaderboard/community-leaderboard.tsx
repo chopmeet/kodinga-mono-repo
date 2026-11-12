@@ -28,7 +28,7 @@ import RulesModal from './modals/rules-modal';
 
 const PODIUM_STYLE: Record<number, { ring: string; badge: string; height: string }> = {
   1: { ring: 'ring-amber-400', badge: 'bg-amber-400 text-amber-950', height: 'sm:pt-0' },
-  2: { ring: 'ring-slate-300', badge: 'bg-slate-300 text-slate-900', height: 'sm:pt-6' },
+  2: { ring: 'ring-slate-300', badge: 'bg-slate-300 text-foreground', height: 'sm:pt-6' },
   3: { ring: 'ring-orange-300', badge: 'bg-orange-300 text-orange-950', height: 'sm:pt-10' },
 };
 
@@ -50,7 +50,7 @@ function Podium({ entries }: { entries: LeaderboardEntry[] }) {
         const style = PODIUM_STYLE[e.rank] ?? PODIUM_STYLE[3];
         return (
           <li key={e.user.id} className={cn('order-none', e.rank === 1 && 'max-sm:order-first', style.height)}>
-            <ColgateWrapper className="flex flex-col items-center border border-neutral-200 p-5 text-center">
+            <ColgateWrapper className="flex flex-col items-center border border-border p-5 text-center">
               <div className="relative">
                 <MemberAvatar entry={e} className={cn('size-16 ring-4', style.ring)} />
                 <span className={cn('absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full text-sm font-bold', style.badge)}>
@@ -58,8 +58,8 @@ function Podium({ entries }: { entries: LeaderboardEntry[] }) {
                 </span>
                 {e.rank === 1 && <Crown className="absolute -top-5 left-1/2 size-5 -translate-x-1/2 text-amber-500" aria-hidden />}
               </div>
-              <p className="mt-3 font-semibold text-slate-900">{e.user.name}</p>
-              <p className="text-xs text-slate-500">
+              <p className="mt-3 font-semibold text-foreground">{e.user.name}</p>
+              <p className="text-xs text-muted-foreground">
                 Niv. {e.level} · {e.rank_title}
               </p>
               <p className="mt-2 text-lg font-bold text-brand tabular-nums">{pointsFormat.format(e.points)} pts</p>
@@ -109,7 +109,7 @@ function CommunityLeaderboard() {
       {isLoading ? (
         <ul aria-label="Chargement du classement" className="grid gap-3 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <li key={i} className="h-44 animate-pulse rounded-xl bg-slate-100" />
+            <li key={i} className="h-44 animate-pulse rounded-xl bg-muted" />
           ))}
         </ul>
       ) : error && !entries.length ? (
@@ -121,19 +121,19 @@ function CommunityLeaderboard() {
           </Button>
         </div>
       ) : entries.length === 0 ? (
-        <ColgateWrapper className="flex flex-col items-center border border-neutral-200 py-12 text-center">
+        <ColgateWrapper className="flex flex-col items-center border border-border py-12 text-center">
           <Medal className="size-10 text-slate-300" aria-hidden />
           {period === 'all_time' ? (
             <>
-              <p className="mt-3 font-semibold text-slate-900">Personne n'a encore marqué de points</p>
-              <p className="mt-1 max-w-md text-sm text-slate-500">
+              <p className="mt-3 font-semibold text-foreground">Personne n'a encore marqué de points</p>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">
                 Les membres gagnent des points en publiant, en commentant, en suivant les formations et en participant aux événements.
               </p>
             </>
           ) : (
             // The period chips are in the hidden panel: a way back
             <>
-              <p className="mt-3 font-semibold text-slate-900">Aucun point marqué sur les {PERIOD_LABEL[period].toLowerCase()}</p>
+              <p className="mt-3 font-semibold text-foreground">Aucun point marqué sur les {PERIOD_LABEL[period].toLowerCase()}</p>
               <Button variant="outline" size="sm" className="mt-3" onClick={() => setPeriod('all_time')}>
                 Voir le classement depuis le début
               </Button>
@@ -154,7 +154,7 @@ function CommunityLeaderboard() {
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <ColgateWrapper className="border border-neutral-200 p-4 lg:col-span-2">
+        <ColgateWrapper className="border border-border p-4 lg:col-span-2">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SearchInput
               id="space-leaderboard-search"
@@ -166,11 +166,11 @@ function CommunityLeaderboard() {
               value={search}
               onValueChange={(value: string) => setSearch(value)}
             />
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-soft">
               Afficher
               <select
                 aria-label="Nombre de membres affichés"
-                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-800"
+                className="h-9 rounded-lg border border-border bg-card px-2 text-sm text-foreground"
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value) as Limit)}
               >
@@ -192,27 +192,27 @@ function CommunityLeaderboard() {
           </div>
 
           {!isLoading && entries.length > 0 && (
-            <ol aria-label="Classement des membres" className={cn('mt-4 divide-y divide-slate-100', isFetching && 'opacity-60 transition-opacity')}>
-              {filtered.length === 0 && <li className="py-8 text-center text-sm text-slate-500">Aucun membre ne correspond à « {search} ».</li>}
+            <ol aria-label="Classement des membres" className={cn('mt-4 divide-y divide-border-soft', isFetching && 'opacity-60 transition-opacity')}>
+              {filtered.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">Aucun membre ne correspond à « {search} ».</li>}
               {filtered.map((e) => {
                 const mine = e.user.id === userId;
                 return (
-                  <li key={e.user.id} className={cn('flex items-center gap-3 py-3', mine && '-mx-2 rounded-lg bg-blue-50 px-2')}>
-                    <span className="w-8 shrink-0 text-center text-sm font-bold text-slate-500 tabular-nums">{e.rank}</span>
+                  <li key={e.user.id} className={cn('flex items-center gap-3 py-3', mine && '-mx-2 rounded-lg bg-brand-subtle px-2')}>
+                    <span className="w-8 shrink-0 text-center text-sm font-bold text-muted-foreground tabular-nums">{e.rank}</span>
                     <MemberAvatar entry={e} className="size-9" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-slate-900">
+                      <p className="truncate font-medium text-foreground">
                         {e.user.name}
                         {mine && <span className="ml-2 text-xs font-semibold text-brand">Vous</span>}
                       </p>
-                      <p className="truncate text-xs text-slate-500">
+                      <p className="truncate text-xs text-muted-foreground">
                         @{e.user.username} · Niv. {e.level} {e.rank_title}
                       </p>
-                      <div className="mt-1.5 h-1.5 w-full max-w-60 rounded-full bg-slate-100" aria-hidden>
+                      <div className="mt-1.5 h-1.5 w-full max-w-60 rounded-full bg-muted" aria-hidden>
                         <div className="h-full rounded-full bg-brand" style={{ width: `${stats.top ? Math.max(4, (e.points / stats.top) * 100) : 0}%` }} />
                       </div>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-slate-900 tabular-nums">{pointsFormat.format(e.points)} pts</span>
+                    <span className="shrink-0 text-sm font-semibold text-foreground tabular-nums">{pointsFormat.format(e.points)} pts</span>
                   </li>
                 );
               })}
@@ -221,9 +221,9 @@ function CommunityLeaderboard() {
         </ColgateWrapper>
 
         <div className="space-y-6">
-          <ColgateWrapper className="border border-neutral-200 p-5">
+          <ColgateWrapper className="border border-border p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold text-slate-900">Comment gagner des points</h2>
+              <h2 className="font-semibold text-foreground">Comment gagner des points</h2>
               {points.canManage && (
                 <Button variant="ghost" size="sm" onClick={() => setModal('rules')} disabled={points.rules.length === 0}>
                   <Pencil />
@@ -232,29 +232,29 @@ function CommunityLeaderboard() {
               )}
             </div>
             {points.rulesLoading ? (
-              <p className="mt-3 text-sm text-slate-500">Chargement du barème…</p>
+              <p className="mt-3 text-sm text-muted-foreground">Chargement du barème…</p>
             ) : (
               <ul className="mt-3 space-y-2 text-sm" aria-label="Barème des points">
-                {activeRules.length === 0 && <li className="text-slate-500">Aucune action ne rapporte de points.</li>}
+                {activeRules.length === 0 && <li className="text-muted-foreground">Aucune action ne rapporte de points.</li>}
                 {activeRules.map((r) => (
                   <li key={r.action} className="flex justify-between gap-3">
-                    <span className="text-slate-600">{r.label}</span>
+                    <span className="text-soft">{r.label}</span>
                     <span className="font-semibold text-emerald-700 tabular-nums">+{r.points}</span>
                   </li>
                 ))}
               </ul>
             )}
           </ColgateWrapper>
-          <ColgateWrapper className="border border-neutral-200 p-5">
-            <h2 className="font-semibold text-slate-900">Niveaux</h2>
-            <p className="mt-1 text-xs text-slate-500">Calculés sur tous les points du membre dans Kodinga.</p>
+          <ColgateWrapper className="border border-border p-5">
+            <h2 className="font-semibold text-foreground">Niveaux</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Calculés sur tous les points du membre dans Kodinga.</p>
             <ul className="mt-3 space-y-2 text-sm">
               {LEVELS.map((l) => (
                 <li key={l.level} className="flex justify-between gap-3">
-                  <span className="text-slate-600">
-                    <span className="font-semibold text-slate-900">{l.level}</span> · {l.title}
+                  <span className="text-soft">
+                    <span className="font-semibold text-foreground">{l.level}</span> · {l.title}
                   </span>
-                  <span className="text-slate-500 tabular-nums">{pointsFormat.format(l.from)} pts</span>
+                  <span className="text-muted-foreground tabular-nums">{pointsFormat.format(l.from)} pts</span>
                 </li>
               ))}
             </ul>
@@ -263,8 +263,8 @@ function CommunityLeaderboard() {
       </div>
 
       {points.canManage && (
-        <ColgateWrapper className="mt-6 border border-neutral-200 p-4">
-          <h2 className="mb-3 font-semibold text-slate-900">Journal des points</h2>
+        <ColgateWrapper className="mt-6 border border-border p-4">
+          <h2 className="mb-3 font-semibold text-foreground">Journal des points</h2>
           <PointsJournalTable items={points.journal} isLoading={points.journalLoading} />
         </ColgateWrapper>
       )}

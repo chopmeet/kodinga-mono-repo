@@ -41,7 +41,7 @@ export function HackathonCard({
   const to = `/communities/${slug}/hackathons/${h.slug}`;
 
   return (
-    <li className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <li className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="relative h-36">
         {h.cover_image_url ? <img src={h.cover_image_url} alt="" className="absolute inset-0 size-full object-cover" /> : <GlassBackdrop fade={false} />}
       </div>
@@ -51,41 +51,41 @@ export function HackathonCard({
           <span className="mt-2 text-xs tracking-wide uppercase">{dateFormat({ month: 'short' }).format(start).replace('.', '')}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-blue-900 uppercase">
+          <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-brand-strong uppercase">
             {h.format === 'online' ? <Laptop className="size-3.5" /> : <MapPin className="size-3.5" />}
             {formatLabel[h.format]}
           </p>
-          <h3 className="mt-1 text-xl text-slate-900">
-            <Link to={to} className="hover:text-blue-900 hover:underline">
+          <h3 className="mt-1 text-xl text-foreground">
+            <Link to={to} className="hover:text-brand-strong hover:underline">
               {h.title}
             </Link>
           </h3>
-          {h.tagline && <p className="mt-1 text-slate-600">{h.tagline}</p>}
-          <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
+          {h.tagline && <p className="mt-1 text-soft">{h.tagline}</p>}
+          <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-soft">
             {showCommunity && (
-              <Link to={`/communities/${slug}`} className="flex items-center gap-1.5 hover:text-blue-900 hover:underline">
-                <UsersRound className="size-4 text-slate-400" /> {h.community.name}
+              <Link to={`/communities/${slug}`} className="flex items-center gap-1.5 hover:text-brand-strong hover:underline">
+                <UsersRound className="size-4 text-faint" /> {h.community.name}
               </Link>
             )}
             <span className="flex items-center gap-1.5">
-              <MapPin className="size-4 text-slate-400" /> {place(h)}
+              <MapPin className="size-4 text-faint" /> {place(h)}
             </span>
             <span className="flex items-center gap-1.5">
-              <Users className="size-4 text-slate-400" /> {t('discover.hackathonCard.registered', { count: h.participants_count })}
+              <Users className="size-4 text-faint" /> {t('discover.hackathonCard.registered', { count: h.participants_count })}
             </span>
             {h.prizes_count > 0 && (
               <span className="flex items-center gap-1.5">
-                <Trophy className="size-4 text-slate-400" /> {t('discover.hackathonCard.prizes', { count: h.prizes_count })}
+                <Trophy className="size-4 text-faint" /> {t('discover.hackathonCard.prizes', { count: h.prizes_count })}
               </span>
             )}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             {left && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-900">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-3 py-1 text-sm font-semibold text-brand-strong">
                 <Hourglass className="size-3.5" /> {left}
               </span>
             )}
-            <Link to={to} className="text-sm font-semibold text-blue-900 hover:underline">
+            <Link to={to} className="text-sm font-semibold text-brand-strong hover:underline">
               {h.is_registration_open ? t('discover.hackathonCard.apply') : t('discover.hackathonCard.see')} →
             </Link>
           </div>

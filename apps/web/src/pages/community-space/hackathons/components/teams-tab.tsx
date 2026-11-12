@@ -17,20 +17,20 @@ export function TeamsTab({ slug, hackathonSlug }: { slug: string; hackathonSlug:
   const total = data?.pagination.count ?? 0;
 
   if (error && !data) return <EmptyAlert text={parseApiError(error).message} />;
-  if (isLoading) return <p className="py-8 text-center text-sm text-slate-500">Chargement des équipes…</p>;
+  if (isLoading) return <p className="py-8 text-center text-sm text-muted-foreground">Chargement des équipes…</p>;
   if (teams.length === 0) return <EmptyAlert text="Aucune équipe formée pour le moment." />;
 
   return (
     <>
       <ul className="grid gap-4 md:grid-cols-2" aria-label="Équipes">
         {teams.map((team) => (
-          <li key={team.id} className="rounded-xl border border-slate-200 p-4">
+          <li key={team.id} className="rounded-xl border border-border p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-900">{team.name}</p>
-                {team.tagline && <p className="truncate text-sm text-slate-500">{team.tagline}</p>}
+                <p className="truncate font-semibold text-foreground">{team.name}</p>
+                {team.tagline && <p className="truncate text-sm text-muted-foreground">{team.tagline}</p>}
               </div>
-              <span className="flex shrink-0 items-center gap-1 text-sm text-slate-600">
+              <span className="flex shrink-0 items-center gap-1 text-sm text-soft">
                 <Users className="size-4" aria-hidden />
                 {team.active_members_count}
               </span>
@@ -38,12 +38,12 @@ export function TeamsTab({ slug, hackathonSlug }: { slug: string; hackathonSlug:
             <ul className="mt-3 space-y-1.5 text-sm">
               {team.members.map((m) => (
                 <li key={m.id} className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-slate-800">
+                  <span className="flex items-center gap-1.5 text-foreground">
                     {m.user.id === team.leader.id && <Crown className="size-3.5 text-amber-500" aria-label="Chef d'équipe" />}
                     {getName(m.user)}
                   </span>
                   {m.status !== 'accepted' && (
-                    <Badge variant="outline" className="text-slate-500">
+                    <Badge variant="outline" className="text-muted-foreground">
                       {memberStatus[m.status] ?? m.status}
                     </Badge>
                   )}

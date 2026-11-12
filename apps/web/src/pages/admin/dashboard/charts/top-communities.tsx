@@ -1,6 +1,6 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { ChartTooltip, formatCompact, GRID_COLOR, SERIES, TICK } from '@/pages/shared/chart-theme';
+import { ChartTooltip, formatCompact, GRID_COLOR, SERIES, TICK, CURSOR_FILL } from '@/pages/shared/chart-theme';
 import type { CommunityRanking } from '../form/UseAdminDashboard';
 
 // Magnitude of one measure: a single hue, sorted, value labels at the bar end
@@ -8,7 +8,7 @@ export default function TopCommunitiesBarChart({ communities }: { communities: C
   const data = [...communities].sort((a, b) => b.members - a.members);
 
   if (data.length === 0) {
-    return <p className="px-5 py-10 text-center text-sm text-slate-400">Aucune communauté pour le moment.</p>;
+    return <p className="px-5 py-10 text-center text-sm text-faint">Aucune communauté pour le moment.</p>;
   }
 
   return (
@@ -18,7 +18,7 @@ export default function TopCommunitiesBarChart({ communities }: { communities: C
           <CartesianGrid stroke={GRID_COLOR} horizontal={false} />
           <XAxis type="number" tick={TICK} tickLine={false} axisLine={false} tickFormatter={formatCompact} />
           <YAxis type="category" dataKey="name" tick={TICK} tickLine={false} axisLine={false} width={150} />
-          <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f1f5f9' }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ fill: CURSOR_FILL }} />
           <Bar isAnimationActive={false} dataKey="members" name="Membres" fill={SERIES[0]} maxBarSize={24} radius={[0, 4, 4, 0]}>
             <LabelList dataKey="members" position="right" formatter={(v) => formatCompact(Number(v))} style={{ fill: '#0f172a', fontSize: 12, fontWeight: 600 }} />
           </Bar>

@@ -37,7 +37,7 @@ function FilterSelect({
 }) {
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger aria-label={label} className="h-10 w-full rounded-full bg-white whitespace-nowrap sm:w-auto sm:min-w-44">
+      <SelectTrigger aria-label={label} className="h-10 w-full rounded-full bg-card whitespace-nowrap sm:w-auto sm:min-w-44">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

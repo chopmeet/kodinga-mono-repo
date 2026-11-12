@@ -69,24 +69,24 @@ function UsersTable({ users, isLoading, onView, ...handlers }: Props) {
               {nameInitials(name)}
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-medium text-slate-900 hover:text-primary hover:underline">{name}</span>
-              <span className="block truncate text-xs text-slate-500">{row.original.email}</span>
+              <span className="block truncate font-medium text-foreground hover:text-primary hover:underline">{name}</span>
+              <span className="block truncate text-xs text-muted-foreground">{row.original.email}</span>
             </span>
           </button>
         );
       },
     },
-    { id: 'username', header: 'Pseudo', cell: ({ row }) => <span className="text-slate-700">@{row.original.username}</span> },
+    { id: 'username', header: 'Pseudo', cell: ({ row }) => <span className="text-body">@{row.original.username}</span> },
     { id: 'status', header: 'Statut', cell: ({ row }) => <UserStatusBadges user={row.original} /> },
     {
       id: 'joined',
       header: 'Inscrit le',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.original.date_joined))}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{dateFormat.format(new Date(row.original.date_joined))}</span>,
     },
     {
       id: 'login',
       header: 'Dernière connexion',
-      cell: ({ row }) => <span className="whitespace-nowrap text-slate-600">{formatLastLogin(row.original.last_login)}</span>,
+      cell: ({ row }) => <span className="whitespace-nowrap text-soft">{formatLastLogin(row.original.last_login)}</span>,
     },
     {
       id: 'actions',

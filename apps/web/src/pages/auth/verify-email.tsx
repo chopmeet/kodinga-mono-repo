@@ -100,7 +100,7 @@ function VerifyEmail() {
           <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <CircleCheck className="size-6" />
           </div>
-          <p className="text-[15px] leading-relaxed text-slate-600">
+          <p className="text-[15px] leading-relaxed text-soft">
             {t('auth.verify.done')}
           </p>
           <Link
@@ -125,7 +125,7 @@ function VerifyEmail() {
     >
       <div className="flex flex-col gap-5">
         <FormAlert>{error ?? t('auth.verify.invalid')}</FormAlert>
-        <p className="text-[15px] text-slate-600">{t('auth.common.singleUse')}</p>
+        <p className="text-[15px] text-soft">{t('auth.common.singleUse')}</p>
         <ResendLink />
       </div>
     </AuthWrapper>

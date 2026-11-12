@@ -11,10 +11,10 @@ import UseProfileSettings from '../form/UseProfileSettings';
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="grid gap-4 border-b border-slate-100 py-6 first:pt-0 last:border-0 lg:grid-cols-[220px_1fr] lg:gap-8">
+    <section className="grid gap-4 border-b border-border-soft py-6 first:pt-0 last:border-0 lg:grid-cols-[220px_1fr] lg:gap-8">
       <div>
-        <h2 className="font-semibold text-slate-900">{title}</h2>
-        {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+        <h2 className="font-semibold text-foreground">{title}</h2>
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       <div className="min-w-0">{children}</div>
     </section>
@@ -32,21 +32,21 @@ function ProfileTab() {
   } = settings.form;
 
   if (settings.isLoading) return <Loader inline size="sm" message="Chargement du profil…" />;
-  if (settings.loadError) return <p className="py-12 text-slate-600">{settings.loadError}</p>;
+  if (settings.loadError) return <p className="py-12 text-soft">{settings.loadError}</p>;
 
   const completion = settings.profile?.completion_percentage ?? 0;
 
   return (
     <form noValidate onSubmit={settings.save}>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-blue-50/60 p-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-brand-subtle/60 p-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-blue-950">Profil complété à {completion} %</p>
-          <div className="mt-2 h-2 max-w-sm rounded-full bg-white" role="progressbar" aria-label="Profil complété" aria-valuenow={completion} aria-valuemin={0} aria-valuemax={100}>
+          <p className="text-sm font-semibold text-brand-strong">Profil complété à {completion} %</p>
+          <div className="mt-2 h-2 max-w-sm rounded-full bg-card" role="progressbar" aria-label="Profil complété" aria-valuenow={completion} aria-valuemin={0} aria-valuemax={100}>
             <div className="h-full rounded-full bg-blue-900" style={{ width: `${completion}%` }} />
           </div>
         </div>
         {settings.username && (
-          <Link to={`/profiles/${settings.username}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-900 hover:underline">
+          <Link to={`/profiles/${settings.username}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-strong hover:underline">
             Voir mon profil public <ExternalLink className="size-3.5" />
           </Link>
         )}
@@ -218,7 +218,7 @@ function ProfileTab() {
         />
       </Section>
 
-      <div className="sticky bottom-0 -mx-4 flex justify-end border-t border-slate-100 bg-white/95 px-4 py-4 backdrop-blur md:-mx-6 md:px-6">
+      <div className="sticky bottom-0 -mx-4 flex justify-end border-t border-border-soft bg-card/95 px-4 py-4 backdrop-blur md:-mx-6 md:px-6">
         <Button type="submit" isLoading={settings.isSaving}>
           Enregistrer le profil
         </Button>

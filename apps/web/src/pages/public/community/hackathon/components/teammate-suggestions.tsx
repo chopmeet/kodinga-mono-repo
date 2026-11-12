@@ -29,21 +29,21 @@ export function TeammateSuggestions({ page, hackathonId }: { page: HackathonPage
   };
 
   return (
-    <section aria-labelledby="teammates-title" className="mt-5 border-t border-slate-100 pt-5">
-      <h3 id="teammates-title" className="text-sm font-semibold text-slate-900">
+    <section aria-labelledby="teammates-title" className="mt-5 border-t border-border-soft pt-5">
+      <h3 id="teammates-title" className="text-sm font-semibold text-foreground">
         {t('hackathon.team.suggested')}
       </h3>
-      <ul className="mt-2 flex flex-col divide-y divide-slate-100" aria-label={t('hackathon.team.suggested')}>
+      <ul className="mt-2 flex flex-col divide-y divide-border-soft" aria-label={t('hackathon.team.suggested')}>
         {suggestions.map((s) => {
           const name = getName(s) || s.username;
           return (
             <li key={s.user_id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
               <span className="min-w-0 flex-[1_1_14rem] text-sm">
-                <Link to={`/profiles/${s.username}`} className="font-medium text-slate-900 hover:underline">
+                <Link to={`/profiles/${s.username}`} className="font-medium text-foreground hover:underline">
                   {name}
                 </Link>
                 {s.match_reasons.map((reason) => (
-                  <span key={reason} className="block text-xs text-slate-500">
+                  <span key={reason} className="block text-xs text-muted-foreground">
                     {reason}
                   </span>
                 ))}

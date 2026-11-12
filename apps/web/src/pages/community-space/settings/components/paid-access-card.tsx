@@ -39,10 +39,10 @@ function PaidAccessCard() {
 
   if (pricingType === 'paid') {
     return (
-      <section aria-label="Adhésion payante" className="mt-8 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <Wallet className="size-5 text-blue-900" aria-hidden />
+      <section aria-label="Adhésion payante" className="mt-8 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-subtle p-4 text-sm text-soft">
+        <Wallet className="size-5 text-brand-strong" aria-hidden />
         <span className="flex-1">Communauté payante : les membres choisissent une formule pour la rejoindre.</span>
-        <Link to={`/c/${community.slug}/payments/plans`} className="font-semibold text-blue-900 hover:underline">
+        <Link to={`/c/${community.slug}/payments/plans`} className="font-semibold text-brand-strong hover:underline">
           Gérer les formules
         </Link>
       </section>
@@ -59,12 +59,12 @@ function PaidAccessCard() {
   };
 
   return (
-    <section aria-labelledby="paid-access-title" className="mt-8 rounded-xl border border-slate-200 p-4">
-      <h3 id="paid-access-title" className="flex items-center gap-2 font-semibold text-slate-900">
-        <Wallet className="size-5 text-blue-900" aria-hidden />
+    <section aria-labelledby="paid-access-title" className="mt-8 rounded-xl border border-border p-4">
+      <h3 id="paid-access-title" className="flex items-center gap-2 font-semibold text-foreground">
+        <Wallet className="size-5 text-brand-strong" aria-hidden />
         Rendre la communauté payante
       </h3>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Réservé aux membres Kodinga Pro. Les nouveaux membres paieront par Mobile Money ou carte via PayDunya ; les membres actuels gardent leur accès.
       </p>
       {community.privacy_type === 'public' && (

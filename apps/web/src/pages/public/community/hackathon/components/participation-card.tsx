@@ -11,12 +11,12 @@ import ApplyModal from './apply-modal';
 function Card({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <section aria-label={t('hackathon.participation.label')} className="rounded-xl border border-slate-200 bg-white p-5">
+    <section aria-label={t('hackathon.participation.label')} className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-center gap-2">
         {icon}
-        <h2 className="font-semibold text-slate-900">{title}</h2>
+        <h2 className="font-semibold text-foreground">{title}</h2>
       </div>
-      <div className="mt-3 flex flex-col gap-3 text-sm text-slate-600">{children}</div>
+      <div className="mt-3 flex flex-col gap-3 text-sm text-soft">{children}</div>
     </section>
   );
 }
@@ -27,7 +27,7 @@ function WithdrawButton({ page }: { page: HackathonPage }) {
   const [confirming, setConfirming] = useState(false);
   if (!confirming) {
     return (
-      <button type="button" onClick={() => setConfirming(true)} className="self-start text-xs font-semibold text-slate-500 underline-offset-2 hover:text-red-600 hover:underline">
+      <button type="button" onClick={() => setConfirming(true)} className="self-start text-xs font-semibold text-muted-foreground underline-offset-2 hover:text-red-600 hover:underline">
         {t('hackathon.participation.withdraw')}
       </button>
     );
@@ -58,7 +58,7 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
     switch (page.participation) {
       case 'visitor':
         return (
-          <Card icon={<LogIn className="size-5 text-blue-900" />} title={t('hackathon.participation.wantIn')}>
+          <Card icon={<LogIn className="size-5 text-brand-strong" />} title={t('hackathon.participation.wantIn')}>
             <p>{t('hackathon.participation.loginToApply')}</p>
             <Button asChild>
               <Link to={page.loginUrl}>{t('hackathon.participation.login')}</Link>
@@ -67,7 +67,7 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
         );
       case 'not_member':
         return (
-          <Card icon={<Users className="size-5 text-blue-900" />} title={t('hackathon.participation.membersOnly')}>
+          <Card icon={<Users className="size-5 text-brand-strong" />} title={t('hackathon.participation.membersOnly')}>
             <p>{t('hackathon.participation.joinToApply', { name: page.community?.name ?? t('hackathon.participation.theCommunity') })}</p>
             <Button asChild>
               <Link to={`/communities/${page.slug}`}>{t('hackathon.participation.joinCommunity')}</Link>
@@ -76,7 +76,7 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
         );
       case 'can_apply':
         return (
-          <Card icon={<CalendarClock className="size-5 text-blue-900" />} title={t('hackathon.participation.open')}>
+          <Card icon={<CalendarClock className="size-5 text-brand-strong" />} title={t('hackathon.participation.open')}>
             <p>{t('hackathon.participation.until', { date: formatDateTime(h.registration_end) })}</p>
             {status?.application_status === 'rejected' && <p className="text-amber-700">{t('hackathon.participation.reapply')}</p>}
             {h.max_participants && typeof h.participants_count === 'number' ? (
@@ -111,7 +111,7 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
         );
       case 'withdrawn':
         return (
-          <Card icon={<XCircle className="size-5 text-slate-400" />} title={t('hackathon.participation.withdrawnTitle')}>
+          <Card icon={<XCircle className="size-5 text-faint" />} title={t('hackathon.participation.withdrawnTitle')}>
             <p>{t('hackathon.participation.closedText')}</p>
           </Card>
         );
@@ -121,7 +121,7 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
             <ul className="flex flex-col gap-1.5">
               {h.allow_teams && <li>
                   {t('hackathon.participation.team')}{' '}
-                  {status?.team_name ? <strong className="text-slate-900">{status.team_name}</strong> : t('hackathon.participation.noTeam')}
+                  {status?.team_name ? <strong className="text-foreground">{status.team_name}</strong> : t('hackathon.participation.noTeam')}
                 </li>}
               <li>
                 {t('hackathon.participation.project')}{' '}
@@ -141,12 +141,12 @@ function ParticipationCard({ page }: { page: HackathonPage }) {
         );
       default:
         return (
-          <Card icon={<CalendarClock className="size-5 text-slate-400" />} title={notOpenYet ? t('hackathon.participation.soon') : t('hackathon.participation.closed')}>
+          <Card icon={<CalendarClock className="size-5 text-faint" />} title={notOpenYet ? t('hackathon.participation.soon') : t('hackathon.participation.closed')}>
             {notOpenYet ? (
               <p>{t('hackathon.participation.opensOn', { date: formatDateTime(h.registration_start) })}</p>
             ) : (
               <>
-                <p className="font-medium text-slate-900">{t('hackathon.participation.noLonger')}</p>
+                <p className="font-medium text-foreground">{t('hackathon.participation.noLonger')}</p>
                 <p>{t('hackathon.participation.closedOn', { date: formatDateTime(h.registration_end) })}</p>
               </>
             )}

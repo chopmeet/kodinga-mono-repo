@@ -99,13 +99,13 @@ export function DataTable<TData, TValue>({
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                <div className="overflow-hidden rounded-md border border-slate-100">
+                <div className="overflow-hidden rounded-md border border-border-soft">
                     <Table>
                         {!!caption && <TableCaption className="sr-only">{caption}</TableCaption>}
                         <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow 
-                                className="bg-slate-50 border-b border-slate-200"
+                                className="bg-subtle border-b border-border"
                                 key={headerGroup.id}
                             >
                             {headerGroup.headers.map((header) => {

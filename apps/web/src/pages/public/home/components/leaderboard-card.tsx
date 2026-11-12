@@ -25,20 +25,20 @@ export function LeaderboardCard() {
   );
 
   return (
-    <section aria-labelledby="pulse-title" className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs">
+    <section aria-labelledby="pulse-title" className="rounded-xl border border-border bg-card p-6 shadow-2xs">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 id="pulse-title" className="flex items-center gap-2.5 text-lg font-bold text-slate-900">
+          <h2 id="pulse-title" className="flex items-center gap-2.5 text-lg font-bold text-foreground">
             <Trophy className="size-5 text-amber-500" aria-hidden />
             {t('home.leaderboard.title')}
           </h2>
-          <p className="mt-1.5 text-sm text-slate-500">{t('home.leaderboard.text')}</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">{t('home.leaderboard.text')}</p>
         </div>
         <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-hidden />
       </div>
 
       {isLoading ? (
-        <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label={t('home.leaderboard.loading')}>
+        <ol className="mt-5 divide-y divide-border-soft border-b border-border-soft" aria-label={t('home.leaderboard.loading')}>
           {Array.from({ length: TOP }, (_, i) => (
             <li key={i} className="flex items-center gap-3 py-4">
               <Skeleton className="size-7 shrink-0 rounded-full" />
@@ -51,26 +51,26 @@ export function LeaderboardCard() {
           ))}
         </ol>
       ) : top.length === 0 ? (
-        <p className="mt-5 border-y border-slate-100 py-8 text-center text-sm text-slate-500">
+        <p className="mt-5 border-y border-border-soft py-8 text-center text-sm text-muted-foreground">
           {isError ? t('home.leaderboard.unavailable') : t('home.leaderboard.soon')}
         </p>
       ) : (
-        <ol className="mt-5 divide-y divide-slate-100 border-b border-slate-100" aria-label={t('home.leaderboard.label')}>
+        <ol className="mt-5 divide-y divide-border-soft border-b border-border-soft" aria-label={t('home.leaderboard.label')}>
           {top.map((community, i) => (
             <li key={community.id}>
               <Link to={`/communities/${community.slug}`} className="group flex items-center gap-3 py-4">
                 <span
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                    i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600',
+                    i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-muted text-soft',
                   )}
                 >
                   {i + 1}
                 </span>
                 <CommunityAvatar community={community} className="size-9 rounded-lg text-xs" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-slate-900 group-hover:text-primary">{community.name}</span>
-                  <span className="mt-0.5 flex items-center gap-3 text-xs text-slate-500">
+                  <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary">{community.name}</span>
+                  <span className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Users className="size-3" aria-hidden />
                       {t('home.card.members', { count: community.members_count, formatted: formatCompact(community.members_count) })}
@@ -87,7 +87,7 @@ export function LeaderboardCard() {
         </ol>
       )}
 
-      <p className="mt-4 text-center text-xs text-slate-500">{t('home.leaderboard.footnote')}</p>
+      <p className="mt-4 text-center text-xs text-muted-foreground">{t('home.leaderboard.footnote')}</p>
     </section>
   );
 }

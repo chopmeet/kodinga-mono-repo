@@ -15,7 +15,7 @@ function AcceptInvitation() {
 
   return (
     <div className="mx-auto flex min-h-[60svh] max-w-lg items-center px-4 py-12">
-      <section aria-labelledby="invitation-title" className="w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-2xs">
+      <section aria-labelledby="invitation-title" className="w-full rounded-2xl border border-border bg-card p-8 text-center shadow-2xs">
         {isLoading ? (
           <Loader inline size="sm" className="py-4" message={t('inbox.invitation.loading')} />
         ) : (
@@ -25,18 +25,18 @@ function AcceptInvitation() {
             ) : invitedTo?.avatar_url ? (
               <img src={invitedTo.avatar_url} alt="" className="mx-auto size-16 rounded-2xl object-cover" />
             ) : (
-              <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-900" aria-hidden>
+              <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-brand-subtle text-brand-strong" aria-hidden>
                 <MailOpen className="size-7" />
               </span>
             )}
-            <p className="mt-5 text-sm font-medium text-slate-500">{t('inbox.invitation.invited')}</p>
-            <h1 id="invitation-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+            <p className="mt-5 text-sm font-medium text-muted-foreground">{t('inbox.invitation.invited')}</p>
+            <h1 id="invitation-title" className="mt-1 text-2xl font-bold tracking-tight text-foreground">
               {name ?? t('inbox.invitation.aCommunity')}
             </h1>
-            {invitedEmail && <p className="mt-2 text-sm text-slate-500">{t('inbox.invitation.sentTo', { email: invitedEmail })}</p>}
-            {community?.tagline && <p className="mt-2 text-slate-600">{community.tagline}</p>}
+            {invitedEmail && <p className="mt-2 text-sm text-muted-foreground">{t('inbox.invitation.sentTo', { email: invitedEmail })}</p>}
+            {community?.tagline && <p className="mt-2 text-soft">{community.tagline}</p>}
             {community && (
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-500">
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
                 <Users className="size-4" aria-hidden />
                 {t('inbox.invitation.members', { count: community.members_count, formatted: formatNumber(community.members_count) })}
               </p>
@@ -57,7 +57,7 @@ function AcceptInvitation() {
                   <Button asChild className="w-full">
                     <Link to={loginUrl}>{t('inbox.invitation.loginToJoin')}</Link>
                   </Button>
-                  <p className="mt-4 text-sm text-slate-600">
+                  <p className="mt-4 text-sm text-soft">
                     {t('inbox.invitation.noAccount')}{' '}
                     <Link to={registerUrl} className="font-semibold text-brand hover:underline">
                       {t('inbox.invitation.create')}
@@ -67,7 +67,7 @@ function AcceptInvitation() {
                 </>
               ) : alreadyMember ? (
                 <>
-                  <p className="mb-4 text-sm text-slate-600">{t('inbox.invitation.alreadyMember')}</p>
+                  <p className="mb-4 text-sm text-soft">{t('inbox.invitation.alreadyMember')}</p>
                   <Button asChild variant="outline" className="w-full">
                     <Link to={memberUrl}>{t('inbox.invitation.open')}</Link>
                   </Button>

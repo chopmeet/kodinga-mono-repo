@@ -51,7 +51,7 @@ function EducationModal({ entries, target, onClose }: { entries: ProfileEntries;
       <Field label="Spécialité" wide value={v.field_of_study} onChange={(x) => set({ field_of_study: x.target.value })} placeholder="Génie logiciel" />
       <Field label="Début" type="month" value={v.start} onChange={(x) => set({ start: x.target.value })} />
       <Field label="Fin" type="month" value={v.end} disabled={v.is_current} onChange={(x) => set({ end: x.target.value })} />
-      <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
+      <label className="flex items-center gap-2 text-sm text-body sm:col-span-2">
         <input type="checkbox" checked={v.is_current} onChange={(x) => set({ is_current: x.target.checked })} className="size-4 accent-(--primary)" />
         En cours
       </label>
