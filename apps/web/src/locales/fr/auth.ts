@@ -1,6 +1,10 @@
 // Sign in, sign up, password and email verification screens
 export const auth = {
   aside: {
+    titleStart: 'Apprenez et codez avec votre',
+    titleHighlight: 'communauté',
+    welcome: 'Bienvenue dans Python & IA',
+    terminal: 'Exemple : rejoindre une communauté',
     title: 'Apprenez et codez avec votre communauté',
     python: 'Python & IA',
     security: 'Cybersécurité',

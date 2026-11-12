@@ -7,6 +7,7 @@ import { cn } from '@kodinga/ui';
 import { useAppSelector } from '@/redux/hook';
 import { languages } from '@/utils/i18n';
 import { scrollToResults, useUser } from '@/utils/Utils';
+import { LogoMark } from './logo-mark';
 
 type FooterLink = { label: string; to?: string; onClick?: () => void };
 
@@ -40,7 +41,7 @@ function FooterLogo() {
   const { t } = useTranslation();
   return (
     <Link to="/" className="inline-flex items-center gap-2.5" aria-label={t('layout.footer.homeLabel')}>
-      <span className="flex size-10 items-center justify-center rounded-lg bg-card text-lg font-bold text-brand-strong">K</span>
+      <LogoMark className="size-10" />
       <span className="text-2xl font-bold tracking-tight text-white">
         kodinga<span className="text-blue-300">.</span>
       </span>

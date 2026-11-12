@@ -2,6 +2,10 @@ import type { Translations } from '../types';
 
 export const auth: Translations['auth'] = {
   aside: {
+    titleStart: 'Learn and code with your',
+    titleHighlight: 'community',
+    welcome: 'Welcome to Python & AI',
+    terminal: 'Example: joining a community',
     title: 'Learn and code with your community',
     python: 'Python & AI',
     security: 'Cybersecurity',
