@@ -41,7 +41,7 @@ export type MonetizationSettings = {
 
 export const platformSettings: PlatformSettings = {
   platform_name: 'Kodinga',
-  support_email: 'support@kodinga.com',
+  support_email: 'support@kodinga.app',
   default_language: 'fr',
   registrations_open: true,
   require_email_verification: true,

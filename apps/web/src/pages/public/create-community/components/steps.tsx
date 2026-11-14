@@ -38,13 +38,13 @@ export function NameStep({ flow }: { flow: CreateCommunityFlow }) {
           {flow.slugEdited ? (
             <div className="flex items-center gap-1">
               <label htmlFor="community-slug" className="shrink-0 text-soft">
-                kodinga.com/communities/
+                kodinga.app/communities/
               </label>
               <input id="community-slug" className="custom-form-control min-w-0 flex-1 bg-card px-2 py-1" {...register('slug')} />
             </div>
           ) : (
             <p className="flex flex-wrap items-center gap-x-4 text-soft">
-              <span className="break-all">kodinga.com/communities/{flow.slug || '…'}</span>
+              <span className="break-all">kodinga.app/communities/{flow.slug || '…'}</span>
               <button type="button" onClick={flow.editSlug} className="text-sm font-semibold text-brand-strong hover:underline">
                 {t('create.name.edit')}
               </button>

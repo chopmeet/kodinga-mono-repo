@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 // Public origin used for absolute URLs in index.html (og:image...). Override per environment:
-//   VITE_SITE_URL=https://staging.kodinga.com npx nx build web
+//   VITE_SITE_URL=https://staging.kodinga.app npx nx build web
 // ||= (not ??=): the Docker build passes an empty string when no URL is given
-process.env.VITE_SITE_URL ||= 'https://kodinga.com';
+process.env.VITE_SITE_URL ||= 'https://kodinga.app';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,

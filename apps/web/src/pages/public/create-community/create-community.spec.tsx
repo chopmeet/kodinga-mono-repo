@@ -336,7 +336,7 @@ describe('Create a community', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer ma communauté/ }));
     expect(await screen.findByRole('heading', { name: 'Comment s’appelle votre communauté ?' }, SLOW)).toBeTruthy();
     expect(screen.getByText('Ce slug de communauté est déjà utilisé.')).toBeTruthy();
-    expect((screen.getByLabelText(/kodinga.com\/communities\//) as HTMLInputElement).value).toBe('dakar-cloud-builders');
+    expect((screen.getByLabelText(/kodinga.app\/communities\//) as HTMLInputElement).value).toBe('dakar-cloud-builders');
   });
 
   it('keeps the draft when the page is reloaded', async () => {

@@ -66,7 +66,7 @@ export function CommunityPreview({ values, slug, category, images }: Props) {
           ))}
         </div>
         <figcaption className="mt-6 truncate border-t border-border-soft pt-4 text-sm text-soft">
-          kodinga.com/communities/<span className="text-foreground">{slug || '…'}</span>
+          kodinga.app/communities/<span className="text-foreground">{slug || '…'}</span>
         </figcaption>
       </div>
     </figure>

@@ -16,7 +16,7 @@ on:
         type: string
         required: true
       site-url:
-        description: Public origin of the front (e.g. https://recette.kodinga.com), baked into the web image
+        description: Public origin of the front (e.g. https://kodinga.app), baked into the web image
         type: string
         required: false
         default: ''

@@ -87,7 +87,7 @@ function GeneralTab() {
         </div>
         <div className="mb-3">
           <p className="custom-form-label mb-1 block">Adresse de la communauté</p>
-          <p className="truncate rounded-md bg-subtle px-3 py-2.5 font-mono text-sm text-soft">kodinga.com/communities/{community.slug}</p>
+          <p className="truncate rounded-md bg-subtle px-3 py-2.5 font-mono text-sm text-soft">kodinga.app/communities/{community.slug}</p>
         </div>
       </div>
 

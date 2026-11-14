@@ -42,8 +42,8 @@ Ensuite, sur le reverse proxy du VPS (nginx), un fichier par domaine, qui gère 
 |---|---|---|
 | `kodinga.fassane.dev` (front) | `kodinga-recette` | `http://127.0.0.1:8082` (`WEB_PORT`) |
 | `api.kodinga.fassane.dev` (API) | `kodinga-recette-api` | `http://127.0.0.1:8092` (`API_PORT`) |
-| `kodinga.com` (front) | `kodinga-prod` | `http://127.0.0.1:8081` |
-| `api.kodinga.com` (API) | `kodinga-prod-api` | `http://127.0.0.1:8091` |
+| `kodinga.app` (front) | `kodinga-prod` | `http://127.0.0.1:8081` |
+| `api.kodinga.app` (API) | `kodinga-prod-api` | `http://127.0.0.1:8091` |
 
 ```nginx
 # /etc/nginx/sites-available/kodinga-recette-api
@@ -103,7 +103,7 @@ Chaque domaine doit aussi avoir son enregistrement DNS (A) vers l'IP du VPS.
 
 Variables du dépôt (Settings → Secrets and variables → Actions → Variables) :
 `RECETTE_SITE_URL` (`https://kodinga.fassane.dev`), `RECETTE_API_URL` (`https://api.kodinga.fassane.dev`),
-`PROD_SITE_URL` (`https://kodinga.com`) et `PROD_API_URL` (`https://api.kodinga.com`).
+`PROD_SITE_URL` (`https://kodinga.app`) et `PROD_API_URL` (`https://api.kodinga.app`).
 Le front, lui, ne lit pas ces variables : ses URLs sont écrites dans `apps/web/src/utils/http.ts`,
 et l'environnement y est fixé **à la main** (`currentEnv`) : `'demo'` sur la branche `recette`,
 `'prod'` sur la branche `prod`. Le déploiement s'arrête si la valeur ne correspond pas.

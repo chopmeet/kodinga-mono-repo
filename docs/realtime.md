@@ -69,7 +69,7 @@ sequenceDiagram
     REST-->>Client: 201 Created { ticket: "uuid", expires_in: 30 }
 
     Note over Client, WS: Établissement de la Connexion
-    Client->>WS: new WebSocket("wss://api.kodinga.com/ws/?ticket=...")
+    Client->>WS: new WebSocket("wss://api.kodinga.app/ws/?ticket=...")
     WS->>Cache: Consomme et détruit le ticket (Usage Unique)
     alt Ticket valide & utilisateur actif
         WS->>WS: Joint le groupe personnel user_{user_id}
@@ -202,7 +202,7 @@ Dans les variables d'environnement du Frontend web :
 
 ```env
 # Optionnel (par défaut, dérivé automatiquement de l'URL d'API)
-VITE_WS_URL=wss://api.kodinga.com/ws/
+VITE_WS_URL=wss://api.kodinga.app/ws/
 ```
 
 ### 7.2. Configuration Nginx

@@ -44,7 +44,7 @@ function stubLiveApi({ status = 'scheduled', isHost = true } = {}) {
     calls.push({ method: request.method, url, body });
     const json = (data: unknown) => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
     const path = url.pathname;
-    if (path.endsWith('/join-live/')) return json({ success: true, data: { room_name: 'kodinga_room', token: 'lk-token', server_url: 'wss://live.kodinga.com', is_host: isHost } });
+    if (path.endsWith('/join-live/')) return json({ success: true, data: { room_name: 'kodinga_room', token: 'lk-token', server_url: 'wss://live.kodinga.app', is_host: isHost } });
     if (path.endsWith('/status/')) {
       current = body?.status;
       return json({ success: true, data: {} });
@@ -89,7 +89,7 @@ describe('Live room of an event', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Entrer dans la salle d’attente/ }, SLOW));
     await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/join-live/'))).toBe(true), SLOW);
     // The local server in dev (docker), the url of the api elsewhere (utils/http.ts)
-    await waitFor(() => expect(connection.calls.at(-1)).toEqual({ serverUrl: liveServerUrl('wss://live.kodinga.com'), token: 'lk-token', isHost: true, onLeft: expect.any(Function) }), SLOW);
+    await waitFor(() => expect(connection.calls.at(-1)).toEqual({ serverUrl: liveServerUrl('wss://live.kodinga.app'), token: 'lk-token', isHost: true, onLeft: expect.any(Function) }), SLOW);
     expect(screen.getByText('Salle d’attente')).toBeTruthy();
     expect(screen.getByTestId('controls').textContent).toBe('camera,microphone,screenShare,leave');
     expect(screen.getByLabelText('2 dans la salle')).toBeTruthy();

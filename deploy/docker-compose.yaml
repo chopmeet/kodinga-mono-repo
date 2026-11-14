@@ -24,7 +24,7 @@ services:
     image: ${WEB_IMAGE}:${IMAGE_TAG}
     restart: unless-stopped
     # Published on localhost only: the host reverse proxy (nginx) handles the domains and TLS.
-    # Front domain (recette.kodinga.com) -> this port. nginx inside the image still proxies
+    # Front domain (kodinga.app; kodinga.fassane.dev in recette) -> this port. nginx inside the image still proxies
     # /api, /admin and /static to `api` (same-origin fallback).
     ports:
       - '127.0.0.1:${WEB_PORT:-8081}:80'
