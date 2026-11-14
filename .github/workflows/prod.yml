@@ -58,7 +58,7 @@ jobs:
       contents: read
       packages: write
     with:
-      environment: production
+      environment: prod
       site-url: ${{ vars.PROD_SITE_URL }}
       api-url: ${{ vars.PROD_API_URL }}
       deploy: ${{ github.event_name == 'push' }}
