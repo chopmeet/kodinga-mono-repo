@@ -5,11 +5,8 @@ import {
   Shield,
   Users,
   Crown,
-  MessageSquare,
   Calendar,
   GraduationCap,
-  Trophy,
-  SlidersHorizontal,
   RotateCcw,
   Save,
   Lock,
@@ -44,69 +41,28 @@ interface CategoryDefinition {
   id: string;
   name: string;
   description: string;
-  icon: typeof MessageSquare;
+  icon: typeof Calendar;
   color: string;
   permissions: PermissionDefinition[];
 }
 
 /**
- * The permissions the api checks today (has_community_permission: events, courses, lives,
- * invitations, join requests); the others are saved and will apply as the api checks them
+ * Only the permissions the api checks (has_community_permission). The others of the matrix
+ * (posts, hackathons, projects, sanctions, settings…) are not shown: the api stores them but
+ * applies none, and they are sent back unchanged on save.
  */
-const ENFORCED_PERMISSIONS: RolePermissionKey[] = [
-  'can_manage_events', 
-  'can_manage_courses', 
-  'can_start_live', 
-  'can_invite_members', 
-  'can_review_requests',
-];
-
 const PERMISSION_CATEGORIES: CategoryDefinition[] = [
-  {
-    id: 'feed',
-    name: 'Publications & Discussions',
-    description: 'Gestion du flux d’actualité, des sondages et des commentaires.',
-    icon: MessageSquare,
-    color: 'text-blue-600 bg-brand-subtle border-brand-muted',
-    permissions: [
-      {
-        key: 'can_create_posts',
-        label: 'Créer des publications',
-        description: 'Publier des messages, questions et sondages dans le fil de la communauté.',
-      },
-      {
-        key: 'can_pin_posts',
-        label: 'Épingler des publications',
-        description: 'Mettre en avant des messages importants en haut du flux.',
-      },
-      {
-        key: 'can_delete_posts',
-        label: 'Supprimer les publications d’autrui',
-        description: 'Retirer des messages inappropriés publiés par d’autres membres.',
-      },
-      {
-        key: 'can_moderate_comments',
-        label: 'Modérer les commentaires',
-        description: 'Supprimer ou masquer les commentaires non conformes à la charte.',
-      },
-    ],
-  },
   {
     id: 'events',
     name: 'Événements & Lives',
-    description: 'Organisation d’ateliers, webinaires et rencontres en direct.',
+    description: 'Organisation d’ateliers, webinaires, hackathons et rencontres en direct.',
     icon: Calendar,
     color: 'text-amber-600 bg-amber-50 border-amber-200',
     permissions: [
       {
-        key: 'can_create_events',
-        label: 'Créer et programmer des événements',
-        description: 'Planifier des ateliers, sessions de formation ou visios pour la communauté.',
-      },
-      {
         key: 'can_manage_events',
-        label: 'Modifier et annuler les événements',
-        description: 'Éditer les dates, le statut (en cours, terminé) ou annuler des événements existants.',
+        label: 'Gérer les événements et les hackathons',
+        description: 'Créer, modifier et annuler des événements, et gérer les hackathons de la communauté.',
       },
       {
         key: 'can_start_live',
@@ -123,50 +79,16 @@ const PERMISSION_CATEGORIES: CategoryDefinition[] = [
     color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
     permissions: [
       {
-        key: 'can_create_courses',
-        label: 'Créer des cours et modules',
-        description: 'Créer des cours complets avec leçons vidéo, texte enrichi et pièces jointes.',
-      },
-      {
         key: 'can_manage_courses',
-        label: 'Gérer et publier les cours',
-        description: 'Modifier le contenu, changer l’ordre des modules et publier ou archiver des cours.',
-      },
-    ],
-  },
-  {
-    id: 'projects',
-    name: 'Hackathons & Projets vitrine',
-    description: 'Coordination des challenges de code et mise en valeur des créations.',
-    icon: Trophy,
-    color: 'text-purple-600 bg-purple-50 border-purple-200',
-    permissions: [
-      {
-        key: 'can_create_hackathons',
-        label: 'Organiser des hackathons',
-        description: 'Lancer de nouveaux concours de développement avec calendrier et prix.',
-      },
-      {
-        key: 'can_manage_hackathons',
-        label: 'Gérer les hackathons et le jury',
-        description: 'Valider les candidatures, assigner des jurés et délibérer sur les résultats.',
-      },
-      {
-        key: 'can_create_projects',
-        label: 'Soumettre des projets vitrine',
-        description: 'Partager des dépôts, démos et images de projets créés par les membres.',
-      },
-      {
-        key: 'can_feature_projects',
-        label: 'Mettre en avant des projets',
-        description: 'Épingler des projets exceptionnels en vitrine de la communauté.',
+        label: 'Créer et gérer les cours',
+        description: 'Créer des cours, modifier leur contenu et l’ordre des modules, les publier ou les archiver.',
       },
     ],
   },
   {
     id: 'moderation',
-    name: 'Membres & Modération',
-    description: 'Accueil, recrutement et maintien d’un environnement sécurisé.',
+    name: 'Membres',
+    description: 'Accueil et recrutement des membres.',
     icon: ShieldCheck,
     color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
     permissions: [
@@ -180,38 +102,12 @@ const PERMISSION_CATEGORIES: CategoryDefinition[] = [
         label: 'Valider les demandes d’adhésion',
         description: 'Examiner et approuver ou rejeter les adhésions en attente.',
       },
-      {
-        key: 'can_sanction_members',
-        label: 'Sanctionner des membres',
-        description: 'Émettre des avertissements formels, suspendre temporairement ou bannir.',
-      },
-      {
-        key: 'can_assign_roles',
-        label: 'Modifier les rôles des membres',
-        description: 'Promouvoir ou rétrograder des membres (ex: passage de membre à modérateur).',
-      },
-    ],
-  },
-  {
-    id: 'settings',
-    name: 'Administration & Statistiques',
-    description: 'Pilotage général de l’espace et consultation de l’activité.',
-    icon: SlidersHorizontal,
-    color: 'text-rose-600 bg-rose-50 border-rose-200',
-    permissions: [
-      {
-        key: 'can_manage_settings',
-        label: 'Modifier les paramètres généraux',
-        description: 'Mettre à jour les informations de l’espace, la charte et les intégrations.',
-      },
-      {
-        key: 'can_view_analytics',
-        label: 'Consulter les statistiques d’engagement',
-        description: 'Accéder aux métriques d’activité, évolution des membres et rétention.',
-      },
     ],
   },
 ];
+
+/** The keys shown above: the counts and "tout autoriser / restreindre" only touch them */
+const SHOWN_PERMISSIONS = PERMISSION_CATEGORIES.flatMap((cat) => cat.permissions.map((perm) => perm.key));
 
 const DEFAULT_ROLE_PERMISSIONS: RolePermissionsMatrix = {
   admin: {
@@ -392,8 +288,8 @@ export function SpaceRolesTab() {
 
   const handleBatchToggle = (role: ConfigurableRole, enableAll: boolean) => {
     setMatrix((prev) => {
-      const rolePerms = { ...prev[role] };
-      (Object.keys(rolePerms) as RolePermissionKey[]).forEach((key) => {
+      const rolePerms = { ...(prev[role] ?? DEFAULT_ROLE_PERMISSIONS[role]) };
+      SHOWN_PERMISSIONS.forEach((key) => {
         rolePerms[key] = enableAll;
       });
       return {
@@ -447,8 +343,8 @@ export function SpaceRolesTab() {
   }
 
   const currentRolePerms = permissionsOf(matrix, activeRole);
-  const activeCount = Object.values(currentRolePerms).filter(Boolean).length;
-  const totalCount = Object.keys(DEFAULT_ROLE_PERMISSIONS.admin).length;
+  const activeCount = SHOWN_PERMISSIONS.filter((key) => currentRolePerms[key]).length;
+  const totalCount = SHOWN_PERMISSIONS.length;
   const isOwner = activeRole === 'owner';
 
   return (
@@ -484,7 +380,7 @@ export function SpaceRolesTab() {
           const Icon = info.icon;
           const isSelected = activeRole === role;
           const rolePerms = permissionsOf(matrix, role);
-          const count = Object.values(rolePerms).filter(Boolean).length;
+          const count = SHOWN_PERMISSIONS.filter((key) => rolePerms[key]).length;
 
           return (
             <button
@@ -568,14 +464,6 @@ export function SpaceRolesTab() {
         </div>
       </div>
 
-      <div className="flex items-start gap-3 rounded-xl border border-brand-muted bg-brand-subtle/60 p-4 text-sm text-brand-strong">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-        <p>
-          Les permissions marquées <strong>Active</strong> s’appliquent dès l’enregistrement. Les autres sont enregistrées et
-          s’appliqueront au fur et à mesure qu’elles seront prises en charge par la plateforme.
-        </p>
-      </div>
-
       {/* Owner Inviolability Notice */}
       {isOwner && (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-900">
@@ -626,15 +514,6 @@ export function SpaceRolesTab() {
                           >
                             {perm.label}
                           </label>
-                          {ENFORCED_PERMISSIONS.includes(perm.key) ? (
-                            <span className="rounded bg-brand-subtle px-1.5 py-0.5 text-[11px] font-semibold text-brand-strong" title="Appliquée dès l’enregistrement">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase" title="Enregistrée, appliquée bientôt">
-                              Bientôt
-                            </span>
-                          )}
                           {isAllowed ? (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -676,10 +555,9 @@ export function SpaceRolesTab() {
         })}
       </div>
 
-      {/* Action Footer */}
       <div className="sticky bottom-4 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-lg">
         <div className="flex items-center gap-3">
-          <Button type="button" variant="outline" size="sm" onClick={handleResetAllDefaults}>
+          <Button type="button" variant="outline" onClick={handleResetAllDefaults}>
             <RotateCcw />
             Réinitialiser tous les rôles par défaut
           </Button>

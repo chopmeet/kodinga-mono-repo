@@ -65,15 +65,13 @@ describe('Community space: roles and permissions', () => {
   it('lets the owner change the permissions of a role, save them and reset them', async () => {
     const calls = stubSpaceApi('dakar-devops', DEFAULTS);
     renderAppAt('/c/dakar-devops/settings/roles');
-    const events = await screen.findByLabelText('Modifier et annuler les événements', {}, SLOW);
-    // What the api applies today, and what it will apply later
-    const badges = (label: string) => screen.getByText(label, { selector: 'label' }).parentElement as HTMLElement;
-    expect(within(badges('Modifier et annuler les événements')).getByText('Active')).toBeTruthy();
-    expect(within(badges('Épingler des publications')).getByText('Bientôt')).toBeTruthy();
-    expect(within(badges('Inviter de nouveaux membres')).getByText('Active')).toBeTruthy();
-    expect(within(badges('Valider les demandes d’adhésion')).getByText('Active')).toBeTruthy();
-    // Checked by the api under another name (can_ban_members): not applied yet
-    expect(within(badges('Sanctionner des membres')).getByText('Bientôt')).toBeTruthy();
+    const events = await screen.findByLabelText('Gérer les événements et les hackathons', {}, SLOW);
+    // Only what the api applies is offered: no "Bientôt" permission left
+    expect(screen.getByLabelText('Inviter de nouveaux membres')).toBeTruthy();
+    expect(screen.getByLabelText('Valider les demandes d’adhésion')).toBeTruthy();
+    expect(screen.queryByLabelText('Épingler des publications')).toBeNull();
+    expect(screen.queryByLabelText('Sanctionner des membres')).toBeNull();
+    expect(screen.queryByText('Bientôt')).toBeNull();
 
     // Admins can manage the events by default: the owner takes it away
     expect((events as HTMLInputElement).checked).toBe(true);
@@ -83,7 +81,7 @@ describe('Community space: roles and permissions', () => {
     expect(await screen.findByText(/enregistrée avec succès/, {}, SLOW)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Réinitialiser tous les rôles par défaut/ }));
-    expect(((await screen.findByLabelText('Modifier et annuler les événements')) as HTMLInputElement).checked).toBe(true);
+    expect(((await screen.findByLabelText('Gérer les événements et les hackathons')) as HTMLInputElement).checked).toBe(true);
   });
 
   it('keeps the admins and the moderators out of the roles', async () => {
