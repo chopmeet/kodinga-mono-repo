@@ -1,6 +1,7 @@
+import { Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { customToast, SelectInput } from '@kodinga/ui';
+import { Button, customToast, SelectInput } from '@kodinga/ui';
 import SettingSwitch from '@/pages/shared/setting-switch';
 import {
   useAnalyzeCommunityMutation,
@@ -183,13 +184,9 @@ export function SpaceAITab() {
       </div>
 
       <div className="mt-8 flex justify-end">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
-        >
-          {saving ? 'Enregistrement en cours...' : 'Enregistrer les paramètres IA'}
-        </button>
+        <Button type="submit" isLoading={saving} disabled={saving}>
+          Enregistrer les paramètres IA
+        </Button>
       </div>
 
       <CommunityImprovementSection slug={slug} />
@@ -224,14 +221,10 @@ function CommunityImprovementSection({ slug }: { slug?: string }) {
             Analyse vos métriques réelles (membres, publications récentes, questions en attente) et suggère des actions concrètes.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={runAnalysis}
-          disabled={analyzing}
-          className="shrink-0 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 disabled:opacity-50 shadow-sm"
-        >
-          {analyzing ? 'Analyse en cours...' : 'Lancer le diagnostic IA'}
-        </button>
+        <Button type="button" variant="outline" className="shrink-0" onClick={runAnalysis} isLoading={analyzing} disabled={analyzing}>
+          <Sparkles />
+          Lancer le diagnostic IA
+        </Button>
       </div>
 
       {analysis && (

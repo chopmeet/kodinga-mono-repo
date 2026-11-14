@@ -1,27 +1,32 @@
-import { AtSign, Mail, MailCheck } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight, AtSign, Mail, MailCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Link, useSearchParams } from "react-router-dom";
 
-import { Input, InputPassword } from '@kodinga/ui';
+import { Button, Input, InputPassword } from "@kodinga/ui";
 
-import AuthWrapper from './auth-wrapper';
-import { FormAlert } from './components/form-alert';
-import { EmailSeparator, OAuthButtons } from './components/oauth-buttons';
-import { PasswordCheck } from './components/password-check';
-import { SubmitButton } from './components/submit-button';
-import UseRegisterForm from './hooks/UseRegisterForm';
+import AuthWrapper from "./auth-wrapper";
+import { FormAlert } from "./components/form-alert";
+import { EmailSeparator, OAuthButtons } from "./components/oauth-buttons";
+import { PasswordCheck } from "./components/password-check";
+import UseRegisterForm from "./hooks/UseRegisterForm";
 
-const linkClassName = 'font-semibold text-brand hover:text-brand-hover hover:underline';
+const linkClassName =
+  "font-semibold text-brand hover:text-brand-hover hover:underline";
 
 function Register() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
-  const next = params.get('next');
+  const next = params.get("next");
   const loginFooter = (
     <>
-      {t('auth.register.hasAccount')}{' '}
-      <Link to={next ? `/auth/login?next=${encodeURIComponent(next)}` : '/auth/login'} className={linkClassName}>
-        {t('auth.common.login')}
+      {t("auth.register.hasAccount")}{" "}
+      <Link
+        to={
+          next ? `/auth/login?next=${encodeURIComponent(next)}` : "/auth/login"
+        }
+        className={linkClassName}
+      >
+        {t("auth.common.login")}
       </Link>
     </>
   );
@@ -42,30 +47,41 @@ function Register() {
 
   if (sentTo) {
     return (
-      <AuthWrapper title={t('auth.common.checkEmails')} footer={loginFooter}>
+      <AuthWrapper
+        panel="register"
+        title={t("auth.common.checkEmails")}
+        footer={loginFooter}
+      >
         <div className="flex flex-col gap-5">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
             <MailCheck className="size-6" />
           </div>
           <p className="text-[15px] leading-relaxed text-soft">
-            {t('auth.register.sentBefore')} <strong className="font-semibold text-foreground">{sentTo}</strong>{' '}
-            {t('auth.register.sentAfter')}
+            {t("auth.register.sentBefore")}{" "}
+            <strong className="font-semibold text-foreground">{sentTo}</strong>{" "}
+            {t("auth.register.sentAfter")}
           </p>
           {formError && <FormAlert>{formError}</FormAlert>}
-          {resent && <FormAlert variant="success">{t('auth.register.resent')}</FormAlert>}
+          {resent && (
+            <FormAlert variant="success">{t("auth.register.resent")}</FormAlert>
+          )}
           <p className="text-sm text-muted-foreground">
-            {t('auth.common.nothingReceived')}{' '}
+            {t("auth.common.nothingReceived")}{" "}
             <button
               type="button"
               onClick={resend}
               disabled={isResending}
               className="font-semibold text-brand hover:text-brand-hover hover:underline disabled:opacity-60"
             >
-              {t('auth.common.resendLink')}
-            </button>{' '}
-            {t('auth.common.or')}{' '}
-            <button type="button" onClick={changeEmail} className={linkClassName}>
-              {t('auth.register.changeEmail')}
+              {t("auth.common.resendLink")}
+            </button>{" "}
+            {t("auth.common.or")}{" "}
+            <button
+              type="button"
+              onClick={changeEmail}
+              className={linkClassName}
+            >
+              {t("auth.register.changeEmail")}
             </button>
           </p>
         </div>
@@ -74,7 +90,12 @@ function Register() {
   }
 
   return (
-    <AuthWrapper title={t('auth.register.title')} subtitle={t('auth.register.subtitle')} footer={loginFooter}>
+    <AuthWrapper
+      panel="register"
+      title={t("auth.register.title")}
+      subtitle={t("auth.register.subtitle")}
+      footer={loginFooter}
+    >
       <OAuthButtons />
 
       <EmailSeparator />
@@ -85,51 +106,51 @@ function Register() {
         <div className="grid gap-x-3 sm:grid-cols-2">
           <Input
             id="register-first-name"
-            label={t('auth.register.firstName')}
+            label={t("auth.register.firstName")}
             autoComplete="given-name"
             required
             error={errors.first_name?.message}
-            {...register('first_name', { onChange: syncUsername })}
+            {...register("first_name", { onChange: syncUsername })}
           />
           <Input
             id="register-last-name"
-            label={t('auth.register.lastName')}
+            label={t("auth.register.lastName")}
             autoComplete="family-name"
             required
             error={errors.last_name?.message}
-            {...register('last_name', { onChange: syncUsername })}
+            {...register("last_name", { onChange: syncUsername })}
           />
         </div>
 
         <Input
           id="register-username"
-          label={t('auth.register.username')}
+          label={t("auth.register.username")}
           icon={<AtSign className="size-4" />}
           autoComplete="username"
           required
-          fieldHelp={t('auth.register.usernameHelp')}
+          fieldHelp={t("auth.register.usernameHelp")}
           error={errors.username?.message}
-          {...register('username')}
+          {...register("username")}
         />
 
         <Input
           id="register-email"
-          label={t('auth.common.email')}
+          label={t("auth.common.email")}
           type="email"
           icon={<Mail className="size-4" />}
           autoComplete="email"
           required
           error={errors.email?.message}
-          {...register('email')}
+          {...register("email")}
         />
 
         <InputPassword
           id="register-password"
-          label={t('auth.common.password')}
+          label={t("auth.common.password")}
           autoComplete="new-password"
           required
           error={errors.password?.message}
-          {...register('password')}
+          {...register("password")}
         />
         {password.length > 0 && (
           <div className="mb-3">
@@ -138,26 +159,42 @@ function Register() {
         )}
 
         <div className="mt-1">
-          <label htmlFor="register-terms" className="flex items-start gap-3 text-sm leading-relaxed text-soft">
+          <label
+            htmlFor="register-terms"
+            className="flex items-start gap-3 text-sm leading-relaxed text-soft"
+          >
             <input
               id="register-terms"
               type="checkbox"
               className="mt-0.5 size-4 shrink-0 accent-(--primary)"
               aria-invalid={!!errors.terms_accepted}
-              aria-describedby={errors.terms_accepted ? 'register-terms-error' : undefined}
-              {...register('terms_accepted')}
+              aria-describedby={
+                errors.terms_accepted ? "register-terms-error" : undefined
+              }
+              {...register("terms_accepted")}
             />
-            <span>{t('auth.register.terms')}</span>
+            <span>{t("auth.register.terms")}</span>
           </label>
           {errors.terms_accepted && (
-            <p id="register-terms-error" className="mt-1.5 text-sm text-red-600">
+            <p
+              id="register-terms-error"
+              className="mt-1.5 text-sm text-red-600"
+            >
               {errors.terms_accepted.message}
             </p>
           )}
         </div>
 
         <div className="mt-4">
-          <SubmitButton isLoading={isLoading}>{t('auth.register.submit')}</SubmitButton>
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full rounded-xl"
+            isLoading={isLoading}
+            disabled={isLoading}
+          >
+            {t("auth.register.submit")} <ArrowUpRight />
+          </Button>
         </div>
       </form>
     </AuthWrapper>

@@ -2,7 +2,7 @@ import { ArrowUpRight, Plus, Radio, RotateCw, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { ColgateWrapper, TopTitle } from '@kodinga/ui';
+import { Button, ColgateWrapper, TopTitle } from '@kodinga/ui';
 import { FormAlert } from '@/pages/auth/components/form-alert';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { FilterChip } from '@/pages/shared/filter-chip';
@@ -11,11 +11,6 @@ import { isManaged, useGetMyCommunitiesQuery } from '@/utils/api/community/commu
 import type { CommunityRole } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
 import { formatCompact, memberRoleLabel } from '@/utils/Utils';
-
-const createLinkClassName =
-  'inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover';
-const actionClassName =
-  'inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-body hover:border-border-strong hover:text-foreground';
 
 type RoleFilter = 'all' | CommunityRole;
 type VisibilityFilter = 'all' | 'public' | 'private';
@@ -62,10 +57,12 @@ function MyCommunities() {
       <div className="flex flex-wrap items-start justify-between gap-4 [&>:last-child]:mb-4">
         <TopTitle title="Mes communautés" paragraph="Votre rôle dans chaque communauté." />
         {all.length > 0 && (
-          <Link to="/create-community" className={createLinkClassName}>
-            <Plus className="size-4" />
-            Créer une communauté
-          </Link>
+          <Button asChild className="rounded-xl">
+            <Link to="/create-community">
+              <Plus />
+              Créer une communauté
+            </Link>
+          </Button>
         )}
       </div>
 
@@ -116,10 +113,12 @@ function MyCommunities() {
               </Link>
               .
             </p>
-            <Link to="/create-community" className={`mt-6 ${createLinkClassName}`}>
-              <Plus className="size-4" />
-              Créer ma communauté
-            </Link>
+            <Button asChild className="mt-6 rounded-xl">
+              <Link to="/create-community">
+                <Plus />
+                Créer ma communauté
+              </Link>
+            </Button>
           </div>
         ) : (
           <>
@@ -183,18 +182,24 @@ function MyCommunities() {
                         )}
                         {isManaged(m) ? (
                           <>
-                            <Link to={`/c/${community.slug}/dashboard`} className={actionClassName} aria-label={`Administrer ${community.name}`}>
-                              Admin
-                            </Link>
-                            <Link to={`/communities/${community.slug}`} className={actionClassName} aria-label={`Espace membre de ${community.name}`}>
-                              Espace membre
-                            </Link>
+                            <Button asChild variant="outline" size="sm">
+                              <Link to={`/c/${community.slug}/dashboard`} aria-label={`Administrer ${community.name}`}>
+                                Admin
+                              </Link>
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
+                              <Link to={`/communities/${community.slug}`} aria-label={`Espace membre de ${community.name}`}>
+                                Espace membre
+                              </Link>
+                            </Button>
                           </>
                         ) : (
-                          <Link to={`/communities/${community.slug}`} className={actionClassName} aria-label={`Ouvrir ${community.name}`}>
-                            Ouvrir
-                            <ArrowUpRight className="size-4" />
-                          </Link>
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/communities/${community.slug}`} aria-label={`Ouvrir ${community.name}`}>
+                              Ouvrir
+                              <ArrowUpRight />
+                            </Link>
+                          </Button>
                         )}
                       </span>
                     </li>

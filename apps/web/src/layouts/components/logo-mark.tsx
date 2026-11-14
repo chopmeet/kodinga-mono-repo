@@ -3,7 +3,7 @@ import { useId } from 'react';
 import { cn } from '@kodinga/ui';
 
 /**
- * The Kodinga mark: a white K on a vivid blue rounded square, a translucent orbit around it and a
+ * The Kodinga mark: a white K on a rounded square of the primary blue (#1D4ED8), a translucent orbit around it and a
  * white dot. SVG, sharp at any size, the same drawing as public/favicon.svg. Gradient ids are made
  * unique: several marks can be on the page.
  */
@@ -13,15 +13,15 @@ export function LogoMark({ className }: { className?: string }) {
     <svg viewBox="0 0 64 64" aria-hidden className={cn('shrink-0', className)}>
       <defs>
         <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0A47F8" />
-          <stop offset="1" stopColor="#0339EF" />
+          <stop offset="0" stopColor="#1D4ED8" />
+          <stop offset="1" stopColor="#1A44C2" />
         </linearGradient>
         <linearGradient id={`${id}-orbit`} x1="0" y1="1" x2="1" y2="0">
           <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.95" />
           <stop offset="1" stopColor="#FFFFFF" stopOpacity="0.4" />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="15" fill="#0128D0" />
+      <rect width="64" height="64" rx="15" fill="#17368F" />
       <rect width="64" height="62" rx="15" fill={`url(#${id}-bg)`} />
       <g fill="#FFFFFF">
         <rect x="17.4" y="15.3" width="9.1" height="31.3" rx="2" />

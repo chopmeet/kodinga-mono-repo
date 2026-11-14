@@ -1,14 +1,35 @@
 import type { Translations } from '../types';
 
 export const auth: Translations['auth'] = {
+  layout: {
+    explore: 'Explore communities',
+    footer: '© {{year}} Kodinga · Tech is better, together.',
+  },
   aside: {
-    titleStart: 'Learn and code with your',
-    titleHighlight: 'community',
-    welcome: 'Welcome to Python & AI',
-    terminal: 'Example: joining a community',
-    title: 'Learn and code with your community',
-    python: 'Python & AI',
-    security: 'Cybersecurity',
+    world: 'The connected world',
+    live: 'Live network',
+    activity: 'What’s happening on Kodinga',
+    cairo: 'Cairo',
+    login: {
+      eyebrow: 'Grow together',
+      title: 'The best opportunities come from the right connections.',
+      text: 'Meet the developers, designers and tech enthusiasts who learn and build with you, all across Africa.',
+      cards: [
+        { title: 'Python workshop', meta: 'Starts in 2 h' },
+        { title: 'GalsenDev', meta: 'New discussion · React 19' },
+        { title: '+24 members', meta: 'This week' },
+      ],
+    },
+    register: {
+      eyebrow: 'One account, endless possibilities',
+      title: 'Learn. Share. Grow.',
+      text: 'One account, endless possibilities. Join people who learn, create and grow together.',
+      cards: [
+        { title: 'Module 3 completed', meta: 'Progress 68%' },
+        { title: 'Discover', meta: '120+ tech communities' },
+        { title: 'Dakar hackathon', meta: 'Team formed · 4 members' },
+      ],
+    },
   },
   common: {
     email: 'Email address',
@@ -50,16 +71,16 @@ export const auth: Translations['auth'] = {
     passwordsMismatch: 'The passwords do not match',
   },
   login: {
-    title: 'Log in',
-    subtitle: 'Welcome back! Find your communities.',
-    noAccount: 'No account yet?',
-    signup: 'Sign up',
+    title: 'Good to see you again.',
+    subtitle: 'Log in to get back to your communities, discussions and projects.',
+    noAccount: 'Don’t have an account yet?',
+    signup: 'Create an account',
     forgot: 'Forgot password?',
     submit: 'Log in',
   },
   register: {
-    title: 'Create an account',
-    subtitle: 'Join Africa’s tech communities, for free.',
+    title: 'Your next adventure starts here.',
+    subtitle: 'Create your account and join communities that suit you.',
     hasAccount: 'Already have an account?',
     firstName: 'First name',
     lastName: 'Last name',

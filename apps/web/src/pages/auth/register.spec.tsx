@@ -28,7 +28,7 @@ afterEach(() => {
 describe('Register', () => {
   it('suggests a username from the name, until it is edited', async () => {
     renderAppAt('/auth/register');
-    await screen.findByRole('heading', { name: 'Créer un compte' }, SLOW);
+    await screen.findByRole('heading', { name: 'Votre prochaine aventure commence ici.' }, SLOW);
     fill(/^Prénom/, 'Aïcha');
     fill(/^Nom\b(?! d)/, 'Ndiaye');
     const username = screen.getByLabelText(/Nom d'utilisateur/) as HTMLInputElement;
@@ -41,7 +41,7 @@ describe('Register', () => {
   it('requires the terms before calling the api', async () => {
     const calls = stubApi({});
     renderAppAt('/auth/register');
-    await screen.findByRole('heading', { name: 'Créer un compte' }, SLOW);
+    await screen.findByRole('heading', { name: 'Votre prochaine aventure commence ici.' }, SLOW);
     fillForm();
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
     expect(await screen.findByText("Acceptez les conditions d'utilisation pour continuer", {}, SLOW)).toBeTruthy();
@@ -54,7 +54,7 @@ describe('Register', () => {
       'auth/resend-verification/': { body: { success: true, message: 'ok' } },
     });
     renderAppAt('/auth/register');
-    await screen.findByRole('heading', { name: 'Créer un compte' }, SLOW);
+    await screen.findByRole('heading', { name: 'Votre prochaine aventure commence ici.' }, SLOW);
     fillForm();
     fireEvent.click(screen.getByRole('checkbox', { name: /J'accepte les conditions/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));
@@ -93,7 +93,7 @@ describe('Register', () => {
       },
     });
     renderAppAt('/auth/register');
-    await screen.findByRole('heading', { name: 'Créer un compte' }, SLOW);
+    await screen.findByRole('heading', { name: 'Votre prochaine aventure commence ici.' }, SLOW);
     fillForm();
     fireEvent.click(screen.getByRole('checkbox', { name: /J'accepte les conditions/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }));

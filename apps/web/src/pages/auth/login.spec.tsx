@@ -30,7 +30,7 @@ describe('Login', () => {
     const leave = vi.spyOn(oauthState, 'leaveTo').mockImplementation(() => undefined);
     renderAppAt('/auth/login?next=%2Finvite%2FTOKEN');
     expect(await screen.findByRole('button', { name: 'Continuer avec Google' }, SLOW)).toBeTruthy();
-    expect(screen.getByRole('link', { name: "S'inscrire" }).getAttribute('href')).toBe('/auth/register?next=%2Finvite%2FTOKEN');
+    expect(screen.getByRole('link', { name: 'Créer un compte' }).getAttribute('href')).toBe('/auth/register?next=%2Finvite%2FTOKEN');
     fireEvent.click(screen.getByRole('button', { name: 'Continuer avec GitHub' }));
     await waitFor(() => expect(leave).toHaveBeenCalledWith('https://github.com/login/oauth/authorize?x=1'), SLOW);
     expect(new URL(calls[0].url).searchParams.get('redirect_uri')).toBe(`${window.location.origin}/auth/callback/github`);
@@ -43,7 +43,7 @@ describe('Login', () => {
       'auth/login/': { status: 401, body: { success: false, code: 'invalid_credentials', message: 'Invalid credentials.' } },
     });
     renderAppAt('/auth/login');
-    await screen.findByRole('heading', { name: 'Se connecter' }, SLOW);
+    await screen.findByRole('heading', { name: 'Heureux de vous revoir.' }, SLOW);
     submit('awa@example.com', 'wrong-password');
     expect(await screen.findByText('Email ou mot de passe incorrect.', {}, SLOW)).toBeTruthy();
   });
@@ -58,7 +58,7 @@ describe('Login', () => {
       },
     });
     const { where } = renderAppAt('/auth/login?next=/dashboard/overview');
-    await screen.findByRole('heading', { name: 'Se connecter' }, SLOW);
+    await screen.findByRole('heading', { name: 'Heureux de vous revoir.' }, SLOW);
     submit('Awa@Example.com', 'kodinga2026');
     await waitFor(() => expect(where()).toBe('/dashboard/overview'), SLOW);
     expect(calls[0].body).toMatchObject({ email: 'awa@example.com', password: 'kodinga2026' });
@@ -70,7 +70,7 @@ describe('Login', () => {
       'auth/login/': { body: { success: true, data: { access: 'a', refresh: 'r', session_id: 's', user: { id: 'u1' } } } },
     });
     const { where } = renderAppAt('/auth/login?next=//evil.example.com');
-    await screen.findByRole('heading', { name: 'Se connecter' }, SLOW);
+    await screen.findByRole('heading', { name: 'Heureux de vous revoir.' }, SLOW);
     submit('awa@example.com', 'kodinga2026');
     await waitFor(() => expect(where()).toBe('/'), SLOW);
   });
@@ -81,7 +81,7 @@ describe('Login', () => {
       'auth/login/': { status: 401, body: { success: false, code: 'invalid_credentials', message: 'Invalid credentials.' } },
     });
     renderAppAt('/auth/login');
-    expect(await screen.findByRole('heading', { name: 'Log in' }, SLOW)).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Good to see you again.' }, SLOW)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
     expect(await screen.findByText('Enter your email', {}, SLOW)).toBeTruthy();

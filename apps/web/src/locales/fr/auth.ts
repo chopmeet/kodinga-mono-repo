@@ -1,13 +1,34 @@
 // Sign in, sign up, password and email verification screens
 export const auth = {
+  layout: {
+    explore: 'Explorer les communautés',
+    footer: '© {{year}} Kodinga · La tech est meilleure, ensemble.',
+  },
   aside: {
-    titleStart: 'Apprenez et codez avec votre',
-    titleHighlight: 'communauté',
-    welcome: 'Bienvenue dans Python & IA',
-    terminal: 'Exemple : rejoindre une communauté',
-    title: 'Apprenez et codez avec votre communauté',
-    python: 'Python & IA',
-    security: 'Cybersécurité',
+    world: 'Le monde connecté',
+    live: 'Réseau actif',
+    activity: 'Ce qui se passe sur Kodinga',
+    cairo: 'Le Caire',
+    login: {
+      eyebrow: 'Grandissez ensemble',
+      title: 'Les meilleures opportunités naissent des bonnes connexions.',
+      text: 'Retrouvez les développeurs, designers et passionnés de tech qui apprennent et construisent avec vous, partout en Afrique.',
+      cards: [
+        { title: 'Atelier Python', meta: 'Démarre dans 2 h' },
+        { title: 'GalsenDev', meta: 'Nouvelle discussion · React 19' },
+        { title: '+24 membres', meta: 'Cette semaine' },
+      ],
+    },
+    register: {
+      eyebrow: 'Un compte, mille possibilités',
+      title: 'Apprenez. Partagez. Évoluez.',
+      text: 'Un compte, des possibilités infinies. Rejoignez des personnes qui apprennent, créent et progressent ensemble.',
+      cards: [
+        { title: 'Module 3 terminé', meta: 'Progression 68 %' },
+        { title: 'Découvrir', meta: '120+ communautés tech' },
+        { title: 'Hackathon Dakar', meta: 'Équipe formée · 4 membres' },
+      ],
+    },
   },
   common: {
     email: 'Adresse email',
@@ -49,16 +70,16 @@ export const auth = {
     passwordsMismatch: 'Les mots de passe ne correspondent pas',
   },
   login: {
-    title: 'Se connecter',
-    subtitle: 'Content de vous revoir ! Retrouvez vos communautés.',
-    noAccount: 'Pas encore de compte ?',
-    signup: 'S\'inscrire',
+    title: 'Heureux de vous revoir.',
+    subtitle: 'Connectez-vous pour retrouver vos communautés, vos discussions et vos projets.',
+    noAccount: 'Vous n\'avez pas encore de compte ?',
+    signup: 'Créer un compte',
     forgot: 'Mot de passe oublié ?',
     submit: 'Se connecter',
   },
   register: {
-    title: 'Créer un compte',
-    subtitle: 'Rejoignez les communautés tech d\'Afrique, gratuitement.',
+    title: 'Votre prochaine aventure commence ici.',
+    subtitle: 'Créez votre compte et rejoignez des communautés qui vous ressemblent.',
     hasAccount: 'Déjà un compte ?',
     firstName: 'Prénom',
     lastName: 'Nom',

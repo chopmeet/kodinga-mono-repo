@@ -19,7 +19,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-import { customToast, InputSwitch } from '@kodinga/ui';
+import { Button, customToast, InputSwitch } from '@kodinga/ui';
 import {
   useGetCommunitySettingsQuery,
   useUpdateCommunitySettingsMutation,
@@ -493,7 +493,7 @@ export function SpaceRolesTab() {
               onClick={() => setActiveRole(role)}
               className={`flex flex-col text-left p-3.5 rounded-xl border transition-all duration-150 ${
                 isSelected
-                  ? 'border-indigo-600 bg-indigo-50/40 shadow-sm ring-1 ring-indigo-600/20'
+                  ? 'border-brand bg-brand-subtle shadow-sm ring-1 ring-brand/20'
                   : 'border-border hover:border-border-strong hover:bg-subtle/50 bg-card'
               }`}
             >
@@ -547,29 +547,22 @@ export function SpaceRolesTab() {
 
           {!isOwner && (
             <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-              <button
-                type="button"
-                onClick={() => handleBatchToggle(activeRole, true)}
-                className="px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
-              >
+              <Button type="button" variant="outline" size="sm" onClick={() => handleBatchToggle(activeRole, true)}>
                 Tout autoriser
-              </button>
-              <button
-                type="button"
-                onClick={() => handleBatchToggle(activeRole, false)}
-                className="px-2.5 py-1 text-xs font-medium text-body bg-card border border-border rounded-lg hover:bg-subtle transition"
-              >
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleBatchToggle(activeRole, false)}>
                 Tout restreindre
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleResetRoleDefaults(activeRole)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-soft hover:text-foreground border border-transparent hover:border-border rounded-lg transition"
                 title="Rétablir les permissions par défaut de ce rôle"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw />
                 Par défaut
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -686,39 +679,23 @@ export function SpaceRolesTab() {
       {/* Action Footer */}
       <div className="sticky bottom-4 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-lg">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleResetAllDefaults}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-soft hover:text-foreground px-3 py-2 border border-border hover:bg-subtle rounded-lg transition"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
+          <Button type="button" variant="outline" size="sm" onClick={handleResetAllDefaults}>
+            <RotateCcw />
             Réinitialiser tous les rôles par défaut
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <button
+          <Button
             type="button"
+            className="w-full sm:w-auto"
             onClick={handleSave}
+            isLoading={isSaving}
             disabled={isSaving || !hasUnsavedChanges}
-            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition shadow-xs ${
-              hasUnsavedChanges
-                ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer ring-2 ring-indigo-600/30'
-                : 'bg-muted text-faint cursor-not-allowed'
-            }`}
           >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Enregistrement...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>Enregistrer les permissions</span>
-              </>
-            )}
-          </button>
+            {!isSaving && <Save />}
+            Enregistrer les permissions
+          </Button>
         </div>
       </div>
     </div>
