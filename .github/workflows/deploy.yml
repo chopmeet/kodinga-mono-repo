@@ -3,17 +3,17 @@
 #
 # With `deploy: false` (pull requests) the images are only built, to check the Dockerfiles.
 #
-# Per GitHub environment (Settings > Environments > recette | production):
+# Per GitHub environment (Settings > Environments > recette | prod):
 #   secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY, SSH_PASSPHRASE (optional), GHCR_TOKEN (PAT read:packages)
 #   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082), API_PORT (e.g. 8092),
-#            ASGI_PORT (optional: 8094 in recette, 8093 in production by default)
+#            ASGI_PORT (optional: 8094 in recette, 8093 in prod by default)
 name: Deploy (reusable)
 
 on:
   workflow_call:
     inputs:
       environment:
-        description: GitHub environment, also the moving image tag (recette | production)
+        description: GitHub environment, also the moving image tag (recette | prod)
         type: string
         required: true
       site-url:
@@ -91,7 +91,7 @@ jobs:
           # Only the web Dockerfile declares these (the api build just ignores them)
           build-args: |
             VITE_SITE_URL=${{ inputs.site-url }}
-            VITE_APP_ENV=${{ inputs.environment == 'production' && 'prod' || 'demo' }}
+            VITE_APP_ENV=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'prod' || 'demo' }}
           push: ${{ inputs.deploy }}
           # Immutable tag (rollback) + moving tag per environment
           tags: |
@@ -137,7 +137,7 @@ jobs:
           WEB_PORT: ${{ vars.WEB_PORT }}
           API_PORT: ${{ vars.API_PORT }}
           # Recette and production share the VPS: each needs its own port for the websockets
-          ASGI_PORT: ${{ vars.ASGI_PORT || (inputs.environment == 'production' && '8093' || '8094') }}
+          ASGI_PORT: ${{ vars.ASGI_PORT || ((inputs.environment == 'prod' || inputs.environment == 'production') && '8093' || '8094') }}
           SITE_URL: ${{ inputs.site-url }}
           API_URL: ${{ inputs.api-url }}
           GHCR_USER: ${{ github.repository_owner }}
