@@ -5,7 +5,8 @@
 #
 # Per GitHub environment (Settings > Environments > recette | production):
 #   secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY, SSH_PASSPHRASE (optional), GHCR_TOKEN (PAT read:packages)
-#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082), API_PORT (e.g. 8092)
+#   vars:    DEPLOY_PATH (e.g. /opt/kodinga/recette), WEB_PORT (e.g. 8082), API_PORT (e.g. 8092),
+#            ASGI_PORT (optional: 8094 in recette, 8093 in production by default)
 name: Deploy (reusable)
 
 on:
@@ -135,6 +136,8 @@ jobs:
           IMAGE_TAG: ${{ needs.images.outputs.tag }}
           WEB_PORT: ${{ vars.WEB_PORT }}
           API_PORT: ${{ vars.API_PORT }}
+          # Recette and production share the VPS: each needs its own port for the websockets
+          ASGI_PORT: ${{ vars.ASGI_PORT || (inputs.environment == 'production' && '8093' || '8094') }}
           SITE_URL: ${{ inputs.site-url }}
           API_URL: ${{ inputs.api-url }}
           GHCR_USER: ${{ github.repository_owner }}
@@ -144,7 +147,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,API_PORT,SITE_URL,API_URL,GHCR_USER,GHCR_TOKEN
+          envs: DEPLOY_PATH,PROJECT,REGISTRY_PATH,IMAGE_TAG,WEB_PORT,API_PORT,ASGI_PORT,SITE_URL,API_URL,GHCR_USER,GHCR_TOKEN
           script: |
             # No `script_stop` option: it checks $? after every line and silently exits on any
             # non-zero test (e.g. a health check attempt that is not 200 yet). set -eu is enough.
@@ -161,6 +164,7 @@ jobs:
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "WEB_PORT=${WEB_PORT:-8081}"
               echo "API_PORT=${API_PORT:-8091}"
+              echo "ASGI_PORT=$ASGI_PORT"
             } > .env
 
             # stdin: the token never shows up in logs or in the process list
