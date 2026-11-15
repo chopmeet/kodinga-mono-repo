@@ -1309,7 +1309,7 @@ export const CommunityApi = createApi({
     }),
     getUnreadNotificationsCount: builder.query<number, void>({
       query: () => 'notifications/unread-count/',
-      transformResponse: (response: ApiSuccess<{ unread_count: number }>) => unwrap(response).unread_count,
+      transformResponse: (response: ApiSuccess<{ unread_count: number }>) => unwrap(response)?.unread_count ?? 0,
       providesTags: ['notifications'],
     }),
     markNotificationRead: builder.mutation<unknown, string>({

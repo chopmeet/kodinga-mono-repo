@@ -40,7 +40,8 @@ const mockOffer = {
 
 function stubOpportunityApi(envelopedApplications = true) {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-    const url = new URL((input as Request).url);
+    const rawUrl = typeof input === 'string' ? input : (input as Request).url;
+    const url = new URL(rawUrl);
     const path = url.pathname;
     const json = (data: unknown, status = 200) =>
       new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -66,7 +67,11 @@ function stubOpportunityApi(envelopedApplications = true) {
       return json(envelopedApplications ? { success: true, data: apps } : apps);
     }
 
-    return json({ success: true, data: null });
+    if (path.endsWith('/notifications/unread-count/')) {
+      return json({ success: true, data: { unread_count: 0 } });
+    }
+
+    return json({ success: true, data: [] });
   });
 }
 
@@ -100,7 +105,7 @@ describe('Opportunity detail page', () => {
     // Company name
     expect(screen.getByText('Dakar AI Labs')).toBeTruthy();
     // Back link with community query param (?from=dakar-ai)
-    expect(screen.getByText(/Retour à la communauté/i)).toBeTruthy();
+    expect(screen.getByText(/Opportunités de la communauté/i)).toBeTruthy();
     // Shows candidate already applied status without crashing
     expect(await screen.findByText(/Candidature envoyée/i, {}, SLOW)).toBeTruthy();
   });
@@ -111,6 +116,6 @@ describe('Opportunity detail page', () => {
     renderAppAt('/opportunities/tech-developpeur-fullstack?from=dakar-ai');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Tech Développeur Fullstack' }, SLOW)).toBeTruthy();
-    expect(screen.getByText(/Connectez-vous pour postuler/i)).toBeTruthy();
+    expect(screen.getByText(/Se connecter pour postuler/i)).toBeTruthy();
   });
 });
