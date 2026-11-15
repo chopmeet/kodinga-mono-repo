@@ -396,3 +396,72 @@ class TestPostsAPI:
         assert comments_list[0]["content"] == "Deuxième commentaire (récent)"
         assert comments_list[1]["content"] == "Premier commentaire (ancien)"
 
+    def test_post_video_uploadthing_128mb_limit_and_direct_playback(
+        self, api_client, user_owner, community
+    ):
+        """
+        Validates:
+        1. 128 MB limit for post videos: rejection with 'uploader une video < 128Mo'.
+        2. Acceptance of <= 128 MB video.
+        3. Video attached directly via UploadThing (MediaAsset) without Mux processing delay,
+           instantly returning 'READY' status and playback_url equal to the UploadThing file_url.
+        """
+        from rest_framework.exceptions import ValidationError
+        from apps.media.models.media_asset import MediaAsset, MediaPurpose, MediaStatus
+        from apps.media.services.uploadthing_service import UploadThingService
+
+        # 1. Rejection over 128 MB (128 MB = 134,217,728 bytes)
+        with pytest.raises(ValidationError) as exc_info:
+            UploadThingService.validate_file_constraints(
+                file_name="grand_tuto.mp4",
+                file_size=129 * 1024 * 1024,
+                mime_type="video/mp4",
+                purpose="post_video",
+            )
+        assert "uploader une video < 128Mo" in str(exc_info.value)
+
+        # 2. Acceptance at 128 MB or less
+        UploadThingService.validate_file_constraints(
+            file_name="tuto.mp4",
+            file_size=120 * 1024 * 1024,
+            mime_type="video/mp4",
+            purpose="post_video",
+        )
+
+        # 3. Create MediaAsset on UploadThing (pure UploadThing, without Mux)
+        video_asset = MediaAsset.objects.create(
+            user=user_owner,
+            file_name="demo_direct.mp4",
+            file_key="kodinga/post_video/demo_123.mp4",
+            file_url="https://utfs.io/f/demo_direct.mp4",
+            file_size=50 * 1024 * 1024,
+            mime_type="video/mp4",
+            purpose=MediaPurpose.POST_VIDEO,
+            status=MediaStatus.READY,
+        )
+
+        api_client.force_authenticate(user=user_owner)
+        res = api_client.post(
+            f"/api/v1/communities/{community.slug}/feed/",
+            {
+                "title": "Post avec vidéo UploadThing sans Mux",
+                "content": "Voici ma vidéo lue directement depuis UploadThing !",
+                "post_type": PostType.DISCUSSION,
+                "media_ids": [str(video_asset.id)],
+            },
+            format="json",
+        )
+        assert res.status_code == status.HTTP_201_CREATED
+        post_data = res.json()["data"]
+
+        # Ensure video is instantly READY and has direct playback_url
+        media_list = post_data["media"]
+        assert len(media_list) == 1
+        video_media = media_list[0]
+        assert video_media["type"] == "VIDEO"
+        assert video_media["status"] == "READY"
+        assert video_media["url"] == "https://utfs.io/f/demo_direct.mp4"
+        assert video_media["playback_url"] == "https://utfs.io/f/demo_direct.mp4"
+        assert post_data["media_processing_status"] == "READY"
+
+

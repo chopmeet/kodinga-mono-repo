@@ -96,6 +96,8 @@ class PostSelector:
             return qs.order_by("-is_pinned", "created_at")
         elif sort_choice in ("views", "-views"):
             return qs.order_by("-is_pinned", "-views_count", "-created_at")
+        elif sort_choice in ("recent", "latest", "-created_at"):
+            return qs.order_by("-created_at")
 
         return qs.order_by("-is_pinned", "-created_at")
 

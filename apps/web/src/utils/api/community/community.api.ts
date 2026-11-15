@@ -435,8 +435,8 @@ export const CommunityApi = createApi({
       query: (body) => ({ url: 'billing/checkout/', method: 'POST', body }),
       transformResponse: unwrap<CheckoutSession>,
     }),
-    // One image or document of a post, sent as multipart (POST media/upload/): its MediaAsset, attached by media_ids
-    uploadPostFile: builder.mutation<UploadedPostFile, { file: File; purpose: 'post_image' | 'post_document' }>({
+    // One image, document or video of a post, sent as multipart (POST media/upload/): its MediaAsset, attached by media_ids
+    uploadPostFile: builder.mutation<UploadedPostFile, { file: File; purpose: 'post_image' | 'post_document' | 'post_video' }>({
       query: ({ file, purpose }) => {
         const body = new FormData();
         body.append('file', file);
@@ -731,10 +731,10 @@ export const CommunityApi = createApi({
     }),
     // Active members (community settings may keep it to the team); the author edits it afterwards
     createPost: builder.mutation<CommunityPostItem, PostWriteData & { slug: string }>({
-      query: ({ slug, ...body }) => ({ url: `communities/${slug}/feed/`, method: 'POST', body }),
+      query: ({ slug, optimisticMedia: _optimisticMedia, ...body }) => ({ url: `communities/${slug}/feed/`, method: 'POST', body }),
       transformResponse: unwrap<CommunityPostItem>,
-      invalidatesTags: ['communities'],
-      async onQueryStarted({ slug, ...body }, { dispatch, getState, queryFulfilled }) {
+      invalidatesTags: ['communities', 'posts'],
+      async onQueryStarted({ slug, optimisticMedia, ...body }, { dispatch, getState, queryFulfilled }) {
         const state = getState() as StateWithUser;
         const currentUser = state.user?.user ?? {
           id: 'me',
@@ -761,6 +761,7 @@ export const CommunityApi = createApi({
           post_type: body.post_type,
           code_snippet: body.code_snippet,
           code_language: body.code_language,
+          media: optimisticMedia ?? [],
           user_reactions: [],
           poll: body.poll
             ? {
@@ -810,7 +811,25 @@ export const CommunityApi = createApi({
               CommunityApi.util.updateQueryData('getCommunityFeed', args, (feed) => {
                 const idx = feed.results.findIndex((p) => p.id === tempId);
                 if (idx !== -1) {
-                  feed.results[idx] = createdPost;
+                  const optPost = feed.results[idx];
+                  const mergedMedia = (createdPost.media ?? []).map((m) => {
+                    const optM = optPost?.media?.find((om) => om.id === m.id || om.filename === m.filename);
+                    if (optM && !m.playback_url && !m.url && optM.url) {
+                      return {
+                        ...m,
+                        url: optM.url,
+                        playback_url: optM.playback_url || optM.url,
+                        poster_url: m.poster_url || optM.poster_url,
+                        thumbnail_url: m.thumbnail_url || optM.thumbnail_url,
+                        status: m.status === 'FAILED' ? 'FAILED' : 'READY',
+                      };
+                    }
+                    return m;
+                  });
+                  feed.results[idx] = {
+                    ...createdPost,
+                    media: mergedMedia,
+                  };
                 }
               }),
             );
@@ -1538,6 +1557,18 @@ export const CommunityApi = createApi({
     updateCourse: builder.mutation<Course, { slug: string; courseSlug: string } & Partial<CourseWriteData>>({
       query: ({ slug, courseSlug, ...body }) => ({ url: `communities/${slug}/courses/${courseSlug}/`, method: 'PATCH', body }),
       transformResponse: unwrap<Course>,
+      async onQueryStarted({ slug, courseSlug, ...patch }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          CommunityApi.util.updateQueryData('getCourse', { slug, courseSlug }, (draft) => {
+            Object.assign(draft, patch);
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ['courses'],
     }),
     deleteCourse: builder.mutation<unknown, { slug: string; courseSlug: string }>({

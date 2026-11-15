@@ -32,9 +32,10 @@ function PostVideo({ video }: { video: Media }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [posterError, setPosterError] = useState(false);
   // The Mux stream, else the file itself (the api marks a video ready from UploadThing when Mux is slow)
   const source = video.playback_url || video.url;
-  const ready = video.status === 'READY' && !!source;
+  const ready = (video.status === 'READY' || (video.status !== 'FAILED' && !!source)) && !!source;
   useHls(ref, source, ready && playing);
 
   if (!ready) {
@@ -54,7 +55,16 @@ function PostVideo({ video }: { video: Media }) {
   }
 
   const ratio = ratioOf(video);
-  const poster = video.poster_url || video.thumbnail_url || undefined;
+  const rawPoster = video.poster_url || video.thumbnail_url || undefined;
+  // A poster MUST be an image (not an .mp4 or stream url)
+  const isImagePoster = Boolean(
+    rawPoster &&
+    !posterError &&
+    !/\.(mp4|mov|webm|m3u8|ts)(\?.*)?$/i.test(rawPoster) &&
+    (rawPoster.startsWith('data:image/') || rawPoster.includes('image.mux.com') || /\.(jpe?g|png|webp|gif|svg|avif)(\?.*)?$/i.test(rawPoster) || rawPoster.includes('thumbnail') || rawPoster.includes('poster'))
+  );
+  const poster = isImagePoster ? rawPoster : undefined;
+
   return (
     <div
       className={cn('relative overflow-hidden rounded-xl bg-slate-950', ratio < 1 ? 'mx-auto h-[min(32rem,70svh)]' : 'w-full')}
@@ -65,14 +75,46 @@ function PostVideo({ video }: { video: Media }) {
           <track kind="captions" />
         </video>
       ) : (
-        <button type="button" onClick={() => setPlaying(true)} aria-label={t('community.media.play', { name: video.filename })} className="group absolute inset-0">
-          {poster && <img src={poster} alt="" loading="lazy" className="size-full object-cover" />}
-          <span className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" aria-hidden />
-          <span className="absolute inset-0 m-auto flex size-16 items-center justify-center rounded-full bg-card/95 text-brand-strong shadow-lg transition-transform group-hover:scale-105" aria-hidden>
+        <button
+          type="button"
+          onClick={() => setPlaying(true)}
+          aria-label={t('community.media.play', { name: video.filename })}
+          className="group absolute inset-0 cursor-pointer text-left"
+        >
+          {poster ? (
+            <img
+              src={poster}
+              alt=""
+              loading="lazy"
+              onError={() => setPosterError(true)}
+              className="size-full object-cover"
+            />
+          ) : source ? (
+            <video
+              src={`${source}#t=0.001`}
+              preload="metadata"
+              muted
+              playsInline
+              aria-hidden="true"
+              tabIndex={-1}
+              className="pointer-events-none size-full object-cover"
+            />
+          ) : (
+            <div className="flex size-full items-center justify-center bg-slate-900 text-slate-500" aria-hidden="true">
+              <Film className="size-14 opacity-50" />
+            </div>
+          )}
+          <span className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent transition-opacity group-hover:opacity-90" aria-hidden="true" />
+          <span
+            className="absolute inset-0 m-auto flex size-16 items-center justify-center rounded-full bg-card/95 text-brand-strong shadow-xl ring-2 ring-white/10 backdrop-blur-xs transition-transform duration-200 group-hover:scale-110"
+            aria-hidden="true"
+          >
             <Play className="ml-1 size-7 fill-current" />
           </span>
           {!!video.duration && (
-            <span className="absolute right-3 bottom-3 rounded-md bg-slate-950/70 px-2 py-0.5 text-xs font-medium text-white tabular-nums">{clock(video.duration)}</span>
+            <span className="absolute right-3 bottom-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-xs font-semibold text-white shadow-xs tabular-nums" aria-hidden="true">
+              {clock(video.duration)}
+            </span>
           )}
         </button>
       )}

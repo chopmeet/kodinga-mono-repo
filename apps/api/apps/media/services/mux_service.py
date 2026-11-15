@@ -76,12 +76,10 @@ class MuxVideoService:
                 )
             else:
                 max_bytes = int(
-                    getattr(settings, "POST_VIDEO_MAX_SIZE_BYTES", 100 * 1024 * 1024)
+                    getattr(settings, "POST_VIDEO_MAX_SIZE_BYTES", 128 * 1024 * 1024)
                 )
             if file_size > max_bytes:
-                raise ValidationError(
-                    f"La vidéo dépasse la taille maximale autorisée ({max_bytes // (1024 * 1024)} Mo)."
-                )
+                raise ValidationError("uploader une video < 128Mo")
 
     @classmethod
     def create_direct_upload(
@@ -416,6 +414,82 @@ class MuxVideoService:
             "video_asset_id": str(video_asset.id),
             "video_status": video_asset.status,
         }
+
+    @classmethod
+    def sync_asset_from_mux(cls, video_asset: VideoAsset) -> VideoAsset:
+        """
+        Polls Mux REST API synchronously to refresh the VideoAsset state when webhooks are delayed
+        or when running in environments without ingress webhooks.
+        """
+        if not video_asset or video_asset.status in (VideoStatus.READY, VideoStatus.DELETED, VideoStatus.ERRORED):
+            return video_asset
+
+        auth = cls._get_auth()
+        if not auth:
+            # Dev / test environment without live Mux credentials:
+            # If upload was initiated or asset is waiting, auto-resolve to READY with mock playback ID
+            if video_asset.upload_id and "mock" in video_asset.upload_id:
+                video_asset.status = VideoStatus.READY
+                if not video_asset.playback_id:
+                    video_asset.playback_id = f"mock_{video_asset.id.hex[:12]}"
+                video_asset.save(update_fields=["status", "playback_id", "updated_at"])
+            return video_asset
+
+        meta = dict(video_asset.metadata) if isinstance(video_asset.metadata, dict) else {}
+
+        # 1. If we have upload_id but no asset_id yet, query the direct upload
+        if video_asset.upload_id and not video_asset.asset_id:
+            try:
+                res = requests.get(f"{cls.MUX_API_URL}/uploads/{video_asset.upload_id}", auth=auth, timeout=5)
+                if res.status_code == 200:
+                    u_data = res.json().get("data", {})
+                    asset_id = u_data.get("asset_id")
+                    if asset_id:
+                        video_asset.asset_id = asset_id
+                        if video_asset.status != VideoStatus.READY:
+                            video_asset.status = VideoStatus.PREPARING
+            except Exception as exc:
+                logger.warning(f"Error querying Mux upload {video_asset.upload_id}: {exc}")
+
+        # 2. If we have asset_id, query the asset state directly
+        if video_asset.asset_id:
+            try:
+                res = requests.get(f"{cls.MUX_API_URL}/assets/{video_asset.asset_id}", auth=auth, timeout=5)
+                if res.status_code == 200:
+                    a_data = res.json().get("data", {})
+                    mux_status = a_data.get("status")
+                    playback_ids = a_data.get("playback_ids", [])
+                    public_playback_id = next(
+                        (p.get("id") for p in playback_ids if p.get("policy") == "public"),
+                        playback_ids[0].get("id") if playback_ids else None,
+                    )
+                    if public_playback_id:
+                        video_asset.playback_id = public_playback_id
+                    if a_data.get("duration") is not None:
+                        video_asset.duration = a_data.get("duration")
+                    if a_data.get("aspect_ratio"):
+                        video_asset.aspect_ratio = a_data.get("aspect_ratio")
+                    if a_data.get("max_stored_resolution"):
+                        video_asset.max_stored_resolution = a_data.get("max_stored_resolution")
+                        video_asset.resolution = a_data.get("max_stored_resolution")
+
+                    if mux_status == "ready":
+                        video_asset.status = VideoStatus.READY
+                        video_asset.error_message = ""
+                    elif mux_status == "errored":
+                        video_asset.status = VideoStatus.ERRORED
+                        video_asset.error_message = json.dumps(a_data.get("errors", {}))
+                    elif mux_status == "preparing":
+                        video_asset.status = VideoStatus.PREPARING
+
+                    video_asset.metadata = meta
+                    video_asset.save()
+                    if video_asset.status == VideoStatus.READY:
+                        cls._broadcast_video_update(video_asset)
+            except Exception as exc:
+                logger.warning(f"Error querying Mux asset {video_asset.asset_id}: {exc}")
+
+        return video_asset
 
     @classmethod
     def _broadcast_video_update(cls, video_asset: VideoAsset) -> None:

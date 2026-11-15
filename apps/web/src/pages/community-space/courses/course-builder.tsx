@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyAlert,
+  Progress,
 } from '@kodinga/ui';
 import { RowActions } from '@/pages/shared/row-actions';
 import {
@@ -47,7 +48,7 @@ function CourseBuilder() {
   const back = `/c/${slug}/courses`;
   const { data: course, isLoading, error } = useGetCourseQuery({ slug, courseSlug });
   const [editingCourse, setEditingCourse] = useState(false);
-  const { canManage, togglePublished, actionsFor, confirmDialog } = UseCourseActions({
+  const { canManage, togglePublished, isPublishing, publishProgress, publishStep, actionsFor, confirmDialog } = UseCourseActions({
     onEdit: () => setEditingCourse(true),
     afterDelete: () => navigate(back),
   });
@@ -130,9 +131,9 @@ function CourseBuilder() {
           </div>
           {canManage && (
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant={course.is_published ? 'outline' : 'default'} onClick={() => togglePublished(course)}>
+              <Button size="sm" variant={course.is_published ? 'outline' : 'default'} isLoading={isPublishing} disabled={isPublishing} onClick={() => togglePublished(course)}>
                 {course.is_published ? <EyeOff /> : <Send />}
-                {course.is_published ? 'Repasser en brouillon' : 'Publier'}
+                {isPublishing ? 'Publication en cours…' : course.is_published ? 'Repasser en brouillon' : 'Publier'}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditingCourse(true)}>
                 <Pencil />
@@ -142,6 +143,26 @@ function CourseBuilder() {
             </div>
           )}
         </div>
+
+        {isPublishing && publishProgress > 0 && (
+          <div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary animate-pulse">
+                  <Send className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Publication de la formation en cours…</p>
+                  <p className="text-xs text-muted-foreground">{publishStep || 'Synchronisation en cours…'}</p>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-primary tabular-nums">{publishProgress}%</span>
+            </div>
+            <div className="mt-3">
+              <Progress value={publishProgress} className="h-2" />
+            </div>
+          </div>
+        )}
       </ColgateWrapper>
 
       <section aria-label="Programme" className="mt-6 flex flex-col gap-4">

@@ -256,7 +256,7 @@ describe('Community space: posts', () => {
     await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/feed/'))?.body).toMatchObject({ media_ids: ['asset-1', 'asset-2'] }), SLOW);
   });
 
-  it('sends a video straight to Mux, then publishes it with the post', async () => {
+  it('enforces 128MB limit with specific error and sends a video directly via UploadThing without Mux', async () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     const calls = stubFeedApi();
@@ -266,16 +266,30 @@ describe('Community space: posts', () => {
     fireEvent.change(within(dialog).getByLabelText(/^Titre/), { target: { value: 'Démo du projet' } });
     fireEvent.change(within(dialog).getByLabelText(/^Contenu/), { target: { value: 'La démo en vidéo.' } });
 
+    // 130MB file to trigger the 128MB limit
+    const hugeFile = new File(['x'], 'too-large.mp4', { type: 'video/mp4' });
+    Object.defineProperty(hugeFile, 'size', { value: 130 * 1024 * 1024 });
+
     fireEvent.change(within(dialog).getByLabelText('Choisir des vidéos'), {
-      target: { files: [new File(['avi'], 'demo.avi', { type: 'video/x-msvideo' }), new File(['mp4'], 'demo.mp4', { type: 'video/mp4' })] },
+      target: {
+        files: [
+          new File(['avi'], 'demo.avi', { type: 'video/x-msvideo' }),
+          hugeFile,
+          new File(['mp4'], 'demo.mp4', { type: 'video/mp4' }),
+        ],
+      },
     });
     expect(await within(dialog).findByText(/« demo\.avi » : formats acceptés MP4, MOV, WEBM\./, {}, SLOW)).toBeTruthy();
+    expect(await within(dialog).findByText(/« too-large\.mp4 » : uploader une video < 128Mo/, {}, SLOW)).toBeTruthy();
+
     const videos = await within(dialog).findByRole('list', { name: 'Vidéos jointes' }, SLOW);
-    expect(await within(videos).findByText(/prête, traitée après publication/, {}, SLOW)).toBeTruthy();
-    expect(calls.find((c) => c.url.pathname.endsWith('/media/videos/upload-url/'))?.body).toMatchObject({ file_name: 'demo.mp4', mime_type: 'video/mp4', purpose: 'post_video' });
+    expect(await within(videos).findByText(/prête/, {}, SLOW)).toBeTruthy();
+
+    // Directly uses media/upload/ with purpose post_video (UploadThing), not Mux upload-url
+    await waitFor(() => expect(calls.some((c) => c.url.pathname.endsWith('/media/upload/'))).toBe(true), SLOW);
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Publier' }));
-    await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/feed/'))?.body).toMatchObject({ video_ids: ['video-1'] }), SLOW);
+    await waitFor(() => expect(calls.find((c) => c.method === 'POST' && c.url.pathname.endsWith('/feed/'))?.body).toMatchObject({ media_ids: ['asset-1'] }), SLOW);
   });
 
   it('removes an attachment of a published post when it is saved', async () => {

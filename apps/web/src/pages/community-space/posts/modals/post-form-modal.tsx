@@ -250,9 +250,9 @@ function PostFormModal({ slug, open, post, onClose, defaultType }: Props) {
             form="post-form"
             isLoading={isSubmitting}
             disabled={attachments.isUploading || attachments.hasErrors}
-            title={attachments.isUploading ? 'Envoi des fichiers en cours…' : attachments.hasErrors ? 'Retirez les fichiers en échec' : undefined}
+            title={attachments.isUploading ? `Envoi des fichiers en cours (${attachments.overallProgress}%)…` : attachments.hasErrors ? 'Retirez les fichiers en échec' : undefined}
           >
-            {post ? 'Enregistrer' : 'Publier'}
+            {post ? 'Enregistrer' : attachments.isUploading ? `Publier (${attachments.overallProgress}%)` : 'Publier'}
           </Button>
         </DialogFooter>
       </DialogContent>

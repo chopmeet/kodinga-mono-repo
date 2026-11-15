@@ -1,11 +1,13 @@
+import logging
 import secrets
 from urllib.parse import parse_qs
 
-from asgiref.sync import sync_to_async
+from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 
+logger = logging.getLogger("kodinga.realtime")
 User = get_user_model()
 
 TICKET_CACHE_PREFIX = "ws_ticket:"
@@ -55,7 +57,8 @@ class RealtimeAuthService:
             if not user_id:
                 return None
             return User.objects.filter(id=user_id, is_active=True).first()
-        except Exception:
+        except Exception as exc:
+            logger.warning(f"[WS AUTH] JWT validation failed: {exc}")
             return None
 
 
@@ -72,7 +75,7 @@ class WebSocketTicketAuthMiddleware:
     async def __call__(self, scope, receive, send):
         # Only process websocket connections
         if scope["type"] == "websocket":
-            # If user already set (e.g. In unit tests), keep it
+            # If user already set (e.g. in unit tests), keep it
             existing_user = scope.get("user")
             if not existing_user or isinstance(existing_user, AnonymousUser):
                 query_string = scope.get("query_string", b"").decode("utf-8")
@@ -83,13 +86,13 @@ class WebSocketTicketAuthMiddleware:
                 user = None
                 if ticket_list and len(ticket_list) > 0:
                     ticket = ticket_list[0]
-                    user = await sync_to_async(
+                    user = await database_sync_to_async(
                         RealtimeAuthService.validate_and_consume_ticket
                     )(ticket)
 
                 if not user and token_list and len(token_list) > 0:
                     raw_token = token_list[0]
-                    user = await sync_to_async(
+                    user = await database_sync_to_async(
                         RealtimeAuthService.validate_jwt_token
                     )(raw_token)
 

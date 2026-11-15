@@ -1,8 +1,8 @@
-import { BookOpen, GraduationCap, Plus, RotateCw } from 'lucide-react';
+import { BookOpen, GraduationCap, Plus, RotateCw, Send } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { Badge, Button, ColgateWrapper, EmptyAlert, Pagination, TopTitle } from '@kodinga/ui';
+import { Badge, Button, ColgateWrapper, EmptyAlert, Pagination, Progress, TopTitle } from '@kodinga/ui';
 import { FilterChip } from '@/pages/shared/filter-chip';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import { RowActions } from '@/pages/shared/row-actions';
@@ -28,7 +28,7 @@ function CommunityCourses() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(12);
   const [editing, setEditing] = useState<Course | 'new' | null>(null);
-  const { canManage, actionsFor, confirmDialog } = UseCourseActions({ onEdit: setEditing });
+  const { canManage, actionsFor, confirmDialog, isPublishing, publishProgress, publishStep } = UseCourseActions({ onEdit: setEditing });
   const { data, isLoading, isFetching, error, refetch } = useGetCommunityCoursesQuery({
     slug: community.slug,
     is_published: FILTERS.find((f) => f.id === filter)?.published,
@@ -51,6 +51,26 @@ function CommunityCourses() {
       </div>
 
       <ColgateWrapper className="border border-border p-4">
+        {isPublishing && publishProgress > 0 && (
+          <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary animate-pulse">
+                  <Send className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Publication de la formation en cours…</p>
+                  <p className="text-xs text-muted-foreground">{publishStep || 'Synchronisation en cours…'}</p>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-primary tabular-nums">{publishProgress}%</span>
+            </div>
+            <div className="mt-3">
+              <Progress value={publishProgress} className="h-2" />
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2" role="group" aria-label="Filtrer les formations">
           {FILTERS.map((f) => (
             <FilterChip
