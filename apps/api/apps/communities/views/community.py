@@ -111,6 +111,7 @@ class CommunityListCreateView(APIView):
 
         user_memberships = None
         user_memberships_map = None
+        user_paid_community_ids = None
         if request.user.is_authenticated and page:
             memberships = list(
                 CommunityMember.objects.filter(
@@ -125,6 +126,42 @@ class CommunityListCreateView(APIView):
                 if m.status == MembershipStatus.ACTIVE
             }
 
+            from django.utils import timezone
+
+            from apps.billing.models.payment import Payment, PaymentStatus
+            from apps.billing.models.subscription import (
+                Subscription,
+                SubscriptionStatus,
+            )
+            from apps.communities.models.community import CommunityPricing
+            from common.permissions.base import is_superadmin_user
+
+            page_ids = [c.id for c in page]
+            now = timezone.now()
+
+            active_sub_ids = set(
+                Subscription.objects.filter(
+                    user=request.user,
+                    community_id__in=page_ids,
+                    status__in=[SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+                    current_period_end__gt=now,
+                ).values_list("community_id", flat=True)
+            )
+            paid_payment_ids = set(
+                Payment.objects.filter(
+                    user=request.user,
+                    plan__community_id__in=page_ids,
+                    status=PaymentStatus.PAID,
+                ).values_list("plan__community_id", flat=True)
+            )
+            is_super = is_superadmin_user(request.user)
+            user_paid_community_ids = active_sub_ids | paid_payment_ids
+            for c in page:
+                if is_super or c.owner_id == request.user.id or (
+                    c.pricing_type == CommunityPricing.PAID and c.id in user_memberships
+                ):
+                    user_paid_community_ids.add(c.id)
+
         serializer = CommunityListSerializer(
             page,
             many=True,
@@ -132,6 +169,7 @@ class CommunityListCreateView(APIView):
                 "request": request,
                 "user_memberships": user_memberships,
                 "user_memberships_map": user_memberships_map,
+                "user_paid_community_ids": user_paid_community_ids,
             },
         )
         return paginator.get_paginated_response(serializer.data)

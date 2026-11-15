@@ -86,4 +86,92 @@ describe('CommunityCard component', () => {
     const joinBtn = screen.getByRole('link', { name: /Rejoindre le direct/ });
     expect(joinBtn.getAttribute('href')).toBe('/communities/kodinga-devs/events/ev-private-1/live');
   });
+
+  it('renders FREE MEMBER badge when user is member of a free community', () => {
+    render(
+      <MemoryRouter>
+        <CommunityCard community={{ ...mockCommunity, is_member: true, pricing_type: 'free' }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText('FREE MEMBER').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders PAID MEMBER badge in green when user has paid or is member of paid community', () => {
+    render(
+      <MemoryRouter>
+        <CommunityCard community={{ ...mockCommunity, is_member: true, pricing_type: 'paid', has_paid: true }} />
+      </MemoryRouter>,
+    );
+
+    const badges = screen.getAllByText('PAID MEMBER');
+    expect(badges.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders monthly pricing for non-member of paid community', () => {
+    render(
+      <MemoryRouter>
+        <CommunityCard
+          community={{
+            ...mockCommunity,
+            is_member: false,
+            pricing_type: 'paid',
+            subscription_plans: [
+              {
+                id: 'p1',
+                name: 'Pro Pass',
+                slug: 'pro-pass',
+                description: '',
+                price: '5000.00',
+                currency: 'XOF',
+                billing_interval: 'month',
+                interval_count: 1,
+                community_id: 'c1',
+                community_name: 'Kodinga Devs',
+                features: [],
+                is_active: true,
+                order: 1,
+              },
+            ],
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText(/5 000 FCFA/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders one-time payment pricing for non-member of one-time paid community', () => {
+    render(
+      <MemoryRouter>
+        <CommunityCard
+          community={{
+            ...mockCommunity,
+            is_member: false,
+            pricing_type: 'paid',
+            subscription_plans: [
+              {
+                id: 'p2',
+                name: 'Lifetime Pass',
+                slug: 'lifetime-pass',
+                description: '',
+                price: '25000.00',
+                currency: 'XOF',
+                billing_interval: 'one_time',
+                interval_count: 1,
+                community_id: 'c1',
+                community_name: 'Kodinga Devs',
+                features: [],
+                is_active: true,
+                order: 1,
+              },
+            ],
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText(/25 000 FCFA/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Paiement unique/i).length).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -51,6 +51,10 @@ export const home: Translations['home'] = {
   },
   card: {
     paid: 'Paid',
+    paidMember: 'PAID MEMBER',
+    freeMember: 'FREE MEMBER',
+    oneTimePayment: 'One time payment',
+    monthlyPayment: 'Monthly payment',
     onRequest: 'On request',
     freeAccess: 'Free access',
     free: 'Free',

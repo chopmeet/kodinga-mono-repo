@@ -586,3 +586,35 @@ class TestMemberActivityEndpoints:
             ][0]["slug"]
             == "rust-meetup-abidjan"
         )
+
+    def test_my_opportunity_applications_api(
+        self, api_client, member_user, community
+    ):
+        api_client.force_authenticate(user=member_user)
+        opp = Opportunity.objects.create(
+            title="Tech Développeur Fullstack",
+            slug="tech-developpeur-fullstack",
+            company_name="Dakar AI Labs",
+            opportunity_type=OpportunityType.FULL_TIME,
+            community=community,
+            poster=member_user,
+            status=OpportunityStatus.OPEN,
+        )
+        app = OpportunityApplication.objects.create(
+            opportunity=opp,
+            applicant=member_user,
+            resume_url="https://example.com/cv.pdf",
+            cover_letter="Candidature test",
+            portfolio_url="https://github.com/test",
+            status=OppAppStatus.PENDING,
+        )
+
+        resp = api_client.get("/api/v1/opportunities/my-applications/")
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data["success"] is True
+        assert len(resp.data["data"]) == 1
+        assert resp.data["data"][0]["id"] == str(app.id)
+        assert (
+            resp.data["data"][0]["opportunity"]["slug"]
+            == "tech-developpeur-fullstack"
+        )

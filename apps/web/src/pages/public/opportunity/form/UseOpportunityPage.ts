@@ -7,6 +7,7 @@ import { isExpired } from '@/pages/community-space/opportunities/opportunity-lab
 import { useAppSelector } from '@/redux/hook';
 import { useApplyToOpportunityMutation, useGetMyOpportunityApplicationsQuery, useGetOpportunityQuery } from '@/utils/api/community/community.api';
 import { parseApiError } from '@/utils/api/errors';
+import type { OpportunityApplication } from '@/utils/api/opportunity/opportunity.type';
 
 export type ApplyValues = { resume_url: string; cover_letter: string; portfolio_url: string };
 
@@ -26,7 +27,13 @@ function UseOpportunityPage() {
   const mine = useGetMyOpportunityApplicationsQuery(undefined, { skip: !signedIn });
   const [apply, { isLoading: isApplying }] = useApplyToOpportunityMutation();
   const offer = query.data;
-  const application = (mine.data ?? []).find((a) => a.opportunity?.slug === opportunitySlug) ?? null;
+  const rawList = mine.data as unknown;
+  const applications: OpportunityApplication[] = Array.isArray(rawList)
+    ? rawList
+    : Array.isArray((rawList as { data?: unknown } | undefined)?.data)
+      ? ((rawList as { data: OpportunityApplication[] }).data)
+      : [];
+  const application = applications.find((a) => a?.opportunity?.slug === opportunitySlug) ?? null;
 
   return {
     offer,
