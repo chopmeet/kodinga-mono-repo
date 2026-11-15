@@ -1797,11 +1797,13 @@ export const CommunityApi = createApi({
     // A member applies (CV, letter, portfolio: links); the poster is notified
     applyToOpportunity: builder.mutation<OpportunityApplication, { opportunitySlug: string; resume_url: string; cover_letter: string; portfolio_url: string }>({
       query: ({ opportunitySlug, ...body }) => ({ url: `opportunities/${opportunitySlug}/apply/`, method: 'POST', body }),
+      transformResponse: (response: ApiSuccess<OpportunityApplication>) => unwrap(response),
       invalidatesTags: (_result, _error, { opportunitySlug }) => ['opportunities', { type: 'opportunities', id: opportunitySlug }, { type: 'opportunities', id: 'my-applications' }],
     }),
     // Applications of the signed-in user, with their status
     getMyOpportunityApplications: builder.query<OpportunityApplication[], void>({
       query: () => 'opportunities/my-applications/',
+      transformResponse: (response: ApiSuccess<OpportunityApplication[]>) => unwrap(response),
       providesTags: [{ type: 'opportunities', id: 'my-applications' }],
     }),
     getOpportunityApplications: builder.query<OpportunityApplication[], string>({

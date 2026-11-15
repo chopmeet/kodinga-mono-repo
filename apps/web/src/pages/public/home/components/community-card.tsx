@@ -6,13 +6,71 @@ import { Link, NavLink } from 'react-router-dom';
 import { CommunityAvatar } from '@/pages/shared/community-avatar';
 import { GlassBackdrop } from '@/pages/shared/glass-backdrop';
 import type { CommunityListItem } from '@/utils/api/community/community.type';
-import { formatCompact } from '@/utils/Utils';
+import type { CommunityPlan } from '@/utils/api/billing/billing.type';
+import { entryPriceLabel, formatCompact, planPrice, xof } from '@/utils/Utils';
 
-/** Free + public: join right away. Paid: subscription. Private / secret: the request is reviewed */
-function accessOf(community: CommunityListItem, t: TFunction) {
-  if (community.pricing_type === 'paid') return { label: t('home.card.paid'), className: 'border-border bg-subtle text-body' };
-  if (community.privacy_type !== 'public') return { label: t('home.card.onRequest'), className: 'border-amber-200 bg-amber-50 text-amber-800' };
-  return { label: t('home.card.freeAccess'), className: 'border-brand-muted bg-brand-subtle text-brand-strong' };
+/** Formats the community pricing formulas (monthly, one-time, yearly, or entry price) */
+export function formatCommunityPricing(plans: CommunityPlan[] | undefined, t: TFunction): string | null {
+  const active = (plans ?? []).filter((p) => Number(p.price) > 0 && p.is_active !== false);
+  if (!active.length) return null;
+
+  const monthly = active.find((p) => p.billing_interval === 'month');
+  const oneTime = active.find((p) => p.billing_interval === 'one_time');
+  const yearly = active.find((p) => p.billing_interval === 'year');
+
+  if (monthly && oneTime) {
+    return `${planPrice(monthly)} · ${xof(Number(oneTime.price))} ${t('home.card.oneTimePayment')}`;
+  }
+  if (monthly) {
+    return planPrice(monthly);
+  }
+  if (oneTime) {
+    return `${xof(Number(oneTime.price))} · ${t('home.card.oneTimePayment')}`;
+  }
+  if (yearly) {
+    return planPrice(yearly);
+  }
+  return entryPriceLabel(active);
+}
+
+/** Free + public: join right away. Paid: pricing formula or PAID MEMBER. Private / secret: request reviewed or FREE MEMBER */
+export function accessOf(community: CommunityListItem, t: TFunction) {
+  const isPaidMember = Boolean(community.has_paid || (community.pricing_type === 'paid' && community.is_member));
+  const isFreeMember = Boolean(community.is_member && !isPaidMember);
+
+  if (isPaidMember) {
+    return {
+      label: t('home.card.paidMember', 'PAID MEMBER'),
+      className: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-600/40 font-bold',
+    };
+  }
+
+  if (isFreeMember) {
+    return {
+      label: t('home.card.freeMember', 'FREE MEMBER'),
+      className: 'border-blue-500/40 bg-blue-500/15 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-600/40 font-bold',
+    };
+  }
+
+  if (community.pricing_type === 'paid') {
+    const pricing = formatCommunityPricing(community.subscription_plans, t);
+    return {
+      label: pricing ?? t('home.card.paid'),
+      className: 'border-border bg-subtle text-foreground font-semibold',
+    };
+  }
+
+  if (community.privacy_type !== 'public') {
+    return {
+      label: t('home.card.onRequest'),
+      className: 'border-amber-200 bg-amber-50 text-amber-800',
+    };
+  }
+
+  return {
+    label: t('home.card.freeAccess'),
+    className: 'border-brand-muted bg-brand-subtle text-brand-strong',
+  };
 }
 
 export function CommunityCard({ community }: { community: CommunityListItem }) {
@@ -20,7 +78,18 @@ export function CommunityCard({ community }: { community: CommunityListItem }) {
   const access = accessOf(community, t);
   const href = `/communities/${community.slug}`;
   const isPrivate = community.privacy_type !== 'public';
-  const tags = [community.category?.name, community.pricing_type === 'paid' ? t('home.card.paid') : t('home.card.free')].filter(Boolean) as string[];
+  const isPaidMember = Boolean(community.has_paid || (community.pricing_type === 'paid' && community.is_member));
+  const isFreeMember = Boolean(community.is_member && !isPaidMember);
+
+  const pricingTag = isPaidMember
+    ? t('home.card.paidMember', 'PAID MEMBER')
+    : isFreeMember
+      ? t('home.card.freeMember', 'FREE MEMBER')
+      : community.pricing_type === 'paid'
+        ? (formatCommunityPricing(community.subscription_plans, t) ?? t('home.card.paid'))
+        : t('home.card.free');
+
+  const tags = [community.category?.name, pricingTag].filter(Boolean) as string[];
   const activeLive = community.active_live;
 
   return (

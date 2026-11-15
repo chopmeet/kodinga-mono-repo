@@ -26,8 +26,16 @@ class CommunitySelector:
 
     @classmethod
     def get_base_queryset(cls) -> QuerySet[Community]:
-        return Community.objects.filter(is_active=True).select_related(
-            "owner", "category", "settings"
+        from apps.billing.models.plan import Plan
+
+        plans_prefetch = Prefetch(
+            "subscription_plans",
+            queryset=Plan.objects.filter(is_active=True).order_by("order", "price"),
+        )
+        return (
+            Community.objects.filter(is_active=True)
+            .select_related("owner", "category", "settings")
+            .prefetch_related(plans_prefetch)
         )
 
     @classmethod

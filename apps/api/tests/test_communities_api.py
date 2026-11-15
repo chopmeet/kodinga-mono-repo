@@ -244,6 +244,55 @@ class TestCommunitiesAPI:
         assert data2["pagination"]["has_next"] is False
         assert data2["pagination"]["has_previous"] is True
 
+    def test_community_list_pricing_and_has_paid(
+        self, api_client, user_owner, user_member
+    ):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.billing.models.plan import BillingInterval, Plan
+        from apps.billing.models.subscription import Subscription, SubscriptionStatus
+
+        paid_comm = Community.objects.create(
+            name="Paid Masterminds",
+            slug="paid-masterminds",
+            owner=user_owner,
+            privacy_type=CommunityPrivacy.PUBLIC,
+            pricing_type=CommunityPricing.PAID,
+        )
+        plan = Plan.objects.create(
+            community=paid_comm,
+            name="Pass Mensuel",
+            slug="paid-pass-mensuel",
+            price=5000,
+            billing_interval=BillingInterval.MONTH,
+            is_active=True,
+        )
+
+        res = api_client.get("/api/v1/communities/")
+        assert res.status_code == status.HTTP_200_OK
+        items = res.json()["results"]
+        comm_data = next(c for c in items if c["id"] == str(paid_comm.id))
+        assert comm_data["has_paid"] is False
+        assert len(comm_data["subscription_plans"]) == 1
+        assert float(comm_data["subscription_plans"][0]["price"]) == 5000.0
+
+        Subscription.objects.create(
+            user=user_member,
+            plan=plan,
+            community=paid_comm,
+            status=SubscriptionStatus.ACTIVE,
+            current_period_start=timezone.now(),
+            current_period_end=timezone.now() + timedelta(days=30),
+        )
+        api_client.force_authenticate(user=user_member)
+        res_auth = api_client.get("/api/v1/communities/")
+        assert res_auth.status_code == status.HTTP_200_OK
+        items_auth = res_auth.json()["results"]
+        comm_auth_data = next(c for c in items_auth if c["id"] == str(paid_comm.id))
+        assert comm_auth_data["has_paid"] is True
+
 
 @pytest.mark.django_db
 class TestCategoryAPI:
