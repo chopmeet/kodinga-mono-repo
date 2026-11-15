@@ -19,6 +19,16 @@ from common.utils.pagination import StandardResultsSetPagination
 from common.utils.responses import error_response, success_response
 
 
+class CommunityFeedPagination(StandardResultsSetPagination):
+    """
+    Pagination sans restriction pour le flux du feed en infinite scroll.
+    Permet de charger de larges volumes en défilement continu sans limite arbitraire.
+    """
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 1000
+
+
 class CommunityFeedView(APIView):
     """
     List feed posts or create a new post in a community.
@@ -26,7 +36,7 @@ class CommunityFeedView(APIView):
     file attachments (image/images, document/documents, file/files, video/videos).
     """
 
-    pagination_class = StandardResultsSetPagination
+    pagination_class = CommunityFeedPagination
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):

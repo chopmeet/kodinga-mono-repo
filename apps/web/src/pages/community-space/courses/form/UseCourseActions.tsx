@@ -24,19 +24,61 @@ function UseCourseActions({ onEdit, afterDelete }: { onEdit: (course: Course) =>
   const slug = space.community.slug;
   const canManage = canManageCourses(space);
   const navigate = useNavigate();
-  const [updateCourse] = useUpdateCourseMutation();
+  const [updateCourse, { isLoading: updating }] = useUpdateCourseMutation();
   const [deleteCourse, { isLoading: deleting }] = useDeleteCourseMutation();
   const [toDelete, setToDelete] = useState<Course | null>(null);
+  const [publishProgress, setPublishProgress] = useState(0);
+  const [publishStep, setPublishStep] = useState('');
+  const [publishingCourseId, setPublishingCourseId] = useState<string | null>(null);
 
   const togglePublished = async (course: Course) => {
     if (!course.is_published && course.lessons_count === 0) {
       customToast.error({ message: 'Ajoutez au moins une leçon avant de publier.' });
       return;
     }
+
+    const isPublishAction = !course.is_published;
+    let timer: NodeJS.Timeout | null = null;
+
+    if (isPublishAction) {
+      setPublishingCourseId(course.id);
+      setPublishProgress(20);
+      setPublishStep('Validation de la structure et des leçons…');
+
+      let currentPct = 20;
+      timer = setInterval(() => {
+        if (currentPct < 85) {
+          currentPct += currentPct < 50 ? 15 : 10;
+          setPublishProgress(currentPct);
+          if (currentPct >= 40 && currentPct < 70) {
+            setPublishStep('Vérification des vidéos et ressources associées…');
+          } else if (currentPct >= 70) {
+            setPublishStep('Mise en ligne et notification des membres…');
+          }
+        }
+      }, 180);
+    }
+
     try {
-      await updateCourse({ slug, courseSlug: course.slug, is_published: !course.is_published }).unwrap();
-      customToast.success({ message: course.is_published ? `« ${course.title} » repasse en brouillon.` : `« ${course.title} » est publiée.` });
+      await updateCourse({ slug, courseSlug: course.slug, is_published: isPublishAction }).unwrap();
+      if (timer) clearInterval(timer);
+      if (isPublishAction) {
+        setPublishProgress(100);
+        setPublishStep('Formation publiée avec succès !');
+        setTimeout(() => {
+          setPublishProgress(0);
+          setPublishStep('');
+          setPublishingCourseId(null);
+        }, 500);
+      }
+      customToast.success({
+        message: course.is_published ? `« ${course.title} » repasse en brouillon.` : `« ${course.title} » est publiée avec succès.`,
+      });
     } catch (error) {
+      if (timer) clearInterval(timer);
+      setPublishProgress(0);
+      setPublishStep('');
+      setPublishingCourseId(null);
       customToast.error({ message: parseApiError(error).message });
     }
   };
@@ -88,7 +130,16 @@ function UseCourseActions({ onEdit, afterDelete }: { onEdit: (course: Course) =>
     </Dialog>
   );
 
-  return { canManage, togglePublished, actionsFor, confirmDialog };
+  return {
+    canManage,
+    togglePublished,
+    isPublishing: updating || publishProgress > 0,
+    publishProgress,
+    publishStep,
+    publishingCourseId,
+    actionsFor,
+    confirmDialog,
+  };
 }
 
 export default UseCourseActions;

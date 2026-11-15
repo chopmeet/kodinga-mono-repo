@@ -159,10 +159,10 @@ class UploadThingService:
         "community_banner": 5 * 1024 * 1024,  # 5 MB
         "post_image": 10 * 1024 * 1024,  # 10 MB
         "post_document": 25 * 1024 * 1024,  # 25 MB
-        "post_video": 100 * 1024 * 1024,  # 100 MB
-        "post_attachment": 25
+        "post_video": 128 * 1024 * 1024,  # 128 MB
+        "post_attachment": 128
         * 1024
-        * 1024,  # 25 MB (or 10 MB for images, 100 MB for videos)
+        * 1024,  # 128 MB (10 MB for images, 25 MB for docs, 128 MB for videos)
         "lesson_attachment": 100 * 1024 * 1024,  # 100 MB
         "lesson_video": 500 * 1024 * 1024,  # 500 MB (212 MB+ video lessons)
         "document": 25 * 1024 * 1024,  # 25 MB
@@ -399,6 +399,8 @@ class UploadThingService:
             file_name=file_name,
         )
         if file_size > max_size:
+            if purpose == "post_video" or normalized_mime.startswith("video/") or ext in cls.POST_VIDEO_EXTENSIONS:
+                raise ValidationError("uploader une video < 128Mo")
             raise ValidationError(
                 f"Le fichier dépasse la taille maximale autorisée ({max_size // (1024 * 1024)} Mo)."
             )

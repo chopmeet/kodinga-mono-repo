@@ -14,6 +14,7 @@ from apps.communities.models.community import Community
 from apps.communities.models.settings import PostPermissionType
 from apps.media.models.media_asset import MediaAsset, MediaStatus
 from apps.media.models.video_asset import VideoAsset, VideoStatus
+from apps.media.services.mux_service import MuxVideoService
 from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
@@ -107,7 +108,6 @@ class PostService:
         if not files_dict:
             return [], []
 
-        from apps.media.services.mux_service import MuxVideoService
         from apps.media.services.uploadthing_service import UploadThingService
 
         extracted_media_ids: list[str] = []
@@ -162,7 +162,7 @@ class PostService:
             )
 
             if is_video:
-                MuxVideoService.validate_video_constraints(
+                UploadThingService.validate_file_constraints(
                     file_name=f_name,
                     file_size=f_size,
                     mime_type=f_mime,
@@ -175,38 +175,7 @@ class PostService:
                     purpose="post_video",
                     file_obj=f_obj,
                 )
-                video_asset = MuxVideoService.create_asset_from_url(
-                    user=user,
-                    input_url=ut_res["file_url"],
-                    title=f_name,
-                )
-                asset_meta = (
-                    video_asset.metadata
-                    if isinstance(video_asset.metadata, dict)
-                    else {}
-                )
-                if asset_meta.get("mux_fallback"):
-                    video_asset.provider = "uploadthing"
-                    video_asset.status = VideoStatus.READY
-
-                v_meta = dict(video_asset.metadata or {})
-                v_meta.update(
-                    {
-                        "media_asset_id": ut_res.get("asset_id"),
-                        "file_key": ut_res.get("file_key"),
-                        "file_name": f_name,
-                        "file_size": ut_res.get("file_size"),
-                        "mime_type": f_mime,
-                        "source_url": ut_res["file_url"],
-                        "file_url": ut_res["file_url"],
-                        "source_provider": "uploadthing",
-                    }
-                )
-                video_asset.metadata = v_meta
-                video_asset.save(
-                    update_fields=["provider", "status", "metadata", "updated_at"]
-                )
-                extracted_video_ids.append(str(video_asset.id))
+                extracted_media_ids.append(str(ut_res["asset_id"]))
             else:
                 purpose = "post_image" if is_image else "post_document"
                 ut_res = UploadThingService.upload_file_direct(
@@ -283,10 +252,13 @@ class PostService:
                         "Vous ne pouvez pas joindre une vidéo appartenant à un autre utilisateur."
                     )
                 videos_count += 1
+                if video.status in (VideoStatus.WAITING, VideoStatus.PREPARING):
+                    with contextlib.suppress(Exception):
+                        video = MuxVideoService.sync_asset_from_mux(video)
                 meta = dict(video.metadata) if isinstance(video.metadata, dict) else {}
                 meta["post_order"] = idx
                 video.metadata = meta
-                video.save(update_fields=["metadata", "updated_at"])
+                video.save(update_fields=["status", "playback_id", "metadata", "updated_at"] if video.status == VideoStatus.READY else ["metadata", "updated_at"])
                 resolved_videos.append(video)
             elif uid in media_map:
                 asset = media_map[uid]

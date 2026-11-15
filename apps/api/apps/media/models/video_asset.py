@@ -123,6 +123,8 @@ class VideoAsset(BaseModel):
         meta = self.metadata if isinstance(self.metadata, dict) else {}
         if self.status == VideoStatus.WAITING:
             return "UPLOADING" if meta.get("upload_started") else "PENDING_UPLOAD"
+        if self.source_url and self.status not in (VideoStatus.ERRORED, VideoStatus.DELETED):
+            return "READY"
         status_map = {
             VideoStatus.PREPARING: "PROCESSING",
             VideoStatus.READY: "READY",
@@ -148,7 +150,7 @@ class VideoAsset(BaseModel):
             "type": "VIDEO",
             "provider": "MUX",
             "url": self.source_url or None,
-            "playback_url": self.hls_url or None,
+            "playback_url": self.hls_url or (self.source_url or None),
             "playback_id": self.playback_id or None,
             "thumbnail_url": self.thumbnail_url or None,
             "poster_url": self.poster_url or None,

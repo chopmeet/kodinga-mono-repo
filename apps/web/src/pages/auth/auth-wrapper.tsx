@@ -62,7 +62,10 @@ function AuthAside({ panel }: { panel: AuthPanel }) {
   const { t } = useTranslation();
   return (
     <aside className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-linear-to-br from-[#7C9DDB] via-[#3467CB] to-[#0A2B8C] text-white">
-      <div className="pointer-events-none absolute -top-40 -left-40 size-[32rem] rounded-full bg-white/15 blur-3xl" aria-hidden />
+      {/* Smooth animated ambient glowing orbs */}
+      <div className="pointer-events-none absolute -top-40 -left-40 size-[32rem] rounded-full bg-white/15 blur-3xl animate-orb-drift-1" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 size-[36rem] rounded-full bg-sky-400/20 blur-3xl animate-orb-drift-2" aria-hidden />
+      <div className="pointer-events-none absolute top-1/3 left-1/4 size-[24rem] rounded-full bg-indigo-400/15 blur-3xl animate-float-gentle" aria-hidden />
 
       <div className="relative flex items-center justify-between gap-4 px-10 pt-10 xl:px-12">
         <p className="flex items-center gap-2.5 text-xs font-semibold tracking-[0.2em] text-white/85 uppercase">

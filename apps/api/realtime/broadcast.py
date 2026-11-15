@@ -40,19 +40,25 @@ def send_group_event(
     def _execute():
         try:
             channel_layer = get_channel_layer()
-            if channel_layer:
-                sender = channel_layer.group_send
-                payload = {
-                    "type": "event_broadcast",
-                    "sender_channel": sender_channel,
-                    "payload": envelope,
-                }
-                if inspect.iscoroutinefunction(sender):
-                    async_to_sync(sender)(group_name, payload)
-                else:
-                    res = sender(group_name, payload)
-                    if asyncio.iscoroutine(res):
-                        async_to_sync(lambda: res)()
+            if not channel_layer:
+                return
+
+            # Fast path for in-memory layers: skip thread dispatch if no active group subscribers
+            if hasattr(channel_layer, "groups") and not channel_layer.groups.get(group_name):
+                return
+
+            sender = channel_layer.group_send
+            payload = {
+                "type": "event_broadcast",
+                "sender_channel": sender_channel,
+                "payload": envelope,
+            }
+            if inspect.iscoroutinefunction(sender):
+                async_to_sync(sender)(group_name, payload)
+            else:
+                res = sender(group_name, payload)
+                if asyncio.iscoroutine(res):
+                    async_to_sync(lambda: res)()
         except Exception as e:
             logger.warning(
                 f"[REALTIME BROADCAST ERROR] Could not send {event_type} to group {group_name}: {e}"
@@ -83,7 +89,15 @@ def send_groups_event(
             if not channel_layer:
                 return
 
-            unique_groups = set(group_names)
+            # Fast path for in-memory layers: only dispatch to groups with active subscribers
+            if hasattr(channel_layer, "groups"):
+                unique_groups = {g for g in group_names if channel_layer.groups.get(g)}
+            else:
+                unique_groups = set(group_names)
+
+            if not unique_groups:
+                return
+
             payload = {
                 "type": "event_broadcast",
                 "sender_channel": sender_channel,

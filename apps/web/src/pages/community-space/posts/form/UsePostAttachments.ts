@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
 import {
-  useCreateVideoUploadMutation,
   useDeleteMediaAssetMutation,
-  useDeleteVideoAssetMutation,
   useUploadPostFileMutation,
 } from '@/utils/api/community/community.api';
 import type { PostMedia } from '@/utils/api/community/community.type';
 import { parseApiError } from '@/utils/api/errors';
-import { putFile } from '@/utils/api/media/put-file';
 import { formatFileSize } from '@/utils/format';
 
 export type AttachmentKind = 'image' | 'document' | 'video';
@@ -17,7 +14,7 @@ export type AttachmentKind = 'image' | 'document' | 'video';
 export const ATTACHMENT_RULES = {
   image: { accept: '.jpg,.jpeg,.png,.webp,.gif', maxBytes: 10 * 1024 * 1024, max: 10 },
   document: { accept: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv', maxBytes: 25 * 1024 * 1024, max: 10 },
-  video: { accept: '.mp4,.mov,.webm', maxBytes: 100 * 1024 * 1024, max: 3 },
+  video: { accept: '.mp4,.mov,.webm', maxBytes: 128 * 1024 * 1024, max: 3 },
 } as const;
 /** Every attachment of a post, videos included */
 export const MAX_ATTACHMENTS = 10;
@@ -47,6 +44,9 @@ const extensionOf = (name: string) => name.split('.').pop()?.toLowerCase() ?? ''
 
 /** Why a file is refused before any upload, else null */
 function refusal(file: File, kind: AttachmentKind) {
+  if (kind === 'video' && file.size > ATTACHMENT_RULES.video.maxBytes) {
+    return `« ${file.name} » : uploader une video < 128Mo`;
+  }
   const tooBig = file.size > ATTACHMENT_RULES[kind].maxBytes ? `« ${file.name} » dépasse ${formatFileSize(ATTACHMENT_RULES[kind].maxBytes)}.` : null;
   if (kind === 'image' && !IMAGE_MIMES.includes(file.type)) return `« ${file.name} » : formats acceptés JPG, PNG, WEBP, GIF.`;
   if (kind === 'video' && !VIDEO_MIMES.includes(file.type)) return `« ${file.name} » : formats acceptés MP4, MOV, WEBM.`;
@@ -70,9 +70,7 @@ const fromMedia = (m: PostMedia): Attachment => ({
 
 function UsePostAttachments({ open, media }: { open: boolean; media?: PostMedia[] }) {
   const [uploadFile] = useUploadPostFileMutation();
-  const [createVideoUpload] = useCreateVideoUploadMutation();
   const [deleteAsset] = useDeleteMediaAssetMutation();
-  const [deleteVideo] = useDeleteVideoAssetMutation();
   const [items, setItems] = useState<Attachment[]>([]);
   const [removedExisting, setRemovedExisting] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
@@ -107,30 +105,31 @@ function UsePostAttachments({ open, media }: { open: boolean; media?: PostMedia[
   const update = (key: string, changes: Partial<Attachment>) => setItems((current) => current.map((i) => (i.key === key ? { ...i, ...changes } : i)));
   const fail = (key: string, error: unknown) => {
     if (error instanceof DOMException && error.name === 'AbortError') return;
-    // The upload to Mux fails with an Error, the api with its answer
     update(key, { status: 'error', error: error instanceof Error ? error.message : parseApiError(error).message });
   };
 
-  const uploadVideo = async (key: string, file: File) => {
-    const controller = new AbortController();
-    uploads.current.set(key, controller);
-    try {
-      const target = await createVideoUpload({
-        title: file.name,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type,
-        purpose: 'post_video',
-        cors_origin: window.location.origin,
-      }).unwrap();
-      update(key, { assetId: target.video_asset_id });
-      await putFile(target.upload_url, file, (progress) => update(key, { progress }), controller.signal);
-      update(key, { status: 'ready', progress: 100 });
-    } catch (error) {
-      fail(key, error);
-    } finally {
-      uploads.current.delete(key);
-    }
+  const uploadVideo = (key: string, file: File) => {
+    const interval = setInterval(() => {
+      setItems((current) =>
+        current.map((i) => {
+          if (i.key === key && i.status === 'uploading' && (i.progress ?? 0) < 90) {
+            return { ...i, progress: Math.min(90, (i.progress ?? 15) + 20) };
+          }
+          return i;
+        })
+      );
+    }, 180);
+
+    uploadFile({ file, purpose: 'post_video' })
+      .unwrap()
+      .then((res) => {
+        clearInterval(interval);
+        update(key, { status: 'ready', assetId: res.asset_id, progress: 100 });
+      })
+      .catch((error) => {
+        clearInterval(interval);
+        fail(key, error);
+      });
   };
 
   const add = (files: FileList | File[], kind: AttachmentKind) => {
@@ -151,22 +150,39 @@ function UsePostAttachments({ open, media }: { open: boolean; media?: PostMedia[
       const key = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setItems((current) => [
         ...current,
-        { key, kind, name: file.name, size: file.size, previewUrl: kind === 'document' ? null : URL.createObjectURL(file), status: 'uploading', progress: kind === 'video' ? 0 : undefined },
+        { key, kind, name: file.name, size: file.size, previewUrl: kind === 'document' ? null : URL.createObjectURL(file), status: 'uploading', progress: 15 },
       ]);
       if (kind === 'video') {
         uploadVideo(key, file);
       } else {
+        const interval = setInterval(() => {
+          setItems((current) =>
+            current.map((i) => {
+              if (i.key === key && i.status === 'uploading' && (i.progress ?? 0) < 90) {
+                return { ...i, progress: Math.min(90, (i.progress ?? 15) + 20) };
+              }
+              return i;
+            })
+          );
+        }, 180);
+
         uploadFile({ file, purpose: kind === 'image' ? 'post_image' : 'post_document' })
           .unwrap()
-          .then((res) => update(key, { status: 'ready', assetId: res.asset_id }))
-          .catch((error) => fail(key, error));
+          .then((res) => {
+            clearInterval(interval);
+            update(key, { status: 'ready', assetId: res.asset_id, progress: 100 });
+          })
+          .catch((error) => {
+            clearInterval(interval);
+            fail(key, error);
+          });
       }
     }
   };
 
   const drop = (item: Attachment) => {
     if (!item.assetId) return;
-    (item.kind === 'video' ? deleteVideo(item.assetId) : deleteAsset(item.assetId)).catch(() => undefined);
+    deleteAsset(item.assetId).catch(() => undefined);
   };
 
   const remove = (key: string) => {
@@ -193,6 +209,30 @@ function UsePostAttachments({ open, media }: { open: boolean; media?: PostMedia[
   const ready = items.filter((i) => i.status === 'ready' && i.assetId);
   const idsOf = (kind: AttachmentKind) => ready.filter((i) => i.kind === kind).map((i) => i.assetId as string);
 
+  const overallProgress =
+    items.length === 0
+      ? 100
+      : Math.round(
+          items.reduce((sum, i) => sum + (i.status === 'ready' ? 100 : (i.progress ?? (i.status === 'error' ? 0 : 15))), 0) /
+            items.length
+        );
+
+  const optimisticMedia: PostMedia[] = items.map((item, index) => ({
+    id: item.assetId ?? item.key,
+    type: item.kind === 'image' ? 'IMAGE' : item.kind === 'video' ? 'VIDEO' : 'DOCUMENT',
+    url: item.previewUrl ?? undefined,
+    playback_url: item.kind === 'video' ? (item.previewUrl ?? undefined) : undefined,
+    thumbnail_url: item.kind === 'image' ? (item.previewUrl ?? null) : null,
+    poster_url: null,
+    filename: item.name,
+    size: item.size,
+    status: 'READY',
+    order: index,
+    duration: null,
+    width: null,
+    height: null,
+  }));
+
   return {
     items,
     images: items.filter((i) => i.kind === 'image'),
@@ -208,8 +248,14 @@ function UsePostAttachments({ open, media }: { open: boolean; media?: PostMedia[
     },
     isUploading: items.some((i) => i.status === 'uploading'),
     hasErrors: items.some((i) => i.status === 'error'),
-    /** media_ids to send, in display order (images first, then documents) */
-    mediaIds: [...idsOf('image'), ...idsOf('document')],
+    /** Overall progress from 0 to 100 */
+    overallProgress,
+    uploadedCount: ready.length,
+    totalCount: items.length,
+    /** Pre-rendered media elements ready for simultaneous post display */
+    optimisticMedia,
+    /** media_ids to send, in display order (images first, then documents, then videos) */
+    mediaIds: [...idsOf('image'), ...idsOf('document'), ...idsOf('video')],
     videoIds: idsOf('video'),
     /** Something changed on a published post: media_ids and video_ids are sent on save */
     changed: removedExisting.length > 0 || items.some((i) => !i.existing),
