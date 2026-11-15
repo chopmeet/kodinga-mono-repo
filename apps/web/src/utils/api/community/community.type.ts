@@ -56,6 +56,10 @@ export type CommunityListItem = {
   active_live?: ActiveLiveInfo | null;
   /** Signed-in member: the notifications of this community reach them */
   notifications_enabled?: boolean;
+  /** User has active subscription or paid access to this community */
+  has_paid?: boolean;
+  /** Active subscription/membership plans for paid communities */
+  subscription_plans?: CommunityPlan[];
 };
 
 /** Query params of GET communities/ */

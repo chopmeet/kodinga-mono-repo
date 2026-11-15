@@ -50,6 +50,10 @@ export const home = {
   },
   card: {
     paid: 'Payante',
+    paidMember: 'PAID MEMBER',
+    freeMember: 'FREE MEMBER',
+    oneTimePayment: 'Paiement unique',
+    monthlyPayment: 'Paiement mensuel',
     onRequest: 'Sur demande',
     freeAccess: 'Accès gratuit',
     free: 'Gratuite',

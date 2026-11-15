@@ -233,11 +233,11 @@ function OpportunityPageView() {
               </div>
             </section>
           )}
-          {o.technologies.length > 0 && (
+          {(o.technologies ?? []).length > 0 && (
             <section>
               <h2 className="text-lg font-semibold text-foreground">{t('discover.offer.technologies')}</h2>
               <ul className="mt-3 flex flex-wrap gap-2">
-                {o.technologies.map((tech) => (
+                {(o.technologies ?? []).map((tech) => (
                   <li key={tech.id} className="rounded-full bg-brand-subtle px-3 py-1 text-sm font-medium text-brand-strong">
                     {tech.name}
                   </li>

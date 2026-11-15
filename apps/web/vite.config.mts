@@ -60,6 +60,7 @@ export default defineConfig(() => ({
     setupFiles: ['src/test-setup.ts'],
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
+    fileParallelism: false,
     coverage: {
       reportsDirectory: '../../coverage/apps/web',
       provider: 'v8' as const,

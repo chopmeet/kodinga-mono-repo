@@ -32,6 +32,8 @@ class CommunityListSerializer(BaseModelSerializer):
     user_membership_status = serializers.SerializerMethodField()
     can_manage = serializers.SerializerMethodField()
     active_live = serializers.SerializerMethodField()
+    subscription_plans = serializers.SerializerMethodField()
+    has_paid = serializers.SerializerMethodField()
 
     class Meta:
         model = Community
@@ -58,6 +60,8 @@ class CommunityListSerializer(BaseModelSerializer):
             "user_membership_status",
             "can_manage",
             "active_live",
+            "subscription_plans",
+            "has_paid",
             "created_at",
         ]
         read_only_fields = fields
@@ -134,6 +138,46 @@ class CommunityListSerializer(BaseModelSerializer):
             CommunityRole.OWNER,
             CommunityRole.ADMIN,
             CommunityRole.MODERATOR,
+        )
+
+    def get_subscription_plans(self, obj) -> list[dict]:
+        from apps.billing.serializers.plan import PlanSerializer
+
+        if hasattr(obj, "_prefetched_objects_cache") and "subscription_plans" in obj._prefetched_objects_cache:
+            plans = [p for p in obj.subscription_plans.all() if p.is_active]
+        else:
+            plans = obj.subscription_plans.filter(is_active=True).order_by("order", "price")
+        return PlanSerializer(plans, many=True, context=self.context).data
+
+    def get_has_paid(self, obj) -> bool:
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        user_paid_ids = self.context.get("user_paid_community_ids")
+        if user_paid_ids is not None:
+            return obj.id in user_paid_ids
+        if obj.owner_id == request.user.id or is_superadmin_user(request.user):
+            return True
+        from django.utils import timezone
+
+        from apps.billing.models.payment import Payment, PaymentStatus
+        from apps.billing.models.subscription import Subscription, SubscriptionStatus
+
+        if Subscription.objects.filter(
+            user=request.user,
+            community=obj,
+            status__in=[SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+            current_period_end__gt=timezone.now(),
+        ).exists():
+            return True
+        if Payment.objects.filter(
+            user=request.user,
+            plan__community=obj,
+            status=PaymentStatus.PAID,
+        ).exists():
+            return True
+        return bool(
+            obj.pricing_type == CommunityPricing.PAID and self.get_is_member(obj)
         )
 
 
