@@ -63,7 +63,7 @@ export function uploadFileWithProgress({
               file_size: data.file_size ?? file.size,
               mime_type: data.mime_type ?? file.type,
             });
-          } catch (err) {
+          } catch {
             reject(new Error('Réponse invalide du serveur de médias.'));
           }
         } else {

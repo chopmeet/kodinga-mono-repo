@@ -406,7 +406,9 @@ class TestPostsAPI:
         3. Video attached directly via UploadThing (MediaAsset) without Mux processing delay,
            instantly returning 'READY' status and playback_url equal to the UploadThing file_url.
         """
+
         from rest_framework.exceptions import ValidationError
+
         from apps.media.models.media_asset import MediaAsset, MediaPurpose, MediaStatus
         from apps.media.services.uploadthing_service import UploadThingService
 

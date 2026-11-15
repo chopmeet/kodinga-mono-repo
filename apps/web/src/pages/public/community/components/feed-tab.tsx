@@ -167,10 +167,6 @@ export function FeedTab({ page }: { page: CommunityPage }) {
     { skip: !page.canSee, pollingInterval: connected ? 0 : 30_000 },
   );
 
-  if (!page.canSee) {
-    return <LockedPanel page={page}>{t('community.feed.locked')}</LockedPanel>;
-  }
-
   const posts = data?.results ?? [];
   const total = data?.pagination.count ?? 0;
   const me = getName(user) || user?.username || '';
@@ -178,6 +174,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
 
   // Infinite scroll automatique sans restriction : charge la suite dès qu'on approche du bas de page
   useEffect(() => {
+    if (!page.canSee) return;
     const sentinel = sentinelRef.current;
     if (!sentinel || typeof window === 'undefined' || typeof (window as unknown as { IntersectionObserver?: unknown }).IntersectionObserver !== 'function') {
       return;
@@ -195,7 +192,11 @@ export function FeedTab({ page }: { page: CommunityPage }) {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [isFetching, posts.length, total]);
+  }, [isFetching, page.canSee, posts.length, total]);
+
+  if (!page.canSee) {
+    return <LockedPanel page={page}>{t('community.feed.locked')}</LockedPanel>;
+  }
 
   // Tri : par défaut 'recent', le dernier post créé/publié se positionne en tête absolue
   const sortedPosts = [...posts].sort((a, b) => {

@@ -14,6 +14,7 @@ from apps.communities.models.community import Community
 from apps.communities.models.settings import PostPermissionType
 from apps.media.models.media_asset import MediaAsset, MediaStatus
 from apps.media.models.video_asset import VideoAsset, VideoStatus
+from apps.media.services.mux_service import MuxVideoService
 from apps.memberships.models.member import (
     CommunityMember,
     MembershipStatus,
@@ -107,7 +108,6 @@ class PostService:
         if not files_dict:
             return [], []
 
-        from apps.media.services.mux_service import MuxVideoService
         from apps.media.services.uploadthing_service import UploadThingService
 
         extracted_media_ids: list[str] = []

@@ -229,7 +229,7 @@ export function ConnectedWorld({ panel }: { panel: AuthPanel }) {
           className="absolute -translate-1/2 hidden md:inline-flex items-center gap-1.5 rounded-full border border-sky-300/40 bg-sky-500/25 px-3.5 py-1 text-[11px] font-bold text-sky-100 backdrop-blur-md shadow-xl shadow-sky-950/20 animate-float-sway"
           aria-hidden
         >
-          <span>🌍</span>
+          <span role="img" aria-label="Afrique">🌍</span>
           Tech Africa Hub
         </span>
       </div>
