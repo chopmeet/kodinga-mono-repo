@@ -355,6 +355,8 @@ export type PostWriteData = {
   media_ids?: string[];
   /** Mux videos (VideoAsset ids) */
   video_ids?: string[];
+  /** Client-side media assets for instant, simultaneous post + media display without flash */
+  optimisticMedia?: PostMedia[];
 };
 
 export type CommunityFeedQuery = {

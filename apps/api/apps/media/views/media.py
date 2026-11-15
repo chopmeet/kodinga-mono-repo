@@ -88,9 +88,12 @@ class ConfirmUploadView(APIView):
         )
         response_data = MediaAssetSerializer(asset).data
 
-        # Si l'asset confirmé est une vidéo, créer/lier automatiquement la ressource Mux
+        # Si l'asset confirmé est une vidéo de leçon, créer/lier automatiquement la ressource Mux
+        # (les vidéos de publications de posts restent 100% sur UploadThing sans Mux)
         if asset.purpose == MediaPurpose.LESSON_VIDEO or (
-            asset.mime_type and asset.mime_type.startswith("video/")
+            asset.purpose != MediaPurpose.POST_VIDEO
+            and asset.mime_type
+            and asset.mime_type.startswith("video/")
         ):
             try:
                 video_asset = VideoAsset.objects.filter(
@@ -220,9 +223,12 @@ class DirectFileUploadView(APIView):
             file_obj=file_obj,
         )
 
-        # Ingestion automatique dans Mux pour les vidéos
-        if purpose in ("lesson_video", "post_video") or (
-            mime_type and mime_type.startswith("video/")
+        # Ingestion automatique dans Mux pour les vidéos de cours
+        # (les vidéos de posts restent 100% sur UploadThing sans Mux pour éviter le délai "processing")
+        if purpose == "lesson_video" or (
+            purpose not in ("post_video", "post_attachment")
+            and mime_type
+            and mime_type.startswith("video/")
         ):
             try:
                 title = request.data.get("title") or file_name

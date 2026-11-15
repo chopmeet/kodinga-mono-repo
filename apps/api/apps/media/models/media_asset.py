@@ -129,10 +129,12 @@ class MediaAsset(BaseModel):
             if self.provider == MediaProvider.UPLOADTHING
             else str(self.provider).upper(),
             "url": self.file_url or None,
-            "playback_url": None,
+            "playback_url": self.file_url if self.media_category == "VIDEO" else None,
+            "playback_id": None,
             "thumbnail_url": self.file_url
             if self.media_category == "IMAGE"
             else meta.get("thumbnail_url"),
+            "poster_url": meta.get("poster_url"),
             "filename": self.file_name,
             "mime_type": self.mime_type,
             "size": self.file_size,

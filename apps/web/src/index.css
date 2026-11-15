@@ -221,3 +221,144 @@
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
+
+/* ==========================================================================
+   Smooth Floating, Beam & Map Animations for Auth Pages (Africa & Network)
+   ========================================================================== */
+@keyframes float-smooth-slow {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, -9px, 0);
+  }
+}
+
+@keyframes float-smooth-reverse {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
+@keyframes float-smooth-gentle {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0) scale(1.02);
+  }
+}
+
+@keyframes float-smooth-sway {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(4px, -7px, 0) rotate(1.2deg);
+  }
+}
+
+@keyframes beam-flow {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulse-africa-glow {
+  0%, 100% {
+    opacity: 0.55;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.45));
+  }
+  50% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 18px rgba(96, 165, 250, 0.85));
+  }
+}
+
+@keyframes pulse-beacon {
+  0% {
+    r: 2;
+    opacity: 0.9;
+  }
+  50% {
+    r: 8;
+    opacity: 0;
+  }
+  100% {
+    r: 2;
+    opacity: 0;
+  }
+}
+
+@keyframes orb-drift-1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, -18px, 0) scale(1.08);
+  }
+}
+
+@keyframes orb-drift-2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-18px, 20px, 0) scale(1.06);
+  }
+}
+
+.animate-float-slow {
+  animation: float-smooth-slow 6.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-reverse {
+  animation: float-smooth-reverse 7.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-gentle {
+  animation: float-smooth-gentle 5.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-sway {
+  animation: float-smooth-sway 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-beam-flow {
+  animation: beam-flow 2.8s linear infinite;
+}
+
+.animate-africa-glow {
+  animation: pulse-africa-glow 4.2s ease-in-out infinite;
+}
+
+.animate-orb-drift-1 {
+  animation: orb-drift-1 14s ease-in-out infinite;
+}
+
+.animate-orb-drift-2 {
+  animation: orb-drift-2 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-float-reverse,
+  .animate-float-gentle,
+  .animate-float-sway,
+  .animate-beam-flow,
+  .animate-africa-glow,
+  .animate-orb-drift-1,
+  .animate-orb-drift-2 {
+    animation: none !important;
+  }
+}

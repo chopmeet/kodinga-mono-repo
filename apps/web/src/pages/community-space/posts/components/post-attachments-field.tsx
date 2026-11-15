@@ -50,7 +50,7 @@ function VideoRow({ item, onRemove }: { item: Attachment; onRemove: () => void }
           </div>
         ) : (
           <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-muted-foreground')}>
-            {item.status === 'error' ? (item.error ?? 'Échec de l’envoi') : item.existing ? 'Publiée' : `${formatFileSize(item.size)} · prête, traitée après publication`}
+            {item.status === 'error' ? (item.error ?? 'Échec de l’envoi') : item.existing ? 'Publiée' : `${formatFileSize(item.size)} · prête`}
           </p>
         )}
       </div>
@@ -71,15 +71,53 @@ export function PostAttachmentsField({ attachments, children }: { attachments: P
 
   return (
     <div className="mb-4">
+      {attachments.items.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border bg-subtle/80 p-3.5" aria-label="Progression du chargement des médias">
+          <div className="mb-2 flex items-center justify-between text-xs font-medium">
+            <span className="flex items-center gap-1.5 text-foreground">
+              {attachments.isUploading ? (
+                <>
+                  <LoaderCircle className="size-3.5 animate-spin text-blue-900" />
+                  <span>Chargement des ressources ({attachments.uploadedCount}/{attachments.totalCount})…</span>
+                </>
+              ) : (
+                <>
+                  <span className="size-2 rounded-full bg-emerald-600" />
+                  <span className="text-emerald-700 font-semibold">Toutes les ressources sont prêtes ({attachments.totalCount}/{attachments.totalCount})</span>
+                </>
+              )}
+            </span>
+            <span className="font-semibold text-foreground tabular-nums">{attachments.overallProgress}%</span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label="Progression globale du chargement des ressources"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={attachments.overallProgress}
+            className="h-2 w-full overflow-hidden rounded-full bg-border"
+          >
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-300 ease-out',
+                attachments.overallProgress === 100 ? 'bg-emerald-600' : 'bg-blue-900'
+              )}
+              style={{ width: `${attachments.overallProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {attachments.images.length > 0 && (
         <ul aria-label="Images jointes" className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {attachments.images.map((item) => (
             <li key={item.key} className="relative aspect-square overflow-hidden rounded-lg border border-border bg-subtle">
               {item.previewUrl && <img src={item.previewUrl} alt={item.name} className="size-full object-cover" />}
               {item.status === 'uploading' && (
-                <span className="absolute inset-0 flex items-center justify-center bg-card/60" role="status" aria-label={`Envoi de « ${item.name} »`}>
-                  <LoaderCircle className="size-5 animate-spin text-brand-strong" />
-                </span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/60 p-1 text-center" role="status" aria-label={`Envoi de « ${item.name} »`}>
+                  <LoaderCircle className="size-4.5 animate-spin text-white" />
+                  <span className="mt-1 text-[11px] font-semibold text-white tabular-nums">{item.progress ?? 0}%</span>
+                </div>
               )}
               {item.status === 'error' && (
                 <span className="absolute inset-0 flex items-center justify-center bg-red-50/90 p-1 text-center text-[11px] text-red-700" title={item.error}>
@@ -107,9 +145,18 @@ export function PostAttachmentsField({ attachments, children }: { attachments: P
               <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
-                <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-muted-foreground')}>
-                  {item.status === 'uploading' ? 'Envoi…' : item.status === 'error' ? (item.error ?? 'Échec de l’envoi') : formatFileSize(item.size)}
-                </p>
+                {item.status === 'uploading' ? (
+                  <div className="mt-1 flex items-center gap-2">
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-blue-900 transition-[width]" style={{ width: `${item.progress ?? 0}%` }} />
+                    </div>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">{item.progress ?? 0}%</span>
+                  </div>
+                ) : (
+                  <p className={cn('text-xs', item.status === 'error' ? 'text-red-700' : 'text-muted-foreground')}>
+                    {item.status === 'error' ? (item.error ?? 'Échec de l’envoi') : formatFileSize(item.size)}
+                  </p>
+                )}
               </div>
               {item.status === 'uploading' && <LoaderCircle className="size-4 animate-spin text-brand-strong" aria-hidden />}
               <RemoveButton item={item} onRemove={() => attachments.remove(item.key)} />

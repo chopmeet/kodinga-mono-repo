@@ -1,5 +1,5 @@
-import { Bookmark, CircleCheck, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal } from 'lucide-react';
-import { useState } from 'react';
+import { Bookmark, CircleCheck, LoaderCircle, MessageCircle, MessagesSquare, PenLine, Pin, Search, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -23,7 +23,7 @@ import { useRealtime, useRealtimeCommunityFeed } from '@/utils/realtime/use-real
 import { PostMediaView } from './post-media';
 import { ReactionBar } from './reaction-bar';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 // Labels: community.feed.filters.<id>
 const FILTERS: (PostType | 'all')[] = ['all', 'announcement', 'discussion', 'question', 'project_showcase', 'poll'];
 
@@ -167,13 +167,48 @@ export function FeedTab({ page }: { page: CommunityPage }) {
     { skip: !page.canSee, pollingInterval: connected ? 0 : 30_000 },
   );
 
+  const posts = data?.results ?? [];
+  const total = data?.pagination.count ?? 0;
+  const me = getName(user) || user?.username || '';
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll automatique sans restriction : charge la suite dès qu'on approche du bas de page
+  useEffect(() => {
+    if (!page.canSee) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof window === 'undefined' || typeof (window as unknown as { IntersectionObserver?: unknown }).IntersectionObserver !== 'function') {
+      return;
+    }
+
+    const observer = new (window as unknown as { new(callback: IntersectionObserverCallback, options?: IntersectionObserverInit): IntersectionObserver }).IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first?.isIntersecting && !isFetching && posts.length < total) {
+          setCount((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { rootMargin: '400px' }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isFetching, page.canSee, posts.length, total]);
+
   if (!page.canSee) {
     return <LockedPanel page={page}>{t('community.feed.locked')}</LockedPanel>;
   }
 
-  const posts = data?.results ?? [];
-  const total = data?.pagination.count ?? 0;
-  const me = getName(user) || user?.username || '';
+  // Tri : par défaut 'recent', le dernier post créé/publié se positionne en tête absolue
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (sort === 'popular') {
+      const popA = (a.reactions_count ?? 0) + (a.comments_count ?? 0);
+      const popB = (b.reactions_count ?? 0) + (b.comments_count ?? 0);
+      return popB - popA;
+    }
+    const timeA = new Date(a.created_at).getTime() || 0;
+    const timeB = new Date(b.created_at).getTime() || 0;
+    return timeB - timeA;
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -268,7 +303,7 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         </div>
       ) : (
         <ul className={cn('flex flex-col gap-6', isFetching && 'opacity-70 transition-opacity')} aria-label={t('community.feed.postsLabel')}>
-          {posts.map((post) => (
+          {sortedPosts.map((post) => (
             <li key={post.id}>
               <PostCard post={post} canReact={isMember} href={postHref(page.slug, post.id)} page={page} />
             </li>
@@ -276,8 +311,25 @@ export function FeedTab({ page }: { page: CommunityPage }) {
         </ul>
       )}
 
-      {posts.length < total && (
-        <Button variant="outline" className="self-center" isLoading={isFetching} onClick={() => setCount((n) => n + PAGE_SIZE)}>
+      {/* Sentinelle invisible pour le déclenchement de l'infinite scroll automatique */}
+      <div ref={sentinelRef} className="h-4 w-full" aria-hidden="true" />
+
+      {isFetching && sortedPosts.length > 0 && (
+        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground" role="status">
+          <LoaderCircle className="mr-2 size-5 animate-spin text-brand-strong" />
+          <span>{t('community.feed.loadingMore', 'Chargement des publications suivantes…')}</span>
+        </div>
+      )}
+
+      {!isFetching && sortedPosts.length >= total && total > 0 && (
+        <p className="py-6 text-center text-xs text-muted-foreground">
+          {t('community.feed.allLoaded', 'Toutes les publications sont affichées')} ({total})
+        </p>
+      )}
+
+      {/* Bouton de secours manuel pour l'accessibilité */}
+      {sortedPosts.length < total && !isFetching && (
+        <Button variant="outline" className="self-center" onClick={() => setCount((n) => n + PAGE_SIZE)}>
           {t('common.actions.showMore')}
         </Button>
       )}

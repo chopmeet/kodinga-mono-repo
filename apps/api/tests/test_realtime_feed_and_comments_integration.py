@@ -111,11 +111,12 @@ def test_post_lifecycle_broadcasts(auth_user, community):
 
 @pytest.mark.django_db(transaction=True)
 def test_comment_lifecycle_broadcasts(auth_user, community):
-    post = PostService.create_post(
-        author=auth_user,
-        community=community,
-        data={"title": "Questions on Architecture", "content": "How to scale?"},
-    )
+    with patch("realtime.broadcast.send_group_event"):
+        post = PostService.create_post(
+            author=auth_user,
+            community=community,
+            data={"title": "Questions on Architecture", "content": "How to scale?"},
+        )
 
     with patch("realtime.broadcast.send_group_event") as mock_send_single:
         # 1. Create Comment
@@ -170,20 +171,21 @@ def test_comment_lifecycle_broadcasts(auth_user, community):
 @pytest.mark.django_db(transaction=True)
 def test_catch_up_since_filtering(auth_user, community):
     now = timezone.now()
-    p1 = PostService.create_post(
-        author=auth_user,
-        community=community,
-        data={"title": "Older Post", "content": "Old"},
-    )
-    # Manually backdate p1 updated_at
-    old_time = now - timedelta(hours=2)
-    type(p1).objects.filter(id=p1.id).update(updated_at=old_time)
+    with patch("realtime.broadcast.send_group_event"):
+        p1 = PostService.create_post(
+            author=auth_user,
+            community=community,
+            data={"title": "Older Post", "content": "Old"},
+        )
+        # Manually backdate p1 updated_at
+        old_time = now - timedelta(hours=2)
+        type(p1).objects.filter(id=p1.id).update(updated_at=old_time)
 
-    p2 = PostService.create_post(
-        author=auth_user,
-        community=community,
-        data={"title": "Newer Post", "content": "New"},
-    )
+        p2 = PostService.create_post(
+            author=auth_user,
+            community=community,
+            data={"title": "Newer Post", "content": "New"},
+        )
 
     # 1. Without since: both posts returned
     all_posts = list(PostSelector.get_community_feed(community=community))

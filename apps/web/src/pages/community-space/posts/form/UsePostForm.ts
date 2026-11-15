@@ -113,13 +113,14 @@ function UsePostForm({
         customToast.success({ message: 'Publication mise à jour.' });
         onDone();
       } else {
-        // Optimistic instant feedback (Facebook/LinkedIn-style: 0ms close & DOM insertion)
+        // Optimistic instant feedback (post & media display simultaneously)
         attachments.markPublished();
         onDone();
         customToast.success({ message: 'Publication partagée avec la communauté.' });
         createPost({
           slug,
           ...body,
+          optimisticMedia: attachments.optimisticMedia,
           ...(v.post_type === 'poll'
             ? {
                 poll: {

@@ -313,13 +313,13 @@ class MultimediaAndEmojisTestSuite(APITestCase):
         video_id = mux_res.data["data"]["video_asset_id"]
         self.assertEqual(mux_res.data["data"]["normalized_status"], "PENDING_UPLOAD")
 
-        # 2. Rejet d'une vidéo dépassant 100 Mo pour un post
+        # 2. Rejet d'une vidéo dépassant 128 Mo pour un post
         too_big_video = self.client.post(
             "/api/v1/media/videos/upload-url/",
             {
                 "title": "Vidéo trop lourde",
                 "file_name": "heavy.mp4",
-                "file_size": 120 * 1024 * 1024,  # 120 Mo > 100 Mo
+                "file_size": 130 * 1024 * 1024,  # 130 Mo > 128 Mo
                 "mime_type": "video/mp4",
                 "purpose": "post_video",
             },

@@ -139,9 +139,12 @@ class NotificationService:
             "action_url": action_url,
         }
 
-        dispatched = 0
-        for recipient in recipients.values():
-            created = cls.create_notification(
+        if not recipients:
+            return 0
+
+        # High-performance batch creation: single SQL bulk insert instead of N sequential inserts
+        notifications_to_create = [
+            Notification(
                 recipient=recipient,
                 actor=actor,
                 title=notif_title,
@@ -152,9 +155,23 @@ class NotificationService:
                 target_id=target_id_str,
                 metadata=metadata,
             )
-            if created is not None:
-                dispatched += 1
-        return dispatched
+            for recipient in recipients.values()
+        ]
+        created_notifications = Notification.objects.bulk_create(notifications_to_create)
+
+        # Dispatch real-time WebSocket events asynchronously in background thread so it never stalls the HTTP request
+        def _broadcast_in_background(notifs):
+            try:
+                from realtime.broadcast import broadcast_notification_created
+                for n in notifs:
+                    broadcast_notification_created(n)
+            except Exception as e:
+                logger.warning(f"Failed to broadcast publication notifications: {e}")
+
+        import threading
+        threading.Thread(target=_broadcast_in_background, args=(created_notifications,), daemon=True).start()
+
+        return len(created_notifications)
 
     @classmethod
     def mark_as_read(cls, notification_id: str, user: User) -> bool:

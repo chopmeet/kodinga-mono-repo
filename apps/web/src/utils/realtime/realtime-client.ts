@@ -17,10 +17,15 @@ export function getWebSocketBaseUrl(): string {
   try {
     const url = new URL(ApiBaseUrl);
     const wsProto = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Match window.location.hostname in local development to avoid localhost vs 127.0.0.1 origin conflicts
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      const port = url.port || '8000';
+      return `${wsProto}//${window.location.hostname}:${port}/ws/`;
+    }
     return `${wsProto}//${url.host}/ws/`;
   } catch {
-    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${wsProto}//${window.location.host}/ws/`;
+    const wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${wsProto}//${typeof window !== 'undefined' ? window.location.host : 'localhost:8000'}/ws/`;
   }
 }
 
